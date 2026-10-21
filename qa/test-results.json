@@ -696,12 +696,34 @@
         {
           "result": "pass",
           "note": "Owner approval D-53. LLM_MODE=mock pnpm db:reset replayed migrations successfully; all four integration tests passed; pnpm db:generate reported no schema changes."
+        },
+        {
+          "result": "pass",
+          "note": "T-07 CI run 39580104889 passed all six jobs on a054711."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": null,
       "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-029",
+      "ac_reference": "T-08; FR-26\u2013FR-29; FR-53",
+      "milestone": "M1 Ingestion and search",
+      "title": "Operational schema and constraints",
+      "status": "resolved",
+      "environment": "macOS; PostgreSQL 17; localhost sourced_test",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-03 verifies all six tables/primary keys, all CHECK constraints, operational indexes and invalid values/unique keys. Strict typecheck/lint, 21 unit and five integration tests passed. db:generate reports no changes; 0002 SQL matches normative TRD exactly except statement breakpoints. Additive local db:migrate passed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
       "retraction_reason": null
     }
   ]

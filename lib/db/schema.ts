@@ -5,6 +5,11 @@ import {
   boolean,
   check,
   customType,
+  date,
+  jsonb,
+  primaryKey,
+  smallint,
+  uuid,
   index,
   integer,
   numeric,
@@ -99,5 +104,80 @@ export const ingestRuns = pgTable(
     index('ingest_runs_finished_idx')
       .on(t.finishedAt.desc().nullsFirst())
       .where(sql`${t.status} = 'succeeded'`),
+  ],
+);
+
+export const answerCache = pgTable(
+  'answer_cache',
+  {
+    id: bigint('id', { mode: 'bigint' }).generatedAlwaysAsIdentity().primaryKey(),
+    cacheKey: text('cache_key').notNull().unique('answer_cache_cache_key_key'),
+    suggestedId: text('suggested_id').notNull(),
+    question: text('question').notNull(),
+    corpusVersion: text('corpus_version').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    chatModel: text('chat_model').notNull(),
+    payload: jsonb('payload').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('answer_cache_suggested_idx').on(t.suggestedId, t.createdAt.desc().nullsFirst())],
+);
+
+export const rateLimits = pgTable(
+  'rate_limits',
+  {
+    bucket: text('bucket').notNull(),
+    windowStart: date('window_start').notNull(),
+    count: integer('count').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ name: 'rate_limits_pkey', columns: [t.bucket, t.windowStart] }),
+    check('rate_limits_count_check', sql`${t.count} >= 0`),
+    index('rate_limits_window_idx').on(t.windowStart),
+  ],
+);
+
+export const queryLog = pgTable(
+  'query_log',
+  {
+    id: bigint('id', { mode: 'bigint' }).generatedAlwaysAsIdentity().primaryKey(),
+    requestId: uuid('request_id').notNull().unique('query_log_request_id_key'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    source: text('source').notNull(),
+    outcome: text('outcome').notNull(),
+    errorCode: text('error_code'),
+    questionHash: text('question_hash').notNull(),
+    questionLength: integer('question_length').notNull(),
+    questionText: text('question_text'),
+    suggestedId: text('suggested_id'),
+    chatModel: text('chat_model'),
+    embeddingModel: text('embedding_model'),
+    promptVersion: text('prompt_version'),
+    corpusVersion: text('corpus_version'),
+    passagesCount: smallint('passages_count'),
+    rerankFallback: boolean('rerank_fallback'),
+    quoteFallbackUsed: boolean('quote_fallback_used'),
+    citationsValid: smallint('citations_valid'),
+    citationsInvalid: smallint('citations_invalid'),
+    latencyTotalMs: integer('latency_total_ms'),
+    latencyFirstTokenMs: integer('latency_first_token_ms'),
+    latencyEmbedMs: integer('latency_embed_ms'),
+    latencySearchMs: integer('latency_search_ms'),
+    latencyRerankMs: integer('latency_rerank_ms'),
+    latencyGenerationMs: integer('latency_generation_ms'),
+    tokensEmbedding: integer('tokens_embedding'),
+    tokensInput: integer('tokens_input'),
+    tokensOutput: integer('tokens_output'),
+    costUsdEstimate: numeric('cost_usd_estimate', { precision: 10, scale: 6 }),
+  },
+  (t) => [
+    check('query_log_source_check', sql`${t.source} IN ('live', 'cache')`),
+    check(
+      'query_log_outcome_check',
+      sql`${t.outcome} IN ('answered', 'not_found', 'rate_limited', 'aborted', 'error')`,
+    ),
+    check('query_log_question_length_check', sql`${t.questionLength} >= 0`),
+    index('query_log_created_at_idx').on(t.createdAt.desc().nullsFirst()),
   ],
 );
