@@ -1491,6 +1491,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-053",
+      "ac_reference": "T-17; FR-36\u2013FR-38; NFR-16",
+      "milestone": "M1 Ingestion and search",
+      "title": "Live ingest and coverage",
+      "description": "T-17 live corpus validation and coverage gate.",
+      "steps_to_reproduce": "With approved local reset and configured live credentials/prices, reset then ingest offline twice; verify second run zero inserted and zero embedding inputs. Run pnpm test:coverage.",
+      "expected_result": "Live report records chunks, tokens, cost and duration; repeat has no embedding calls; global lines >=80% and critical files >=90%.",
+      "status": "pending_decision",
+      "environment": "macOS; local Postgres 17; T-17 preparation",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Coverage portion only: pnpm test:coverage passed with global 80% threshold enabled; 96.35% overall lines, chunk 97.72%, RRF 100%. Live portion not run: API key/chat model absent, prices zero; separate local reset and live-call approval requested in docs/PROGRESS.md."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "retraction_reason": null
     }
   ]
 }
