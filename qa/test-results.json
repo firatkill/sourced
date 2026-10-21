@@ -52,6 +52,24 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-003",
+      "ac_reference": "T-01; NFR-17",
+      "milestone": "M0 Setup",
+      "title": "CI scaffold",
+      "status": "resolved",
+      "environment": "GitHub Actions ubuntu-latest, Node 22, commit 1bfb6b7",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Lint, typecheck and production build passed: https://github.com/firatkill/sourced/actions/runs/39563006461"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
