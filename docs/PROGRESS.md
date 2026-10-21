@@ -21,8 +21,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | done | 1bfb6b7 |
 | T-02 | M0 Setup | Configuration, environment and error codes | done | b3e68d9 |
 | T-03 | M0 Setup | Logging, request id and security headers | done | 7c0b2e6 |
-| T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | HEAD |
-| T-05 | M0 Setup | Test runners and full CI | todo | — |
+| T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | 44cf3a3 |
+| T-05 | M0 Setup | Test runners and full CI | doing | — |
 | T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | todo | — |
 | T-07 | M1 Ingestion and search | Core schema: documents and chunks | todo | — |
 | T-08 | M1 Ingestion and search | Operational tables | todo | — |
@@ -84,3 +84,5 @@ T-02: local lint, typecheck, 15 unit tests and build pass; CI run 39563649874 pa
 
 T-03: 18 unit tests, lint, typecheck, build, built-server security-header checks and live Chrome CSP check passed. CI run 39564293221 passed.
 
+
+T-05 local verification: lint, typecheck, 20 unit tests, integration smoke, coverage and production build plus three E2E smoke tests pass. CI verification pending push. Coverage global enforcement begins T-17 per plan.
