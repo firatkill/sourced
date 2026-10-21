@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: sourced
+      POSTGRES_PASSWORD: sourced
+      POSTGRES_DB: sourced
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sourced -d sourced']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  pgdata:
