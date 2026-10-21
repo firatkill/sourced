@@ -11,3 +11,7 @@ corpus/LICENSE-POSTGRESQL.txt and retained in the original HTML pages.
 
 corpus/fixtures/injected-notice.html is a synthetic Sourced test fixture,
 not part of the PostgreSQL documentation.
+
+tests/fixtures/html/indexes-partial.html, transaction-iso.html and
+datatype-json.html are trimmed PostgreSQL documentation excerpts, covered
+by the same PostgreSQL copyright notice and licence above.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+  <body>
+    <div id="docContent">
+      <div class="sect1" id="DATATYPE-JSON">
+        <div class="titlepage">
+          <div>
+            <div>
+              <h2 class="title" style="clear: both">
+                8.14.&nbsp;<acronym class="acronym">JSON</acronym> Types
+                <a href="#DATATYPE-JSON" class="id_link">#</a>
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <p>
+          JSON data types are for storing JSON (JavaScript Object Notation) data, as specified in
+          <a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc7159" target="_top"
+            >RFC 7159</a
+          >. Such data can also be stored as <code class="type">text</code>, but the JSON data types
+          have the advantage of enforcing that each stored value is valid according to the JSON
+          rules. There are also assorted JSON-specific functions and operators available for data
+          stored in these data types; see
+          <a class="xref" href="functions-json.html" title="9.16.&nbsp;JSON Functions and Operators"
+            >Section&nbsp;9.16</a
+          >.
+        </p>
+        <p>
+          <span class="productname">PostgreSQL</span> offers two types for storing JSON data:
+          <code class="type">json</code> and <code class="type">jsonb</code>. To implement efficient
+          query mechanisms for these data types, <span class="productname">PostgreSQL</span> also
+          provides the <code class="type">jsonpath</code> data type described in
+          <a
+            class="xref"
+            href="datatype-json.html#DATATYPE-JSONPATH"
+            title="8.14.7.&nbsp;jsonpath Type"
+            >Section&nbsp;8.14.7</a
+          >.
+        </p>
+
+        <div class="sect2" id="JSON-KEYS-ELEMENTS">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title">
+                  8.14.1.&nbsp;JSON Input and Output Syntax
+                  <a href="#JSON-KEYS-ELEMENTS" class="id_link">#</a>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <p>
+            The input/output syntax for the JSON data types is as specified in
+            <acronym class="acronym">RFC</acronym> 7159.
+          </p>
+          <p>
+            The following are all valid <code class="type">json</code> (or
+            <code class="type">jsonb</code>) expressions:
+          </p>
+        </div>
+        <div class="sect2" id="JSON-DOC-DESIGN">
+          <div class="titlepage">
+            <div>
+              <div>
+                <h3 class="title">
+                  8.14.2.&nbsp;Designing JSON Documents
+                  <a href="#JSON-DOC-DESIGN" class="id_link">#</a>
+                </h3>
+              </div>
+            </div>
+          </div>
+          <p>
+            Representing data as JSON can be considerably more flexible than the traditional
+            relational data model, which is compelling in environments where requirements are fluid.
+            It is quite possible for both approaches to co-exist and complement each other within
+            the same application. However, even for applications where maximal flexibility is
+            desired, it is still recommended that JSON documents have a somewhat fixed structure.
+            The structure is typically unenforced (though enforcing some business rules
+            declaratively is possible), but having a predictable structure makes it easier to write
+            queries that usefully summarize a set of
+            <span class="quote">“<span class="quote">documents</span>”</span> (datums) in a table.
+          </p>
+          <p>
+            JSON data is subject to the same concurrency-control considerations as any other data
+            type when stored in a table. Although storing large documents is practicable, keep in
+            mind that any update acquires a row-level lock on the whole row. Consider limiting JSON
+            documents to a manageable size in order to decrease lock contention among updating
+            transactions. Ideally, JSON documents should each represent an atomic datum that
+            business rules dictate cannot reasonably be further subdivided into smaller datums that
+            could be modified independently.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
