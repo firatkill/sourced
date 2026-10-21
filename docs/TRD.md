@@ -416,6 +416,7 @@ export const FETCH = {
   MIN_INTERVAL_MS: 2_000,
   TIMEOUT_MS: 20_000,
   MAX_RETRIES: 3,
+  RETRY_DELAYS_MS: [5_000, 15_000, 45_000],
   USER_AGENT: 'SourcedIngest/1.0 (+https://github.com/firatkill/sourced)',
 } as const;
 
