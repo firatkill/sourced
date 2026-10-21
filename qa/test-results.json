@@ -719,12 +719,90 @@
         {
           "result": "pass",
           "note": "IT-03 verifies all six tables/primary keys, all CHECK constraints, operational indexes and invalid values/unique keys. Strict typecheck/lint, 21 unit and five integration tests passed. db:generate reports no changes; 0002 SQL matches normative TRD exactly except statement breakpoints. Additive local db:migrate passed."
+        },
+        {
+          "result": "pass",
+          "note": "T-08 CI run 39580361843 passed all six jobs on 0c6918a."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-030",
+      "ac_reference": "T-09; FR-33",
+      "milestone": "M1 Ingestion and search",
+      "title": "Manifest validation",
+      "status": "resolved",
+      "environment": "macOS; Node 24; PostgreSQL documentation verified 2026-10-21",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-29 passes valid manifest, page count, unique slug, slug format, URL and schema version checks."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Strict lint rejects numeric interpolation in test fixture slug.",
+          "note": "Explicit String conversion preserves the test data."
+        },
+        {
+          "result": "pass",
+          "note": "Final pnpm lint, typecheck, all 23 unit and five integration tests pass. Manifest has exactly 35 pages."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "description": "Manifest schema and loader follow TRD \u00a710.1; test fixture strings must satisfy strict TypeScript lint.",
+      "steps_to_reproduce": "Run pnpm lint and pnpm test tests/unit/manifest.test.ts.",
+      "expected_result": "Strict checks and UT-29 pass."
+    },
+    {
+      "tc_reference": "TC-031",
+      "ac_reference": "T-09; FR-50; D-05",
+      "milestone": "M1 Ingestion and search",
+      "title": "Corpus sources and attribution",
+      "status": "resolved",
+      "environment": "macOS; Node 24; PostgreSQL documentation verified 2026-10-21",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "All 35 URLs return 200 without redirects; robots policy permits docs/17. Identifying User-Agent, >=2-second start spacing. Licence paragraphs copied verbatim; source and findings recorded D-54/D-55."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-032",
+      "ac_reference": "T-09; FR-39",
+      "milestone": "M1 Ingestion and search",
+      "title": "Injection fixture content",
+      "status": "resolved",
+      "environment": "macOS; Node 24; PostgreSQL documentation verified 2026-10-21",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Raw cheerio text included indentation and line breaks.",
+          "note": "Corrected test against TRD \u00a710.3 whitespace rule, without changing expected paragraph wording."
+        },
+        {
+          "result": "pass",
+          "note": "Normative title, paragraphs and section structure pass after specified text whitespace normalization."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "description": "Initial fixture assertion compared raw indentation instead of normalized HTML text.",
+      "steps_to_reproduce": "Run manifest.test.ts after Prettier formats the fixture.",
+      "expected_result": "TRD \u00a710.3 collapses whitespace; exact normative paragraph words remain unchanged."
     }
   ]
 }
