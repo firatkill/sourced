@@ -28,7 +28,11 @@ export default defineConfig({
         'lib/eval/load-results.ts',
       ],
       // T-05 stages global thresholds until T-17; add critical file thresholds as implemented.
-      thresholds: { autoUpdate: false, 'lib/ingest/chunk.ts': { lines: 90 } },
+      thresholds: {
+        autoUpdate: false,
+        'lib/ingest/chunk.ts': { lines: 90 },
+        'lib/retrieval/rrf.ts': { lines: 90 },
+      },
     },
     projects: [
       {

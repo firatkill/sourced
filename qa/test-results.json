@@ -1279,6 +1279,10 @@
         {
           "result": "pass",
           "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 63fea80, run 39632532522."
         }
       ],
       "regression_of": null,
@@ -1305,6 +1309,10 @@
         {
           "result": "pass",
           "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 63fea80, run 39632532522."
         }
       ],
       "regression_of": null,
@@ -1327,6 +1335,10 @@
         {
           "result": "pass",
           "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 63fea80, run 39632532522."
         }
       ],
       "regression_of": null,
@@ -1349,6 +1361,88 @@
         {
           "result": "pass",
           "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 63fea80, run 39632532522."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-049",
+      "ac_reference": "T-15; FR-12; NFR-06",
+      "milestone": "M1 Ingestion and search",
+      "title": "Reference reciprocal rank fusion",
+      "status": "resolved",
+      "environment": "Local PostgreSQL; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-05 formula, fixture ranking, empty lists, limits and bigint tie-break pass."
+        },
+        {
+          "result": "pass",
+          "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-050",
+      "ac_reference": "T-15; FR-12; NFR-06",
+      "milestone": "M1 Ingestion and search",
+      "title": "Hybrid SQL fixture",
+      "status": "resolved",
+      "environment": "Local PostgreSQL; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "All three IT-01 cases pass: FTS D/F/A, fused A/D/F/B/C/E, limited A/D/B/F, empty FTS vector order and in-transaction ef_search."
+        },
+        {
+          "result": "pass",
+          "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-051",
+      "ac_reference": "T-15; FR-12; NFR-06",
+      "milestone": "M1 Ingestion and search",
+      "title": "SQL equals reference",
+      "status": "resolved",
+      "environment": "Local PostgreSQL; mock embeddings",
+      "attempts": [
+        {
+          "result": "fail",
+          "note": "IT-02 score mismatch traced to reference SQL ORDER BY id resolving the selected text alias, violating required numeric id ordering on ties. Qualify the original bigint column; production normative SQL unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "IT-02 passes all 20 random queries after numeric reference tie-break correction; HNSW index is usable with sequential scan disabled."
+        },
+        {
+          "result": "fail",
+          "note": "Targeted lint requires explicit String conversion of the numeric constant in the prescribed SET LOCAL template. SQL and constant value remain identical."
+        },
+        {
+          "result": "pass",
+          "note": "Targeted lint passes with identical constant SQL; default and forced-index EXPLAIN plans recorded in qa/T15-pr-description.md."
+        },
+        {
+          "result": "pass",
+          "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
         }
       ],
       "regression_of": null,
