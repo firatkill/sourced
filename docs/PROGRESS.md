@@ -23,7 +23,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-03 | M0 Setup | Logging, request id and security headers | done | 7c0b2e6 |
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | 44cf3a3 |
 | T-05 | M0 Setup | Test runners and full CI | done | f4cfa89 |
-| T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | doing | — |
+| T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | done | 3cd3bc6 |
 | T-07 | M1 Ingestion and search | Core schema: documents and chunks | todo | — |
 | T-08 | M1 Ingestion and search | Operational tables | todo | — |
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | todo | — |
@@ -87,4 +87,6 @@ T-03: 18 unit tests, lint, typecheck, build, built-server security-header checks
 
 T-05 local verification: lint, typecheck, 20 unit tests, integration smoke, coverage and production build plus three E2E smoke tests pass. All six CI jobs passed: run 39566914362. Coverage global enforcement begins T-17 per plan.
 
-T-06: approved D-52 compatibility change passes the unchanged 120 KB JavaScript limit at 106.3 KB gzip. Main-repository lint, typecheck, 21 unit tests, integration smoke, production build, seven E2E tests, scaffold checks and production dependency audit pass. CI verification is pending this commit. Manual QA remains open; see qa/M0-review.md.
+T-06: approved D-52 compatibility change passes the unchanged 120 KB JavaScript limit at 106.3 KB gzip. Main-repository lint, typecheck, 21 unit tests, integration smoke, production build, seven E2E tests, scaffold checks and production dependency audit pass. All six CI jobs passed in run 39573125819 for commit 3cd3bc6. Manual QA remains open; see qa/M0-review.md.
+
+M0 boundary: T-01–T-06 implementation acceptance is complete and pushed. Stop before T-07. Full QA closure remains pending TC-022 and TC-023 manual checks.

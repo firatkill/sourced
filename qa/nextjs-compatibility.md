@@ -1,6 +1,6 @@
 # T-06 JavaScript-budget compatibility proposal
 
-Status: tested in an isolated workspace copy and **approved for adoption in D-52**. Main-repository automated acceptance passed at 106.3 KB; CI verification is pending.
+Status: tested in an isolated workspace copy and **approved for adoption in D-52**. Adopted in commit 3cd3bc6: main-repository automated acceptance passed at 106.3 KB and all six CI jobs passed in [run 39573125819](https://github.com/firatkill/sourced/actions/runs/39573125819).
 
 The acceptance limit remains 120 KB gzip. Measurements include every script referenced by the built root HTML, using gzip level 9, exactly as TRD §22 prescribes. Neither the ceiling nor the measurement is weakened.
 
@@ -30,7 +30,7 @@ The production font implementation remains next/font/google. Early diagnostics u
 - CSP nonce changes between requests and is attached to every script.
 - Chromium and WebKit theme/layout checks pass; macOS WebKit keyboard navigation uses Option+Tab to include links.
 - Firefox explicit theme toggle/persistence, layout and 404 checks pass. System-dark verification remains manual by owner decision D-51 because Playwright's requested dark preference was not reflected by matchMedia.
-- Main-repository scaffold, audit, nonce checks and all seven Playwright tests pass with the approved stack. CI for this change has not run yet.
+- Main-repository scaffold, audit, nonce checks and all seven Playwright tests pass with the approved stack. All six CI jobs passed on the adopted commit.
 
 ## Approved tradeoffs
 

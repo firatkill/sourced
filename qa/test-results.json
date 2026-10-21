@@ -342,6 +342,10 @@
         {
           "result": "pass",
           "note": "All six jobs passed in https://github.com/firatkill/sourced/actions/runs/39566914362"
+        },
+        {
+          "result": "pass",
+          "note": "T-06 commit 3cd3bc6: GitHub CI run 39573125819 passed all six jobs (lint/audit, typecheck, unit, integration/coverage, build, mock E2E). https://github.com/firatkill/sourced/actions/runs/39573125819"
         }
       ],
       "regression_of": null,
@@ -368,6 +372,10 @@
         {
           "result": "pass",
           "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        },
+        {
+          "result": "pass",
+          "note": "T-06 commit 3cd3bc6: GitHub CI run 39573125819 passed all six jobs (lint/audit, typecheck, unit, integration/coverage, build, mock E2E). https://github.com/firatkill/sourced/actions/runs/39573125819"
         }
       ],
       "regression_of": null,
@@ -394,6 +402,10 @@
         {
           "result": "pass",
           "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        },
+        {
+          "result": "pass",
+          "note": "T-06 commit 3cd3bc6: GitHub CI run 39573125819 passed all six jobs (lint/audit, typecheck, unit, integration/coverage, build, mock E2E). https://github.com/firatkill/sourced/actions/runs/39573125819"
         }
       ],
       "regression_of": null,
@@ -420,6 +432,10 @@
         {
           "result": "pass",
           "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        },
+        {
+          "result": "pass",
+          "note": "T-06 commit 3cd3bc6: GitHub CI run 39573125819 passed all six jobs (lint/audit, typecheck, unit, integration/coverage, build, mock E2E). https://github.com/firatkill/sourced/actions/runs/39573125819"
         }
       ],
       "regression_of": null,
@@ -446,6 +462,10 @@
         {
           "result": "pass",
           "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        },
+        {
+          "result": "pass",
+          "note": "T-06 commit 3cd3bc6: GitHub CI run 39573125819 passed all six jobs (lint/audit, typecheck, unit, integration/coverage, build, mock E2E). https://github.com/firatkill/sourced/actions/runs/39573125819"
         }
       ],
       "regression_of": null,
