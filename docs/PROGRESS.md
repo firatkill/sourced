@@ -28,8 +28,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-08 | M1 Ingestion and search | Operational tables | done | 0c6918a |
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | done | a697344 |
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | done | f3377f1 |
-| T-11 | M1 Ingestion and search | HTML parser | doing | — |
-| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | todo | — |
+| T-11 | M1 Ingestion and search | HTML parser | done | 32e96c8 |
+| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | doing | — |
 | T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | todo | — |
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | todo | — |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | todo | — |
@@ -65,6 +65,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-45 | M4 Polish and deploy | Release v1.0.0 | todo | — |
 
 ## Open questions for the owner
+
+- T-12 / TC-039: approval requested to count joined text including separators/overlap. Exact cl100k reproduction: two 400-token blocks sum to 800 but join to 801, contradicting the hard limit. Chunker implementation awaits the decision.
 
 
 
@@ -103,4 +105,6 @@ T-09 local acceptance: 35 URLs verified, licence copied, fixture and UT-29 pass;
 
 T-10 local acceptance: 35 raw pages (1,192,907 bytes), second fetch run all unchanged; no network for cached reads. Lint/typecheck, 27 unit and five integration tests passed. A-13 verified in D-56. All six CI jobs passed: run 39581544503.
 
-T-11 local acceptance: approved D-57 heading fallback; UT-02 and full 30-unit / five-integration suites pass with lint/typecheck. Audit of 35 raw pages found zero body fallbacks, nonempty titles/ids and 1,146 blocks. The CLI dry-run acceptance will be repeated in T-12 as planned. CI pending task push.
+T-11 local acceptance: approved D-57 heading fallback; UT-02 and full 30-unit / five-integration suites pass with lint/typecheck. Audit of 35 raw pages found zero body fallbacks, nonempty titles/ids and 1,146 blocks. The CLI dry-run acceptance will be repeated in T-12 as planned. All six CI jobs passed: run 39582056212.
+
+T-12 tokenizer is implemented and UT-01 passes. Full local lint/typecheck, 31 unit and five integration tests pass. Packing remains pending the owner decision above; no chunker implementation or acceptance claim yet.
