@@ -1,0 +1,57 @@
+{
+  "project": "Sourced",
+  "cases": [
+    {
+      "tc_reference": "TC-001",
+      "ac_reference": "T-01; NFR-17",
+      "milestone": "M0 Setup",
+      "title": "Pinned scaffold builds cleanly",
+      "description": "T-01 scaffold acceptance from the implementation plan.",
+      "steps_to_reproduce": "Run node --test tests/setup/scaffold-check.mjs, pnpm exec eslint ., and NEXT_TELEMETRY_DISABLED=1 pnpm build.",
+      "expected_result": "Scaffold checks and required tooling succeed.",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; T-01 working tree",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Latest TypeScript 7.0.2 is rejected by typescript-eslint 8.72.0; ESLint 10.13.0 also exceeds Next lint plugin peer ranges.",
+          "note": "Scaffold static assertions and next build passed. Full acceptance remains open pending owner approval for TypeScript 6.0.3 and ESLint 9.39.5."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Strict ESLint now passes with approved pins; Prettier reports newly generated shadcn files need formatting.",
+          "note": "Apply required pnpm format before final acceptance. Compatibility issue resolved without weakening lint."
+        },
+        {
+          "result": "pass",
+          "note": "pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, node --test tests/setup/scaffold-check.mjs, NEXT_TELEMETRY_DISABLED=1 pnpm build, and pnpm audit --prod --audit-level high all passed after D-44 and formatting."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-002",
+      "ac_reference": "T-01; NFR-14",
+      "milestone": "M0 Setup",
+      "title": "Server modules import in scripts",
+      "description": "T-01 scaffold acceptance from the implementation plan.",
+      "steps_to_reproduce": "Run node --test tests/setup/scaffold-check.mjs, pnpm exec eslint ., and NEXT_TELEMETRY_DISABLED=1 pnpm build.",
+      "expected_result": "Scaffold checks and required tooling succeed.",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; T-01 working tree",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "node --test tests/setup/scaffold-check.mjs: server-only, postgres, drizzle-orm and ai import under tsx --conditions=react-server."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    }
+  ]
+}
