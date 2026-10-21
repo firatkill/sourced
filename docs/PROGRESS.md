@@ -29,8 +29,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | done | a697344 |
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | done | f3377f1 |
 | T-11 | M1 Ingestion and search | HTML parser | done | 32e96c8 |
-| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | this commit |
-| T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | todo | — |
+| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | a56df5b |
+| T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | done | this commit |
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | todo | — |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | todo | — |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | todo | — |
@@ -110,4 +110,6 @@ T-12 tokenizer is implemented and UT-01 passes. Full local lint/typecheck, 31 un
 
 T-12 packing correction approved as D-58; implementation and acceptance checks in progress.
 
-T-12 local acceptance: D-58 joined-token correction implemented; UT-01/03/04, 38 unit and five integration tests, lint/typecheck pass. Chunk coverage 97.72%. Two offline previews match: 35 pages, 201 chunks, max 797 tokens, 98,555 embedding tokens; mock price zero is not live pricing verification. CI pending push; eval remains staged until M3.
+T-12 local acceptance: D-58 joined-token correction implemented; UT-01/03/04, 38 unit and five integration tests, lint/typecheck pass. Chunk coverage 97.72%. Two offline previews match: 35 pages, 201 chunks, max 797 tokens, 98,555 embedding tokens; mock price zero is not live pricing verification. All six CI jobs passed: run 39584497394. Eval remains staged until M3.
+
+T-13 local acceptance: deterministic mock and OpenAI embedding adapter, 100-input / two-worker batches, order, dimensions, usage and retry policy pass. Full lint/typecheck, 44 unit and five integration tests pass. D-59 records A-05 and installed embedding SDK verification; live calls and generation remain staged for T-17/T-18. CI pending push.

@@ -995,6 +995,10 @@
         {
           "result": "pass",
           "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for a56df5b, run 39584497394."
         }
       ],
       "regression_of": null,
@@ -1021,6 +1025,10 @@
         {
           "result": "pass",
           "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for a56df5b, run 39584497394."
         }
       ],
       "regression_of": null,
@@ -1043,6 +1051,10 @@
         {
           "result": "pass",
           "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for a56df5b, run 39584497394."
         }
       ],
       "regression_of": null,
@@ -1074,6 +1086,85 @@
         {
           "result": "pass",
           "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for a56df5b, run 39584497394."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-042",
+      "ac_reference": "T-13; FR-55",
+      "milestone": "M1 Ingestion and search",
+      "title": "Mock feature hashing",
+      "status": "resolved",
+      "environment": "macOS; Node 24; mock providers and mocked SDK; no network",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-27 passes deterministic normalized 1536-dimensional vectors, token counts, bigrams, e0 fallback and similarity ordering."
+        },
+        {
+          "result": "pass",
+          "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-043",
+      "ac_reference": "T-13; FR-36",
+      "milestone": "M1 Ingestion and search",
+      "title": "Embedding batches and order",
+      "status": "resolved",
+      "environment": "macOS; Node 24; mock providers and mocked SDK; no network",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Unit cases pass batch size, concurrency, order, usage, malformed vector rejection and OpenAI SDK adapter options."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Targeted lint rejected deprecated Zod finite() and a nested Vitest matcher typed as any.",
+          "note": "Use Zod 4 number validation (already finite) and inspect SDK argument as unknown; preserve acceptance."
+        },
+        {
+          "result": "pass",
+          "note": "Affected tests and targeted ESLint pass after Zod 4 and matcher typing corrections."
+        },
+        {
+          "result": "pass",
+          "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-044",
+      "ac_reference": "T-13; FR-36",
+      "milestone": "M1 Ingestion and search",
+      "title": "Embedding retry policy",
+      "status": "resolved",
+      "environment": "macOS; Node 24; mock providers and mocked SDK; no network",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Unit cases pass numeric/date Retry-After, jitter, retry count, 5xx/network/timeout and immediate other-4xx failure."
+        },
+        {
+          "result": "pass",
+          "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
         }
       ],
       "regression_of": null,
