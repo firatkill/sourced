@@ -750,6 +750,10 @@
         {
           "result": "pass",
           "note": "Final pnpm lint, typecheck, all 23 unit and five integration tests pass. Manifest has exactly 35 pages."
+        },
+        {
+          "result": "pass",
+          "note": "T-09 CI run 39580928795 passed all six jobs on a697344."
         }
       ],
       "regression_of": null,
@@ -803,6 +807,127 @@
       "description": "Initial fixture assertion compared raw indentation instead of normalized HTML text.",
       "steps_to_reproduce": "Run manifest.test.ts after Prettier formats the fixture.",
       "expected_result": "TRD \u00a710.3 collapses whitespace; exact normative paragraph words remain unchanged."
+    },
+    {
+      "tc_reference": "TC-033",
+      "ac_reference": "T-10; FR-33",
+      "milestone": "M1 Ingestion and search",
+      "title": "Robots enforcement",
+      "status": "resolved",
+      "environment": "macOS; Node 24; injected fetch and clock; no network",
+      "description": "UT-30 tests use validated manifest fixture types.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test tests/unit/fetch.test.ts.",
+      "expected_result": "Robots disallow, unavailable policy and 404 behavior pass.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejected JSON schemaVersion inferred as number instead of literal 1.",
+          "note": "Parse test manifest through the specified Zod schema before supplying it to the fetcher."
+        },
+        {
+          "result": "pass",
+          "note": "Robots disallow, unavailable policy and 404 behavior pass. Typecheck and all four UT-30 tests pass."
+        },
+        {
+          "result": "pass",
+          "note": "Final full T-10 suite: lint/typecheck, 27 unit and five integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-034",
+      "ac_reference": "T-10; FR-33",
+      "milestone": "M1 Ingestion and search",
+      "title": "Fetch interval and retries",
+      "status": "resolved",
+      "environment": "macOS; Node 24; injected fetch and clock; no network",
+      "description": "UT-30 tests use validated manifest fixture types.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test tests/unit/fetch.test.ts.",
+      "expected_result": "Injected-clock tests verify 2-second minimum/Crawl-delay, 5/15/45-second retries, numeric and HTTP-date Retry-After, body/network failures, non-retryable responses and retry exhaustion.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejected JSON schemaVersion inferred as number instead of literal 1.",
+          "note": "Parse test manifest through the specified Zod schema before supplying it to the fetcher."
+        },
+        {
+          "result": "pass",
+          "note": "Injected-clock tests verify 2-second minimum/Crawl-delay, 5/15/45-second retries, numeric and HTTP-date Retry-After, body/network failures, non-retryable responses and retry exhaustion. Typecheck and all four UT-30 tests pass."
+        },
+        {
+          "result": "pass",
+          "note": "Final full T-10 suite: lint/typecheck, 27 unit and five integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-035",
+      "ac_reference": "T-10; FR-33; NFR-16",
+      "milestone": "M1 Ingestion and search",
+      "title": "Offline and cached fetch",
+      "status": "resolved",
+      "environment": "macOS; Node 24; injected fetch and clock; no network",
+      "description": "UT-30 tests use validated manifest fixture types.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test tests/unit/fetch.test.ts.",
+      "expected_result": "Offline and cached paths use zero fetch calls; unchanged refresh preserves bytes/mtime; missing offline page fails.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejected JSON schemaVersion inferred as number instead of literal 1.",
+          "note": "Parse test manifest through the specified Zod schema before supplying it to the fetcher."
+        },
+        {
+          "result": "pass",
+          "note": "Offline and cached paths use zero fetch calls; unchanged refresh preserves bytes/mtime; missing offline page fails. Typecheck and all four UT-30 tests pass."
+        },
+        {
+          "result": "pass",
+          "note": "Final full T-10 suite: lint/typecheck, 27 unit and five integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-036",
+      "ac_reference": "T-10; FR-33; NFR-16",
+      "milestone": "M1 Ingestion and search",
+      "title": "Committed corpus cache",
+      "status": "resolved",
+      "environment": "macOS; Node 24; live PostgreSQL fetch only in deliberate CLI run",
+      "description": "T-10 fetch-only CLI and committed raw HTML acceptance.",
+      "steps_to_reproduce": "LLM_MODE=mock pnpm corpus:fetch twice; inspect file count/size; run standard checks.",
+      "expected_result": "35 pages cached unchanged; total <=10 MB; no network in unit/integration tests.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Strict lint rejects shorthand console callback returning void.",
+          "note": "CLI runtime fetching is unaffected; use a block-bodied callback."
+        },
+        {
+          "result": "fail",
+          "actual_result": "The same strict lint error remained in the full-check run.",
+          "note": "Corrected callback body before next run."
+        },
+        {
+          "result": "pass",
+          "note": "35 raw pages fetched; 1,192,907 bytes. Second CLI run reports 35 unchanged pages. Lint/typecheck, all 27 unit and five integration tests pass. Tests prove zero network calls on cached path. No live LLM calls."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

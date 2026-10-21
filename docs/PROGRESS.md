@@ -26,8 +26,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | done | 3cd3bc6 |
 | T-07 | M1 Ingestion and search | Core schema: documents and chunks | done | a054711 |
 | T-08 | M1 Ingestion and search | Operational tables | done | 0c6918a |
-| T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | doing | — |
-| T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | todo | — |
+| T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | done | a697344 |
+| T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | doing | — |
 | T-11 | M1 Ingestion and search | HTML parser | todo | — |
 | T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | todo | — |
 | T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | todo | — |
@@ -66,6 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
+- T-11: approval requested for an unclassed-heading fallback where PostgreSQL SQL reference pages lack the TRD §10.3 .title class. Three ordinary pages and both SQL reference pages inspected; no parser implemented pending decision.
+
 
 - TC-022: light/dark appearance, font rendering and visible keyboard focus await browser/computer access and a live visual pass.
 - TC-023: Firefox system-dark verification remains a manual review by owner decision D-51; Playwright media emulation did not take effect.
@@ -98,4 +100,6 @@ T-07 local acceptance: D-53 reset approved and passed with explicit LLM_MODE=moc
 
 T-08 local acceptance passed: normative operational migration, no schema drift, lint/typecheck, 21 unit and five integration tests. All six CI jobs passed: run 39580361843.
 
-T-09 local acceptance: 35 URLs verified, licence copied, fixture and UT-29 pass; lint/typecheck, 23 unit and five integration tests pass. CI pending task push. Live eval remains unavailable until later pipeline/evaluation tasks.
+T-09 local acceptance: 35 URLs verified, licence copied, fixture and UT-29 pass; lint/typecheck, 23 unit and five integration tests pass. All six CI jobs passed: run 39580928795. Live eval remains unavailable until later pipeline/evaluation tasks.
+
+T-10 local acceptance: 35 raw pages (1,192,907 bytes), second fetch run all unchanged; no network for cached reads. Lint/typecheck, 27 unit and five integration tests passed. A-13 verified in D-56. CI pending task push.
