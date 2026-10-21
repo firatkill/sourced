@@ -34,7 +34,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
-| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | todo | — |
+| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | blocked | — |
 | T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | todo | — |
 | T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | todo | — |
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | todo | — |
@@ -65,6 +65,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-45 | M4 Polish and deploy | Release v1.0.0 | todo | — |
 
 ## Open questions for the owner
+
+- T-17 / TC-053: configure OPENAI_API_KEY locally (never in chat), a model available to the account and its positive chat prices, and PRICE_EMBED_PER_MTOK=0.02. Approve the next guarded localhost:5433/sourced reset and live offline ingestion, followed by an idempotence run. Current estimate: 98,555 input tokens, $0.0019711 before retries at the verified listed embedding price; no chat calls. This separate reset replaces T-16’s 35 documents, 201 mock chunks and one ingest run.
 
 
 
@@ -133,3 +135,5 @@ T-15 all six CI jobs passed: run 39633348013. T-16 seed script and CI seed step 
 T-16 seed implementation committed and pushed in 1bb38c4. All six CI jobs passed (39633875632), including CI seed. Only the explicitly guarded development reset-and-seed acceptance remains pending owner approval.
 
 T-16 acceptance completed after D-61 approval: guarded local reset and mock seed passed; 201 chunks across 35 documents, sole embedding model mock-feature-hash, matching the printed report. No live API calls.
+
+T-17 preparation: global lib line coverage floor enabled at 80%; existing critical chunk/RRF floors remain 90%. Coverage passed: 96.35% overall lines, chunk 97.72%, RRF 100%. Live validation is blocked on owner configuration and reset/live-call approval; no API calls or T-17 reset performed. Pricing source: https://developers.openai.com/api/docs/models/text-embedding-3-small ($0.02 per million input tokens, checked 2026-10-21).

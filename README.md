@@ -15,3 +15,7 @@ MIT. Copyright (c) 2026 Fırat Kıl.
 ## Local logs
 
 For readable local JSON logs, run `pnpm dev | pnpm exec pino-pretty`.
+
+## Corpus
+
+The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Local mock ingestion is verified; live embedding validation is pending T-17. Raw pages and attribution are in `corpus/`.
