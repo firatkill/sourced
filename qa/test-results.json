@@ -219,6 +219,55 @@
           "note": "Live Chrome QA at localhost:3000: Sourced H1 visible; browser console returned no warnings or errors, including CSP violations."
         }
       ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-012",
+      "ac_reference": "T-04; D-02; A-15",
+      "title": "Local database extension and test database",
+      "status": "resolved",
+      "description": "Drizzle loads the server-only schema outside the react-server condition.",
+      "steps_to_reproduce": "pnpm exec drizzle-kit generate --custom --name extensions",
+      "expected_result": "Custom migration and metadata generated successfully.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Drizzle throws server-only Client Component import error while loading schema; no valid migration generated.",
+          "note": "Owner approval requested for NODE_OPTIONS=--conditions=react-server on Drizzle commands. Docker image pull still pending."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Generated custom migration template was applied before restoring CREATE EXTENSION; extension probe failed.",
+          "note": "Restored normative SQL. Local database has only drizzle.__drizzle_migrations; awaiting owner approval to reset local schemas and replay."
+        },
+        {
+          "result": "pass",
+          "note": "D-46/D-47 approved. Corrected migration replayed through guarded local reset. db:up, db:migrate, pgvector 0.8.7, HNSW probe and sourced_test connection pass. Lint, typecheck, 19 unit tests and scaffold checks pass."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-013",
+      "ac_reference": "T-04; NFR-14",
+      "title": "Reset refuses remote hosts",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "db-reset.test.ts passes: non-local URL rejected before connection. Typecheck passed."
+        }
+      ]
     }
   ]
 }

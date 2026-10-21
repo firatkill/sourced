@@ -20,8 +20,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | --- | --- | --- | --- | --- |
 | T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | done | 1bfb6b7 |
 | T-02 | M0 Setup | Configuration, environment and error codes | done | b3e68d9 |
-| T-03 | M0 Setup | Logging, request id and security headers | doing | — |
-| T-04 | M0 Setup | Local database, Drizzle and the extensions migration | todo | — |
+| T-03 | M0 Setup | Logging, request id and security headers | done | 7c0b2e6 |
+| T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | HEAD |
 | T-05 | M0 Setup | Test runners and full CI | todo | — |
 | T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | todo | — |
 | T-07 | M1 Ingestion and search | Core schema: documents and chunks | todo | — |
@@ -67,7 +67,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 ## Open questions for the owner
 
 - Repository creation and staged bootstrap testing approved on 2026-10-21 (D-39, D-40).
-- Compatible TypeScript/ESLint pins and shadcn component dependencies approved (D-44, D-45). No pending owner decisions.
+- Compatible TypeScript/ESLint pins and shadcn component dependencies approved (D-44, D-45). Pending: approve the react-server condition for the Drizzle commands; required server-only schema fails under the current CLI command.
 
 ## Settled overrides
 
@@ -82,4 +82,5 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 T-02: local lint, typecheck, 15 unit tests and build pass; CI run 39563649874 passed. Normative constants copied unchanged. Live eval is not available before the later pipeline/eval tasks.
 
-T-03: 18 unit tests, lint, typecheck, build, built-server security-header checks and live Chrome CSP check passed. CI pending push.
+T-03: 18 unit tests, lint, typecheck, build, built-server security-header checks and live Chrome CSP check passed. CI run 39564293221 passed.
+
