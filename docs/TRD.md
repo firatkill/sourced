@@ -3080,3 +3080,5 @@ The README must contain, in this order:
 13. "Limits" (same points as `/how-it-works`).
 14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/LICENSE-POSTGRESQL.txt`.
 15. Author line with links to firatkil.com and GitHub.
+
+Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.

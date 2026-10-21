@@ -268,6 +268,52 @@
           "note": "db-reset.test.ts passes: non-local URL rejected before connection. Typecheck passed."
         }
       ]
+    },
+    {
+      "tc_reference": "TC-014",
+      "ac_reference": "T-05; TRD \u00a723.2, \u00a723.4, \u00a723.5, \u00a725.1",
+      "milestone": "M0 Setup",
+      "title": "Integration isolation and smoke",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Initial typecheck found process.env DATABASE_URL not narrowed inside beforeAll.",
+          "note": "Capture validated URL in a const before the hook."
+        },
+        {
+          "result": "pass",
+          "note": "Localhost guard tests and SELECT 1 on sourced_test pass; single fork, serialized files; migration and coverage runner pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-015",
+      "ac_reference": "T-05; TRD \u00a723.2, \u00a723.4, \u00a723.5, \u00a725.1",
+      "milestone": "M0 Setup",
+      "title": "Three mock E2E servers",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Strict lint rejected numeric template expressions in normative Playwright config and test helpers.",
+          "note": "Explicit String conversions in tests; narrow documented lint comments retain normative configuration text."
+        },
+        {
+          "result": "pass",
+          "note": "Production build and all three Playwright smoke tests pass on 3100/3101/3102. Verified ports free and no other Playwright run before launch."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
