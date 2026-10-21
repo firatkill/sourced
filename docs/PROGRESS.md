@@ -30,8 +30,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | done | f3377f1 |
 | T-11 | M1 Ingestion and search | HTML parser | done | 32e96c8 |
 | T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | a56df5b |
-| T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | done | this commit |
-| T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | todo | — |
+| T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | done | 227ca8f |
+| T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | HEAD |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | todo | — |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | todo | — |
 | T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | todo | — |
@@ -65,6 +65,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-45 | M4 Polish and deploy | Release v1.0.0 | todo | — |
 
 ## Open questions for the owner
+
 
 
 
@@ -112,4 +113,12 @@ T-12 packing correction approved as D-58; implementation and acceptance checks i
 
 T-12 local acceptance: D-58 joined-token correction implemented; UT-01/03/04, 38 unit and five integration tests, lint/typecheck pass. Chunk coverage 97.72%. Two offline previews match: 35 pages, 201 chunks, max 797 tokens, 98,555 embedding tokens; mock price zero is not live pricing verification. All six CI jobs passed: run 39584497394. Eval remains staged until M3.
 
-T-13 local acceptance: deterministic mock and OpenAI embedding adapter, 100-input / two-worker batches, order, dimensions, usage and retry policy pass. Full lint/typecheck, 44 unit and five integration tests pass. D-59 records A-05 and installed embedding SDK verification; live calls and generation remain staged for T-17/T-18. CI pending push.
+T-13 local acceptance: deterministic mock and OpenAI embedding adapter, 100-input / two-worker batches, order, dimensions, usage and retry policy pass. Full lint/typecheck, 44 unit and five integration tests pass. D-59 records A-05 and installed embedding SDK verification; live calls and generation remain staged for T-17/T-18. All six CI jobs passed: run 39585046891.
+
+T-14 implementation is ready but uncommitted: per-document transactions, unchanged-row updates, missing-only embeddings, fixture/model handling, CLI reports and failure recording. Seven focused DB tests pass, including three prescribed HTML fixtures. Full-corpus loader passed after PostgreSQL crash recovery without reset. Two local mock CLI runs pass (201 inserted, then zero inserts/updates/deletes and zero embedding inputs). Lint/typecheck passed; final unit gate is blocked by TC-013/TC-039 timeouts after three attempts. Full final integration suite and T-14 CI remain unverified.
+
+D-60 follow-up: waited for lower load (6.84 on 10 cores, consecutive >50% CPU idle, no swap-outs). Single-worker reset guard passed, but three chunk cases still timed out. TC-013 is resolved; TC-039 remains open and retries are held for lower resource pressure. No timeout/assertion change.
+
+Owner requested continuation; TC-039 affected retry passes all five tests in 1.12 seconds with unchanged acceptance. T-14 final gates resumed.
+
+T-14 final local acceptance passes: lint/typecheck, 45 unit and 13 integration tests; two mock CLI runs prove idempotence. Resource-related retries resolved without changing timeouts or assertions. CI pending push.

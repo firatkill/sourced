@@ -278,8 +278,32 @@
         {
           "result": "pass",
           "note": "db-reset.test.ts passes: non-local URL rejected before connection. Typecheck passed."
+        },
+        {
+          "result": "fail",
+          "actual_result": "T-14 full unit run timed out at the unchanged 5-second limit during heavy local host contention (db-reset subprocess and long code/table chunk case). Other 43 unit cases passed; lint/typecheck passed.",
+          "note": "Retry affected tests with one worker; do not change timeout, assertions or test data."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Single-worker rerun still hit the 5-second limit: reset subprocess 7.3 s and Unicode reconstruction case 5.3 s. Assertions did not report behavioral mismatches.",
+          "note": "Remove pnpm process-launch overhead by invoking the same reset script with Node + tsx directly; avoid unused overlap-search calculations for repetitive non-sentence text. Preserve every assertion, fixture size and timeout before the third affected rerun."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Third affected attempt still exceeded the unchanged 5-second limit: reset script 9.7 s and code/table chunk case 8.7 s, despite one worker and reduced test harness overhead.",
+          "note": "Escalated to owner under AGENTS.md three-attempt rule. No timeout or acceptance change; T-14 completion and commit withheld pending direction."
+        },
+        {
+          "result": "pass",
+          "note": "D-60: retried with one worker after load dropped below core capacity and CPU idle exceeded 50%. Reset-script guard passes unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
         }
-      ]
+      ],
+      "owner_decision": "D-60: owner directed continuing when the machine is less busy; assertions and timeouts unchanged."
     },
     {
       "tc_reference": "TC-014",
@@ -999,12 +1023,41 @@
         {
           "result": "pass",
           "note": "All six CI jobs passed for a56df5b, run 39584497394."
+        },
+        {
+          "result": "fail",
+          "actual_result": "T-14 full unit run timed out at the unchanged 5-second limit during heavy local host contention (db-reset subprocess and long code/table chunk case). Other 43 unit cases passed; lint/typecheck passed.",
+          "note": "Retry affected tests with one worker; do not change timeout, assertions or test data."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Single-worker rerun still hit the 5-second limit: reset subprocess 7.3 s and Unicode reconstruction case 5.3 s. Assertions did not report behavioral mismatches.",
+          "note": "Remove pnpm process-launch overhead by invoking the same reset script with Node + tsx directly; avoid unused overlap-search calculations for repetitive non-sentence text. Preserve every assertion, fixture size and timeout before the third affected rerun."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Third affected attempt still exceeded the unchanged 5-second limit: reset script 9.7 s and code/table chunk case 8.7 s, despite one worker and reduced test harness overhead.",
+          "note": "Escalated to owner under AGENTS.md three-attempt rule. No timeout or acceptance change; T-14 completion and commit withheld pending direction."
+        },
+        {
+          "result": "fail",
+          "actual_result": "D-60 conditional retry after lower CPU load: three chunk cases still exceeded the unchanged 5-second limit (6.2 / 8.2 / 5.5 s); no assertion mismatch reported.",
+          "note": "Stop retries again until memory/resource pressure settles. No new permission requested; owner already directed waiting and resuming when less busy."
+        },
+        {
+          "result": "pass",
+          "note": "Owner requested continuation. All five chunk tests pass with one worker in 1.12 seconds, with unchanged assertions and timeouts."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": null,
-      "retraction_reason": null
+      "retraction_reason": null,
+      "owner_decision": "D-60: owner directed continuing when the machine is less busy; assertions and timeouts unchanged."
     },
     {
       "tc_reference": "TC-038",
@@ -1112,6 +1165,10 @@
         {
           "result": "pass",
           "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 227ca8f, run 39585046891."
         }
       ],
       "regression_of": null,
@@ -1143,6 +1200,10 @@
         {
           "result": "pass",
           "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 227ca8f, run 39585046891."
         }
       ],
       "regression_of": null,
@@ -1165,6 +1226,129 @@
         {
           "result": "pass",
           "note": "Final T-13 gate: pnpm lint, pnpm typecheck, all 44 unit and five integration tests pass. No live API calls; SDK embedding compatibility recorded in D-59."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for 227ca8f, run 39585046891."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-045",
+      "ac_reference": "T-14; FR-34\u2013FR-38",
+      "milestone": "M1 Ingestion and search",
+      "title": "Ingest and report",
+      "status": "resolved",
+      "environment": "Local isolated PostgreSQL test database; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Six affected database integration tests and typecheck pass, including stored provenance/counts, zero-embedding repeat, ordinal swaps, changed content, removal, model replacement, failed runs and per-document rollback."
+        },
+        {
+          "result": "fail",
+          "actual_result": "All-corpus loader test exceeded the unit project default 5-second timeout. Targeted lint also flagged untyped query results, unbound mock methods and void callbacks.",
+          "note": "Move the filesystem/full-corpus test to the existing integration project with its prescribed 30-second budget; retain every assertion and do not raise any timeout. Correct query types and callbacks."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Targeted lint passes, but the integration loader run could not start: PostgreSQL reported crash recovery (57P02 / 57P03). The separate read-only CLI preflight also hit CONNECT_TIMEOUT.",
+          "note": "Docker still reports the project container running; pg_isready now reports accepting connections. No reset or destructive recovery performed. Retry only the affected loader check after recovery."
+        },
+        {
+          "result": "pass",
+          "note": "Full-corpus integration loader passes after PostgreSQL recovery. Read-only preflight confirms 201 unique hashes and an empty development database (0 documents / 0 chunks), so the upcoming initial CLI ingest removes no existing content."
+        },
+        {
+          "result": "pass",
+          "note": "Local mock CLI first run: 35 documents, 201 inserted chunks, 71,033 mock word tokens, 20.6 s; corpus hash matches dry-run preview."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Lint passed; typecheck found an implicit array type in the newly added three-HTML-fixture test closure.",
+          "note": "Annotate documents as IngestDocument[]; runtime assertions unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "Typecheck and affected four IT-04 tests pass with explicit document typing."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-046",
+      "ac_reference": "T-14; FR-37",
+      "milestone": "M1 Ingestion and search",
+      "title": "Unchanged ingest",
+      "status": "resolved",
+      "environment": "Local isolated PostgreSQL test database; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Six affected database integration tests and typecheck pass, including stored provenance/counts, zero-embedding repeat, ordinal swaps, changed content, removal, model replacement, failed runs and per-document rollback."
+        },
+        {
+          "result": "pass",
+          "note": "Local mock CLI second run: 0 inserted / 0 updated / 0 deleted, 201 unchanged, 0 embedding inputs / tokens, 7.0 s, same corpus hash."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-047",
+      "ac_reference": "T-14; FR-37; FR-39",
+      "milestone": "M1 Ingestion and search",
+      "title": "Changed and removed documents",
+      "status": "resolved",
+      "environment": "Local isolated PostgreSQL test database; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Six affected database integration tests and typecheck pass, including stored provenance/counts, zero-embedding repeat, ordinal swaps, changed content, removal, model replacement, failed runs and per-document rollback."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-048",
+      "ac_reference": "T-14; FR-38",
+      "milestone": "M1 Ingestion and search",
+      "title": "Ingest failure and deployment guard",
+      "status": "resolved",
+      "environment": "Local isolated PostgreSQL test database; mock embeddings",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Six affected database integration tests and typecheck pass, including stored provenance/counts, zero-embedding repeat, ordinal swaps, changed content, removal, model replacement, failed runs and per-document rollback."
+        },
+        {
+          "result": "pass",
+          "note": "T-14 final local gate passes: lint, typecheck, all 45 unit tests with one worker, and all 13 integration tests. Timeouts and assertions unchanged."
         }
       ],
       "regression_of": null,
