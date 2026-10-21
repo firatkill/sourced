@@ -678,7 +678,7 @@
       "ac_reference": "T-07; NFR-17",
       "milestone": "M1 Ingestion and search",
       "title": "Core migration reproducibility",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "localhost:5433/sourced; public schema contains no application tables",
       "description": "T-07 requires a destructive local reset and migration replay.",
       "steps_to_reproduce": "After owner approval, run pnpm db:reset, IT-03 and pnpm db:generate.",
@@ -687,11 +687,20 @@
         {
           "result": "blocked",
           "note": "Normative SQL exact comparison and no-drift generation pass; reset awaits explicit owner approval under AGENTS.md checkpoint 4."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Reset refused before connecting because default live mode lacks OPENAI_API_KEY and CHAT_MODEL.",
+          "note": "Use explicit LLM_MODE=mock for this no-API-key local acceptance run."
+        },
+        {
+          "result": "pass",
+          "note": "Owner approval D-53. LLM_MODE=mock pnpm db:reset replayed migrations successfully; all four integration tests passed; pnpm db:generate reported no schema changes."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
-      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "clickup_task": null,
       "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
       "retraction_reason": null
     }

@@ -66,7 +66,6 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-- T-07 / TC-028: approval requested for required local reset on localhost:5433/sourced, verified to contain no application tables. Migration and tests are ready; reset not run.
 
 - TC-022: light/dark appearance, font rendering and visible keyboard focus await browser/computer access and a live visual pass.
 - TC-023: Firefox system-dark verification remains a manual review by owner decision D-51; Playwright media emulation did not take effect.
@@ -94,3 +93,5 @@ T-06: approved D-52 compatibility change passes the unchanged 120 KB JavaScript 
 M0 boundary: T-01–T-06 implementation acceptance is complete and pushed. Stop before T-07. Full QA closure remains pending TC-022 and TC-023 manual checks.
 
 Owner requested continuation after the M0 report. M1 started with TC-025–TC-053 spec-derived case design; M0 manual checks remain open.
+
+T-07 local acceptance: D-53 reset approved and passed with explicit LLM_MODE=mock; four integration tests passed; no schema drift. CI pending task push.
