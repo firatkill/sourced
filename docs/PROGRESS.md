@@ -31,8 +31,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-11 | M1 Ingestion and search | HTML parser | done | 32e96c8 |
 | T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | a56df5b |
 | T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | done | 227ca8f |
-| T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | HEAD |
-| T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | todo | — |
+| T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
+| T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | HEAD |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | todo | — |
 | T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | todo | — |
 | T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | todo | — |
@@ -122,3 +122,7 @@ D-60 follow-up: waited for lower load (6.84 on 10 cores, consecutive >50% CPU id
 Owner requested continuation; TC-039 affected retry passes all five tests in 1.12 seconds with unchanged acceptance. T-14 final gates resumed.
 
 T-14 final local acceptance passes: lint/typecheck, 45 unit and 13 integration tests; two mock CLI runs prove idempotence. Resource-related retries resolved without changing timeouts or assertions. CI pending push.
+
+T-14 all six CI jobs passed: run 39632532522. T-15 implementation and spec-derived tests in progress.
+
+T-15 local acceptance: normative hybrid SQL, RRF reference and all specified fixtures pass; 47 unit / 17 integration tests, lint/typecheck pass. RRF coverage 100%. Default and forced HNSW plans on the 201-chunk corpus recorded in qa/T15-pr-description.md. CI pending push; live eval remains deferred until its harness exists.
