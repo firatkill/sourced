@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getEnv } from '@/lib/env';
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const env = getEnv();
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');

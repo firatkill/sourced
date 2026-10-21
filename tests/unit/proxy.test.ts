@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { proxy } from '../../proxy';
+import { middleware } from '../../middleware';
 import { resetEnvForTests } from '@/lib/env';
 
 afterEach(() => {
@@ -13,8 +13,8 @@ it('TC-010: NFR-14 fresh ids and nonces, security headers, production CSP', () =
   const request = new NextRequest('http://localhost:3000', {
     headers: { 'x-request-id': 'client-supplied' },
   });
-  const first = proxy(request);
-  const second = proxy(request);
+  const first = middleware(request);
+  const second = middleware(request);
   expect(first.headers.get('x-request-id')).not.toBe('client-supplied');
   expect(first.headers.get('x-request-id')).not.toBe(second.headers.get('x-request-id'));
   const csp = first.headers.get('content-security-policy');
@@ -39,7 +39,7 @@ it('TC-010: development eval allowance and deployed HTTPS upgrade follow env', (
   vi.stubEnv('NODE_ENV', 'development');
   vi.stubEnv('VERCEL_ENV', 'preview');
   resetEnvForTests();
-  const csp = proxy(new NextRequest('https://preview.example')).headers.get(
+  const csp = middleware(new NextRequest('https://preview.example')).headers.get(
     'content-security-policy',
   );
   expect(csp).toContain("'unsafe-eval'");

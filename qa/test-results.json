@@ -25,6 +25,10 @@
         {
           "result": "pass",
           "note": "pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck, node --test tests/setup/scaffold-check.mjs, NEXT_TELEMETRY_DISABLED=1 pnpm build, and pnpm audit --prod --audit-level high all passed after D-44 and formatting."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository frozen install, strict lint/typecheck, scaffold checks and production audit passed with approved D-52 Next.js 15.5.28 stack. Production build produced the tested server."
         }
       ],
       "regression_of": null,
@@ -46,6 +50,10 @@
         {
           "result": "pass",
           "note": "node --test tests/setup/scaffold-check.mjs: server-only, postgres, drizzle-orm and ai import under tsx --conditions=react-server."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository scaffold import check passed."
         }
       ],
       "regression_of": null,
@@ -199,6 +207,10 @@
         {
           "result": "pass",
           "note": "Unit tests and built localhost:3000 HTTP checks pass: all headers, fresh IDs/nonces and nonce-bearing scripts."
+        },
+        {
+          "result": "pass",
+          "note": "Main built HTTP smoke passed: root 200, fresh CSP nonce between requests, matching nonce on every script."
         }
       ]
     },
@@ -308,6 +320,10 @@
         {
           "result": "pass",
           "note": "Production build and all three Playwright smoke tests pass on 3100/3101/3102. Verified ports free and no other Playwright run before launch."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
         }
       ],
       "regression_of": null,
@@ -332,6 +348,232 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-017",
+      "ac_reference": "T-06; FR-49; E2E-20",
+      "milestone": "M0 Setup",
+      "title": "System dark theme",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Affected theme/layout Playwright specs passed; TC-020 also passed the unit retry/copy check."
+        },
+        {
+          "result": "pass",
+          "note": "Final full seven-test E2E suite passed after removing error-page component dependency. All 21 unit tests, integration, lint, typecheck and production build pass."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-018",
+      "ac_reference": "T-06; FR-49; E2E-20",
+      "milestone": "M0 Setup",
+      "title": "Theme persistence",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Affected theme/layout Playwright specs passed; TC-020 also passed the unit retry/copy check."
+        },
+        {
+          "result": "pass",
+          "note": "Final full seven-test E2E suite passed after removing error-page component dependency. All 21 unit tests, integration, lint, typecheck and production build pass."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-019",
+      "ac_reference": "T-06; FR-50; NFR-09; PRD \u00a79.1",
+      "milestone": "M0 Setup",
+      "title": "Layout landmarks and exact copy",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Affected theme/layout Playwright specs passed; TC-020 also passed the unit retry/copy check."
+        },
+        {
+          "result": "pass",
+          "note": "Final full seven-test E2E suite passed after removing error-page component dependency. All 21 unit tests, integration, lint, typecheck and production build pass."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-020",
+      "ac_reference": "T-06; NFR-09; PRD \u00a79.7",
+      "milestone": "M0 Setup",
+      "title": "Not-found and error boundary copy",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Affected theme/layout Playwright specs passed; TC-020 also passed the unit retry/copy check."
+        },
+        {
+          "result": "pass",
+          "note": "Final full seven-test E2E suite passed after removing error-page component dependency. All 21 unit tests, integration, lint, typecheck and production build pass."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository Next.js 15.5.28: full Playwright suite passed all seven tests; unit suite passed 21 tests, including error-boundary retry/copy. No acceptance thresholds changed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-021",
+      "ac_reference": "T-06; NFR-08; TRD \u00a722",
+      "milestone": "M0 Setup",
+      "title": "Scaffold JavaScript budget",
+      "status": "resolved",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "187.5 KB gzip exceeds T-06 120 KB limit.",
+          "note": "Measured all referenced scripts with gzip level 9 per TRD \u00a722."
+        },
+        {
+          "result": "fail",
+          "actual_result": "175.2 KB gzip after removing unnecessary error-boundary component dependency.",
+          "note": "Owner approved older supported Next.js investigation. Threshold and measurement unchanged."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Isolated Next.js 15.5.28 benchmark measured 144.7 KB gzip; still above 120 KB.",
+          "note": "Diagnostic uses already-downloaded font files and a CSS module declaration for TypeScript 6. Owner explicitly approved continued investigation after the third failure; see D-50. Repository pins unchanged."
+        },
+        {
+          "result": "pass",
+          "note": "Isolated candidate only: Next.js 15.5.28 with unused noModule polyfill emitter omitted measures 106.3 KB using unchanged all-script gzip measurement. Not adopted; root remains above limit."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Current Next.js 16.4.2 with Webpack and the same noModule omission still measures 135.9 KB.",
+          "note": "Isolated experiment; no production build change adopted."
+        },
+        {
+          "result": "pass",
+          "note": "Main repository node --test tests/setup/js-budget-check.mjs passed at 106.3 KB gzip after D-52 approval. All referenced scripts count, gzip level 9, unchanged 120 KB limit."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "description": "Framework payload exceeds scaffold budget.",
+      "steps_to_reproduce": "Build, start on port 3000, run node --test tests/setup/js-budget-check.mjs.",
+      "expected_result": "At most 120 KB gzip."
+    },
+    {
+      "tc_reference": "TC-022",
+      "ac_reference": "T-06; NFR-09; PRD \u00a79.1; TRD \u00a715.6",
+      "milestone": "M0 Setup",
+      "title": "Keyboard layout and theme appearance",
+      "status": "manual_required",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3; built Next.js 16.4.2",
+      "attempts": [
+        {
+          "result": "blocked",
+          "note": "Browser inventory empty; native Chrome returned Computer Use permissions are not granted. Owner is enabling access. Automated keyboard skip-link and theme checks pass but do not replace this visual review."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "automatable": false,
+      "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner"
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "Isolated Next.js 15.5.28 benchmark; Playwright 1.64.1 on macOS",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-023",
+      "ac_reference": "FR-49; NFR-18; E2E-20",
+      "title": "Firefox candidate system-dark verification",
+      "status": "manual_required",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "System-dark CSS remains light after page.emulateMedia dark."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Affected Firefox-only retest remains light."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Context-level colorScheme dark also remains light.",
+          "note": "Diagnostics show matchMedia dark=false, while explicit toggling passes. Paused after third failure and asked owner whether to investigate environment or leave manual review. Owner chose manual review (D-51); no further retries."
+        }
+      ],
+      "automatable": false,
+      "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "description": "Firefox does not reflect the requested system-dark media preference in the candidate environment.",
+      "steps_to_reproduce": "Run the system-dark theme case in Firefox, requesting dark via page or context colorScheme.",
+      "expected_result": "With no stored override, system dark selects the dark theme."
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "Isolated Next.js 15.5.28 benchmark; Playwright 1.64.1 on macOS",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-024",
+      "ac_reference": "NFR-09; NFR-18; PRD \u00a79.1",
+      "title": "WebKit candidate keyboard navigation",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Plain Tab did not focus the skip link under macOS WebKit."
+        },
+        {
+          "result": "pass",
+          "note": "Option+Tab includes links in macOS WebKit; affected layout test passes including focused skip link, Enter and main focus. Candidate harness adjusted to platform keyboard convention; no product behavior changed."
+        }
+      ],
+      "description": "macOS WebKit keyboard navigation includes links with Option+Tab.",
+      "steps_to_reproduce": "Open the root page in macOS WebKit and navigate to the skip link using Option+Tab, then press Enter.",
+      "expected_result": "Skip link receives visible focus and moves focus to main content."
     }
   ]
 }

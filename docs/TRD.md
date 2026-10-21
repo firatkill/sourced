@@ -59,7 +59,7 @@ flowchart TB
 
 ### 1.2 Request lifecycle (POST /api/ask)
 
-1. `proxy.ts` assigns a request id (always a fresh `crypto.randomUUID()`; any incoming `x-request-id` header from the client is overwritten, never trusted) and a CSP nonce (section 19).
+1. `middleware.ts` assigns a request id (always a fresh `crypto.randomUUID()`; any incoming `x-request-id` header from the client is overwritten, never trusted) and a CSP nonce (section 19).
 2. Route handler parses and validates the body (section 11.2). Fails return JSON errors (D-09).
 3. Origin check, then `DEMO_MODE` check (section 16.4).
 4. If the question matches a suggested question and a current cache row exists, replay it as SSE (section 16.3). No quota use.
@@ -80,7 +80,7 @@ Rule: **pin exact versions at implementation time.** Run `pnpm view <package> ve
 |---|---|---|---|
 | Runtime | Node.js | 22 LTS or newer LTS | `.nvmrc` contains the major; `engines.node` is `>=22` |
 | Package manager | pnpm | 10.x or newer | `packageManager` field in `package.json` pins exact version |
-| Framework | Next.js (App Router) | 16.x | Request interception file is `proxy.ts` on 16.x; on 15.x it is `middleware.ts`. Use whichever the installed major documents. |
+| Framework | Next.js (App Router) | 15.5.28 (D-52) | Request interception file is `proxy.ts` on 16.x; on 15.x it is `middleware.ts`. Use whichever the installed major documents. |
 | UI library | React | 19.x | |
 | Language | TypeScript | 5.x or newer | `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true` |
 | Styling | Tailwind CSS | 4.x | CSS-first config in `app/globals.css` via `@theme` |
@@ -130,7 +130,7 @@ sourced/
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  strict options in section 2; paths "@/*": ["./*"]
 ├── next.config.ts                 outputFileTracingIncludes for eval results; poweredByHeader false
-├── proxy.ts                       Request id, CSP nonce, security headers (middleware.ts on Next ≤ 15)
+├── middleware.ts                  Request id, CSP nonce, security headers (D-52, Next 15)
 ├── eslint.config.mjs              Flat config; rules in AGENTS.md
 ├── postcss.config.mjs             @tailwindcss/postcss
 ├── components.json                shadcn config (style "new-york", baseColor "neutral", cssVariables true)
@@ -1200,7 +1200,7 @@ export function matchSuggested(question: string): SuggestedId | null; // normali
 
 Handler order **(normative)**:
 
-1. `requestId` from `x-request-id` (set by `proxy.ts`), else `crypto.randomUUID()`.
+1. `requestId` from `x-request-id` (set by `middleware.ts`), else `crypto.randomUUID()`.
 2. Content type not JSON → `415 UNSUPPORTED_MEDIA_TYPE`.
 3. Body > 4,096 bytes → `413 PAYLOAD_TOO_LARGE`.
 4. JSON parse failure or schema failure → `400 VALIDATION_FAILED` with `details.field` (`question`, `suggestedId` or `body`) and `details.reason` (`too_short`, `too_long`, `required`, `invalid_json`, `unknown_field`, `invalid_type`; `invalid_type` covers a non-string question, a non-object body and an unknown `suggestedId`). For `too_long`, `details.length` carries the normalized question length.
@@ -2279,7 +2279,7 @@ export class AppError extends Error {
 
 1. **Input validation**: Zod at every boundary: request body, env, SSE events (client), golden file, results files, manifest, LLM structured outputs.
 2. **Output encoding**: React escaping; Markdown with `skipHtml` and an allow-list of elements; no `dangerouslySetInnerHTML` anywhere (ESLint rule `react/no-danger: error`) except the constant theme script in `app/layout.tsx` (section 15.3). Passage text rendered as text nodes.
-3. **CSP** in `proxy.ts` with a per-request nonce (D-15):
+3. **CSP** in `middleware.ts` with a per-request nonce (D-15):
 
 ```text
 default-src 'self';
@@ -2297,7 +2297,7 @@ upgrade-insecure-requests{DEPLOYED_ONLY}
 
 `{DEPLOYED_ONLY}`: `upgrade-insecure-requests` is included only when `VERCEL_ENV` is set, so `next start` on `http://localhost` (E2E) is not affected. Pass the nonce to the layout via the `x-nonce` request header (read with `headers()`), and also set the full policy as the `Content-Security-Policy` **request** header in `NextResponse.next({ request: { headers } })`, which is how Next.js finds the nonce and applies it to its own scripts; follow the Next.js CSP guide for the installed version. The proxy matcher covers every path except `_next/static`, `_next/image` and `favicon.svg`, so `/api/*` responses also get the request id and headers. `'unsafe-inline'` for styles is accepted because React style attributes and Next font loading need it; scripts never use it.
 
-4. **Other headers** (set in `proxy.ts` on every response): `Strict-Transport-Security: max-age=63072000; includeSubDomains`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`, `X-Request-Id`.
+4. **Other headers** (set in `middleware.ts` on every response): `Strict-Transport-Security: max-age=63072000; includeSubDomains`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`, `X-Request-Id`.
 5. **Secrets**: only in server env; `lib/env.ts`, `lib/db/*`, `lib/llm/*`, `lib/logger.ts`, `lib/ratelimit/*` import `server-only`. Only `NEXT_PUBLIC_SITE_URL` is public. ESLint `no-restricted-imports` forbids importing those modules from `components/` and `hooks/`.
 6. **Rate limits**: section 16.1. Origin check: section 11.2.
 7. **No accounts, no cookies**, no `localStorage` except the theme preference.
@@ -3082,3 +3082,5 @@ The README must contain, in this order:
 15. Author line with links to firatkil.com and GitHub.
 
 Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.
+
+T-06 approved compatibility exception (D-52): pin Next.js 15.5.28; override only its transitive PostCSS to 8.5.31. Use middleware.ts and TypeScript JSX preserve plus a CSS side-effect module declaration. The guarded Webpack hook omits exactly the unused legacy nomodule asset emitter and fails if its expected internal shape changes. NFR-18 browsers support modules; the all-referenced-script gzip measurement and 120 KB scaffold ceiling remain unchanged. Review this hook and override on every framework upgrade.

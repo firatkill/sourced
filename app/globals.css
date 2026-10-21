@@ -1,1 +1,207 @@
 @import 'tailwindcss';
+
+:root {
+  --ground: #f6f6f3;
+  --surface: #ffffff;
+  --ink: #121212;
+  --ink-2: #4a4a47;
+  --ink-3: #6b6b66;
+  --rule: #e4e3de;
+  --rule-strong: #cfcdc6;
+  --accent: #2443d0;
+  --accent-ink: #ffffff;
+  --ok: #1f7a4d;
+  --warn: #b5481d;
+  --highlight: color-mix(in srgb, var(--accent) 14%, transparent);
+  --radius: 4px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ground: #111111;
+    --surface: #181817;
+    --ink: #efeee9;
+    --ink-2: #b4b3ad;
+    --ink-3: #93928c;
+    --rule: #2a2a28;
+    --rule-strong: #3a3a37;
+    --accent: #8ea2ff;
+    --accent-ink: #111111;
+    --ok: #5cc28f;
+    --warn: #f08a5d;
+    --highlight: color-mix(in srgb, var(--accent) 22%, transparent);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ground: #111111;
+  --surface: #181817;
+  --ink: #efeee9;
+  --ink-2: #b4b3ad;
+  --ink-3: #93928c;
+  --rule: #2a2a28;
+  --rule-strong: #3a3a37;
+  --accent: #8ea2ff;
+  --accent-ink: #111111;
+  --ok: #5cc28f;
+  --warn: #f08a5d;
+  --highlight: color-mix(in srgb, var(--accent) 22%, transparent);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--ground);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-muted-foreground: var(--ink-3);
+  --color-border: var(--rule);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-ink);
+  --color-destructive: var(--warn);
+  --color-ring: var(--accent);
+  --font-sans: var(--font-schibsted), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --radius-sm: 2px;
+  --radius-md: var(--radius);
+}
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+}
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@theme inline {
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface);
+  --color-accent: var(--highlight);
+  --color-accent-foreground: var(--ink);
+  --color-input: var(--rule-strong);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+}
+body {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 28px;
+  min-height: 100vh;
+}
+h1 {
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+}
+p {
+  max-width: 68ch;
+}
+small,
+.small {
+  font-size: 14px;
+  line-height: 20px;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+}
+.shell {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: 40px;
+}
+main {
+  min-height: 55vh;
+  padding-block: 64px;
+}
+main p {
+  margin-top: 20px;
+}
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+.site-header {
+  border-bottom: 1px solid var(--rule);
+}
+.site-header .shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-block: 24px;
+}
+.site-header nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.site-footer {
+  border-top: 1px solid var(--rule);
+  color: var(--ink-2);
+  padding-block: 28px;
+}
+.site-footer p + p {
+  margin-top: 12px;
+}
+.site-footer a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  z-index: 100;
+  transform: translateY(-160%);
+  background: var(--surface);
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  cursor: pointer;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+mark {
+  background: var(--highlight);
+  color: inherit;
+  border-bottom: 1px solid var(--accent);
+}
+@media (max-width: 719px) {
+  .shell {
+    padding-inline: 20px;
+  }
+}
+@media (max-width: 639px) {
+  h1 {
+    font-size: 30px;
+    line-height: 36px;
+  }
+}
+@media (max-width: 399px) {
+  .shell {
+    padding-inline: 16px;
+  }
+}

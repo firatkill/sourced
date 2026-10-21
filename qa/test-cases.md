@@ -186,8 +186,8 @@ Source: PRD, TRD and implementation plan, read before implementation. D-40 stage
 - Milestone: M0 Setup
 - Preconditions: T-06 implemented; local environment as above.
 - Requirement: T-06; NFR-09; PRD §9.7; T-06 acceptance.
-- Steps: Navigate to /does-not-exist.
-- Expected: Exact Page not found heading, body and link.
+- Steps: Navigate to /does-not-exist. Render the error boundary with an internal error and activate Try again.
+- Expected: Exact Page not found heading, body and link. Error boundary matches PRD §9.7 and retry calls reset without showing internal details.
 
 ### TC-021: Scaffold JavaScript budget
 
@@ -204,3 +204,21 @@ Source: PRD, TRD and implementation plan, read before implementation. D-40 stage
 - Requirement: T-06; NFR-09; PRD §9.1; TRD §15.6.
 - Steps: Tab through layout in light and dark mode and inspect focus visibility.
 - Expected: Skip link works; controls operable with visible focus; specified tokens and fonts render.
+
+### TC-023: Firefox candidate system-dark verification
+
+- Milestone: M0 Setup
+- Requirement: FR-49; NFR-18; TRD E2E-20.
+- Priority: High. Automatable: yes.
+- Preconditions: Isolated compatibility candidate running in Firefox.
+- Steps: Request system dark through the browser context, open the page without a stored override, inspect effective tokens and toggle label.
+- Expected: Dark tokens and Switch to light theme. Explicit toggling also persists.
+
+### TC-024: WebKit candidate keyboard navigation
+
+- Milestone: M0 Setup
+- Requirement: NFR-09; NFR-18; PRD §9.1.
+- Priority: High. Automatable: yes.
+- Preconditions: Isolated compatibility candidate in macOS WebKit.
+- Steps: Use platform keyboard navigation including links (Option+Tab); activate Skip to content with Enter.
+- Expected: Skip link is first, focus transfers to main, layout copy and links match the PRD.
