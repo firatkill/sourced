@@ -32,8 +32,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | a56df5b |
 | T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | done | 227ca8f |
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
-| T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | HEAD |
-| T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | todo | — |
+| T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
+| T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | blocked | — |
 | T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | todo | — |
 | T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | todo | — |
 | T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | todo | — |
@@ -65,6 +65,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-45 | M4 Polish and deploy | Release v1.0.0 | todo | — |
 
 ## Open questions for the owner
+
+- T-16 / TC-052: approve the guarded reset of localhost:5433/sourced and immediate mock seed. Preflight found 35 documents, 201 mock chunks and two ingest runs; answer_cache, rate_limits and query_log are empty. The reset recreates public/drizzle schemas and replays migrations. Implementation and local test gates pass; task completion awaits this approval and CI.
 
 
 
@@ -126,3 +128,5 @@ T-14 final local acceptance passes: lint/typecheck, 45 unit and 13 integration t
 T-14 all six CI jobs passed: run 39632532522. T-15 implementation and spec-derived tests in progress.
 
 T-15 local acceptance: normative hybrid SQL, RRF reference and all specified fixtures pass; 47 unit / 17 integration tests, lint/typecheck pass. RRF coverage 100%. Default and forced HNSW plans on the 201-chunk corpus recorded in qa/T15-pr-description.md. CI pending push; live eval remains deferred until its harness exists.
+
+T-15 all six CI jobs passed: run 39633348013. T-16 seed script and CI seed step implemented; lint/typecheck, 47 unit and 18 integration tests pass. Required guarded development reset remains pending owner approval.
