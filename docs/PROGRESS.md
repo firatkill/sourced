@@ -9,8 +9,8 @@ Updated: 2026-10-21.
 - Initialized `main` and enabled the existing executable `.githooks/commit-msg` hook.
 - Initial documents and authorship controls committed in `0abe745` (`docs: add specs and agent rules`).
 - Commits use explicit Git messages with no co-author, generated-by or session attribution. Existing Claude and Aider attribution settings remain disabled.
-- GitHub repository creation and the first push approved on 2026-10-21 (D-39); creation pending.
-- M0 has not started. QA case design precedes its implementation; stop for an owner review at each milestone boundary.
+- GitHub repository creation and the first push approved on 2026-10-21 (D-39); created and pushed: https://github.com/firatkill/sourced.
+- M0 started with spec-derived QA case design. QA case design precedes its implementation; stop for an owner review at each milestone boundary.
 
 ## Tasks
 
@@ -18,7 +18,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 | Task | Milestone | Description | Status | Completion commit |
 | --- | --- | --- | --- | --- |
-| T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | todo | — |
+| T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | doing | — |
 | T-02 | M0 Setup | Configuration, environment and error codes | todo | — |
 | T-03 | M0 Setup | Logging, request id and security headers | todo | — |
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | todo | — |
@@ -66,7 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-None. Repository creation and staged bootstrap testing approved on 2026-10-21 (D-39, D-40).
+- Repository creation and staged bootstrap testing approved on 2026-10-21 (D-39, D-40).
+- Compatible TypeScript/ESLint pins and shadcn component dependencies approved (D-44, D-45). No pending owner decisions.
 
 ## Settled overrides
 
@@ -76,4 +77,5 @@ None. Repository creation and staged bootstrap testing approved on 2026-10-21 (D
 ## Verification
 
 - Setup only: required Git identity, hook shell syntax, executable hook, initial commit authorship and absence of attribution.
-- Application lint, typecheck, unit, integration, E2E, build and CI have not run: the application and test runners do not exist yet.
+- T-01 local acceptance passed: frozen install, lint, typecheck, executable scaffold checks, build and production dependency audit. CI verification pending first scaffold push.
+- Vitest, integration and E2E gates begin at the stages approved in D-40.

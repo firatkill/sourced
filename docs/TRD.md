@@ -85,6 +85,9 @@ Rule: **pin exact versions at implementation time.** Run `pnpm view <package> ve
 | Language | TypeScript | 5.x or newer | `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true` |
 | Styling | Tailwind CSS | 4.x | CSS-first config in `app/globals.css` via `@theme` |
 | Components | shadcn/ui (CLI `shadcn`) | latest CLI | Components copied into `components/ui` |
+| Component primitives | `radix-ui` | 1.x | Required by generated shadcn components; owner approved D-45 |
+| Component variants | `class-variance-authority` | 0.7.x | Required by generated shadcn components; D-45 |
+| Class names | `cn` | 0.5.x | Required by generated shadcn components; D-45 |
 | Validation | Zod | 4.x | All boundaries |
 | LLM SDK | `ai` (Vercel AI SDK) + `@ai-sdk/openai` | 5.x or newer | See section 13.0 for API differences between majors |
 | ORM and migrations | `drizzle-orm` + `drizzle-kit` | latest stable | Schema and migrations only |

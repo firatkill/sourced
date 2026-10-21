@@ -1,0 +1,12 @@
+corpus/raw
+drizzle/meta
+pnpm-lock.yaml
+eval/results/*.md
+docs/*.md
+AGENTS.md
+.next
+node_modules
+coverage
+playwright-report
+test-results
+next-env.d.ts
