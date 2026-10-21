@@ -100,7 +100,7 @@ Rule: **pin exact versions at implementation time.** Run `pnpm view <package> ve
 | Logging | `pino` | 9.x or newer | JSON to stdout; `pino-pretty` only as dev dependency for local piping |
 | Script runner | `tsx` | 4.x | Runs `scripts/*.ts` |
 | Env in scripts | `cross-env` | 7.x or newer | Cross-platform env vars in `package.json` scripts |
-| Unit and integration tests | Vitest + `@vitest/coverage-v8` | 3.x or newer | Two Vitest projects: `unit`, `integration`. Set `esbuild: { jsx: 'automatic' }` so `.tsx` tests compile regardless of the tsconfig `jsx` value Next.js writes |
+| Unit and integration tests | Vitest + `@vitest/coverage-v8` | 3.x or newer | Two Vitest projects: `unit`, `integration`. Set `esbuild: { jsx: 'automatic' }` (with Vitest 5 / Vite 8, also `oxc: { jsx: { runtime: 'automatic' } }`, which takes precedence) so `.tsx` tests compile regardless of the tsconfig `jsx` value Next.js writes |
 | Component tests | `@testing-library/react` + `jsdom` | latest stable | Dev dependencies; only UT-31 uses them (`// @vitest-environment jsdom` in that file) |
 | E2E | `@playwright/test` + `@axe-core/playwright` | 1.5x or newer / 4.x | Chromium only in CI |
 | Lint and format | ESLint (flat config) + `typescript-eslint` + `eslint-config-next`, Prettier + `prettier-plugin-tailwindcss` | 9.x / 8.x / matching Next / 3.x | |

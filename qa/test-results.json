@@ -70,6 +70,101 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-004",
+      "ac_reference": "T-02; TRD \u00a75",
+      "title": "Mock environment defaults",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-005",
+      "ac_reference": "T-02; TRD \u00a75",
+      "title": "Live environment validation",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Vitest stubEnv did not remove price variables from the replaced environment object, so the missing-price assertion failed.",
+          "note": "Corrected test setup with explicit deletion of required keys, preserving TRD missing-variable expectations."
+        },
+        {
+          "result": "pass",
+          "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-006",
+      "ac_reference": "T-02; TRD \u00a75",
+      "title": "Production mock rejection",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-007",
+      "ac_reference": "T-02; TRD \u00a75",
+      "title": "Environment types and complete examples",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-008",
+      "ac_reference": "T-02; FR-02; TRD \u00a711.2",
+      "title": "Suggested question definitions",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
+        }
+      ]
     }
   ]
 }
