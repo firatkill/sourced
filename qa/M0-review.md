@@ -1,6 +1,6 @@
 # M0 setup — QA milestone review
 
-Date: 2026-10-21. Status: **implementation acceptance passed locally; CI pending; manual QA closure pending**. T-01–T-05 are committed and pushed; T-06 is awaiting its CI run. Stop at M0 before T-07.
+Date: 2026-10-21. Status: **implementation acceptance and CI passed; manual QA closure pending**. T-01–T-06 are committed and pushed; T-06 implementation is commit 3cd3bc6. Stop at M0 before T-07.
 
 ## Resolved
 
@@ -33,7 +33,7 @@ The [results ledger](test-results.json) retains all attempts. 22 of 24 cases are
 
 Local acceptance: strict lint and typecheck, 21 unit tests, one integration smoke test, seven Playwright tests, scaffold checks, production build and dependency audit passed. The root page's referenced JavaScript totals **106.3 KB gzip**, below the unchanged **120 KB** T-06 limit. Built HTTP checks confirm a fresh CSP nonce and a matching nonce on every script. D-52 authorizes the documented [compatibility exception](nextjs-compatibility.md).
 
-T-05 CI passed all six jobs in [run 39566914362](https://github.com/firatkill/sourced/actions/runs/39566914362). T-06 CI is pending.
+T-05 CI passed all six jobs in [run 39566914362](https://github.com/firatkill/sourced/actions/runs/39566914362). T-06 passed all six jobs in [run 39573125819](https://github.com/firatkill/sourced/actions/runs/39573125819).
 
 ## Pending decision
 
@@ -82,4 +82,4 @@ No cases have regression_of or root_cause_group set. No cases were retracted or 
 8. **Repeated-attempt review:** TC-021 reflects a measured framework payload conflict resolved with owner approval; TC-023 reflects an unresolved browser-emulation environment issue. Neither is silently waived.
 9. **Agent improvement:** inspect generated custom migration SQL before applying it; keep diagnostic workspaces outside .git while running tools that block hidden paths, then restore their ignored location; distinguish supported browser keyboard conventions from application defects. No QA plugin change is justified by the evidence.
 
-**Verdict:** stop at the M0 boundary. Automated acceptance is locally complete, CI is pending, and two manual checks prevent full QA closure. No live LLM calls were made.
+**Verdict:** stop at the M0 boundary. Automated acceptance and all six CI jobs pass; two manual checks prevent full QA closure. No live LLM calls were made.
