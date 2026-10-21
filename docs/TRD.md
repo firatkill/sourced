@@ -979,18 +979,19 @@ function splitSection(blocks): string[]
   current = []
   currentTokens = 0
   for u in units:
-    ut = countTokens(u)
-    if currentTokens + ut > MAX_TOKENS and currentTokens >= MIN_TOKENS:
+    joinedTokens = countTokens(join(current + [u]))  // D-58: include separators and overlap
+    if joinedTokens > MAX_TOKENS and currentTokens >= MIN_TOKENS:
       pieces.append(join(current))
       overlap = tailOverlap(current, OVERLAP_TOKENS)  // whole sentences from the end of current, total <= OVERLAP_TOKENS; empty if the last unit is code or table
       current = overlap ? [overlap] : []
       currentTokens = countTokens(overlap)
-    else if currentTokens + ut > MAX_TOKENS:         // current is small but u would overflow
+    else if joinedTokens > MAX_TOKENS:         // current is small but u would overflow
       pieces.append(join(current)) if current not empty
       current = []
       currentTokens = 0
+    if countTokens(join(current + [u])) > MAX_TOKENS: current = [] // discard overlap if needed
     current.append(u)
-    currentTokens += ut
+    currentTokens = countTokens(join(current))
     if currentTokens >= TARGET_TOKENS:
       pieces.append(join(current))
       overlap = tailOverlap(current, OVERLAP_TOKENS)

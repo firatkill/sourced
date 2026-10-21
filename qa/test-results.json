@@ -968,7 +968,7 @@
       "ac_reference": "T-12; FR-35; NFR-16",
       "milestone": "M1 Ingestion and search",
       "title": "Chunk bounds and structure",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "js-tiktoken cl100k_base; normative TRD \u00a710.4 packing arithmetic",
       "description": "Normative token-sum packing excludes separators and can violate the 800-token invariant.",
       "steps_to_reproduce": "Encode \"word \".repeat(400).trim() as each of two blocks; compare token-count sum with encoding their blank-line join.",
@@ -978,12 +978,28 @@
           "result": "fail",
           "actual_result": "Each block has 400 tokens; summed count 800; joined text has 801 tokens.",
           "note": "Owner approval requested under checkpoint 2 to count actual joined text while retaining all thresholds."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Four of five UT-03 tests passed; overlap fixture with 645 repeated words remained below the 650-token target, so its expected split was incorrect.",
+          "note": "D-58 approved. Correct fixture against unchanged TRD target; no production threshold change."
+        },
+        {
+          "result": "pass",
+          "note": "All five UT-03 tests pass after correcting the below-target fixture; bounds, sections, overlap, tiny merges, Unicode and code/table preservation pass."
+        },
+        {
+          "result": "pass",
+          "note": "Targeted V8 line coverage for chunk.ts is 97.72%, above required 90%."
+        },
+        {
+          "result": "pass",
+          "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
-      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
-      "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "clickup_task": null,
       "retraction_reason": null
     },
     {
@@ -1001,6 +1017,63 @@
         {
           "result": "pass",
           "note": "Full local lint/typecheck, 31 unit and five integration tests pass; chunker is not implemented pending owner decision."
+        },
+        {
+          "result": "pass",
+          "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-040",
+      "ac_reference": "T-12; FR-37",
+      "milestone": "M1 Ingestion and search",
+      "title": "Content hash identity",
+      "status": "resolved",
+      "environment": "macOS; Node 24; mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-04 passes normative SHA-256, slug/anchor/content changes and ordinal independence."
+        },
+        {
+          "result": "pass",
+          "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-041",
+      "ac_reference": "T-12; FR-35; NFR-16",
+      "milestone": "M1 Ingestion and search",
+      "title": "Offline dry-run report",
+      "status": "resolved",
+      "environment": "macOS; Node 24; mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Preview unit test passes deterministic sorted corpus hash, histogram, heading-prefixed embedding counts and price calculation."
+        },
+        {
+          "result": "fail",
+          "actual_result": "Typecheck passed; targeted ESLint rejected an unnecessary nullish fallback on the validated embedding price.",
+          "note": "Remove redundant fallback; retain env validation and configured price."
+        },
+        {
+          "result": "pass",
+          "note": "Targeted ESLint and all seven affected tests pass. Two offline dry runs match byte-for-byte: 35 documents, 201 chunks, min 8 / p50 546 / p95 736 / max 797; 98,555 embedding tokens; corpus hash b20183152a8f8749117831fc675b5d4ec4c4e3f64da30276e67118a80841afbf. Price preview is zero under configured mock pricing, not live cost verification."
+        },
+        {
+          "result": "pass",
+          "note": "T-12 final local gate: pnpm lint, pnpm typecheck, all 38 unit and five integration tests pass. No live API calls. Evaluation is deferred until the M3 harness exists under the recorded staged-bootstrap decision."
         }
       ],
       "regression_of": null,
