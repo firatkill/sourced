@@ -952,6 +952,55 @@
         {
           "result": "pass",
           "note": "Three UT-02 tests pass, as do strict lint/typecheck, all 30 unit and five integration tests. Actual corpus audit: 35 pages, zero body fallbacks, all root titles/ids nonempty, 1,146 blocks. D-57 owner approval recorded before implementation."
+        },
+        {
+          "result": "pass",
+          "note": "T-11 CI run 39582056212 passed all six jobs on 32e96c8."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-039",
+      "ac_reference": "T-12; FR-35; NFR-16",
+      "milestone": "M1 Ingestion and search",
+      "title": "Chunk bounds and structure",
+      "status": "pending_decision",
+      "environment": "js-tiktoken cl100k_base; normative TRD \u00a710.4 packing arithmetic",
+      "description": "Normative token-sum packing excludes separators and can violate the 800-token invariant.",
+      "steps_to_reproduce": "Encode \"word \".repeat(400).trim() as each of two blocks; compare token-count sum with encoding their blank-line join.",
+      "expected_result": "Every emitted chunk must contain at most 800 tokens.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Each block has 400 tokens; summed count 800; joined text has 801 tokens.",
+          "note": "Owner approval requested under checkpoint 2 to count actual joined text while retaining all thresholds."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-038",
+      "ac_reference": "T-12; FR-35",
+      "milestone": "M1 Ingestion and search",
+      "title": "Tokenizer round trip",
+      "status": "resolved",
+      "environment": "macOS; Node 24; js-tiktoken cl100k_base",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-01 passes fixed known counts, empty input, Unicode and whitespace encode/decode round trips."
+        },
+        {
+          "result": "pass",
+          "note": "Full local lint/typecheck, 31 unit and five integration tests pass; chunker is not implemented pending owner decision."
         }
       ],
       "regression_of": null,
