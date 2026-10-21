@@ -1467,7 +1467,7 @@
       "ac_reference": "T-16; FR-55; G-5",
       "milestone": "M1 Ingestion and search",
       "title": "Mock seed",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "Local isolated test database; offline mock embeddings; no API key",
       "attempts": [
         {
@@ -1477,11 +1477,19 @@
         {
           "result": "pass",
           "note": "T-16 implementation gate passes: lint, typecheck, 47 unit and 18 integration tests. Required development reset awaits checkpoint 4 approval; preflight confirms localhost:5433/sourced, 35 documents, 201 mock chunks, two ingest runs, zero cache/rate-limit/query-log rows. CI seed verification pending push."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for seed implementation 1bb38c4, run 39633875632, including the new pnpm db:seed step before E2E. Only the guarded development reset acceptance remains pending owner approval."
+        },
+        {
+          "result": "pass",
+          "note": "D-61 owner-approved guarded localhost:5433/sourced reset and immediate mock seed exited 0. Report: 35 documents, 201 inserted chunks, mock embedding cost $0, 3.5 seconds. Database verification confirms 201 chunks and sole model mock-feature-hash; all six CI jobs already passed in run 39633875632."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
-      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "clickup_task": null,
       "retraction_reason": null
     }
   ]
