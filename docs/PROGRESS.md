@@ -18,7 +18,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 | Task | Milestone | Description | Status | Completion commit |
 | --- | --- | --- | --- | --- |
-| T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | doing | — |
+| T-01 | M0 Setup | Scaffold the repository, tooling and CI skeleton | done | 1bfb6b7 |
 | T-02 | M0 Setup | Configuration, environment and error codes | todo | — |
 | T-03 | M0 Setup | Logging, request id and security headers | todo | — |
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | todo | — |
@@ -77,5 +77,5 @@ The completion commit is filled when a task finishes. In the completing commit i
 ## Verification
 
 - Setup only: required Git identity, hook shell syntax, executable hook, initial commit authorship and absence of attribution.
-- T-01 local acceptance passed: frozen install, lint, typecheck, executable scaffold checks, build and production dependency audit. CI verification pending first scaffold push.
+- T-01 local acceptance passed: frozen install, lint, typecheck, executable scaffold checks, build and production dependency audit. CI run 39563006461 passed all three jobs.
 - Vitest, integration and E2E gates begin at the stages approved in D-40.
