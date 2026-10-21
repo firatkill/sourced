@@ -1,0 +1,13 @@
+Sourced is licensed under the MIT License; see LICENSE.
+
+corpus/raw/ contains unmodified copies of PostgreSQL 17 documentation pages.
+PostgreSQL 17 documentation, © The PostgreSQL Global Development Group,
+used under the PostgreSQL License.
+
+Source: https://www.postgresql.org/docs/17/
+License: https://www.postgresql.org/about/licence/
+The PostgreSQL copyright notice and permission paragraphs are included in
+corpus/LICENSE-POSTGRESQL.txt and retained in the original HTML pages.
+
+corpus/fixtures/injected-notice.html is a synthetic Sourced test fixture,
+not part of the PostgreSQL documentation.
