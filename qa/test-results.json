@@ -594,6 +594,106 @@
       "description": "macOS WebKit keyboard navigation includes links with Option+Tab.",
       "steps_to_reproduce": "Open the root page in macOS WebKit and navigate to the skip link using Option+Tab, then press Enter.",
       "expected_result": "Skip link receives visible focus and moves focus to main content."
+    },
+    {
+      "tc_reference": "TC-025",
+      "ac_reference": "T-07; D-02; D-13",
+      "milestone": "M1 Ingestion and search",
+      "title": "Core schema and indexes",
+      "status": "resolved",
+      "environment": "macOS; PostgreSQL 17 + pgvector 0.8.7; localhost sourced_test; T-07 working tree",
+      "description": "IT-03 verifies core tables, identity columns, vector column and prescribed HNSW/GIN/lookup indexes.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test:integration.",
+      "expected_result": "IT-03 verifies core tables, identity columns, vector column and prescribed HNSW/GIN/lookup indexes.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejects bigint bound parameters through the normative postgres.Sql return type.",
+          "note": "Database assertions passed; convert returned ids to string at the boundary as AGENTS.md requires."
+        },
+        {
+          "result": "pass",
+          "note": "IT-03 verifies core tables, identity columns, vector column and prescribed HNSW/GIN/lookup indexes. Final strict typecheck/lint, 21 unit tests and all four integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-026",
+      "ac_reference": "T-07; D-13",
+      "milestone": "M1 Ingestion and search",
+      "title": "Generated full-text column",
+      "status": "resolved",
+      "environment": "macOS; PostgreSQL 17 + pgvector 0.8.7; localhost sourced_test; T-07 working tree",
+      "description": "IT-03 verifies generated English tsv from content, excludes heading-only terms and updates it after content changes.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test:integration.",
+      "expected_result": "IT-03 verifies generated English tsv from content, excludes heading-only terms and updates it after content changes.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejects bigint bound parameters through the normative postgres.Sql return type.",
+          "note": "Database assertions passed; convert returned ids to string at the boundary as AGENTS.md requires."
+        },
+        {
+          "result": "pass",
+          "note": "IT-03 verifies generated English tsv from content, excludes heading-only terms and updates it after content changes. Final strict typecheck/lint, 21 unit tests and all four integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-027",
+      "ac_reference": "T-07; D-02",
+      "milestone": "M1 Ingestion and search",
+      "title": "Core integrity constraints",
+      "status": "resolved",
+      "environment": "macOS; PostgreSQL 17 + pgvector 0.8.7; localhost sourced_test; T-07 working tree",
+      "description": "IT-03 rejects invalid hash/ordinal/path/content/token count/status, verifies initially deferred ordinal uniqueness, permits transactional ordinal swaps and verifies cascading deletion.",
+      "steps_to_reproduce": "Run pnpm typecheck and pnpm test:integration.",
+      "expected_result": "IT-03 rejects invalid hash/ordinal/path/content/token count/status, verifies initially deferred ordinal uniqueness, permits transactional ordinal swaps and verifies cascading deletion.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejects bigint bound parameters through the normative postgres.Sql return type.",
+          "note": "Database assertions passed; convert returned ids to string at the boundary as AGENTS.md requires."
+        },
+        {
+          "result": "pass",
+          "note": "IT-03 rejects invalid hash/ordinal/path/content/token count/status, verifies initially deferred ordinal uniqueness, permits transactional ordinal swaps and verifies cascading deletion. Final strict typecheck/lint, 21 unit tests and all four integration tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-028",
+      "ac_reference": "T-07; NFR-17",
+      "milestone": "M1 Ingestion and search",
+      "title": "Core migration reproducibility",
+      "status": "pending_decision",
+      "environment": "localhost:5433/sourced; public schema contains no application tables",
+      "description": "T-07 requires a destructive local reset and migration replay.",
+      "steps_to_reproduce": "After owner approval, run pnpm db:reset, IT-03 and pnpm db:generate.",
+      "expected_result": "Fresh replay and IT-03 pass; no schema changes generated.",
+      "attempts": [
+        {
+          "result": "blocked",
+          "note": "Normative SQL exact comparison and no-drift generation pass; reset awaits explicit owner approval under AGENTS.md checkpoint 4."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "owner_escalation": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "retraction_reason": null
     }
   ]
 }

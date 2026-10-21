@@ -222,3 +222,329 @@ Source: PRD, TRD and implementation plan, read before implementation. D-40 stage
 - Preconditions: Isolated compatibility candidate in macOS WebKit.
 - Steps: Use platform keyboard navigation including links (Option+Tab); activate Skip to content with Enter.
 - Expected: Skip link is first, focus transfers to main, layout copy and links match the PRD.
+
+## M1 Ingestion and search
+
+Designed from PRD FR-12, FR-33–FR-39, FR-50, FR-55; TRD §§6, 9, 10, 23; T-07–T-17 before milestone implementation. Preconditions: the task implementation exists; database tests use localhost sourced_test; corpus fetching is deliberate and never part of unit/integration tests; live T-17 requires owner-controlled credentials and approved spending.
+
+| TC ID  | AC Reference              | TRD test ID / source  | Title                               | Priority | Automatable | Expected result                                                                                                                |
+| ------ | ------------------------- | --------------------- | ----------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| TC-025 | T-07; D-02; D-13          | IT-03                 | Core schema and indexes             | High     | yes         | documents, chunks and ingest_runs match TRD §6.1; HNSW cosine m=16/ef_construction=64 and GIN exist.                           |
+| TC-026 | T-07; D-13                | IT-03                 | Generated full-text column          | High     | yes         | tsv is generated from content using english and updates automatically.                                                         |
+| TC-027 | T-07; D-02                | IT-03                 | Core integrity constraints          | High     | yes         | Invalid rows rejected; unique document ordinals are initially deferred; document deletion cascades.                            |
+| TC-028 | T-07; NFR-17              | T-07 acceptance       | Core migration reproducibility      | High     | yes         | Fresh replay succeeds and generation reports no changes.                                                                       |
+| TC-029 | T-08; FR-26–FR-29; FR-53  | IT-03                 | Operational schema and constraints  | High     | yes         | DDL matches TRD §6.1 and invalid count/source/outcome/length are rejected.                                                     |
+| TC-030 | T-09; FR-33               | UT-29                 | Manifest validation                 | High     | yes         | 30–40 unique pages accepted; malformed manifest rejected.                                                                      |
+| TC-031 | T-09; FR-50; D-05         | A-12; A-14            | Corpus sources and attribution      | High     | yes         | Pages return 200 with expected titles; licence copied verbatim and attribution present.                                        |
+| TC-032 | T-09; FR-39               | TRD §10.9             | Injection fixture content           | High     | yes         | Normative injection content and #docContent section id match exactly.                                                          |
+| TC-033 | T-10; FR-33               | UT-30                 | Robots enforcement                  | High     | yes         | Disallow or unavailable policy aborts; 404 permits fetching.                                                                   |
+| TC-034 | T-10; FR-33               | UT-30                 | Fetch interval and retries          | High     | yes         | Requests sequential, interval >=2 seconds or Crawl-delay; specified retry policy and headers honored.                          |
+| TC-035 | T-10; FR-33; NFR-16       | UT-30                 | Offline and cached fetch            | High     | yes         | Unchanged bytes not rewritten; offline never accesses network; missing offline page fails.                                     |
+| TC-036 | T-10; FR-33; NFR-16       | T-10 acceptance       | Committed corpus cache              | High     | yes         | Second run prints unchanged without refetch; raw count equals manifest count and total <=10 MB.                                |
+| TC-037 | T-11; FR-34               | UT-02                 | HTML sections and blocks            | High     | yes         | Section anchors and headings retained; specified block rendering and whitespace; nav removed.                                  |
+| TC-038 | T-12; FR-35               | UT-01                 | Tokenizer round trip                | High     | yes         | Known counts and exact round trip match cl100k_base.                                                                           |
+| TC-039 | T-12; FR-35; NFR-16       | UT-03                 | Chunk bounds and structure          | High     | yes         | 1–800 tokens; no text lost; overlap <=80; sections preserved except tiny merge; deterministic; chunk.ts >=90% coverage.        |
+| TC-040 | T-12; FR-37               | UT-04                 | Content hash formula                | High     | yes         | sha256(slug + newline + anchor + newline + content), stable and context-specific.                                              |
+| TC-041 | T-12; FR-35; NFR-16       | T-11/T-12 acceptance  | Offline dry-run report              | High     | yes         | No body fallback; max <=800; identical corpus_version preview; no database writes or embedding calls.                          |
+| TC-042 | T-13; FR-55               | UT-27                 | Mock feature hashing                | High     | yes         | Deterministic 1536-dimensional unit vectors; similar text closer; empty yields e0.                                             |
+| TC-043 | T-13; FR-36               | embed-batch.test.ts   | Embedding batches and order         | High     | yes         | Batches <=100, concurrency <=2, order preserved, finite 1536-dimensional vectors required.                                     |
+| TC-044 | T-13; FR-36               | embed-batch.test.ts   | Embedding retry policy              | High     | yes         | Specified capped jitter/backoff and Retry-After; max retries respected; 400 fails immediately.                                 |
+| TC-045 | T-14; FR-34–FR-38         | IT-04                 | Ingest and report                   | High     | yes         | Counts, anchors, paths and succeeded ingest_runs match stored rows and report.                                                 |
+| TC-046 | T-14; FR-37               | IT-05                 | Unchanged ingest                    | High     | yes         | Second run has zero insert/update/delete and no embedding calls.                                                               |
+| TC-047 | T-14; FR-37; FR-39        | IT-05                 | Changed and removed documents       | High     | yes         | Only changed chunks embedded; removed rows deleted; fixtures excluded when false; new model re-embeds all chunks.              |
+| TC-048 | T-14; FR-38               | IT-04; TRD §10.6–10.7 | Ingest failure and deployment guard | High     | yes         | Failure records failed run with message; deployed execution refused.                                                           |
+| TC-049 | T-15; FR-12               | UT-05                 | Reference reciprocal rank fusion    | High     | yes         | Exact k=60 scores, best single rank then id tie-break; rrf.ts >=90% coverage.                                                  |
+| TC-050 | T-15; FR-12; NFR-06       | IT-01                 | Hybrid SQL fixture                  | High     | yes         | FTS D/F/A; fused A/D/F/B/C/E; limited A/D/B/F; ef_search=100; empty FTS returns vector-only.                                   |
+| TC-051 | T-15; FR-12               | IT-02                 | SQL equals reference                | High     | yes         | Same ids/order/scores; HNSW index usable with sequential scan disabled.                                                        |
+| TC-052 | T-16; FR-55; G-5          | T-16 acceptance       | Mock seed                           | High     | yes         | More than 200 chunks, report matches count, sole model mock-feature-hash; CI seed succeeds.                                    |
+| TC-053 | T-17; FR-36–FR-38; NFR-16 | T-17 acceptance       | Live ingest and coverage            | High     | yes         | Second run zero inserted and embedding calls; report cost/tokens/duration; global lib coverage >=80% and critical files >=90%. |
+
+### TC-025: Core schema and indexes
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-07; D-02; D-13; IT-03.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inspect pg_tables, pg_constraint and pg_indexes after migrations.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: documents, chunks and ingest_runs match TRD §6.1; HNSW cosine m=16/ef_construction=64 and GIN exist.
+
+### TC-026: Generated full-text column
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-07; D-13; IT-03.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Insert a chunk, query its tsv and update content.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: tsv is generated from content using english and updates automatically.
+
+### TC-027: Core integrity constraints
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-07; D-02; IT-03.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Attempt invalid document hash, ordinal, heading path, content, tokens and ingest status; swap chunk ordinals in a transaction.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Invalid rows rejected; unique document ordinals are initially deferred; document deletion cascades.
+
+### TC-028: Core migration reproducibility
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-07; NFR-17; T-07 acceptance.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Reset the approved local database; run IT-03; regenerate migration.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Fresh replay succeeds and generation reports no changes.
+
+### TC-029: Operational schema and constraints
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-08; FR-26–FR-29; FR-53; IT-03.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inspect six tables, primary keys, indexes and checks; attempt invalid operational values.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: DDL matches TRD §6.1 and invalid count/source/outcome/length are rejected.
+
+### TC-030: Manifest validation
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-09; FR-33; UT-29.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Parse manifest and invalid variants with duplicate slugs or invalid page counts.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 30–40 unique pages accepted; malformed manifest rejected.
+
+### TC-031: Corpus sources and attribution
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-09; FR-50; D-05; A-12; A-14.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Verify robots policy then request each pinned URL at least two seconds apart; compare licence and NOTICE with authoritative text.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Pages return 200 with expected titles; licence copied verbatim and attribution present.
+
+### TC-032: Injection fixture content
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-09; FR-39; TRD §10.9.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Read fixture and assert its title, paragraphs and section structure.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Normative injection content and #docContent section id match exactly.
+
+### TC-033: Robots enforcement
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-10; FR-33; UT-30.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inject robots allow/disallow, 404, server error and network failure.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Disallow or unavailable policy aborts; 404 permits fetching.
+
+### TC-034: Fetch interval and retries
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-10; FR-33; UT-30.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Use injected clock/sleep/fetch to exercise 429, 5xx, timeout, network errors and non-retryable errors.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Requests sequential, interval >=2 seconds or Crawl-delay; specified retry policy and headers honored.
+
+### TC-035: Offline and cached fetch
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-10; FR-33; NFR-16; UT-30.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Fetch mock page twice, compare unchanged file; run offline with missing file and cached pages.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Unchanged bytes not rewritten; offline never accesses network; missing offline page fails.
+
+### TC-036: Committed corpus cache
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-10; FR-33; NFR-16; T-10 acceptance.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Run corpus:fetch twice and inspect raw directory.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Second run prints unchanged without refetch; raw count equals manifest count and total <=10 MB.
+
+### TC-037: HTML sections and blocks
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-11; FR-34; UT-02.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Parse three real trimmed pages and synthetic nested sections, missing ids, dl/table/note/code/nav.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Section anchors and headings retained; specified block rendering and whitespace; nav removed.
+
+### TC-038: Tokenizer round trip
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-12; FR-35; UT-01.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Count known cl100k strings and encode/decode text.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Known counts and exact round trip match cl100k_base.
+
+### TC-039: Chunk bounds and structure
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-12; FR-35; NFR-16; UT-03.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Chunk mixed long/short sections, long code/table lines and sentences; repeat.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 1–800 tokens; no text lost; overlap <=80; sections preserved except tiny merge; deterministic; chunk.ts >=90% coverage.
+
+### TC-040: Content hash formula
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-12; FR-37; UT-04.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Hash same content under different slugs and anchors; repeat same input.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: sha256(slug + newline + anchor + newline + content), stable and context-specific.
+
+### TC-041: Offline dry-run report
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-12; FR-35; NFR-16; T-11/T-12 acceptance.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Run ingest --dry-run --offline twice over raw corpus.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: No body fallback; max <=800; identical corpus_version preview; no database writes or embedding calls.
+
+### TC-042: Mock feature hashing
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-13; FR-55; UT-27.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Embed repeated, similar, dissimilar and empty strings.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Deterministic 1536-dimensional unit vectors; similar text closer; empty yields e0.
+
+### TC-043: Embedding batches and order
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-13; FR-36; embed-batch.test.ts.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inject provider across >200 inputs and inspect batch sizes, concurrency, order and token sum.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Batches <=100, concurrency <=2, order preserved, finite 1536-dimensional vectors required.
+
+### TC-044: Embedding retry policy
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-13; FR-36; embed-batch.test.ts.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inject 429/5xx/timeout/network and 400 errors with deterministic sleep/random.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Specified capped jitter/backoff and Retry-After; max retries respected; 400 fails immediately.
+
+### TC-045: Ingest and report
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-14; FR-34–FR-38; IT-04.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Ingest three fixture HTML pages with mock embeddings.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Counts, anchors, paths and succeeded ingest_runs match stored rows and report.
+
+### TC-046: Unchanged ingest
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-14; FR-37; IT-05.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Ingest same corpus twice with provider spy.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Second run has zero insert/update/delete and no embedding calls.
+
+### TC-047: Changed and removed documents
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-14; FR-37; FR-39; IT-05.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Modify paragraph, remove page, toggle fixtures and change model id.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Only changed chunks embedded; removed rows deleted; fixtures excluded when false; new model re-embeds all chunks.
+
+### TC-048: Ingest failure and deployment guard
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-14; FR-38; IT-04; TRD §10.6–10.7.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Inject provider failure; invoke CLI with VERCEL set.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Failure records failed run with message; deployed execution refused.
+
+### TC-049: Reference reciprocal rank fusion
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-15; FR-12; UT-05.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Merge overlapping, disjoint and empty lists with ties and limits.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Exact k=60 scores, best single rank then id tie-break; rrf.ts >=90% coverage.
+
+### TC-050: Hybrid SQL fixture
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-15; FR-12; NFR-06; IT-01.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Run six-chunk fixture, limited candidates, empty tsquery and SHOW hnsw.ef_search inside transaction.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: FTS D/F/A; fused A/D/F/B/C/E; limited A/D/B/F; ef_search=100; empty FTS returns vector-only.
+
+### TC-051: SQL equals reference
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-15; FR-12; IT-02.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Compare SQL and reference over 200 deterministic random chunks and 20 questions; inspect EXPLAIN.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Same ids/order/scores; HNSW index usable with sequential scan disabled.
+
+### TC-052: Mock seed
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-16; FR-55; G-5; T-16 acceptance.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. Reset approved local DB and seed without API key; compare report with SQL.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: More than 200 chunks, report matches count, sole model mock-feature-hash; CI seed succeeds.
+
+### TC-053: Live ingest and coverage
+
+- Milestone: M1 Ingestion and search
+- Requirement: T-17; FR-36–FR-38; NFR-16; T-17 acceptance.
+- Preconditions: milestone prerequisites above and the corresponding task implemented.
+- Steps:
+  1. With approved credentials/budget and reset, ingest offline twice; run coverage.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Second run zero inserted and embedding calls; report cost/tokens/duration; global lib coverage >=80% and critical files >=90%.
