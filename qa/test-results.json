@@ -1387,6 +1387,10 @@
         {
           "result": "pass",
           "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for f443dd4, run 39633348013."
         }
       ],
       "regression_of": null,
@@ -1409,6 +1413,10 @@
         {
           "result": "pass",
           "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for f443dd4, run 39633348013."
         }
       ],
       "regression_of": null,
@@ -1443,11 +1451,37 @@
         {
           "result": "pass",
           "note": "T-15 final gate passes: lint, typecheck, 47 unit tests with one worker and 17 integration tests. RRF line coverage is 100%; chunk coverage remains above 90%. Development corpus EXPLAIN plans are in qa/T15-pr-description.md."
+        },
+        {
+          "result": "pass",
+          "note": "All six CI jobs passed for f443dd4, run 39633348013."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-052",
+      "ac_reference": "T-16; FR-55; G-5",
+      "milestone": "M1 Ingestion and search",
+      "title": "Mock seed",
+      "status": "pending_decision",
+      "environment": "Local isolated test database; offline mock embeddings; no API key",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Focused seed integration test passes >200 chunks, one mock model, no fixture documents, exact report count and zero cost. Guarded development reset and CI acceptance remain pending."
+        },
+        {
+          "result": "pass",
+          "note": "T-16 implementation gate passes: lint, typecheck, 47 unit and 18 integration tests. Required development reset awaits checkpoint 4 approval; preflight confirms localhost:5433/sourced, 35 documents, 201 mock chunks, two ingest runs, zero cache/rate-limit/query-log rows. CI seed verification pending push."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
       "retraction_reason": null
     }
   ]
