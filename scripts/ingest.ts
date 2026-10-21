@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { parseHtml } from '@/lib/ingest/parse-html';
+import { previewCorpus } from '@/lib/ingest/preview';
 import { parseArgs } from 'node:util';
 import { getEnv } from '@/lib/env';
 import { AppError } from '@/lib/errors';
@@ -10,6 +13,7 @@ try {
   if (env.VERCEL) throw new AppError('INTERNAL_ERROR', 'Ingestion is not allowed on Vercel.');
   const { values } = parseArgs({
     options: {
+      'dry-run': { type: 'boolean' },
       'fetch-only': { type: 'boolean' },
       refresh: { type: 'boolean' },
       offline: { type: 'boolean' },
@@ -24,7 +28,21 @@ try {
       console.log(`${status} ${slug}`);
     },
   });
-  if (!values['fetch-only'])
+  if (values['dry-run'] && !values['fetch-only']) {
+    const documents = [];
+    for (const page of manifest.pages) {
+      const html = await readFile(`corpus/raw/${page.slug}`, 'utf8');
+      documents.push({
+        slug: page.slug,
+        document: parseHtml(html, {
+          ...page,
+          contentSelector: manifest.contentSelector,
+          removeSelectors: manifest.removeSelectors,
+        }),
+      });
+    }
+    console.log(JSON.stringify(previewCorpus(documents, env.PRICE_EMBED_PER_MTOK), null, 2));
+  } else if (!values['fetch-only'])
     throw new AppError('INTERNAL_ERROR', 'Ingestion pipeline is added in T-14; use --fetch-only.');
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Ingest failed.');

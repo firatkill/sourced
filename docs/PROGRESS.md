@@ -29,7 +29,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | done | a697344 |
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | done | f3377f1 |
 | T-11 | M1 Ingestion and search | HTML parser | done | 32e96c8 |
-| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | doing | — |
+| T-12 | M1 Ingestion and search | Tokenizer and structure-aware chunker | done | this commit |
 | T-13 | M1 Ingestion and search | Embedding provider (live and mock) with batching and retry | todo | — |
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | todo | — |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | todo | — |
@@ -66,7 +66,6 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-- T-12 / TC-039: approval requested to count joined text including separators/overlap. Exact cl100k reproduction: two 400-token blocks sum to 800 but join to 801, contradicting the hard limit. Chunker implementation awaits the decision.
 
 
 
@@ -108,3 +107,7 @@ T-10 local acceptance: 35 raw pages (1,192,907 bytes), second fetch run all unch
 T-11 local acceptance: approved D-57 heading fallback; UT-02 and full 30-unit / five-integration suites pass with lint/typecheck. Audit of 35 raw pages found zero body fallbacks, nonempty titles/ids and 1,146 blocks. The CLI dry-run acceptance will be repeated in T-12 as planned. All six CI jobs passed: run 39582056212.
 
 T-12 tokenizer is implemented and UT-01 passes. Full local lint/typecheck, 31 unit and five integration tests pass. Packing remains pending the owner decision above; no chunker implementation or acceptance claim yet.
+
+T-12 packing correction approved as D-58; implementation and acceptance checks in progress.
+
+T-12 local acceptance: D-58 joined-token correction implemented; UT-01/03/04, 38 unit and five integration tests, lint/typecheck pass. Chunk coverage 97.72%. Two offline previews match: 35 pages, 201 chunks, max 797 tokens, 98,555 embedding tokens; mock price zero is not live pricing verification. CI pending push; eval remains staged until M3.
