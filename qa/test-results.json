@@ -314,6 +314,24 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-016",
+      "ac_reference": "T-05; TRD \u00a725.1",
+      "milestone": "M0 Setup",
+      "title": "Full CI six jobs",
+      "status": "resolved",
+      "environment": "GitHub Actions Ubuntu; Node 22; pnpm 10.18.3",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "All six jobs passed in https://github.com/firatkill/sourced/actions/runs/39566914362"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
