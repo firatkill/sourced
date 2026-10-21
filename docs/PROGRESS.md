@@ -24,8 +24,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | 44cf3a3 |
 | T-05 | M0 Setup | Test runners and full CI | done | f4cfa89 |
 | T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | done | 3cd3bc6 |
-| T-07 | M1 Ingestion and search | Core schema: documents and chunks | doing | — |
-| T-08 | M1 Ingestion and search | Operational tables | todo | — |
+| T-07 | M1 Ingestion and search | Core schema: documents and chunks | done | a054711 |
+| T-08 | M1 Ingestion and search | Operational tables | doing | — |
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | todo | — |
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | todo | — |
 | T-11 | M1 Ingestion and search | HTML parser | todo | — |
@@ -94,4 +94,6 @@ M0 boundary: T-01–T-06 implementation acceptance is complete and pushed. Stop 
 
 Owner requested continuation after the M0 report. M1 started with TC-025–TC-053 spec-derived case design; M0 manual checks remain open.
 
-T-07 local acceptance: D-53 reset approved and passed with explicit LLM_MODE=mock; four integration tests passed; no schema drift. CI pending task push.
+T-07 local acceptance: D-53 reset approved and passed with explicit LLM_MODE=mock; four integration tests passed; no schema drift. All six CI jobs passed: run 39580104889.
+
+T-08 local acceptance passed: normative operational migration, no schema drift, lint/typecheck, 21 unit and five integration tests. CI pending task push.

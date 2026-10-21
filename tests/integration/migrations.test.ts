@@ -114,3 +114,71 @@ test('TC-027: IT-03 core checks, deferred ordinal uniqueness and cascading delet
   >`SELECT count(*)::int AS count FROM chunks WHERE document_id=${doc!.id.toString()}`;
   expect(remaining?.count).toBe(0);
 });
+
+test('TC-029: IT-03 all six tables, primary keys and operational constraints match the DDL', async () => {
+  const sql = getSql();
+  const keys = await sql<{ name: string; columns: string[] }[]>`
+    SELECT t.relname AS name, array_agg(a.attname ORDER BY k.ordinality) AS columns
+    FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
+    JOIN pg_namespace n ON n.oid=t.relnamespace
+    CROSS JOIN LATERAL unnest(c.conkey) WITH ORDINALITY k(attnum,ordinality)
+    JOIN pg_attribute a ON a.attrelid=t.oid AND a.attnum=k.attnum
+    WHERE c.contype='p' AND n.nspname='public' GROUP BY t.relname`;
+  expect(Object.fromEntries(keys.map((row) => [row.name, row.columns]))).toEqual({
+    documents: ['id'],
+    chunks: ['id'],
+    ingest_runs: ['id'],
+    answer_cache: ['id'],
+    rate_limits: ['bucket', 'window_start'],
+    query_log: ['id'],
+  });
+  const checks = await sql<
+    { conname: string }[]
+  >`SELECT conname FROM pg_constraint WHERE contype='c' AND connamespace='public'::regnamespace`;
+  expect(checks.map((row) => row.conname)).toEqual(
+    expect.arrayContaining([
+      'documents_content_hash_hex',
+      'chunks_ordinal_check',
+      'chunks_heading_path_check',
+      'chunks_content_check',
+      'chunks_token_count_check',
+      'ingest_runs_status_check',
+      'rate_limits_count_check',
+      'query_log_source_check',
+      'query_log_outcome_check',
+      'query_log_question_length_check',
+    ]),
+  );
+  const indexes = await sql<
+    { indexname: string; indexdef: string }[]
+  >`SELECT indexname,indexdef FROM pg_indexes WHERE schemaname='public'`;
+  expect(indexes.find((row) => row.indexname === 'answer_cache_suggested_idx')?.indexdef).toContain(
+    '(suggested_id, created_at DESC)',
+  );
+  expect(indexes.find((row) => row.indexname === 'rate_limits_window_idx')?.indexdef).toContain(
+    '(window_start)',
+  );
+  expect(indexes.find((row) => row.indexname === 'query_log_created_at_idx')?.indexdef).toContain(
+    '(created_at DESC)',
+  );
+  await expect(
+    sql`INSERT INTO rate_limits (bucket,window_start,count) VALUES ('global',current_date,-1)`,
+  ).rejects.toMatchObject({ code: '23514' });
+  for (const bad of [
+    { source: 'invalid', outcome: 'answered', length: 1 },
+    { source: 'live', outcome: 'invalid', length: 1 },
+    { source: 'live', outcome: 'answered', length: -1 },
+  ]) {
+    await expect(
+      sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length) VALUES ('00000000-0000-4000-8000-000000000001',${bad.source},${bad.outcome},'hash',${bad.length})`,
+    ).rejects.toMatchObject({ code: '23514' });
+  }
+  await sql`INSERT INTO answer_cache (cache_key,suggested_id,question,corpus_version,prompt_version,chat_model,payload) VALUES ('key','id','Question','corpus','prompt','mock','{}'::jsonb)`;
+  await expect(
+    sql`INSERT INTO answer_cache (cache_key,suggested_id,question,corpus_version,prompt_version,chat_model,payload) VALUES ('key','id','Question','corpus','prompt','mock','{}'::jsonb)`,
+  ).rejects.toMatchObject({ code: '23505' });
+  await sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length) VALUES ('00000000-0000-4000-8000-000000000001','cache','answered','hash',0)`;
+  await expect(
+    sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length) VALUES ('00000000-0000-4000-8000-000000000001','live','error','hash',0)`,
+  ).rejects.toMatchObject({ code: '23505' });
+});
