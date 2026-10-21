@@ -37,7 +37,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
   5. Prettier config from TRD §3. Run `pnpm format`.
   6. `pnpm dlx shadcn@latest init` with the `components.json` values in TRD §3; add `button`, `textarea`, `badge`, `collapsible`, `table`, `tooltip`, `separator`.
   7. Add all scripts from TRD §3.1 (some point to files created later; that is fine as long as `lint`, `typecheck`, `build` work now).
-  8. Confirm Next.js major and the name of the interception file (`proxy.ts` or `middleware.ts`) in the installed docs (A-10). Note it in the PRD decisions log.
+  8. Confirm Next.js major and the name of the interception file (`middleware.ts` or `middleware.ts`) in the installed docs (A-10). Note it in the PRD decisions log.
   9. Verify the `react-server` condition approach for scripts (TRD §3.1 last paragraph). Record the result.
   10. Write `ci.yml` with the `lint`, `typecheck` and `build` jobs exactly as in TRD §25.1 (other jobs added in T-05). Check current majors of the actions (A-16).
   11. `LICENSE`: MIT, "Copyright (c) 2026 Fırat Kıl".
@@ -72,10 +72,10 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
 
 - **Goal**: JSON logs with request id; CSP nonce and security headers on every response.
 - **Implements**: FR-52, NFR-14; TRD §19, §20.1; D-15
-- **Files**: `lib/logger.ts`, `proxy.ts` (or `middleware.ts`), `app/layout.tsx` (read nonce from `headers()`), `next.config.ts` (`poweredByHeader: false`), `tests/unit/logger.test.ts`.
+- **Files**: `lib/logger.ts`, `middleware.ts` (or `middleware.ts`), `app/layout.tsx` (read nonce from `headers()`), `next.config.ts` (`poweredByHeader: false`), `tests/unit/logger.test.ts`.
 - **Steps**:
   1. pino logger per TRD §20.1 with redaction; `withRequest(requestId)`.
-  2. `proxy.ts`: always generate a fresh `requestId = crypto.randomUUID()` (overwrite any incoming `x-request-id`) and a base64 nonce from 16 random bytes; set request headers `x-request-id`, `x-nonce` and `Content-Security-Policy` (so Next.js applies the nonce to its own scripts); set response headers from TRD §19 (CSP with nonce; `'unsafe-eval'` only when `NODE_ENV === 'development'`; `upgrade-insecure-requests` only when `VERCEL_ENV` is set; read both through `getEnv()`). Matcher excludes `_next/static`, `_next/image`, `favicon.svg`. `proxy.ts` imports only `lib/env.ts` and `lib/config.ts` (TRD §8).
+  2. `middleware.ts`: always generate a fresh `requestId = crypto.randomUUID()` (overwrite any incoming `x-request-id`) and a base64 nonce from 16 random bytes; set request headers `x-request-id`, `x-nonce` and `Content-Security-Policy` (so Next.js applies the nonce to its own scripts); set response headers from TRD §19 (CSP with nonce; `'unsafe-eval'` only when `NODE_ENV === 'development'`; `upgrade-insecure-requests` only when `VERCEL_ENV` is set; read both through `getEnv()`). Matcher excludes `_next/static`, `_next/image`, `favicon.svg`. `middleware.ts` imports only `lib/env.ts` and `lib/config.ts` (TRD §8).
   3. Layout reads `x-nonce` and passes it to the theme script (added in T-06) and to Next's script handling as documented for the installed version.
 - **Acceptance**:
   - `pnpm build && pnpm start` then `curl -sI http://localhost:3000 | grep -iE 'content-security-policy|x-request-id|strict-transport|x-frame-options'` shows all four headers; two requests show different nonces.
@@ -526,7 +526,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
   2. `pnpm audit --prod` clean at `high`.
   3. Grep checks: no `console.log` in `app/`, `lib/`, `components/`, `hooks/`; no `process.env` outside `lib/env.ts`, `next.config.ts`, `drizzle.config.ts`, `playwright.config.ts`, `vitest.config.ts` and tests.
   4. Try a cross-origin POST with `curl -H 'Origin: https://evil.example'` → 403.
-- **Acceptance**: E2E-23 passes; `grep -rn "process.env" app lib components hooks proxy.ts | grep -v '^lib/env.ts:'` prints nothing; `grep -rn "console\." app lib components hooks` prints nothing.
+- **Acceptance**: E2E-23 passes; `grep -rn "process.env" app lib components hooks middleware.ts | grep -v '^lib/env.ts:'` prints nothing; `grep -rn "console\." app lib components hooks` prints nothing.
 - **Depends on**: T-40
 
 ### T-42 Supabase, OpenAI project and production data

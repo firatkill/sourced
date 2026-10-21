@@ -23,7 +23,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-03 | M0 Setup | Logging, request id and security headers | done | 7c0b2e6 |
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | 44cf3a3 |
 | T-05 | M0 Setup | Test runners and full CI | done | f4cfa89 |
-| T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | todo | — |
+| T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | doing | — |
 | T-07 | M1 Ingestion and search | Core schema: documents and chunks | todo | — |
 | T-08 | M1 Ingestion and search | Operational tables | todo | — |
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | todo | — |
@@ -66,8 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-- Repository creation and staged bootstrap testing approved on 2026-10-21 (D-39, D-40).
-- Compatible TypeScript/ESLint pins and shadcn component dependencies approved (D-44, D-45). Pending: approve the react-server condition for the Drizzle commands; required server-only schema fails under the current CLI command.
+- TC-022: light/dark appearance, font rendering and visible keyboard focus await browser/computer access and a live visual pass.
+- TC-023: Firefox system-dark verification remains a manual review by owner decision D-51; Playwright media emulation did not take effect.
 
 ## Settled overrides
 
@@ -86,3 +86,5 @@ T-03: 18 unit tests, lint, typecheck, build, built-server security-header checks
 
 
 T-05 local verification: lint, typecheck, 20 unit tests, integration smoke, coverage and production build plus three E2E smoke tests pass. All six CI jobs passed: run 39566914362. Coverage global enforcement begins T-17 per plan.
+
+T-06: approved D-52 compatibility change passes the unchanged 120 KB JavaScript limit at 106.3 KB gzip. Main-repository lint, typecheck, 21 unit tests, integration smoke, production build, seven E2E tests, scaffold checks and production dependency audit pass. CI verification is pending this commit. Manual QA remains open; see qa/M0-review.md.
