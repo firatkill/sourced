@@ -922,6 +922,36 @@
         {
           "result": "pass",
           "note": "35 raw pages fetched; 1,192,907 bytes. Second CLI run reports 35 unchanged pages. Lint/typecheck, all 27 unit and five integration tests pass. Tests prove zero network calls on cached path. No live LLM calls."
+        },
+        {
+          "result": "pass",
+          "note": "T-10 CI run 39581544503 passed all six jobs on f3377f1."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-037",
+      "ac_reference": "T-11; FR-34",
+      "milestone": "M1 Ingestion and search",
+      "title": "HTML sections and blocks",
+      "status": "resolved",
+      "environment": "macOS; Node 24; cheerio 1.2.0; committed raw PostgreSQL pages",
+      "description": "UT-02 parser follows section div anchors, block rendering and approved D-57 heading fallback.",
+      "steps_to_reproduce": "Run parse-html.test.ts and audit parseHtml against all 35 cached pages.",
+      "expected_result": "Nested sections/ids/headings and specified blocks preserved, navigation removed; real corpus needs no body fallback.",
+      "attempts": [
+        {
+          "result": "fail",
+          "actual_result": "Typecheck rejected a private logger import and an overloaded get() return type used as an element type.",
+          "note": "Use the exported createLogger and Cheerio indexed element type; no behavior change."
+        },
+        {
+          "result": "pass",
+          "note": "Three UT-02 tests pass, as do strict lint/typecheck, all 30 unit and five integration tests. Actual corpus audit: 35 pages, zero body fallbacks, all root titles/ids nonempty, 1,146 blocks. D-57 owner approval recorded before implementation."
         }
       ],
       "regression_of": null,
