@@ -165,6 +165,60 @@
           "note": "UT-17 and UT-19: all 15 tests passed; full lint, typecheck and build passed."
         }
       ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-009",
+      "ac_reference": "T-03; FR-52; NFR-12",
+      "title": "Structured logs and redaction",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Logger sink test verifies JSON requestId, base fields and top-level/nested private value redaction."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-010",
+      "ac_reference": "T-03; NFR-14",
+      "title": "Security headers and fresh nonces",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Unit tests and built localhost:3000 HTTP checks pass: all headers, fresh IDs/nonces and nonce-bearing scripts."
+        }
+      ]
+    },
+    {
+      "milestone": "M0 Setup",
+      "environment": "macOS; Node 24.10.0; pnpm 10.18.3",
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "tc_reference": "TC-011",
+      "ac_reference": "T-03; NFR-14",
+      "title": "Browser CSP check",
+      "status": "resolved",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Live Chrome QA at localhost:3000: Sourced H1 visible; browser console returned no warnings or errors, including CSP violations."
+        }
+      ]
     }
   ]
 }

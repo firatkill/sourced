@@ -11,3 +11,7 @@ Dependencies pinned on 2026-10-21. Node.js 22 or newer; pnpm 10.18.3.
 ## License
 
 MIT. Copyright (c) 2026 Fırat Kıl.
+
+## Local logs
+
+For readable local JSON logs, run `pnpm dev | pnpm exec pino-pretty`.
