@@ -9,7 +9,7 @@ Updated: 2026-10-21.
 - Initialized `main` and enabled the existing executable `.githooks/commit-msg` hook.
 - Initial documents and authorship controls committed in `0abe745` (`docs: add specs and agent rules`).
 - Commits use explicit Git messages with no co-author, generated-by or session attribution. Existing Claude and Aider attribution settings remain disabled.
-- GitHub repository creation and the first push await owner approval. No remote resources have been created.
+- GitHub repository creation and the first push approved on 2026-10-21 (D-39); creation pending.
 - M0 has not started. QA case design precedes its implementation; stop for an owner review at each milestone boundary.
 
 ## Tasks
@@ -66,8 +66,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-1. Approve creating the public `firatkill/sourced` GitHub repository with this local repository as its source and pushing `main`? Proposed description: "A small, production-quality RAG app and starter kit with server-verified citations over PostgreSQL 17 documentation."
-2. Approve the plan's staged testing gates during bootstrap: T-01 gets executable scaffold checks; Vitest unit tests start in T-02; integration tests start in T-05; full E2E becomes mandatory in T-34 (with earlier task-specific E2E checks as specified)? This reconciles AGENTS.md's unconditional test requirements with the runner introduction dates and explicit staging in IMPLEMENTATION_PLAN.md. No existing test would be skipped or weakened.
+None. Repository creation and staged bootstrap testing approved on 2026-10-21 (D-39, D-40).
 
 ## Settled overrides
 
