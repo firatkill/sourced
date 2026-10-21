@@ -1,0 +1,77 @@
+export const RETRIEVAL = {
+  VECTOR_CANDIDATES: 40,
+  FTS_CANDIDATES: 40,
+  RRF_K: 60,
+  RERANK_CANDIDATES: 20,
+  FINAL_PASSAGES: 6,
+  HNSW_EF_SEARCH: 100,
+  RERANK_TIMEOUT_MS: 4_000,
+  RERANK_PASSAGE_MAX_TOKENS: 160,
+  RERANK_MAX_OUTPUT_TOKENS: 200,
+  FTS_CONFIG: 'english',
+  SNIPPET_CHARS: 240,
+} as const;
+
+export const CHUNKING = {
+  ENCODING: 'cl100k_base',
+  MIN_TOKENS: 500,
+  TARGET_TOKENS: 650,
+  MAX_TOKENS: 800,
+  OVERLAP_TOKENS: 80,
+  TINY_SECTION_TOKENS: 40,
+} as const;
+
+export const EMBEDDING = {
+  MODEL: 'text-embedding-3-small',
+  DIMENSIONS: 1536,
+  BATCH_SIZE: 100,
+  CONCURRENCY: 2,
+  MAX_RETRIES: 5,
+  BASE_DELAY_MS: 1_000,
+  MAX_DELAY_MS: 20_000,
+  BATCH_TIMEOUT_MS: 30_000,
+  QUERY_TIMEOUT_MS: 5_000,
+} as const;
+
+export const GENERATION = {
+  ANSWER_WORD_LIMIT: 250,
+  FIRST_TOKEN_TIMEOUT_MS: 15_000,
+  TOTAL_TIMEOUT_MS: 35_000,
+  TEMPERATURE: 0,
+  CITATIONS_DELIMITER: '<<<CITATIONS>>>',
+  QUOTE_MIN_WORDS: 4,
+  QUOTE_MAX_WORDS: 40,
+  QUOTE_FALLBACK_TIMEOUT_MS: 6_000,
+  QUOTE_FALLBACK_MAX_OUTPUT_TOKENS: 400,
+  NOT_FOUND_SENTENCE: "I couldn't find this in the PostgreSQL docs.",
+} as const;
+
+export const QUESTION = {
+  MIN_CHARS: 3,
+  MAX_CHARS: 500,
+  COUNTER_WARN_AT: 450,
+  MAX_BODY_BYTES: 4_096,
+} as const;
+
+export const SSE = {
+  HEARTBEAT_MS: 15_000,
+  CACHE_REPLAY_CHUNK_CHARS: 40,
+} as const;
+
+export const FETCH = {
+  MIN_INTERVAL_MS: 2_000,
+  TIMEOUT_MS: 20_000,
+  MAX_RETRIES: 3,
+  USER_AGENT: 'SourcedIngest/1.0 (+https://github.com/firatkill/sourced)',
+} as const;
+
+export const MAINTENANCE = {
+  CLEANUP_PROBABILITY: 0.02,
+  RATE_LIMIT_RETENTION_DAYS: 2,
+  QUERY_LOG_RETENTION_DAYS: 90,
+} as const;
+
+export const JUDGE = {
+  MAX_OUTPUT_TOKENS: 300,
+  TIMEOUT_MS: 20_000,
+} as const;
