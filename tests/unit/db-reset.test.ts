@@ -3,8 +3,8 @@ import { expect, it } from 'vitest';
 
 it('TC-013: T-04 refuses reset against a non-local host before connecting', () => {
   const result = spawnSync(
-    'pnpm',
-    ['exec', 'tsx', '--conditions=react-server', 'scripts/db-reset.ts'],
+    process.execPath,
+    ['--import', 'tsx', '--conditions=react-server', 'scripts/db-reset.ts'],
     {
       encoding: 'utf8',
       env: {

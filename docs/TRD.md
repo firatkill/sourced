@@ -377,6 +377,7 @@ export const CHUNKING = {
 
 export const EMBEDDING = {
   MODEL: 'text-embedding-3-small',
+  MOCK_MODEL: 'mock-feature-hash',
   DIMENSIONS: 1536,
   BATCH_SIZE: 100,
   CONCURRENCY: 2,

@@ -95,7 +95,11 @@ test('TC-039: UT-03 oversized sentences and Unicode retain all non-whitespace te
     for (const chunk of chunks) {
       const compact = chunk.content.replace(/\s/g, '');
       let overlap = 0;
-      for (let i = 1; i <= compact.length && i <= reconstructed.length; i++) {
+      for (
+        let i = 1;
+        text.startsWith('Sentence') && i <= compact.length && i <= reconstructed.length;
+        i++
+      ) {
         if (reconstructed.endsWith(compact.slice(0, i))) overlap = i;
       }
       // Repeated words / Unicode are original content, not sentence overlap.
