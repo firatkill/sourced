@@ -24,7 +24,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-04 | M0 Setup | Local database, Drizzle and the extensions migration | done | 44cf3a3 |
 | T-05 | M0 Setup | Test runners and full CI | done | f4cfa89 |
 | T-06 | M0 Setup | Design tokens, fonts, layout shell and theme | done | 3cd3bc6 |
-| T-07 | M1 Ingestion and search | Core schema: documents and chunks | todo | — |
+| T-07 | M1 Ingestion and search | Core schema: documents and chunks | doing | — |
 | T-08 | M1 Ingestion and search | Operational tables | todo | — |
 | T-09 | M1 Ingestion and search | Corpus manifest, license files and injection fixture | todo | — |
 | T-10 | M1 Ingestion and search | Fetcher with robots.txt and rate limiting | todo | — |
@@ -66,6 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
+- T-07 / TC-028: approval requested for required local reset on localhost:5433/sourced, verified to contain no application tables. Migration and tests are ready; reset not run.
+
 - TC-022: light/dark appearance, font rendering and visible keyboard focus await browser/computer access and a live visual pass.
 - TC-023: Firefox system-dark verification remains a manual review by owner decision D-51; Playwright media emulation did not take effect.
 
@@ -90,3 +92,5 @@ T-05 local verification: lint, typecheck, 20 unit tests, integration smoke, cove
 T-06: approved D-52 compatibility change passes the unchanged 120 KB JavaScript limit at 106.3 KB gzip. Main-repository lint, typecheck, 21 unit tests, integration smoke, production build, seven E2E tests, scaffold checks and production dependency audit pass. All six CI jobs passed in run 39573125819 for commit 3cd3bc6. Manual QA remains open; see qa/M0-review.md.
 
 M0 boundary: T-01–T-06 implementation acceptance is complete and pushed. Stop before T-07. Full QA closure remains pending TC-022 and TC-023 manual checks.
+
+Owner requested continuation after the M0 report. M1 started with TC-025–TC-053 spec-derived case design; M0 manual checks remain open.
