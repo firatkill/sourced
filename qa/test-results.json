@@ -1506,6 +1506,10 @@
         {
           "result": "pass",
           "note": "Coverage portion only: pnpm test:coverage passed with global 80% threshold enabled; 96.35% overall lines, chunk 97.72%, RRF 100%. Live portion not run: API key/chat model absent, prices zero; separate local reset and live-call approval requested in docs/PROGRESS.md."
+        },
+        {
+          "result": "pass",
+          "note": "Preparation CI 39660248863 passed. Owner approved T-17 reset/live ingestion in D-62 on 2026-10-23. Live acceptance remains unrun: local API key/chat model absent and required prices zero/unset. Reset deferred until credentials are available; no live calls. Approval will not be requested again for this operation."
         }
       ],
       "regression_of": null,
