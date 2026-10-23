@@ -66,7 +66,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-- T-17 / TC-053: configure OPENAI_API_KEY locally (never in chat), a model available to the account and its positive chat prices, and PRICE_EMBED_PER_MTOK=0.02. Approve the next guarded localhost:5433/sourced reset and live offline ingestion, followed by an idempotence run. Current estimate: 98,555 input tokens, $0.0019711 before retries at the verified listed embedding price; no chat calls. This separate reset replaces T-16’s 35 documents, 201 mock chunks and one ingest run.
+- T-17 / TC-053: D-62 approves the local reset and live ingestion. Only local credentials remain needed: add OPENAI_API_KEY to .env.local, never in chat. Once available, verify an account-accessible temporary model and its listed prices, then perform the already approved operation. No repeat approval required for this scope.
 
 
 
@@ -137,3 +137,5 @@ T-16 seed implementation committed and pushed in 1bb38c4. All six CI jobs passed
 T-16 acceptance completed after D-61 approval: guarded local reset and mock seed passed; 201 chunks across 35 documents, sole embedding model mock-feature-hash, matching the printed report. No live API calls.
 
 T-17 preparation: global lib line coverage floor enabled at 80%; existing critical chunk/RRF floors remain 90%. Coverage passed: 96.35% overall lines, chunk 97.72%, RRF 100%. Live validation is blocked on owner configuration and reset/live-call approval; no API calls or T-17 reset performed. Pricing source: https://developers.openai.com/api/docs/models/text-embedding-3-small ($0.02 per million input tokens, checked 2026-10-21).
+
+T-17 follow-up (2026-10-23): D-62 approval recorded. Local API key and chat model remain absent; all three required prices are zero/unset. No reset or live API calls performed. Preparation commit 50537f0 passed all CI checks in run 39660248863. Live validation remains blocked solely on local credential availability; model/prices will be verified before execution.
