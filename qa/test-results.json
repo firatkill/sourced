@@ -2049,6 +2049,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-079",
+      "ac_reference": "T-27; FR-53; FR-54; NFR-12",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Query log privacy",
+      "description": "T-27 integration acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-079.",
+      "expected_result": "question_text null when STORE_QUESTIONS=false and equal to the question when true; question_hash equals HMAC of the normalized question; no raw IP.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-27: querylog.test.ts asserts question_text null with STORE_QUESTIONS=false and equal with true, question_hash = HMAC(QUESTION_HASH_SALT, normalize(question)) computed independently, no IP field accepted."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

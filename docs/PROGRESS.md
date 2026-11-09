@@ -44,7 +44,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | HEAD |
 | T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | HEAD |
 | T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | HEAD |
-| T-27 | M2 Ask, stream, citations | Cost estimate and query log | todo | — |
+| T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | HEAD |
 | T-28 | M2 Ask, stream, citations | `POST /api/ask` | todo | — |
 | T-29 | M2 Ask, stream, citations | `GET /api/health` | todo | — |
 | T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | todo | — |
@@ -160,3 +160,5 @@ T-24 local acceptance: normative SSE event schemas (§12.2) and client parser (�
 T-25 local acceptance: normative limiter SQL (TRD §16.1) and visitor hashing (§16.2). UT-15 and IT-06 pass, including 50 concurrent requests with limit 10 → exactly 10 successes; lib/ratelimit 100% lines with a 90% floor added. Lint, typecheck, 644 tests with coverage pass. TC-071–TC-073 resolved; the per-request refund guard and the §16.1 cleanup are wired in T-28.
 
 T-26 local acceptance: answerQuestion per TRD §14.4 (first-token watchdog, total timeout, splitter, §14.1 JSON tail, verification with quote fallback), cost estimate (§21.1), answer cache with versioned keys and replay (§16.3), `pnpm cache:suggested [--mock]`, seed creates 6 mock cache rows. Review: meta candidate counts fixed per D-76; internal error message centralized. Lint, typecheck, 611 unit and 63 integration tests pass. TC-060 and TC-074–TC-078 resolved. Local database now holds the mock-seeded corpus (re-ingest live with `pnpm ingest --offline` when needed).
+
+T-27 local acceptance: logQuery per TRD §20.2 with Zod-validated input, salted question hash, question text only with STORE_QUESTIONS=true, no IP. Lint, typecheck, 611 unit and 75 integration tests pass; query logger 100% lines. TC-079 resolved; TC-080 (which requests write a row) is verified with the route in T-28.
