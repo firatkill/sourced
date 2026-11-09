@@ -1,8 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
 import { normalize } from '@/lib/citations/normalize';
-import { getDb } from '@/lib/db/client';
-import { queryLog } from '@/lib/db/schema';
+import { getSql } from '@/lib/db/client';
 import { getEnv } from '@/lib/env';
 import { ErrorCodeSchema } from '@/lib/errors';
 import { hmacSha256Hex } from '@/lib/hash';
@@ -39,15 +38,28 @@ export type QueryLogInput = z.input<typeof QueryLogInput>;
 
 /** TRD §20.2: the route calls this in after() only for eligible requests (D-23). */
 export async function logQuery(input: QueryLogInput): Promise<void> {
-  const { question, costUsdEstimate, ...metadata } = QueryLogInput.parse(input);
+  const data = QueryLogInput.parse(input);
+  const { question } = data;
   const env = getEnv();
-  await getDb()
-    .insert(queryLog)
-    .values({
-      ...metadata,
-      questionHash: hmacSha256Hex(env.QUESTION_HASH_SALT, normalize(question)),
-      questionLength: question.length,
-      questionText: env.STORE_QUESTIONS ? question : null,
-      costUsdEstimate: costUsdEstimate == null ? null : String(costUsdEstimate),
-    });
+  // Drizzle initialization mutates the shared client's JSON/date codecs. Keep
+  // logging on the same bound-SQL path as cache and retrieval (TRD §6.2).
+  await getSql()`INSERT INTO query_log (
+    request_id, source, outcome, error_code, question_hash, question_length, question_text,
+    suggested_id, chat_model, embedding_model, prompt_version, corpus_version,
+    passages_count, rerank_fallback, quote_fallback_used, citations_valid, citations_invalid,
+    latency_total_ms, latency_first_token_ms, latency_embed_ms, latency_search_ms,
+    latency_rerank_ms, latency_generation_ms, tokens_embedding, tokens_input, tokens_output,
+    cost_usd_estimate
+  ) VALUES (
+    ${data.requestId}, ${data.source}, ${data.outcome}, ${data.errorCode ?? null},
+    ${hmacSha256Hex(env.QUESTION_HASH_SALT, normalize(question))}, ${question.length},
+    ${env.STORE_QUESTIONS ? question : null}, ${data.suggestedId ?? null},
+    ${data.chatModel ?? null}, ${data.embeddingModel ?? null}, ${data.promptVersion ?? null},
+    ${data.corpusVersion ?? null}, ${data.passagesCount ?? null}, ${data.rerankFallback ?? null},
+    ${data.quoteFallbackUsed ?? null}, ${data.citationsValid ?? null}, ${data.citationsInvalid ?? null},
+    ${data.latencyTotalMs ?? null}, ${data.latencyFirstTokenMs ?? null},
+    ${data.latencyEmbedMs ?? null}, ${data.latencySearchMs ?? null}, ${data.latencyRerankMs ?? null},
+    ${data.latencyGenerationMs ?? null}, ${data.tokensEmbedding ?? null},
+    ${data.tokensInput ?? null}, ${data.tokensOutput ?? null}, ${data.costUsdEstimate ?? null}
+  )`;
 }

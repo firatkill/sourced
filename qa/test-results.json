@@ -1869,12 +1869,16 @@
       "description": "TRD §12.",
       "steps_to_reproduce": "See qa/test-cases.md TC-070.",
       "expected_result": "`: ping` comment is sent every 15 s while the stream is open and stops at close.",
-      "status": "pending_decision",
-      "environment": "macOS; Node 22",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
       "attempts": [
         {
           "result": "pending",
           "note": "T-24: startHeartbeat helper verified with fake timers (15 s cadence, cleanup). Route-level heartbeat while the stream is open is verified in T-28."
+        },
+        {
+          "result": "pass",
+          "note": "T-28: IT-08 verifies the route sends ': ping' every SSE.HEARTBEAT_MS while the stream is open and clears the interval on close."
         }
       ],
       "regression_of": null,
@@ -2064,6 +2068,132 @@
         {
           "result": "pass",
           "note": "T-27: querylog.test.ts asserts question_text null with STORE_QUESTIONS=false and equal with true, question_hash = HMAC(QUESTION_HASH_SALT, normalize(question)) computed independently, no IP field accepted."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-080",
+      "ac_reference": "T-27; D-23",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Which requests write a query_log row",
+      "description": "TRD §20.2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-080.",
+      "expected_result": "Cache hits, rate-limited and live requests write one row; validation, origin, content-type, size, DEMO_OFF and DEMO_READONLY rejections write none.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: IT-08 verifies one query_log row for cache hits, rate-limited and live streams, and none for 400/403/413/415/DEMO_OFF/DEMO_READONLY rejections (D-23)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-081",
+      "ac_reference": "T-28; FR-01; FR-24",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Ask request validation",
+      "description": "UT-18.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-081.",
+      "expected_result": "Trim and whitespace collapse; < 3 and > 500 rejected; unknown fields rejected; suggested id accepted.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: UT-18 covers trim and whitespace collapse, 3/500 bounds, unknown fields, invalid types and suggested ids with the details.field/reason values of TRD §11.2."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-082",
+      "ac_reference": "T-28; FR-23; FR-24",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Ask route statuses and stream",
+      "description": "IT-08.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-082.",
+      "expected_result": "Valid request streams schema-valid events in order; each JSON error returns its status (400, 403, 413, 415, 429, 503) with the error envelope; cache hit replays without quota use.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: IT-08 checks SSE event order and schemas, JSON statuses 400/403/413/415/429/503 with the error envelope and Retry-After, cache replay without quota, exactly one refund across failure paths, client abort logged as aborted."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-083",
+      "ac_reference": "T-28; FR-16; FR-22",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Passage-borne injection does not reach the answer",
+      "description": "IT-09.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-083.",
+      "expected_result": "With the injection fixture ingested, forbidden strings never appear in a verified answer.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: IT-09 with the injection fixture: echoed passage text yields notFound and no forbidden string in the verified answer."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-084",
+      "ac_reference": "T-28; FR-30; D-12",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Demo modes in the route",
+      "description": "IT-08.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-084.",
+      "expected_result": "readonly serves only cached suggested answers and returns 503 DEMO_READONLY otherwise; off returns 503 DEMO_OFF for all.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: IT-08 covers DEMO_MODE readonly (cached suggested answers only, otherwise 503 DEMO_READONLY) and off (503 DEMO_OFF)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-085",
+      "ac_reference": "T-28",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "curl stream in dev:mock",
+      "description": "T-28 manual acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-085.",
+      "expected_result": "curl -N prints meta, token, citations, done events.",
+      "status": "resolved",
+      "environment": "macOS; pnpm dev:mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-28: curl -N against pnpm dev:mock printed meta, token, citations and done events (cached suggested question)."
         }
       ],
       "regression_of": null,
