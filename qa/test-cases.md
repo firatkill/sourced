@@ -1508,3 +1508,307 @@ Source: PRD §7.8, FR-40–FR-48, §9.5, §9.6; TRD §15.7, §15.8, §17, §23 (
   1. Live browser pass on both pages.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Light and dark themes, keyboard-only use, diagram reflows to one column below 640 px, trend charts readable.
+
+## M4 Polish and deploy
+
+Source: PRD NFR-04, NFR-07–NFR-14, FR-29, FR-57, FR-58, §11, §12; TRD §15.3, §15.6, §19, §21.2, §22, §24 (A-06–A-09), §25.4, §26, §27, §23 (E2E-17–E2E-20, E2E-23); implementation plan T-40–T-45. Designed from the specs before the code. E2E-17–E2E-20 already exist as TC-107–TC-110; the cases below cover what they leave out. TC-022, TC-111, TC-112 and TC-139 stay open and are closed in this milestone.
+
+| TC ID  | AC Reference           | TRD test ID / source            | Title                                              | Priority | Automatable | Expected result                                                                                                                                                                                                                                                                 |
+| ------ | ---------------------- | ------------------------------- | -------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-140 | T-40; NFR-10           | T-40 step 3; E2E-19             | Long code lines scroll inside their block          | High     | yes         | At 360 px an answer with a long line in a code block and a passage with a long unbroken line scroll inside their own block (overflow-x auto, scrollWidth > clientWidth on the block) while the page has no horizontal scroll.                                                   |
+| TC-141 | T-40; NFR-10           | E2E-19                          | No horizontal scroll at 1920 px                    | Medium   | yes         | At 1920 × 1080, /, the done state, /eval, /how-it-works and the 404 page have scrollWidth <= clientWidth.                                                                                                                                                                       |
+| TC-142 | T-40; NFR-09           | TRD §15.6                       | Visible focus ring on every interactive element    | High     | yes         | Each focusable element reached by Tab on /, /eval and /how-it-works shows a 2 px solid outline in --accent with 2 px offset under :focus-visible.                                                                                                                               |
+| TC-143 | T-40; NFR-09           | TRD §15.6                       | Reduced motion respected                           | Medium   | yes         | With prefers-reduced-motion: reduce, html scroll-behavior is auto and focus outlines have no transition; activating a citation chip moves focus without smooth scrolling.                                                                                                       |
+| TC-144 | T-40; NFR-09           | TRD §15.6                       | Touch targets at least 24 × 24 px                  | Medium   | yes         | At 360 px every visible button, link and chip on /, the done state, /eval and /how-it-works has a hit area of at least 24 × 24 px, or meets the WCAG 2.2 spacing exception (axe target-size rule passes).                                                                       |
+| TC-145 | T-40; NFR-09           | TRD §15.3; D-26                 | No hydration or console errors on page load        | High     | yes         | Loading /, /eval and /how-it-works in both themes logs no console error or React hydration warning (including the theme-script nonce).                                                                                                                                          |
+| TC-146 | T-40; NFR-08           | TRD §22                         | First-load JavaScript for / within 180 KB gzip     | High     | yes         | The TRD §22 command against pnpm build && pnpm start prints ≤ 180 KB.                                                                                                                                                                                                           |
+| TC-147 | T-40; NFR-07           | T-40 step 4                     | Lighthouse mobile on the local production build    | High     | no          | Lighthouse mobile on pnpm start: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05; scores recorded.                                                                                                                                           |
+| TC-148 | T-41; NFR-14           | E2E-23 security-headers.spec.ts | CSP nonce and security headers                     | Critical | yes         | Every page and /api/health response carries the TRD §19 CSP with a nonce that differs between two requests; every inline script carries that nonce; HSTS, X-Content-Type-Options, Referrer-Policy, X-Frame-Options, COOP, Permissions-Policy and X-Request-Id match §19 item 4. |
+| TC-149 | T-41; NFR-14           | TRD §11.2; T-41 step 4          | Cross-origin POST is rejected                      | Critical | yes         | POST /api/ask with Origin: https://evil.example returns 403 with the origin error code and no stream.                                                                                                                                                                           |
+| TC-150 | T-41; NFR-12; NFR-14   | T-41 acceptance                 | No process.env or console outside allowed files    | High     | yes         | grep -rn "process.env" app lib components hooks middleware.ts excluding lib/env.ts prints nothing; grep -rn "console\." app lib components hooks prints nothing.                                                                                                                |
+| TC-151 | T-41; NFR-14           | TRD §19 item 5; TRD §8          | Client code cannot import server modules           | High     | yes         | ESLint no-restricted-imports (final TRD §8 rules) reports an error when a file under components/ or hooks/ imports lib/env, lib/db, lib/llm, lib/logger, lib/ratelimit or another server-only module.                                                                           |
+| TC-152 | T-41; NFR-14           | TRD §19 item 9                  | Production dependency audit clean                  | High     | yes         | pnpm audit --prod --audit-level high exits 0.                                                                                                                                                                                                                                   |
+| TC-153 | T-41; NFR-12; NFR-14   | TRD §19                         | Security checklist reviewed with evidence          | High     | no          | Each of the eleven TRD §19 items is checked with evidence (file, test or command) and listed in the T-41 notes; Dependabot alerts and secret scanning with push protection are enabled on the repository.                                                                       |
+| TC-154 | T-42; FR-29; D-16      | T-42 acceptance                 | Production database migrated and ingested          | Critical | no          | migrate.yml with input migrate is green; chunks count equals the local live ingest count; answer_cache has 6 rows; no fixture documents.                                                                                                                                        |
+| TC-155 | T-42; A-07; NFR-13     | TRD §26.1 steps 5–6             | Supabase hardening and free-plan limits            | High     | no          | Data API is off; A-07 findings (size limit, pause policy, pooler activity, connection limits) recorded in the decisions log.                                                                                                                                                    |
+| TC-156 | T-42; A-06; NFR-13     | TRD §26.2; §21.2                | OpenAI production project capped                   | Critical | no          | Production project key restricted to the project; monthly budget with 50% alert; prepaid credit with auto-recharge off; data sharing off (D-82); worst-case monthly LLM cost from §21.2 within the budget, with RATE_LIMIT_GLOBAL_DAILY lowered if needed.                      |
+| TC-157 | T-43; NFR-04; D-20     | T-43 acceptance                 | Production health and CSP                          | Critical | no          | https://sourced.firatkil.com/api/health returns status ok, db ok, llmMode live; the home page response has the nonce CSP; DNS resolves through the Vercel CNAME with a valid certificate.                                                                                       |
+| TC-158 | T-43; A-08; A-09       | TRD §24                         | Function duration and IP header trust on a preview | High     | no          | maxDuration set per the verified Hobby limit; a spoofed x-real-ip on a preview deployment does not change the visitor hash; findings recorded in the decisions log.                                                                                                             |
+| TC-159 | T-43; NFR-04           | TRD §25.4                       | Keepalive workflow                                 | High     | no          | keepalive.yml is byte-identical to TRD §25.4 with schedule 17 6 */3 * *; a workflow_dispatch run is green and its log shows "db":"ok".                                                                                                                                          |
+| TC-160 | T-43; FR-29; NFR-12    | T-43 acceptance                 | Production answers and privacy                     | Critical | no          | One suggested and one live question answer with verified citations on production; the two newest query_log rows have source cache and live and question_text null.                                                                                                              |
+| TC-161 | T-43; NFR-01–NFR-07    | TRD §22                         | Production performance measurements                | Medium   | no          | Warm p95 meta, first token and done, cold start, cached answer and Lighthouse median recorded against their budgets; at most ordinary manual use, no load testing.                                                                                                              |
+| TC-162 | T-44; FR-57; G-1       | TRD §27                         | README sections complete                           | High     | yes         | README.md contains every TRD §27 section in order and the metrics table copied from the latest eval/results/*.md.                                                                                                                                                               |
+| TC-163 | T-44; PRD §11          | T-44 step 4                     | Fresh clone without an API key                     | High     | no          | On a clean directory, following only the README "Run locally without an API key" commands reaches a working mock ask page in ≤ 15 minutes.                                                                                                                                      |
+| TC-164 | T-44; G-4              | T-44 step 2                     | Demo GIF                                           | Medium   | no          | docs/assets/demo.gif is light theme, 1200 px wide, ≤ 20 s and ≤ 4 MB.                                                                                                                                                                                                           |
+| TC-165 | T-44; FR-58            | T-44 files                      | Page metadata and Open Graph image                 | Low      | yes         | /, /eval and /how-it-works have a title, a description and an og:image that returns an image, or the item is skipped with a decisions log entry.                                                                                                                                |
+| TC-166 | T-45; PRD §11; PRD §12 | Release checklist               | Release v1.0.0                                     | High     | no          | Every release checklist item is checked; tag v1.0.0 and GitHub release with the CHANGELOG entry exist; repository description, topics and website set.                                                                                                                          |
+
+### TC-140: Long code lines scroll inside their block
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-10; T-40 step 3; E2E-19.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Ask a mock question whose answer and passages contain a 200-character code line at 360 × 740; inspect the block and the document.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: At 360 px an answer with a long line in a code block and a passage with a long unbroken line scroll inside their own block (overflow-x auto, scrollWidth > clientWidth on the block) while the page has no horizontal scroll.
+
+### TC-141: No horizontal scroll at 1920 px
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-10; E2E-19.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Repeat the E2E-19 checks at 1920 × 1080.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: At 1920 × 1080, /, the done state, /eval, /how-it-works and the 404 page have scrollWidth <= clientWidth.
+
+### TC-142: Visible focus ring on every interactive element
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-09; TRD §15.6.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Tab through each page and read the computed outline of the focused element.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each focusable element reached by Tab on /, /eval and /how-it-works shows a 2 px solid outline in --accent with 2 px offset under :focus-visible.
+
+### TC-143: Reduced motion respected
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-09; TRD §15.6.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Emulate reducedMotion: 'reduce'; check computed styles and chip activation.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: With prefers-reduced-motion: reduce, html scroll-behavior is auto and focus outlines have no transition; activating a citation chip moves focus without smooth scrolling.
+
+### TC-144: Touch targets at least 24 × 24 px
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-09; TRD §15.6.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Run axe with the target-size rule and measure bounding boxes of interactive elements.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: At 360 px every visible button, link and chip on /, the done state, /eval and /how-it-works has a hit area of at least 24 × 24 px, or meets the WCAG 2.2 spacing exception (axe target-size rule passes).
+
+### TC-145: No hydration or console errors on page load
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-09; TRD §15.3; D-26.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Collect console messages while loading each page with a stored theme and with none.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Loading /, /eval and /how-it-works in both themes logs no console error or React hydration warning (including the theme-script nonce).
+
+### TC-146: First-load JavaScript for / within 180 KB gzip
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-08; TRD §22.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. pnpm build; pnpm start; run the §22 measurement command.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The TRD §22 command against pnpm build && pnpm start prints ≤ 180 KB.
+
+### TC-147: Lighthouse mobile on the local production build
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-40; NFR-07; T-40 step 4.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Run Lighthouse (mobile, simulated throttling) three times on / and take the median.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Lighthouse mobile on pnpm start: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05; scores recorded.
+
+### TC-148: CSP nonce and security headers
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-14; E2E-23 security-headers.spec.ts.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Request / twice and /api/health; compare headers and the nonce attributes of script tags.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every page and /api/health response carries the TRD §19 CSP with a nonce that differs between two requests; every inline script carries that nonce; HSTS, X-Content-Type-Options, Referrer-Policy, X-Frame-Options, COOP, Permissions-Policy and X-Request-Id match §19 item 4.
+
+### TC-149: Cross-origin POST is rejected
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-14; TRD §11.2; T-41 step 4.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. curl -X POST with a foreign Origin header against pnpm start.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: POST /api/ask with Origin: https://evil.example returns 403 with the origin error code and no stream.
+
+### TC-150: No process.env or console outside allowed files
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-12; NFR-14; T-41 acceptance.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Run both greps from the plan.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: grep -rn "process.env" app lib components hooks middleware.ts excluding lib/env.ts prints nothing; grep -rn "console\." app lib components hooks prints nothing.
+
+### TC-151: Client code cannot import server modules
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-14; TRD §19 item 5; TRD §8.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Lint a temporary violating file per restricted module.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: ESLint no-restricted-imports (final TRD §8 rules) reports an error when a file under components/ or hooks/ imports lib/env, lib/db, lib/llm, lib/logger, lib/ratelimit or another server-only module.
+
+### TC-152: Production dependency audit clean
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-14; TRD §19 item 9.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Run the audit.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: pnpm audit --prod --audit-level high exits 0.
+
+### TC-153: Security checklist reviewed with evidence
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-41; NFR-12; NFR-14; TRD §19.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Walk the §19 list; read the repository security settings.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each of the eleven TRD §19 items is checked with evidence (file, test or command) and listed in the T-41 notes; Dependabot alerts and secret scanning with push protection are enabled on the repository.
+
+### TC-154: Production database migrated and ingested
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-42; FR-29; D-16; T-42 acceptance.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Run migrate.yml; query the production database with the migration URL.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: migrate.yml with input migrate is green; chunks count equals the local live ingest count; answer_cache has 6 rows; no fixture documents.
+
+### TC-155: Supabase hardening and free-plan limits
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-42; A-07; NFR-13; TRD §26.1 steps 5–6.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Owner checks the dashboard; reviewer records the findings.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Data API is off; A-07 findings (size limit, pause policy, pooler activity, connection limits) recorded in the decisions log.
+
+### TC-156: OpenAI production project capped
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-42; A-06; NFR-13; TRD §26.2; §21.2.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Owner confirms the settings; compute the worst case from the six suggested questions' costUsdEstimate.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Production project key restricted to the project; monthly budget with 50% alert; prepaid credit with auto-recharge off; data sharing off (D-82); worst-case monthly LLM cost from §21.2 within the budget, with RATE_LIMIT_GLOBAL_DAILY lowered if needed.
+
+### TC-157: Production health and CSP
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-43; NFR-04; D-20; T-43 acceptance.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. curl the health endpoint and headers; dig the CNAME.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: https://sourced.firatkil.com/api/health returns status ok, db ok, llmMode live; the home page response has the nonce CSP; DNS resolves through the Vercel CNAME with a valid certificate.
+
+### TC-158: Function duration and IP header trust on a preview
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-43; A-08; A-09; TRD §24.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Deploy a preview; send a request with a spoofed x-real-ip; compare hashes.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: maxDuration set per the verified Hobby limit; a spoofed x-real-ip on a preview deployment does not change the visitor hash; findings recorded in the decisions log.
+
+### TC-159: Keepalive workflow
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-43; NFR-04; TRD §25.4.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Diff the file against the TRD; dispatch the workflow.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: keepalive.yml is byte-identical to TRD §25.4 with schedule 17 6 */3 * *; a workflow_dispatch run is green and its log shows "db":"ok".
+
+### TC-160: Production answers and privacy
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-43; FR-29; NFR-12; T-43 acceptance.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Ask both questions in a browser; query query_log.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: One suggested and one live question answer with verified citations on production; the two newest query_log rows have source cache and live and question_text null.
+
+### TC-161: Production performance measurements
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-43; NFR-01–NFR-07; TRD §22.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Collect from query_log over normal use during the first week; Lighthouse three runs.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Warm p95 meta, first token and done, cold start, cached answer and Lighthouse median recorded against their budgets; at most ordinary manual use, no load testing.
+
+### TC-162: README sections complete
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-44; FR-57; G-1; TRD §27.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Compare README headings with the §27 list; diff the metrics table.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: README.md contains every TRD §27 section in order and the metrics table copied from the latest eval/results/*.md.
+
+### TC-163: Fresh clone without an API key
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-44; PRD §11; T-44 step 4.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Clone into a temp directory and time the README steps.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: On a clean directory, following only the README "Run locally without an API key" commands reaches a working mock ask page in ≤ 15 minutes.
+
+### TC-164: Demo GIF
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-44; G-4; T-44 step 2.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. ls -lh and ffprobe the GIF.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: docs/assets/demo.gif is light theme, 1200 px wide, ≤ 20 s and ≤ 4 MB.
+
+### TC-165: Page metadata and Open Graph image
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-44; FR-58; T-44 files.
+- Preconditions: M3 complete; the corresponding task implemented; mock mode against pnpm build && pnpm start unless the case says otherwise.
+- Steps:
+  1. Read the head tags of each page and fetch the og:image URL.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: /, /eval and /how-it-works have a title, a description and an og:image that returns an image, or the item is skipped with a decisions log entry.
+
+### TC-166: Release v1.0.0
+
+- Milestone: M4 Polish and deploy
+- Requirement: T-45; PRD §11; PRD §12; Release checklist.
+- Preconditions: M3 complete; the corresponding task implemented; production or the owner's accounts.
+- Steps:
+  1. Walk the checklist; gh release view v1.0.0; gh repo view.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every release checklist item is checked; tag v1.0.0 and GitHub release with the CHANGELOG entry exist; repository description, topics and website set.
