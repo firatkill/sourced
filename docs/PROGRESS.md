@@ -1,6 +1,6 @@
 # Progress
 
-Updated: 2026-10-21.
+Updated: 2026-11-09.
 
 ## Repository setup
 
@@ -34,7 +34,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
-| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | blocked | — |
+| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | HEAD |
 | T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | todo | — |
 | T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | todo | — |
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | todo | — |
@@ -66,7 +66,6 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
-- T-17 / TC-053: D-62 approves the local reset and live ingestion. Only local credentials remain needed: add OPENAI_API_KEY to .env.local, never in chat. Once available, verify an account-accessible temporary model and its listed prices, then perform the already approved operation. No repeat approval required for this scope.
 
 
 
@@ -139,3 +138,7 @@ T-16 acceptance completed after D-61 approval: guarded local reset and mock seed
 T-17 preparation: global lib line coverage floor enabled at 80%; existing critical chunk/RRF floors remain 90%. Coverage passed: 96.35% overall lines, chunk 97.72%, RRF 100%. Live validation is blocked on owner configuration and reset/live-call approval; no API calls or T-17 reset performed. Pricing source: https://developers.openai.com/api/docs/models/text-embedding-3-small ($0.02 per million input tokens, checked 2026-10-21).
 
 T-17 follow-up (2026-10-23): D-62 approval recorded. Local API key and chat model remain absent; all three required prices are zero/unset. No reset or live API calls performed. Preparation commit 50537f0 passed all CI checks in run 39660248863. Live validation remains blocked solely on local credential availability; model/prices will be verified before execution.
+
+T-17 local acceptance (2026-11-09, D-62): live offline ingest of 35 documents, 201 chunks, 98,555 embedding tokens, est. $0.0020, 5.5 s; second run 0 inserted/updated/deleted and 0 embedding inputs; 201 chunks, sole model text-embedding-3-small. Temporary CHAT_MODEL `gpt-6-luna` ($0.10 / $0.50 per 1M) set only in `.env.local`; T-18 pins the real model. Embedding price $0.02 per 1M confirmed from https://developers.openai.com/api/docs/models/text-embedding-3-small on 2026-11-09. Lint, typecheck, 47 unit and 18 integration tests and coverage (96.35% lines; chunk 97.72%, RRF 100%) pass. M1 complete.
+
+Orchestration (2026-11-09): from M2 on, Codex implements each task from a prompt in the git-ignored `.codex-prompts/`; the reviewer (Claude Code) checks the diff against the specs, re-runs the checks, commits and updates this file.

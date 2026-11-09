@@ -87,7 +87,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-004",
-      "ac_reference": "T-02; TRD \u00a75",
+      "ac_reference": "T-02; TRD §5",
       "title": "Mock environment defaults",
       "status": "resolved",
       "attempts": [
@@ -105,7 +105,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-005",
-      "ac_reference": "T-02; TRD \u00a75",
+      "ac_reference": "T-02; TRD §5",
       "title": "Live environment validation",
       "status": "resolved",
       "attempts": [
@@ -128,7 +128,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-006",
-      "ac_reference": "T-02; TRD \u00a75",
+      "ac_reference": "T-02; TRD §5",
       "title": "Production mock rejection",
       "status": "resolved",
       "attempts": [
@@ -146,7 +146,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-007",
-      "ac_reference": "T-02; TRD \u00a75",
+      "ac_reference": "T-02; TRD §5",
       "title": "Environment types and complete examples",
       "status": "resolved",
       "attempts": [
@@ -164,7 +164,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-008",
-      "ac_reference": "T-02; FR-02; TRD \u00a711.2",
+      "ac_reference": "T-02; FR-02; TRD §11.2",
       "title": "Suggested question definitions",
       "status": "resolved",
       "attempts": [
@@ -307,7 +307,7 @@
     },
     {
       "tc_reference": "TC-014",
-      "ac_reference": "T-05; TRD \u00a723.2, \u00a723.4, \u00a723.5, \u00a725.1",
+      "ac_reference": "T-05; TRD §23.2, §23.4, §23.5, §25.1",
       "milestone": "M0 Setup",
       "title": "Integration isolation and smoke",
       "status": "resolved",
@@ -330,7 +330,7 @@
     },
     {
       "tc_reference": "TC-015",
-      "ac_reference": "T-05; TRD \u00a723.2, \u00a723.4, \u00a723.5, \u00a725.1",
+      "ac_reference": "T-05; TRD §23.2, §23.4, §23.5, §25.1",
       "milestone": "M0 Setup",
       "title": "Three mock E2E servers",
       "status": "resolved",
@@ -357,7 +357,7 @@
     },
     {
       "tc_reference": "TC-016",
-      "ac_reference": "T-05; TRD \u00a725.1",
+      "ac_reference": "T-05; TRD §25.1",
       "milestone": "M0 Setup",
       "title": "Full CI six jobs",
       "status": "resolved",
@@ -439,7 +439,7 @@
     },
     {
       "tc_reference": "TC-019",
-      "ac_reference": "T-06; FR-50; NFR-09; PRD \u00a79.1",
+      "ac_reference": "T-06; FR-50; NFR-09; PRD §9.1",
       "milestone": "M0 Setup",
       "title": "Layout landmarks and exact copy",
       "status": "resolved",
@@ -469,7 +469,7 @@
     },
     {
       "tc_reference": "TC-020",
-      "ac_reference": "T-06; NFR-09; PRD \u00a79.7",
+      "ac_reference": "T-06; NFR-09; PRD §9.7",
       "milestone": "M0 Setup",
       "title": "Not-found and error boundary copy",
       "status": "resolved",
@@ -499,7 +499,7 @@
     },
     {
       "tc_reference": "TC-021",
-      "ac_reference": "T-06; NFR-08; TRD \u00a722",
+      "ac_reference": "T-06; NFR-08; TRD §22",
       "milestone": "M0 Setup",
       "title": "Scaffold JavaScript budget",
       "status": "resolved",
@@ -508,7 +508,7 @@
         {
           "result": "fail",
           "actual_result": "187.5 KB gzip exceeds T-06 120 KB limit.",
-          "note": "Measured all referenced scripts with gzip level 9 per TRD \u00a722."
+          "note": "Measured all referenced scripts with gzip level 9 per TRD §22."
         },
         {
           "result": "fail",
@@ -544,7 +544,7 @@
     },
     {
       "tc_reference": "TC-022",
-      "ac_reference": "T-06; NFR-09; PRD \u00a79.1; TRD \u00a715.6",
+      "ac_reference": "T-06; NFR-09; PRD §9.1; TRD §15.6",
       "milestone": "M0 Setup",
       "title": "Keyboard layout and theme appearance",
       "status": "manual_required",
@@ -602,7 +602,7 @@
       "clickup_task": null,
       "retraction_reason": null,
       "tc_reference": "TC-024",
-      "ac_reference": "NFR-09; NFR-18; PRD \u00a79.1",
+      "ac_reference": "NFR-09; NFR-18; PRD §9.1",
       "title": "WebKit candidate keyboard navigation",
       "status": "resolved",
       "attempts": [
@@ -734,7 +734,7 @@
     },
     {
       "tc_reference": "TC-029",
-      "ac_reference": "T-08; FR-26\u2013FR-29; FR-53",
+      "ac_reference": "T-08; FR-26–FR-29; FR-53",
       "milestone": "M1 Ingestion and search",
       "title": "Operational schema and constraints",
       "status": "resolved",
@@ -784,7 +784,7 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null,
-      "description": "Manifest schema and loader follow TRD \u00a710.1; test fixture strings must satisfy strict TypeScript lint.",
+      "description": "Manifest schema and loader follow TRD §10.1; test fixture strings must satisfy strict TypeScript lint.",
       "steps_to_reproduce": "Run pnpm lint and pnpm test tests/unit/manifest.test.ts.",
       "expected_result": "Strict checks and UT-29 pass."
     },
@@ -817,7 +817,7 @@
         {
           "result": "fail",
           "actual_result": "Raw cheerio text included indentation and line breaks.",
-          "note": "Corrected test against TRD \u00a710.3 whitespace rule, without changing expected paragraph wording."
+          "note": "Corrected test against TRD §10.3 whitespace rule, without changing expected paragraph wording."
         },
         {
           "result": "pass",
@@ -830,7 +830,7 @@
       "retraction_reason": null,
       "description": "Initial fixture assertion compared raw indentation instead of normalized HTML text.",
       "steps_to_reproduce": "Run manifest.test.ts after Prettier formats the fixture.",
-      "expected_result": "TRD \u00a710.3 collapses whitespace; exact normative paragraph words remain unchanged."
+      "expected_result": "TRD §10.3 collapses whitespace; exact normative paragraph words remain unchanged."
     },
     {
       "tc_reference": "TC-033",
@@ -993,7 +993,7 @@
       "milestone": "M1 Ingestion and search",
       "title": "Chunk bounds and structure",
       "status": "resolved",
-      "environment": "js-tiktoken cl100k_base; normative TRD \u00a710.4 packing arithmetic",
+      "environment": "js-tiktoken cl100k_base; normative TRD §10.4 packing arithmetic",
       "description": "Normative token-sum packing excludes separators and can violate the 800-token invariant.",
       "steps_to_reproduce": "Encode \"word \".repeat(400).trim() as each of two blocks; compare token-count sum with encoding their blank-line join.",
       "expected_result": "Every emitted chunk must contain at most 800 tokens.",
@@ -1239,7 +1239,7 @@
     },
     {
       "tc_reference": "TC-045",
-      "ac_reference": "T-14; FR-34\u2013FR-38",
+      "ac_reference": "T-14; FR-34–FR-38",
       "milestone": "M1 Ingestion and search",
       "title": "Ingest and report",
       "status": "resolved",
@@ -1494,14 +1494,14 @@
     },
     {
       "tc_reference": "TC-053",
-      "ac_reference": "T-17; FR-36\u2013FR-38; NFR-16",
+      "ac_reference": "T-17; FR-36–FR-38; NFR-16",
       "milestone": "M1 Ingestion and search",
       "title": "Live ingest and coverage",
       "description": "T-17 live corpus validation and coverage gate.",
       "steps_to_reproduce": "With approved local reset and configured live credentials/prices, reset then ingest offline twice; verify second run zero inserted and zero embedding inputs. Run pnpm test:coverage.",
       "expected_result": "Live report records chunks, tokens, cost and duration; repeat has no embedding calls; global lines >=80% and critical files >=90%.",
-      "status": "pending_decision",
-      "environment": "macOS; local Postgres 17; T-17 preparation",
+      "status": "resolved",
+      "environment": "macOS; local Postgres 17 (Docker); live text-embedding-3-small",
       "attempts": [
         {
           "result": "pass",
@@ -1510,11 +1510,15 @@
         {
           "result": "pass",
           "note": "Preparation CI 39660248863 passed. Owner approved T-17 reset/live ingestion in D-62 on 2026-10-23. Live acceptance remains unrun: local API key/chat model absent and required prices zero/unset. Reset deferred until credentials are available; no live calls. Approval will not be requested again for this operation."
+        },
+        {
+          "result": "pass",
+          "note": "2026-11-09 under D-62: guarded reset, live offline ingest of 35 documents, 201 chunks inserted, 98,555 tokens, est. $0.0020, 5.5 s; second run 0 inserted/updated/deleted and 0 embedding inputs; 201 chunks, one model (text-embedding-3-small). Reviewer re-ran the idempotence ingest plus lint, typecheck, 47 unit and 18 integration tests: pass. Coverage 96.35% lines, chunk 97.72%, RRF 100%."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
-      "clickup_task": "docs/PROGRESS.md#open-questions-for-the-owner",
+      "clickup_task": null,
       "retraction_reason": null
     }
   ]

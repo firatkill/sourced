@@ -18,4 +18,4 @@ For readable local JSON logs, run `pnpm dev | pnpm exec pino-pretty`.
 
 ## Corpus
 
-The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Local mock ingestion is verified; live embedding validation is pending T-17. Raw pages and attribution are in `corpus/`.
+The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Live ingestion with `text-embedding-3-small` was verified on 2026-11-09: 98,555 tokens embedded; an unchanged second run used zero embedding inputs. Raw pages and attribution are in `corpus/`.
