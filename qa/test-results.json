@@ -1665,6 +1665,27 @@
       ],
       "regression_of": null,
       "root_cause_group": null,
+      "clickup_task": "Deferred to T-26 (docs/IMPLEMENTATION_PLAN.md); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-061",
+      "ac_reference": "T-20; FR-13",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Reranker ranking and fallback",
+      "description": "UT-06.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-061.",
+      "expected_result": "Valid ranking applied; unknown and duplicate ids dropped; empty, invalid or error output and 4,000 ms timeout fall back to RRF order with rerankFallback true and a reason; ≤ 6 candidates skips the call.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-20: UT-06 (21 cases) covers valid ranking, unknown/duplicate ids, missing ids appended in RRF order, empty_output, invalid_output (schema/parse cause), provider error, 4,000 ms timeout with fake timers, client abort rethrown without fallback, ≤ 6 candidates shortcut. Provider errors keep their cause for classification only (isInvalidOutput)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
     }

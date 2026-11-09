@@ -1,5 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
+import { JSONParseError, TypeValidationError, NoObjectGeneratedError } from 'ai';
+import { isInvalidOutput } from '@/lib/llm';
 import { GENERATION } from '@/lib/config';
 import { createOpenaiProvider, MODEL_SUPPORTS_TEMPERATURE, openaiProvider } from '@/lib/llm/openai';
 
@@ -276,3 +278,61 @@ test.each([true, false])(
     }
   },
 );
+
+test.each([
+  new JSONParseError({ text: 'private invalid JSON', cause: new Error('parse') }),
+  new TypeValidationError({ value: { private: true }, cause: new Error('schema') }),
+])('TC-061 / TRD §13.0: SDK $name cause survives safe provider wrapping', async (cause) => {
+  doubles.generateText.mockRejectedValue(cause);
+  const error: unknown = await openaiProvider
+    .generateObject({ ...request, schema: z.object({}) })
+    .catch((error: unknown) => error);
+  expect(error).toMatchObject({
+    code: 'PROVIDER_ERROR',
+    message: 'The language model did not respond.',
+    cause,
+  });
+  expect(isInvalidOutput(error)).toBe(true);
+});
+
+test('TC-061 / TRD §13.0: post-parse Zod failures are distinguishable from transport failures', async () => {
+  doubles.generateText.mockResolvedValue({ output: { ranking: 1 }, usage: {} });
+  const error: unknown = await openaiProvider
+    .generateObject({ ...request, schema: z.object({ ranking: z.array(z.string()) }) })
+    .catch((error: unknown) => error);
+  expect(error).toMatchObject({ code: 'PROVIDER_ERROR', cause: expect.any(z.ZodError) as unknown });
+  expect(isInvalidOutput(error)).toBe(true);
+  const cause = new Error('private transport details');
+  doubles.generateText.mockRejectedValue(cause);
+  const transport: unknown = await openaiProvider
+    .generateObject({ ...request, schema: z.object({}) })
+    .catch((error: unknown) => error);
+  expect(transport).toMatchObject({ cause, message: 'The language model did not respond.' });
+  expect(isInvalidOutput(transport)).toBe(false);
+  expect(isInvalidOutput(null)).toBe(false);
+});
+
+test('TC-061 / TRD §13.0: actual SDK no-object failure is classified without network', async () => {
+  const { generateText: actualGenerateText } = await vi.importActual<typeof import('ai')>('ai');
+  const { MockLanguageModelV4 } = await import('ai/test');
+  const model = new MockLanguageModelV4({
+    doGenerate: {
+      content: [{ type: 'text', text: 'not JSON' }],
+      finishReason: { unified: 'stop', raw: undefined },
+      usage: {
+        inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+        outputTokens: { total: 1, text: 1, reasoning: 0 },
+      },
+      warnings: [],
+    },
+  });
+  doubles.generateText.mockImplementation((options: Parameters<typeof actualGenerateText>[0]) =>
+    actualGenerateText({ ...options, model }),
+  );
+  const error: unknown = await openaiProvider
+    .generateObject({ ...request, schema: z.object({ ranking: z.array(z.string()) }) })
+    .catch((error: unknown) => error);
+  expect(error).toBeInstanceOf(Error);
+  expect(error instanceof Error && NoObjectGeneratedError.isInstance(error.cause)).toBe(true);
+  expect(isInvalidOutput(error)).toBe(true);
+});

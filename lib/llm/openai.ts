@@ -25,6 +25,7 @@ function providerError(error: unknown, signal?: AbortSignal): AppError {
   return new AppError(
     timeout ? 'PROVIDER_TIMEOUT' : 'PROVIDER_ERROR',
     timeout ? PROVIDER_TIMEOUT_MESSAGE : PROVIDER_ERROR_MESSAGE,
+    { cause: error },
   );
 }
 
