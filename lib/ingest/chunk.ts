@@ -11,7 +11,7 @@ export type Chunk = {
   tokenCount: number;
 };
 type Unit = { text: string; literal: boolean };
-const sentences = (text: string) => text.split(/(?<=[.!?])\s+(?=[A-Z0-9("'])/);
+export const sentences = (text: string) => text.split(/(?<=[.!?])\s+(?=[A-Z0-9("'])/);
 const join = (units: Unit[]) => units.map((unit) => unit.text).join('\n\n');
 
 function render(block: Block): string {

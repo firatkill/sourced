@@ -35,7 +35,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
 | T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | HEAD |
-| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | todo | — |
+| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | HEAD |
 | T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | todo | — |
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | todo | — |
 | T-21 | M2 Ask, stream, citations | Retrieval pipeline | todo | — |
@@ -142,3 +142,5 @@ T-17 follow-up (2026-10-23): D-62 approval recorded. Local API key and chat mode
 T-17 local acceptance (2026-11-09, D-62): live offline ingest of 35 documents, 201 chunks, 98,555 embedding tokens, est. $0.0020, 5.5 s; second run 0 inserted/updated/deleted and 0 embedding inputs; 201 chunks, sole model text-embedding-3-small. Temporary CHAT_MODEL `gpt-6-luna` ($0.10 / $0.50 per 1M) set only in `.env.local`; T-18 pins the real model. Embedding price $0.02 per 1M confirmed from https://developers.openai.com/api/docs/models/text-embedding-3-small on 2026-11-09. Lint, typecheck, 47 unit and 18 integration tests and coverage (96.35% lines; chunk 97.72%, RRF 100%) pass. M1 complete.
 
 Orchestration (2026-11-09): from M2 on, Codex implements each task from a prompt in the git-ignored `.codex-prompts/`; the reviewer (Claude Code) checks the diff against the specs, re-runs the checks, commits and updates this file.
+
+T-18 local acceptance: OpenAI streamText/generateObject (AI SDK 7 `streamText`, `generateText` + `Output.object`) with maxRetries 0, explicit non-strict schema (D-73), conditional temperature, exact TRD §18 messages; every mock script of TRD §23.3. Pinned gpt-6-luna (D-74). Scratch live call streamed text with usage. Lint, typecheck, 85 unit and 18 integration tests, coverage 97.16% lines pass. TC-054–TC-057 resolved. Review round found three deviations, fixed by Codex in the same session.

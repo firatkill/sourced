@@ -14,6 +14,9 @@ export const ERROR_CODES = [
   'RETRIEVAL_ERROR',
   'INTERNAL_ERROR',
 ] as const;
+export const PROVIDER_ERROR_MESSAGE = 'The language model did not respond.';
+export const PROVIDER_TIMEOUT_MESSAGE = 'The language model took too long to respond.';
+
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export class AppError extends Error {
   constructor(

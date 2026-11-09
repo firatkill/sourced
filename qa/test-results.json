@@ -1520,6 +1520,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-054",
+      "ac_reference": "T-18; FR-55; FR-56",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Mock provider scripts",
+      "description": "TRD §23.3; mock-provider.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-054.",
+      "expected_result": "Every mock trigger in TRD §23.3 produces its scripted stream, structured output, usage and errors deterministically.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; LLM_MODE=mock unless stated",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-18: mock-provider.test.ts covers every TRD §23.3 trigger and the default script; reviewer re-ran 85 unit tests: pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-055",
+      "ac_reference": "T-18; A-01; A-03; A-04",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Chat model pinned with prices",
+      "description": "T-18 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-055.",
+      "expected_result": "`.env.example` has the pinned CHAT_MODEL and JUDGE_MODEL with `# Pinned on <date> from <url>`, prices commented; decisions log rows exist.",
+      "status": "resolved",
+      "environment": "macOS; .env.example",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-18: CHAT_MODEL and JUDGE_MODEL pinned to gpt-6-luna with dated source comments; prices /bin/zsh.10//bin/zsh.50 chat and judge, /bin/zsh.02 embeddings, checked 2026-11-09; decisions D-74."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-056",
+      "ac_reference": "T-18; A-03; D-19",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Live streaming call with the pinned model",
+      "description": "T-18 manual acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-056.",
+      "expected_result": "A scratch live call streams text and returns usage; temperature support recorded as MODEL_SUPPORTS_TEMPERATURE.",
+      "status": "resolved",
+      "environment": "macOS; live OpenAI, gpt-6-luna",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-18: scratch live stream returned text and usage (20 in, 6 out); temperature 0 accepted with reasoningEffort none, 0 reasoning tokens; MODEL_SUPPORTS_TEMPERATURE = true."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-057",
+      "ac_reference": "T-18; NFR-15",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "OpenAI adapter error mapping",
+      "description": "TRD §13.0.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-057.",
+      "expected_result": "Stream errors and aborts surface as AppError PROVIDER_ERROR / PROVIDER_TIMEOUT from the text iterator; maxRetries 0; missing usage maps to 0.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; LLM_MODE=mock unless stated",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-18: openai-provider.test.ts covers stream error parts, aborts/timeouts, missing usage, maxRetries 0, strictJsonSchema false (D-73), conditional temperature and exact TRD §18 messages. First review found non-TRD messages, unconditional temperature and a duplicated sentence regex; fixed in the same task."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
