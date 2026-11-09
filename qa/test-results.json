@@ -1814,6 +1814,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-068",
+      "ac_reference": "T-24; FR-23",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "SSE encoding and event schemas",
+      "description": "UT-12; UT-13.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-068.",
+      "expected_result": "Each event encodes as one data line with the right event name; heartbeat bytes exact; Zod schemas accept the TRD examples and reject malformed payloads.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-24: encoder matches TRD §12.3; UT-12 checks each event's single data line and heartbeat bytes; UT-13 accepts the TRD examples and rejects malformed payloads (normative §12.2 schemas)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-069",
+      "ac_reference": "T-24; FR-23",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Client SSE parser robustness",
+      "description": "UT-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-069.",
+      "expected_result": "Byte-by-byte replay, CRLF/CR, comments, multi-line data and missing final blank line with end() yield the same events.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-24: normative client parser (§12.4) with byte-by-byte replay, CRLF/CR, comments, multi-line data and end() without final blank line; no server imports. lib/sse 100% lines; 90% floor added."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-070",
+      "ac_reference": "T-24; FR-25",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Heartbeat while open",
+      "description": "TRD §12.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-070.",
+      "expected_result": "`: ping` comment is sent every 15 s while the stream is open and stops at close.",
+      "status": "pending_decision",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "T-24: startHeartbeat helper verified with fake timers (15 s cadence, cleanup). Route-level heartbeat while the stream is open is verified in T-28."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Deferred to T-28 (docs/IMPLEMENTATION_PLAN.md); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

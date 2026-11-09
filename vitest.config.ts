@@ -35,6 +35,7 @@ export default defineConfig({
         'lib/retrieval/rrf.ts': { lines: 90 },
         'lib/generation/stream-splitter.ts': { lines: 90 },
         'lib/citations/**': { lines: 90 },
+        'lib/sse/**': { lines: 90 },
       },
     },
     projects: [

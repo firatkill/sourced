@@ -41,7 +41,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | HEAD |
 | T-22 | M2 Ask, stream, citations | Stream splitter | done | HEAD |
 | T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | HEAD |
-| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | todo | — |
+| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | HEAD |
 | T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | todo | — |
 | T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | todo | — |
 | T-27 | M2 Ask, stream, citations | Cost estimate and query log | todo | — |
@@ -154,3 +154,5 @@ T-21 local acceptance: embedQuery (QUERY_TIMEOUT_MS, one retry after 300 ms on n
 T-22 local acceptance: normative stream splitter (TRD §14.1) with UT-07 over every split position; 100% lines; per-file 90% coverage floor added. Lint, typecheck, unit, integration and coverage (479 tests) pass. TC-064 resolved. The §14.1 trailing-JSON rule is applied in answer orchestration (T-26).
 
 T-23 local acceptance: normalizer (TRD §14.2 normative), code-aware marker parsing, block parsing and verification per §14.3, matchSuggested. UT-08, UT-09, UT-19 pass; lib/citations 100% lines with a 90% floor added. Lint, typecheck, 526 tests with coverage pass. TC-065–TC-067 resolved.
+
+T-24 local acceptance: normative SSE event schemas (§12.2) and client parser (§12.4), encoder and heartbeat bytes (§12.3), plus a startHeartbeat helper the route will use. UT-12–UT-14 pass (103 cases); lib/sse 100% lines with a 90% floor added. Lint, typecheck, 629 tests with coverage pass. TC-068 and TC-069 resolved; TC-070's route-level check moves to T-28.
