@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -36,40 +37,15 @@ import {
   reciprocalRank,
   type EvalRecord,
 } from '@/lib/eval/metrics';
-import { EvalResult, type Metrics, type QuestionResult } from '@/lib/eval/results-schema';
+import { EvalResult, type QuestionResult } from '@/lib/eval/results-schema';
 import {
   EvalThresholds,
-  metricValues,
   renderMarkdown,
   renderMetricsTable,
   resultFileStem,
 } from '@/lib/eval/markdown';
+import { checkRun } from '@/lib/eval/thresholds';
 import { readGoldenCorpus } from './eval-validate';
-
-/** Temporary T-36 adapter; T-37 owns the threshold module and UT-23. */
-export function checkRun(
-  metrics: Metrics,
-  thresholds: EvalThresholds,
-  baseline: Metrics | null,
-): Pick<EvalResult, 'pass' | 'failures'> {
-  const values = metricValues(metrics);
-  const prior = baseline ? metricValues(baseline) : null;
-  const failures: EvalResult['failures'] = [];
-  for (const [kind, limits] of [
-    ['floor', thresholds.floors],
-    ['ceiling', thresholds.ceilings],
-    ['regression', thresholds.maxRegression],
-  ] as const) {
-    if (kind === 'regression' && !prior) continue;
-    for (const [metric, threshold] of Object.entries(limits)) {
-      const value = values[metric];
-      const limit = kind === 'regression' ? (prior?.[metric] ?? 0) - threshold : threshold;
-      if (value !== undefined && (kind === 'ceiling' ? value > limit : value < limit))
-        failures.push({ metric, kind, value, limit });
-    }
-  }
-  return { pass: failures.length === 0, failures };
-}
 
 export function checkPreconditions(input: {
   mode: 'mock' | 'live';
@@ -224,9 +200,10 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-async function loadBaseline(
+export async function loadBaseline(
   file: string | undefined,
   directory: string,
+  outputFile: string,
 ): Promise<{ file: string; result: EvalResult } | null> {
   if (file) return { file, result: EvalResult.parse(JSON.parse(await readFile(file, 'utf8'))) };
   const files = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', directory], {
@@ -234,7 +211,7 @@ async function loadBaseline(
   })
     .trim()
     .split('\n')
-    .filter((path) => /\/\d{4}-\d{2}-\d{2}(?:-\d+)?\.json$/.test(path));
+    .filter((path) => path.endsWith('.json') && resolve(path) !== resolve(outputFile));
   const results = files.map((path) => ({
     file: path,
     result: EvalResult.parse(
@@ -311,7 +288,9 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
       ).length
     )
       throw new EvalAbort(2, 'Missing golden anchors; run pnpm eval:validate');
-    const baseline = await loadBaseline(values.baseline, env.EVAL_RESULTS_DIR);
+    const runDate = new Date();
+    const stem = await resultFileStem(env.EVAL_RESULTS_DIR, () => runDate, exists);
+    const baseline = await loadBaseline(values.baseline, env.EVAL_RESULTS_DIR, `${stem}.json`);
     checkBudget(
       projectCost(
         entries.length,
@@ -327,7 +306,6 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
       env.EVAL_MAX_COST_USD,
       env.LLM_MODE,
     );
-    const runDate = new Date();
     const records = await evaluateQuestions(entries, {
       mode: env.LLM_MODE,
       prices,
@@ -367,7 +345,6 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
     const markdown = renderMarkdown(result, baseline?.result.metrics ?? null);
     if (!values['no-write']) {
       await mkdir(env.EVAL_RESULTS_DIR, { recursive: true });
-      const stem = await resultFileStem(env.EVAL_RESULTS_DIR, () => runDate, exists);
       await writeFile(`${stem}.json`, `${JSON.stringify(result, null, 2)}\n`, { flag: 'wx' });
       await writeFile(`${stem}.md`, markdown, { flag: 'wx' });
     }

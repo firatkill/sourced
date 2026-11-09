@@ -1,6 +1,10 @@
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { afterEach, expect, test, vi } from 'vitest';
-import { runEval } from '../../scripts/eval';
+import { loadBaseline, runEval } from '../../scripts/eval';
+import { aggregateMetrics } from '@/lib/eval/metrics';
+import { EvalResult } from '@/lib/eval/results-schema';
+import thresholds from '../../eval/thresholds.json';
 import { resetEnvForTests } from '@/lib/env';
 import { parseGolden, type GoldenCorpus } from '@/lib/eval/golden';
 
@@ -11,6 +15,7 @@ const state = vi.hoisted(() => ({
   calls: 0,
   writes: vi.fn(),
 }));
+vi.mock('node:child_process', () => ({ execFileSync: vi.fn(() => '') }));
 vi.mock('@/lib/db/client', () => ({
   closeSqlForTests: async () => {},
   getSql: () => async (parts: TemplateStringsArray) => {
@@ -50,6 +55,7 @@ afterEach(() => {
   state.writes.mockClear();
   vi.unstubAllEnvs();
   vi.restoreAllMocks();
+  vi.mocked(execFileSync).mockReset().mockReturnValue('');
   resetEnvForTests();
 });
 
@@ -118,4 +124,100 @@ test('TC-125: --only with --limit selects questions and pipeline errors exit 1, 
   expect(state.calls).toBe(2);
   expect(state.writes).not.toHaveBeenCalled();
   expect(console.log).toHaveBeenCalledWith(expect.stringContaining('| errors | 2 |'));
+});
+
+function baselineResult(runId: string): EvalResult {
+  return EvalResult.parse({
+    schemaVersion: 1,
+    runId,
+    date: '2026-11-09',
+    gitSha: 'test',
+    config: {
+      chatModel: 'chat',
+      judgeModel: 'judge',
+      embeddingModel: 'embed',
+      promptVersion: 'v1',
+      corpusVersion: 'v1',
+      retrieval: {
+        vectorCandidates: 40,
+        ftsCandidates: 40,
+        rrfK: 60,
+        rerankCandidates: 20,
+        finalPassages: 6,
+      },
+    },
+    metrics: aggregateMetrics([]),
+    thresholds,
+    baseline: null,
+    pass: false,
+    failures: [],
+    questions: [],
+  });
+}
+
+test('TC-127: automatic baseline uses committed contents and greatest runId, excluding output', async () => {
+  const older = baselineResult('2026-11-09T08:00:00Z');
+  const newest = baselineResult('2026-11-09T10:00:00Z');
+  vi.mocked(execFileSync).mockImplementation((_cmd, args) => {
+    if (args?.[0] === 'ls-tree')
+      return 'eval/results/2026-11-09-2.json\neval/results/2026-11-09-10.json\neval/results/output.json\neval/results/report.md\n';
+    return JSON.stringify(args?.[1] === 'HEAD:eval/results/2026-11-09-10.json' ? newest : older);
+  });
+  expect(await loadBaseline(undefined, 'eval/results', './eval/results/output.json')).toEqual({
+    file: 'eval/results/2026-11-09-10.json',
+    result: newest,
+  });
+  expect(execFileSync).toHaveBeenCalledWith(
+    'git',
+    ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/results'],
+    { encoding: 'utf8' },
+  );
+  expect(execFileSync).not.toHaveBeenCalledWith(
+    'git',
+    ['show', 'HEAD:eval/results/output.json'],
+    expect.anything(),
+  );
+});
+
+test('TC-127: explicit --baseline takes precedence and validates the results schema', async () => {
+  const fs = await import('node:fs/promises');
+  const result = baselineResult('2026-11-09T11:00:00Z');
+  vi.spyOn(fs, 'readFile')
+    .mockResolvedValueOnce(JSON.stringify(result))
+    .mockResolvedValueOnce('{}');
+  expect(await loadBaseline('chosen.json', 'eval/results', 'output.json')).toEqual({
+    file: 'chosen.json',
+    result,
+  });
+  expect(execFileSync).not.toHaveBeenCalled();
+  await expect(loadBaseline('invalid.json', 'eval/results', 'output.json')).rejects.toThrow();
+});
+
+test('TC-127: no committed baseline skips regression and reports No baseline; failures exit 1', async () => {
+  logs();
+  expect(await loadBaseline(undefined, 'eval/results', 'output.json')).toBeNull();
+  expect(await runEval(['--limit', '1', '--no-write'])).toBe(1);
+  expect(console.log).toHaveBeenCalledWith('No baseline');
+  expect(console.log).toHaveBeenCalledWith(
+    expect.stringContaining('| errors | 1 | ≤ 0 | — | — | FAIL |'),
+  );
+});
+
+test('TC-127: --ci appends Markdown with resolved baseline and failures to step summary', async () => {
+  logs();
+  vi.stubEnv('GITHUB_STEP_SUMMARY', '/tmp/sourced-test-summary');
+  resetEnvForTests();
+  const fs = await import('node:fs/promises');
+  const original = fs.readFile;
+  const baseline = baselineResult('2026-11-09T10:00:00Z');
+  vi.spyOn(fs, 'readFile').mockImplementation((...args) =>
+    args[0] === 'chosen.json' ? Promise.resolve(JSON.stringify(baseline)) : original(...args),
+  );
+  expect(await runEval(['--limit', '1', '--no-write', '--ci', '--baseline', 'chosen.json'])).toBe(
+    1,
+  );
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(
+    '/tmp/sourced-test-summary',
+    expect.stringContaining('Baseline: chosen.json (2026-11-09T10:00:00Z)'),
+  );
 });

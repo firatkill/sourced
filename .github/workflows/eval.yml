@@ -1,0 +1,124 @@
+name: Eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_cost_usd:
+        description: Budget guard in USD for this run
+        required: true
+        default: '1.00'
+  pull_request:
+    paths:
+      - 'lib/retrieval/**'
+      - 'lib/prompts/**'
+      - 'lib/generation/**'
+      - 'lib/citations/**'
+      - 'lib/ingest/parse-html.ts'
+      - 'lib/ingest/chunk.ts'
+      - 'lib/config.ts'
+      - 'corpus/manifest.json'
+      - 'corpus/raw/**'
+      - 'eval/**'
+      # Committing results must not trigger another paid run.
+      - '!eval/results/**'
+
+concurrency:
+  group: eval-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    name: Retrieval and answer evaluation
+    # Secrets are unavailable to pull requests from forks; skip them instead of failing.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: eval
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: sourced
+          POSTGRES_PASSWORD: sourced
+          POSTGRES_DB: sourced_eval
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U sourced -d sourced_eval"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      DATABASE_URL: postgres://sourced:sourced@localhost:5433/sourced_eval
+      LLM_MODE: live
+      LLM_PROVIDER: openai
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      CHAT_MODEL: ${{ vars.CHAT_MODEL }}
+      JUDGE_MODEL: ${{ vars.JUDGE_MODEL }}
+      PRICE_CHAT_INPUT_PER_MTOK: ${{ vars.PRICE_CHAT_INPUT_PER_MTOK }}
+      PRICE_CHAT_OUTPUT_PER_MTOK: ${{ vars.PRICE_CHAT_OUTPUT_PER_MTOK }}
+      PRICE_EMBED_PER_MTOK: ${{ vars.PRICE_EMBED_PER_MTOK }}
+      PRICE_JUDGE_INPUT_PER_MTOK: ${{ vars.PRICE_JUDGE_INPUT_PER_MTOK }}
+      PRICE_JUDGE_OUTPUT_PER_MTOK: ${{ vars.PRICE_JUDGE_OUTPUT_PER_MTOK }}
+      EVAL_MAX_COST_USD: ${{ inputs.max_cost_usd || '1.00' }}
+      INGEST_INCLUDE_FIXTURES: 'true'
+      IP_HASH_SALT: eval-ip-salt-00000000000000000000000000
+      QUESTION_HASH_SALT: eval-question-salt-000000000000000000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check secrets
+        run: |
+          if [ -z "$OPENAI_API_KEY" ] || [ -z "$CHAT_MODEL" ]; then
+            echo "::error::OPENAI_API_KEY secret and CHAT_MODEL variable must be set in the 'eval' environment"
+            exit 1
+          fi
+      - run: pnpm db:migrate
+      - run: pnpm ingest --offline --include-fixtures
+      - run: pnpm eval:validate
+      - name: Resolve baseline from the base branch
+        id: baseline
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          DIR="$RUNNER_TEMP/base-results"
+          mkdir -p "$DIR"
+          for f in $(git ls-tree --name-only "origin/$BASE_REF" eval/results/ | grep -E '\.json$' || true); do
+            git show "origin/$BASE_REF:$f" > "$DIR/$(basename "$f")"
+          done
+          # Pick the run with the greatest runId (file names like 2026-11-02-2.json do not sort correctly as text).
+          FILE=$(node -e '
+            const fs = require("fs"), path = require("path"); const d = process.argv[1]; let best = null;
+            for (const f of fs.readdirSync(d)) {
+              try { const r = JSON.parse(fs.readFileSync(path.join(d, f), "utf8"));
+                if (typeof r.runId === "string" && (!best || r.runId > best.runId)) best = { runId: r.runId, file: path.join(d, f) };
+              } catch {}
+            }
+            process.stdout.write(best ? best.file : "");' "$DIR")
+          echo "path=$FILE" >> "$GITHUB_OUTPUT"
+      - name: Run eval
+        run: |
+          if [ -n "${{ steps.baseline.outputs.path }}" ]; then
+            pnpm eval --ci --baseline "${{ steps.baseline.outputs.path }}"
+          else
+            pnpm eval --ci
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval/results/
+          retention-days: 30
