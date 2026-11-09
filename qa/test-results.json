@@ -1877,6 +1877,69 @@
       "root_cause_group": null,
       "clickup_task": "Deferred to T-28 (docs/IMPLEMENTATION_PLAN.md); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-071",
+      "ac_reference": "T-25; FR-28; D-10",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Visitor hash privacy",
+      "description": "UT-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-071.",
+      "expected_result": "Header precedence and IPv6 handled; HMAC changes with date and salt; raw IP never in output or logs.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-25: UT-15 covers header precedence, IPv6 zone stripping, unknown visitor, HMAC rotation by date and salt, and scans that no raw IP appears in output. Reviewer switched hashing to the shared hmacSha256Hex helper."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-072",
+      "ac_reference": "T-25; FR-26; FR-27",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Per-visitor and global quotas",
+      "description": "IT-06.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-072.",
+      "expected_result": "Nth request allowed, (N+1)th rejected with scope; IP rejection does not increment global; 50 concurrent with limit 10 → exactly 10 succeed; date rollover resets.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-25: IT-06 with the normative SQL: limit at N, N+1 rejected with scope, IP rejection leaves the global counter unchanged, 50 concurrent requests with limit 10 → exactly 10 successes (visitor and global), UTC rollover via injected clock. lib/ratelimit 100% lines; 90% floor added."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-073",
+      "ac_reference": "T-25; FR-32; D-11",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Quota refund before first token",
+      "description": "IT-06.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-073.",
+      "expected_result": "A provider failure before the first token refunds both counters exactly once.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-25: refund(ipHash, day) decrements both original-day counters once and never below 0; the at-most-once-per-request guard is verified with the route in T-28 (IT-08)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

@@ -36,6 +36,7 @@ export default defineConfig({
         'lib/generation/stream-splitter.ts': { lines: 90 },
         'lib/citations/**': { lines: 90 },
         'lib/sse/**': { lines: 90 },
+        'lib/ratelimit/**': { lines: 90 },
       },
     },
     projects: [
