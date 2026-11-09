@@ -548,3 +548,659 @@ Designed from PRD FR-12, FR-33–FR-39, FR-50, FR-55; TRD §§6, 9, 10, 23; T-07
   1. With approved credentials/budget and reset, ingest offline twice; run coverage.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Second run zero inserted and embedding calls; report cost/tokens/duration; global lib coverage >=80% and critical files >=90%.
+
+## M2 Ask, stream, citations
+
+Source: PRD §7.1–7.6, §9.2–9.4, FR-51–FR-56, NFR-01–NFR-05, NFR-09, NFR-10, NFR-12, NFR-14, NFR-15; TRD §9.4–§16, §18, §20–§23; implementation plan T-18–T-34. Designed from the specs before implementation. Live-model cases are marked; everything else runs with `LLM_MODE=mock`. Gaps found while designing: none that block cases; NFR-01–NFR-03 production measurement belongs to M4.
+
+| TC ID  | AC Reference                    | TRD test ID / source             | Title                                             | Priority | Automatable | Expected result                                                                                                                                                                                                                |
+| ------ | ------------------------------- | -------------------------------- | ------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TC-054 | T-18; FR-55; FR-56              | TRD §23.3; mock-provider.test.ts | Mock provider scripts                             | Critical | yes         | Every mock trigger in TRD §23.3 produces its scripted stream, structured output, usage and errors deterministically.                                                                                                           |
+| TC-055 | T-18; A-01; A-03; A-04          | T-18 acceptance                  | Chat model pinned with prices                     | High     | yes         | `.env.example` has the pinned CHAT_MODEL and JUDGE_MODEL with `# Pinned on <date> from <url>`, prices commented; decisions log rows exist.                                                                                     |
+| TC-056 | T-18; A-03; D-19                | T-18 manual acceptance           | Live streaming call with the pinned model         | High     | no          | A scratch live call streams text and returns usage; temperature support recorded as MODEL_SUPPORTS_TEMPERATURE.                                                                                                                |
+| TC-057 | T-18; NFR-15                    | TRD §13.0                        | OpenAI adapter error mapping                      | High     | yes         | Stream errors and aborts surface as AppError PROVIDER_ERROR / PROVIDER_TIMEOUT from the text iterator; maxRetries 0; missing usage maps to 0.                                                                                  |
+| TC-058 | T-19; FR-15                     | UT-11                            | System prompt byte-identical and versioned        | Critical | yes         | System prompt equals TRD §13.1 byte for byte; prompt hash snapshot matches PROMPT_VERSION.                                                                                                                                     |
+| TC-059 | T-19; FR-16                     | UT-10                            | Delimiter sanitization                            | Critical | yes         | Delimiter sequences in question or passage text cannot create extra delimiters; template shape exact; zero passages handled.                                                                                                   |
+| TC-060 | T-19; FR-17                     | TRD §13.1.1                      | Output limits in prompt and call                  | Medium   | yes         | Prompt asks for under 250 words; generation passes MAX_OUTPUT_TOKENS (default 700).                                                                                                                                            |
+| TC-061 | T-20; FR-13                     | UT-06                            | Reranker ranking and fallback                     | Critical | yes         | Valid ranking applied; unknown and duplicate ids dropped; empty, invalid or error output and 4,000 ms timeout fall back to RRF order with rerankFallback true and a reason; ≤ 6 candidates skips the call.                     |
+| TC-062 | T-21; FR-12–FR-14               | T-21 integration acceptance      | Retrieval pipeline end to end (mock)              | Critical | yes         | ≤ 6 passages labelled P1..Pn; officialUrl includes the section fragment; timings present; rerankFallback false in mock.                                                                                                        |
+| TC-063 | T-21; FR-12                     | TRD §9.1                         | Zero retrieval results                            | High     | yes         | An empty result set yields zero passages and leads to the not-found path, not an error.                                                                                                                                        |
+| TC-064 | T-22; FR-19                     | UT-07                            | Stream splitter at every boundary                 | Critical | yes         | The delimiter is never streamed for any split position; text before it is streamed in order; block after it captured; partial prefixes flushed; coverage ≥ 90%.                                                                |
+| TC-065 | T-23; FR-20; D-22               | UT-08                            | Quote normalization                               | High     | yes         | NFKC, lowercase, punctuation/symbols to spaces, whitespace collapse; offsets map back to original substrings.                                                                                                                  |
+| TC-066 | T-23; FR-18–FR-22               | UT-09                            | Citation parsing and verification                 | Critical | yes         | Markers parsed (grouped, case, ignored in code); out-of-range, missing-quote, short-quote (< 4 words) and not-in-passage citations invalid with reasons; invalid markers removed with correct spacing; zero valid → not found. |
+| TC-067 | T-23; FR-02                     | UT-19                            | Suggested question matching                       | Medium   | yes         | matchSuggested normalizes case, whitespace and punctuation and returns the suggested id only for the six questions.                                                                                                            |
+| TC-068 | T-24; FR-23                     | UT-12; UT-13                     | SSE encoding and event schemas                    | Critical | yes         | Each event encodes as one data line with the right event name; heartbeat bytes exact; Zod schemas accept the TRD examples and reject malformed payloads.                                                                       |
+| TC-069 | T-24; FR-23                     | UT-14                            | Client SSE parser robustness                      | Critical | yes         | Byte-by-byte replay, CRLF/CR, comments, multi-line data and missing final blank line with end() yield the same events.                                                                                                         |
+| TC-070 | T-24; FR-25                     | TRD §12                          | Heartbeat while open                              | Medium   | yes         | `: ping` comment is sent every 15 s while the stream is open and stops at close.                                                                                                                                               |
+| TC-071 | T-25; FR-28; D-10               | UT-15                            | Visitor hash privacy                              | Critical | yes         | Header precedence and IPv6 handled; HMAC changes with date and salt; raw IP never in output or logs.                                                                                                                           |
+| TC-072 | T-25; FR-26; FR-27              | IT-06                            | Per-visitor and global quotas                     | Critical | yes         | Nth request allowed, (N+1)th rejected with scope; IP rejection does not increment global; 50 concurrent with limit 10 → exactly 10 succeed; date rollover resets.                                                              |
+| TC-073 | T-25; FR-32; D-11               | IT-06                            | Quota refund before first token                   | High     | yes         | A provider failure before the first token refunds both counters exactly once.                                                                                                                                                  |
+| TC-074 | T-26; FR-09; FR-22              | answer.test.ts                   | Answer orchestration event order                  | Critical | yes         | Default: meta → token+ → citations → done; mock:not-found → not-found; mock:invalid-citation removes exactly 2; mock:no-block uses the quote fallback.                                                                         |
+| TC-075 | T-26; FR-29                     | IT-07                            | Answer cache keys and staleness                   | High     | yes         | Write and current lookup; stale entries served only in readonly; key includes corpus, prompt and model versions.                                                                                                               |
+| TC-076 | T-26; FR-29                     | T-26 acceptance                  | Seed creates suggested cache                      | High     | yes         | `pnpm db:seed` creates 6 answer_cache rows.                                                                                                                                                                                    |
+| TC-077 | T-26; FR-31                     | UT-16                            | Per-question cost estimate                        | High     | yes         | Formula uses env prices; zero fallback tokens; reasoning tokens added to output.                                                                                                                                               |
+| TC-078 | T-26                            | UT-24                            | Server modules import from scripts                | Medium   | yes         | tsx with react-server condition imports db client, env and answer modules without opening a connection.                                                                                                                        |
+| TC-079 | T-27; FR-53; FR-54; NFR-12      | T-27 integration acceptance      | Query log privacy                                 | Critical | yes         | question_text null when STORE_QUESTIONS=false and equal to the question when true; question_hash equals HMAC of the normalized question; no raw IP.                                                                            |
+| TC-080 | T-27; D-23                      | TRD §20.2                        | Which requests write a query_log row              | High     | yes         | Cache hits, rate-limited and live requests write one row; validation, origin, content-type, size, DEMO_OFF and DEMO_READONLY rejections write none.                                                                            |
+| TC-081 | T-28; FR-01; FR-24              | UT-18                            | Ask request validation                            | High     | yes         | Trim and whitespace collapse; < 3 and > 500 rejected; unknown fields rejected; suggested id accepted.                                                                                                                          |
+| TC-082 | T-28; FR-23; FR-24              | IT-08                            | Ask route statuses and stream                     | Critical | yes         | Valid request streams schema-valid events in order; each JSON error returns its status (400, 403, 413, 415, 429, 503) with the error envelope; cache hit replays without quota use.                                            |
+| TC-083 | T-28; FR-16; FR-22              | IT-09                            | Passage-borne injection does not reach the answer | Critical | yes         | With the injection fixture ingested, forbidden strings never appear in a verified answer.                                                                                                                                      |
+| TC-084 | T-28; FR-30; D-12               | IT-08                            | Demo modes in the route                           | High     | yes         | readonly serves only cached suggested answers and returns 503 DEMO_READONLY otherwise; off returns 503 DEMO_OFF for all.                                                                                                       |
+| TC-085 | T-28                            | T-28 manual acceptance           | curl stream in dev:mock                           | Medium   | no          | curl -N prints meta, token, citations, done events.                                                                                                                                                                            |
+| TC-086 | T-29; FR-51                     | IT-10                            | Health endpoint                                   | High     | yes         | 200 with counts when DB is up; 503 when the DB URL points to a closed port.                                                                                                                                                    |
+| TC-087 | T-30; FR-03; FR-04; FR-09–FR-11 | UT-20                            | useAsk reducer transitions                        | Critical | yes         | Every row of TRD §15.4 transition table holds.                                                                                                                                                                                 |
+| TC-088 | T-31; FR-02; FR-50              | E2E-01                           | Empty state copy                                  | High     | yes         | H1, lead, label, counter 0 / 500, six chips and three footer lines match PRD §9.                                                                                                                                               |
+| TC-089 | T-31; FR-01                     | E2E-02                           | Typing counter                                    | Medium   | yes         | Counter updates; warning colour at 450; maxLength blocks the 501st character.                                                                                                                                                  |
+| TC-090 | T-31; FR-01                     | E2E-03                           | Validation messages                               | High     | yes         | Empty and 2-character submits show exact copy with aria-invalid; server 400 for 600 characters is mapped.                                                                                                                      |
+| TC-091 | T-32; FR-04; FR-11              | E2E-04                           | Streaming answer and ask-again                    | Critical | yes         | Status phases appear; text streams; chips become buttons; done announcement; ask another question keeps the text selected and focused.                                                                                         |
+| TC-092 | T-32; FR-05; FR-06              | E2E-05                           | Sources panel and chip navigation                 | High     | yes         | Chip click focuses card; mark contains quote; link href equals officialUrl with target and rel; uncited badge shown.                                                                                                           |
+| TC-093 | T-32; FR-07                     | E2E-06; UT-28                    | Copy answer                                       | Medium   | yes         | Clipboard text matches FR-07 format; label shows Copied for 2 s.                                                                                                                                                               |
+| TC-094 | T-32; FR-05                     | UT-21                            | Citation chips from text only                     | High     | yes         | Chips created from text markers, never inside code; labels P1–P6 only.                                                                                                                                                         |
+| TC-095 | T-32; NFR-14; D-26              | T-32 acceptance                  | No raw HTML rendering                             | Critical | yes         | dangerouslySetInnerHTML appears only in app/layout.tsx.                                                                                                                                                                        |
+| TC-096 | T-33; FR-08                     | E2E-07                           | How this was answered                             | High     | yes         | Table columns, rerank line, timings, tokens and cost shown as PRD §9.2.                                                                                                                                                        |
+| TC-097 | T-33; FR-09                     | E2E-08                           | Not-found state                                   | Critical | yes         | Exact heading and body; related reading cards; no unverified draft text.                                                                                                                                                       |
+| TC-098 | T-33; FR-21                     | E2E-09                           | Removed citations note                            | High     | yes         | Invalid markers absent; note reads 2 citations were removed…                                                                                                                                                                   |
+| TC-099 | T-33; FR-19                     | E2E-10                           | Quote fallback                                    | Medium   | yes         | Answer completes with valid chips; disclosure shows fallback used.                                                                                                                                                             |
+| TC-100 | T-33; FR-26                     | E2E-11                           | Visitor rate limit state                          | High     | yes         | 4th live question shows visitor copy with reset time; suggested chip still answers.                                                                                                                                            |
+| TC-101 | T-33; FR-27                     | E2E-12 @isolated                 | Global rate limit state                           | High     | yes         | Global copy shown; global row restored in finally.                                                                                                                                                                             |
+| TC-102 | T-33; FR-30                     | E2E-13; E2E-14                   | Read-only and off modes                           | High     | yes         | 3101: banner, disabled input, chip answers with Answered in advance. 3102: demo-off copy and links.                                                                                                                            |
+| TC-103 | T-33; FR-32                     | E2E-15                           | Provider error states                             | High     | yes         | mock:provider-error copy includes not counted; Try again resubmits; mock:error-midstream copy omits it.                                                                                                                        |
+| TC-104 | T-33                            | E2E-16                           | Network error state                               | High     | yes         | Connection lost with partial answer label for mock:drop and for an aborted request.                                                                                                                                            |
+| TC-105 | T-33; FR-10                     | E2E-24                           | Stop                                              | Medium   | yes         | Stop shows the stopped label and partial text.                                                                                                                                                                                 |
+| TC-106 | T-33; FR-29                     | E2E-25                           | Cached suggested answer                           | High     | yes         | Chip shows Answered in advance and cached disclosure line; visitor quota unchanged.                                                                                                                                            |
+| TC-107 | T-34; NFR-09                    | E2E-17                           | Accessibility scan                                | Critical | yes         | Zero serious or critical axe violations in each state and theme.                                                                                                                                                               |
+| TC-108 | T-34; NFR-09; FR-03; FR-10      | E2E-18                           | Keyboard operation                                | High     | yes         | Skip link, tab order, Enter/Shift+Enter, chips, disclosure and Stop work by keyboard.                                                                                                                                          |
+| TC-109 | T-34; NFR-10                    | E2E-19                           | Responsive layout                                 | High     | yes         | No horizontal scroll at 360 and 1024 px; sources below answer at 360.                                                                                                                                                          |
+| TC-110 | T-34                            | T-34 acceptance                  | E2E suite repeatable and within CI budget         | High     | yes         | Full suite passes twice on the same day; CI e2e job green and ≤ 12 minutes.                                                                                                                                                    |
+| TC-111 | T-34; NFR-09                    | T-34 manual                      | Streaming and citations in a real browser         | High     | no          | Streaming text, chip activation, focus moves and live-region announcements behave as specified with VoiceOver; light and dark themes.                                                                                          |
+| TC-112 | NFR-01–NFR-03                   | TRD §22                          | Latency budgets (warm, live)                      | Medium   | no          | Measured p95 meta ≤ 2,000 ms, first token ≤ 3,500 ms, done ≤ 12,000 ms; recorded, measured on production in M4.                                                                                                                |
+
+### TC-054: Mock provider scripts
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-18; FR-55; FR-56; TRD §23.3; mock-provider.test.ts.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Call the mock provider with each trigger in the TRD §23.3 table and the default question.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every mock trigger in TRD §23.3 produces its scripted stream, structured output, usage and errors deterministically.
+
+### TC-055: Chat model pinned with prices
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-18; A-01; A-03; A-04; T-18 acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Inspect `.env.example` and the PRD decisions log.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: `.env.example` has the pinned CHAT_MODEL and JUDGE_MODEL with `# Pinned on <date> from <url>`, prices commented; decisions log rows exist.
+
+### TC-056: Live streaming call with the pinned model
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-18; A-03; D-19; T-18 manual acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the uncommitted scratch script once with the owner's key.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A scratch live call streams text and returns usage; temperature support recorded as MODEL_SUPPORTS_TEMPERATURE.
+
+### TC-057: OpenAI adapter error mapping
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-18; NFR-15; TRD §13.0.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Unit-test the adapter with a mocked transport emitting an error part, an abort and missing usage.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Stream errors and aborts surface as AppError PROVIDER_ERROR / PROVIDER_TIMEOUT from the text iterator; maxRetries 0; missing usage maps to 0.
+
+### TC-058: System prompt byte-identical and versioned
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-19; FR-15; UT-11.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Compare the exported prompt with the stored TRD copy; compute the hash.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: System prompt equals TRD §13.1 byte for byte; prompt hash snapshot matches PROMPT_VERSION.
+
+### TC-059: Delimiter sanitization
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-19; FR-16; UT-10.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Build prompts with injected delimiter strings and with no passages.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Delimiter sequences in question or passage text cannot create extra delimiters; template shape exact; zero passages handled.
+
+### TC-060: Output limits in prompt and call
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-19; FR-17; TRD §13.1.1.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Inspect built prompt and the arguments passed to streamText.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Prompt asks for under 250 words; generation passes MAX_OUTPUT_TOKENS (default 700).
+
+### TC-061: Reranker ranking and fallback
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-20; FR-13; UT-06.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the reranker with scripted outputs, fake timers and small candidate sets.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Valid ranking applied; unknown and duplicate ids dropped; empty, invalid or error output and 4,000 ms timeout fall back to RRF order with rerankFallback true and a reason; ≤ 6 candidates skips the call.
+
+### TC-062: Retrieval pipeline end to end (mock)
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-21; FR-12–FR-14; T-21 integration acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ingest tests/fixtures/html in beforeAll; run the pipeline for a fixture question.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: ≤ 6 passages labelled P1..Pn; officialUrl includes the section fragment; timings present; rerankFallback false in mock.
+
+### TC-063: Zero retrieval results
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-21; FR-12; TRD §9.1.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the pipeline against an empty chunks table.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: An empty result set yields zero passages and leads to the not-found path, not an error.
+
+### TC-064: Stream splitter at every boundary
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-22; FR-19; UT-07.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Loop over every split point of answer + delimiter + block; cover no delimiter and delimiter at start.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The delimiter is never streamed for any split position; text before it is streamed in order; block after it captured; partial prefixes flushed; coverage ≥ 90%.
+
+### TC-065: Quote normalization
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-23; FR-20; D-22; UT-08.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Normalize ligatures, full-width characters, curly quotes, em dashes and underscores.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: NFKC, lowercase, punctuation/symbols to spaces, whitespace collapse; offsets map back to original substrings.
+
+### TC-066: Citation parsing and verification
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-23; FR-18–FR-22; UT-09.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the verifier over the UT-09 fixture answers.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Markers parsed (grouped, case, ignored in code); out-of-range, missing-quote, short-quote (< 4 words) and not-in-passage citations invalid with reasons; invalid markers removed with correct spacing; zero valid → not found.
+
+### TC-067: Suggested question matching
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-23; FR-02; UT-19.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Match variants of each suggested question and near misses.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: matchSuggested normalizes case, whitespace and punctuation and returns the suggested id only for the six questions.
+
+### TC-068: SSE encoding and event schemas
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-24; FR-23; UT-12; UT-13.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Encode every event type and validate examples and mutations.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each event encodes as one data line with the right event name; heartbeat bytes exact; Zod schemas accept the TRD examples and reject malformed payloads.
+
+### TC-069: Client SSE parser robustness
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-24; FR-23; UT-14.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Replay tests/fixtures/sse-streams.ts with every chunking.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Byte-by-byte replay, CRLF/CR, comments, multi-line data and missing final blank line with end() yield the same events.
+
+### TC-070: Heartbeat while open
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-24; FR-25; TRD §12.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the stream with fake timers past 30 s.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: `: ping` comment is sent every 15 s while the stream is open and stops at close.
+
+### TC-071: Visitor hash privacy
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-25; FR-28; D-10; UT-15.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Hash sample headers across two dates and two salts; scan output.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Header precedence and IPv6 handled; HMAC changes with date and salt; raw IP never in output or logs.
+
+### TC-072: Per-visitor and global quotas
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-25; FR-26; FR-27; IT-06.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the limiter against the test DB with concurrency.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Nth request allowed, (N+1)th rejected with scope; IP rejection does not increment global; 50 concurrent with limit 10 → exactly 10 succeed; date rollover resets.
+
+### TC-073: Quota refund before first token
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-25; FR-32; D-11; IT-06.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Consume a slot, refund, and check counts.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A provider failure before the first token refunds both counters exactly once.
+
+### TC-074: Answer orchestration event order
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-26; FR-09; FR-22; answer.test.ts.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run answerQuestion in mock mode with each trigger.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Default: meta → token+ → citations → done; mock:not-found → not-found; mock:invalid-citation removes exactly 2; mock:no-block uses the quote fallback.
+
+### TC-075: Answer cache keys and staleness
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-26; FR-29; IT-07.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Write entries under different versions and modes.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Write and current lookup; stale entries served only in readonly; key includes corpus, prompt and model versions.
+
+### TC-076: Seed creates suggested cache
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-26; FR-29; T-26 acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Reset, seed and count rows.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: `pnpm db:seed` creates 6 answer_cache rows.
+
+### TC-077: Per-question cost estimate
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-26; FR-31; UT-16.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Compute cost for fixed token counts.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Formula uses env prices; zero fallback tokens; reasoning tokens added to output.
+
+### TC-078: Server modules import from scripts
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-26; UT-24.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Spawn the one-line script.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: tsx with react-server condition imports db client, env and answer modules without opening a connection.
+
+### TC-079: Query log privacy
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-27; FR-53; FR-54; NFR-12; T-27 integration acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask via the pipeline under both settings and read query_log.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: question_text null when STORE_QUESTIONS=false and equal to the question when true; question_hash equals HMAC of the normalized question; no raw IP.
+
+### TC-080: Which requests write a query_log row
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-27; D-23; TRD §20.2.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Send each request kind and count rows.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Cache hits, rate-limited and live requests write one row; validation, origin, content-type, size, DEMO_OFF and DEMO_READONLY rejections write none.
+
+### TC-081: Ask request validation
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-28; FR-01; FR-24; UT-18.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Parse boundary inputs.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Trim and whitespace collapse; < 3 and > 500 rejected; unknown fields rejected; suggested id accepted.
+
+### TC-082: Ask route statuses and stream
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-28; FR-23; FR-24; IT-08.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Invoke the route handler directly with crafted Request objects.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Valid request streams schema-valid events in order; each JSON error returns its status (400, 403, 413, 415, 429, 503) with the error envelope; cache hit replays without quota use.
+
+### TC-083: Passage-borne injection does not reach the answer
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-28; FR-16; FR-22; IT-09.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask the mock:echo-injection question.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: With the injection fixture ingested, forbidden strings never appear in a verified answer.
+
+### TC-084: Demo modes in the route
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-28; FR-30; D-12; IT-08.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Call the route under each DEMO_MODE.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: readonly serves only cached suggested answers and returns 503 DEMO_READONLY otherwise; off returns 503 DEMO_OFF for all.
+
+### TC-085: curl stream in dev:mock
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-28; T-28 manual acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run pnpm dev:mock and curl the endpoint.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: curl -N prints meta, token, citations, done events.
+
+### TC-086: Health endpoint
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-29; FR-51; IT-10.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Call the handler with good and bad DATABASE_URL.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 200 with counts when DB is up; 503 when the DB URL points to a closed port.
+
+### TC-087: useAsk reducer transitions
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-30; FR-03; FR-04; FR-09–FR-11; UT-20.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Dispatch each event from each state.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every row of TRD §15.4 transition table holds.
+
+### TC-088: Empty state copy
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-31; FR-02; FR-50; E2E-01.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Load / and assert strings.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: H1, lead, label, counter 0 / 500, six chips and three footer lines match PRD §9.
+
+### TC-089: Typing counter
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-31; FR-01; E2E-02.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Type 449, 450 and 501 characters.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Counter updates; warning colour at 450; maxLength blocks the 501st character.
+
+### TC-090: Validation messages
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-31; FR-01; E2E-03.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Submit invalid inputs and post 600 characters.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Empty and 2-character submits show exact copy with aria-invalid; server 400 for 600 characters is mapped.
+
+### TC-091: Streaming answer and ask-again
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-32; FR-04; FR-11; E2E-04.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask the default question.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Status phases appear; text streams; chips become buttons; done announcement; ask another question keeps the text selected and focused.
+
+### TC-092: Sources panel and chip navigation
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-32; FR-05; FR-06; E2E-05.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Click each chip.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Chip click focuses card; mark contains quote; link href equals officialUrl with target and rel; uncited badge shown.
+
+### TC-093: Copy answer
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-32; FR-07; E2E-06; UT-28.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Click Copy answer with clipboard permission.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Clipboard text matches FR-07 format; label shows Copied for 2 s.
+
+### TC-094: Citation chips from text only
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-32; FR-05; UT-21.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Render fixture Markdown.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Chips created from text markers, never inside code; labels P1–P6 only.
+
+### TC-095: No raw HTML rendering
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-32; NFR-14; D-26; T-32 acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the grep from T-32.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: dangerouslySetInnerHTML appears only in app/layout.tsx.
+
+### TC-096: How this was answered
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-08; E2E-07.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Open the disclosure.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Table columns, rerank line, timings, tokens and cost shown as PRD §9.2.
+
+### TC-097: Not-found state
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-09; E2E-08.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask with mock:not-found.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Exact heading and body; related reading cards; no unverified draft text.
+
+### TC-098: Removed citations note
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-21; E2E-09.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask with mock:invalid-citation.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Invalid markers absent; note reads 2 citations were removed…
+
+### TC-099: Quote fallback
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-19; E2E-10.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask with mock:no-block.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Answer completes with valid chips; disclosure shows fallback used.
+
+### TC-100: Visitor rate limit state
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-26; E2E-11.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask 4 times from one IP with limit 3.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 4th live question shows visitor copy with reset time; suggested chip still answers.
+
+### TC-101: Global rate limit state
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-27; E2E-12 @isolated.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Set the global row to the cap and ask.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Global copy shown; global row restored in finally.
+
+### TC-102: Read-only and off modes
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-30; E2E-13; E2E-14.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Load ports 3101 and 3102.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 3101: banner, disabled input, chip answers with Answered in advance. 3102: demo-off copy and links.
+
+### TC-103: Provider error states
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-32; E2E-15.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask with both triggers.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: mock:provider-error copy includes not counted; Try again resubmits; mock:error-midstream copy omits it.
+
+### TC-104: Network error state
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; E2E-16.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask with mock:drop and with page.route abort.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Connection lost with partial answer label for mock:drop and for an aborted request.
+
+### TC-105: Stop
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-10; E2E-24.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ask mock:slow and click Stop.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Stop shows the stopped label and partial text.
+
+### TC-106: Cached suggested answer
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-33; FR-29; E2E-25.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Click a chip, then ask 3 live questions.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Chip shows Answered in advance and cached disclosure line; visitor quota unchanged.
+
+### TC-107: Accessibility scan
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-34; NFR-09; E2E-17.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run axe on each state.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Zero serious or critical axe violations in each state and theme.
+
+### TC-108: Keyboard operation
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-34; NFR-09; FR-03; FR-10; E2E-18.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Drive the page with keyboard only.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Skip link, tab order, Enter/Shift+Enter, chips, disclosure and Stop work by keyboard.
+
+### TC-109: Responsive layout
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-34; NFR-10; E2E-19.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Resize and measure.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: No horizontal scroll at 360 and 1024 px; sources below answer at 360.
+
+### TC-110: E2E suite repeatable and within CI budget
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-34; T-34 acceptance.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the suite twice locally; check CI timing.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Full suite passes twice on the same day; CI e2e job green and ≤ 12 minutes.
+
+### TC-111: Streaming and citations in a real browser
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: T-34; NFR-09; T-34 manual.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Manual browser pass with keyboard and VoiceOver.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Streaming text, chip activation, focus moves and live-region announcements behave as specified with VoiceOver; light and dark themes.
+
+### TC-112: Latency budgets (warm, live)
+
+- Milestone: M2 Ask, stream, citations
+- Requirement: NFR-01–NFR-03; TRD §22.
+- Preconditions: M1 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Measure locally with the live model and record; production in M4.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Measured p95 meta ≤ 2,000 ms, first token ≤ 3,500 ms, done ≤ 12,000 ms; recorded, measured on production in M4.
