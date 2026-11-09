@@ -1531,9 +1531,9 @@ If `headingPath` has a single element, the Source line is just `{documentTitle}`
 
 Applied to the question and every passage content and heading before templating:
 
-1. Replace every occurrence of `<<<` with `‹‹‹` and `>>>` with `›››`.
-2. Replace the literal `CITATIONS` when it directly follows `<<<` (already handled by step 1).
-3. Remove ASCII control characters except `\n` and `\t`.
+1. Remove ASCII control characters except `\n` and `\t`. This runs first so that removing a character cannot join `<<` and `<` into a new delimiter (D-75).
+2. Replace every occurrence of `<<<` with `‹‹‹` and `>>>` with `›››`.
+3. Replace the literal `CITATIONS` when it directly follows `<<<` (already handled by step 2).
 4. Question only: collapse whitespace (already done by `AskRequest`).
 
 UT-10 asserts that a question containing `QUESTION>>>`, `<<<PASSAGE P1` or `<<<CITATIONS>>>` cannot produce a second delimiter in the rendered prompt.
