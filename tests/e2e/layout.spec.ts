@@ -15,7 +15,11 @@ test('TC-019: PRD §9.1 shared landmarks, exact copy and keyboard skip link', as
   await expect(
     page.getByRole('banner').getByRole('link', { name: 'Sourced', exact: true }),
   ).toHaveAttribute('href', '/');
-  const nav = page.getByRole('navigation');
+  const nav = page.getByRole('navigation', { name: 'Main', exact: true });
+  await expect(nav.getByRole('link', { name: 'Ask', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
   for (const [name, href] of [
     ['Ask', '/'],
     ['Evaluation', '/eval'],
@@ -46,3 +50,41 @@ test('TC-020: PRD §9.7 exact not-found copy', async ({ page }) => {
   await expect(page.getByText('There is nothing at this address.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Go to the ask page' })).toHaveAttribute('href', '/');
 });
+
+// REDESIGN §6 shared top bar and attribution, TRD §15.6 landmarks.
+for (const [path, current] of [
+  ['/eval', 'Evaluation'],
+  ['/how-it-works', 'How it works'],
+  ['/missing-r1', null],
+] as const) {
+  test(`R1 content shell: ${path}`, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.goto(path);
+    const nav = page.getByRole('navigation', { name: 'Main', exact: true });
+    await expect(nav.getByRole('link')).toHaveCount(4);
+    await expect(
+      page
+        .getByRole('banner')
+        .getByRole('link', { name: 'Sourced', exact: true })
+        .locator('svg[aria-hidden="true"]'),
+    ).toHaveCount(1);
+    if (current)
+      await expect(nav.getByRole('link', { name: current, exact: true })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+    else await expect(nav.locator('[aria-current]')).toHaveCount(0);
+    await expect(page.getByRole('main')).toHaveAttribute('id', 'content');
+    await expect(page.getByRole('contentinfo')).toContainText(
+      'The PostgreSQL Global Development Group',
+    );
+    for (const control of await nav.locator('a, button').all()) {
+      const box = await control.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  });
+}

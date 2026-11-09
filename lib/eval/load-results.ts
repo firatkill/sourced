@@ -5,7 +5,7 @@ import { getEnv } from '@/lib/env';
 import { createLogger } from '@/lib/logger';
 import { EvalResult } from './results-schema';
 
-export async function loadResults(): Promise<EvalResult[]> {
+export async function loadResults(): Promise<Array<EvalResult & { sourceFile: string }>> {
   const directory = resolve(process.cwd(), getEnv().EVAL_RESULTS_DIR);
   let files: string[];
   try {
@@ -14,13 +14,13 @@ export async function loadResults(): Promise<EvalResult[]> {
     if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
     throw error;
   }
-  const runs: EvalResult[] = [];
+  const runs: Array<EvalResult & { sourceFile: string }> = [];
   for (const file of files.filter((name) => name.endsWith('.json'))) {
     try {
       const content: unknown = JSON.parse(await readFile(resolve(directory, file), 'utf8'));
       const result = EvalResult.safeParse(content);
       if (result.success) {
-        runs.push(result.data);
+        runs.push({ ...result.data, sourceFile: file });
         continue;
       }
     } catch {

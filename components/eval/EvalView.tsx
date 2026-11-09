@@ -3,7 +3,6 @@ import { checkRun } from '@/lib/eval/thresholds';
 import { RETRIEVAL } from '@/lib/config';
 import thresholds from '@/eval/thresholds.json';
 import { MetricCard, type Metric } from './MetricCard';
-import { TrendChart } from './TrendChart';
 import { ResultsTable } from './ResultsTable';
 import { EVAL_COPY } from './copy';
 
@@ -11,7 +10,7 @@ const decimal = (value: number) => value.toFixed(2);
 const seconds = (value: number) => `${(value / 1000).toFixed(1)} s`;
 const dollars = (value: number) => `$${value.toFixed(4)}`;
 
-export function EvalView({ runs }: { runs: EvalResult[] }) {
+export function EvalView({ runs }: { runs: Array<EvalResult & { sourceFile?: string }> }) {
   const latest = runs.at(-1);
   const failures = latest ? checkRun(latest.metrics, thresholds, null).failures : [];
   const metrics: Metric[] = latest
@@ -24,8 +23,13 @@ export function EvalView({ runs }: { runs: EvalResult[] }) {
             value: decimal(latest.metrics[name]),
             values: runs.map((run) => run.metrics[name]),
             format: decimal,
+            meaning: EVAL_COPY.meanings[name],
+            ...(name === 'recallAt5' || name === 'recallAt10' || name === 'mrr'
+              ? { withoutRerank: decimal(latest.metrics.withoutRerank[name]) }
+              : {}),
             gate: {
               kind: 'floor' as const,
+              limit: floor,
               value: decimal(floor),
               failed: failures.some(
                 (failure) => failure.metric === name && failure.kind === 'floor',
@@ -39,9 +43,11 @@ export function EvalView({ runs }: { runs: EvalResult[] }) {
           value: `${seconds(latest.metrics.latencyMs.p50)} / ${seconds(latest.metrics.latencyMs.p95)}`,
           values: runs.map((run) => run.metrics.latencyMs.p95),
           format: seconds,
+          meaning: EVAL_COPY.meanings.latency,
           gate: {
             kind: 'ceiling',
             value: seconds(thresholds.ceilings.latencyP95Ms),
+            limit: thresholds.ceilings.latencyP95Ms,
             failed: failures.some(
               (failure) => failure.metric === 'latencyP95Ms' && failure.kind === 'ceiling',
             ),
@@ -50,51 +56,87 @@ export function EvalView({ runs }: { runs: EvalResult[] }) {
         {
           key: 'cost',
           label: EVAL_COPY.labels.cost,
-          value: dollars(latest.metrics.cost.totalUsd),
-          values: runs.map((run) => run.metrics.cost.totalUsd),
+          value: dollars(latest.metrics.cost.perQuestionUsd),
+          values: runs.map((run) => run.metrics.cost.perQuestionUsd),
           format: dollars,
+          meaning: EVAL_COPY.meanings.cost,
+          gate: {
+            kind: 'ceiling',
+            value: dollars(thresholds.ceilings.costPerQuestionUsd),
+            limit: thresholds.ceilings.costPerQuestionUsd,
+            failed: latest.metrics.cost.perQuestionUsd > thresholds.ceilings.costPerQuestionUsd,
+          },
+        },
+        {
+          key: 'falseRefusal',
+          label: EVAL_COPY.labels.falseRefusal,
+          value: decimal(latest.metrics.falseRefusal),
+          values: runs.map((run) => run.metrics.falseRefusal),
+          format: decimal,
+          meaning: EVAL_COPY.meanings.falseRefusal,
+          gate: {
+            kind: 'ceiling',
+            value: decimal(thresholds.ceilings.falseRefusal),
+            limit: thresholds.ceilings.falseRefusal,
+            failed: latest.metrics.falseRefusal > thresholds.ceilings.falseRefusal,
+          },
         },
       ]
     : [];
+  const groups = [
+    ['citationValidity', 'faithfulness', 'injectionResistance', 'correctRefusal'],
+    ['recallAt5', 'recallAt10', 'mrr'],
+    ['latency', 'cost', 'falseRefusal'],
+  ];
   return (
     <div className="space-y-12">
       <header>
         <h1>{EVAL_COPY.heading}</h1>
-        <p>{EVAL_COPY.lead}</p>
+        {latest && <p>{EVAL_COPY.lead(latest.metrics.counts)}</p>}
         {latest && (
-          <p className="mono text-muted-foreground break-words">{`Run ${latest.date} · commit ${latest.gitSha.slice(0, 7)} · chat model ${latest.config.chatModel} · judge ${latest.config.judgeModel} · ${String(latest.metrics.counts.total)} questions`}</p>
+          <ul
+            aria-label="Evaluation run"
+            className="[&_li]:border-border [&_li]:bg-card mt-6 flex flex-wrap gap-2 font-mono text-xs text-[var(--ink-2)] [&_li]:rounded-full [&_li]:border [&_li]:px-3 [&_li]:py-2 [&_li]:break-all"
+          >
+            <li>Run {latest.date}</li>
+            <li>commit {latest.gitSha.slice(0, 7)}</li>
+            <li>chat model {latest.config.chatModel}</li>
+            <li>judge {latest.config.judgeModel}</li>
+            <li>
+              {String(latest.metrics.counts.total)} questions ·{' '}
+              {dollars(latest.metrics.cost.totalUsd)}
+            </li>
+          </ul>
         )}
       </header>
       {latest ? (
         <>
-          <div className="space-y-5">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {metrics.slice(0, 3).map((metric) => (
-                <MetricCard key={metric.key} metric={metric} />
-              ))}
-            </div>
-            <p className="mono text-muted-foreground">{`Without reranking: Recall@5 ${decimal(latest.metrics.withoutRerank.recallAt5)} · Recall@10 ${decimal(latest.metrics.withoutRerank.recallAt10)} · MRR ${decimal(latest.metrics.withoutRerank.mrr)}`}</p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {metrics.slice(3).map((metric) => (
-                <MetricCard key={metric.key} metric={metric} />
-              ))}
-            </div>
-          </div>
-          <section aria-labelledby="eval-trend" className="space-y-5">
-            <h2 id="eval-trend">{EVAL_COPY.trend}</h2>
-            <p className="small text-muted-foreground">{EVAL_COPY.trendCaption}</p>
-            <div className="grid gap-6 min-[400px]:grid-cols-2 md:grid-cols-3">
-              {metrics.map((metric) => (
-                <TrendChart
-                  key={metric.key}
-                  label={metric.label}
-                  values={metric.values}
-                  format={metric.format}
-                />
-              ))}
-            </div>
-          </section>
+          {groups.map((keys, index) => (
+            <section
+              key={index}
+              aria-labelledby={`eval-group-${String(index)}`}
+              className="space-y-4"
+            >
+              <h2 id={`eval-group-${String(index)}`}>{EVAL_COPY.sections[index]}</h2>
+              <div
+                className={`grid gap-3 sm:grid-cols-2 ${index === 0 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+              >
+                {keys.map((key) => {
+                  const metric = metrics.find((item) => item.key === key);
+                  return metric ? <MetricCard key={key} metric={metric} /> : null;
+                })}
+              </div>
+            </section>
+          ))}
           <ResultsTable questions={latest.questions} />
+          <p className="text-muted-foreground text-sm">
+            <a
+              className="text-primary underline"
+              href={`https://github.com/firatkill/sourced/blob/main/eval/results/${encodeURIComponent(latest.sourceFile ?? `${latest.date}.json`)}`}
+            >
+              Full results file
+            </a>
+          </p>
         </>
       ) : (
         <section>

@@ -6,54 +6,115 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.goto('/eval');
 });
 
-test('TC-133 / E2E-21: exact copy, nine cards, floors, D-84 deltas and accessible trends', async ({
+test('TC-133 / E2E-21: exact copy, grouped cards, floors, D-84 deltas and accessible trends', async ({
   page,
 }) => {
   await expect(page).toHaveTitle('Evaluation · Sourced');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Evaluation');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('How good are the answers?');
   await expect(
     page.getByText(
-      'Every change to retrieval or prompts is measured against 40 hand-written questions. These are the committed results of the latest run; nothing on this page is computed live.',
+      'Every change to search or prompts is tested against 4 hand-written questions: 2 the docs can answer, 1 they cannot, and 1 that try to hijack the model. A run that falls below a floor fails CI.',
       { exact: true },
     ),
   ).toBeVisible();
-  await expect(
-    page.getByText(
-      'Run 2026-11-02 · commit abcdef1 · chat model fixture-chat · judge fixture-judge · 4 questions',
-      { exact: true },
-    ),
-  ).toBeVisible();
+  const run = page.getByRole('list', { name: 'Evaluation run' });
+  await expect(run.getByRole('listitem')).toHaveText([
+    'Run 2026-11-02',
+    'commit abcdef1',
+    'chat model fixture-chat',
+    'judge fixture-judge',
+    '4 questions · $0.0523',
+  ]);
+  for (const name of [
+    'Can you trust the answer?',
+    'Does it find the right passage?',
+    'Speed, cost and misses',
+    'Every question',
+  ]) {
+    await expect(page.getByRole('heading', { name, exact: true, level: 2 })).toBeVisible();
+  }
   const cards = [
-    ['Recall@5', '0.50', 'Floor 0.70', '−0.50 vs previous', 'Below floor'],
-    ['Recall@10', '0.50', 'Floor 0.85', '−0.50 vs previous', 'Below floor'],
-    ['MRR', '0.50', 'Floor 0.60', '−0.25 vs previous', 'Below floor'],
-    ['Citation validity', '0.67', 'Floor 0.95', '−0.33 vs previous', 'Below floor'],
-    ['Faithfulness', '0.75', 'Floor 0.85', '−0.25 vs previous', 'Below floor'],
-    ['Correct refusals', '1.00', 'Floor 0.80', '+0.00 vs previous'],
-    ['Injection resistance', '0.00', 'Floor 1.00', '−1.00 vs previous', 'Below floor'],
+    [
+      'Recall@5',
+      '0.50',
+      'Floor 0.70 · right section in the top 5',
+      '−0.50 vs previous',
+      'Below floor',
+    ],
+    [
+      'Recall@10',
+      '0.50',
+      'Floor 0.85 · right section in the top 10',
+      '−0.50 vs previous',
+      'Below floor',
+    ],
+    [
+      'MRR',
+      '0.50',
+      'Floor 0.60 · how high the right section ranks',
+      '−0.25 vs previous',
+      'Below floor',
+    ],
+    [
+      'Citation validity',
+      '0.67',
+      'Floor 0.95 · quotes found in their passage',
+      '−0.33 vs previous',
+      'Below floor',
+    ],
+    [
+      'Faithfulness',
+      '0.75',
+      'Floor 0.85 · claims supported, per judge',
+      '−0.25 vs previous',
+      'Below floor',
+    ],
+    ['Correct refusals', '1.00', 'Floor 0.80 · says so when the docs lack it', '+0.00 vs previous'],
+    [
+      'Injection resistance',
+      '0.00',
+      'Floor 1.00 · attacks resisted',
+      '−1.00 vs previous',
+      'Below floor',
+    ],
     [
       'Latency p50 / p95',
       '1.2 s / 16.1 s',
-      'Ceiling 15.0 s',
+      'Ceiling 15.0 s · time to full answer, p95',
       '+1.2 s vs previous',
       'Above ceiling',
     ],
-    ['Cost per run', '$0.0523', '+$0.0123 vs previous'],
+    [
+      'Cost per answer',
+      '$0.0090',
+      'Ceiling $0.0200 · answer-call cost per question',
+      '+$0.0010 vs previous',
+    ],
+    ['False refusal', '0.00', 'Ceiling 0.10 · answerable questions refused', '+0.00 vs previous'],
   ] as const;
-  await expect(page.getByRole('article')).toHaveCount(9);
+  await expect(page.getByRole('article')).toHaveCount(10);
   for (const [label, ...texts] of cards) {
     const card = page.getByRole('article', { name: label, exact: true });
     for (const text of texts) await expect(card.getByText(text, { exact: true })).toBeVisible();
+    await expect(card.getByText('Each point is one committed run.', { exact: true })).toBeVisible();
+    await expect(card.locator('svg[aria-hidden="true"] path')).toHaveCount(1);
   }
-  await expect(
-    page.getByRole('article', { name: 'Cost per run' }).getByText(/Floor|Ceiling/),
-  ).toHaveCount(0);
-  await expect(
-    page.getByText('Without reranking: Recall@5 0.50 · Recall@10 0.75 · MRR 0.50', { exact: true }),
-  ).toBeVisible();
-  const trend = page.getByRole('region', { name: 'Trend', exact: true });
-  await expect(trend.getByText('Each point is one committed run.', { exact: true })).toBeVisible();
-  await expect(trend.getByRole('img')).toHaveCount(9);
+  for (const [name, value] of [
+    ['Recall@5', '0.50'],
+    ['Recall@10', '0.75'],
+    ['MRR', '0.50'],
+  ] as const) {
+    await expect(
+      page
+        .getByRole('article', { name, exact: true })
+        .getByText(`Without reranking: ${value}`, { exact: true }),
+    ).toBeVisible();
+  }
+  await expect(page.getByRole('article').getByRole('img')).toHaveCount(10);
+  await expect(page.getByRole('link', { name: 'Full results file' })).toHaveAttribute(
+    'href',
+    'https://github.com/firatkill/sourced/blob/main/eval/results/2026-11-02.json',
+  );
   const chartTitles = [
     'Recall@5: 1.00, 0.50',
     'Recall@10: 1.00, 0.50',
@@ -63,10 +124,11 @@ test('TC-133 / E2E-21: exact copy, nine cards, floors, D-84 deltas and accessibl
     'Correct refusals: 1.00, 1.00',
     'Injection resistance: 1.00, 0.00',
     'Latency p50 / p95: 14.9 s, 16.1 s',
-    'Cost per run: $0.0400, $0.0523',
+    'Cost per answer: $0.0080, $0.0090',
+    'False refusal: 0.00, 0.00',
   ];
   for (const title of chartTitles) {
-    const chart = trend.getByRole('img', { name: title, exact: true });
+    const chart = page.getByRole('article').getByRole('img', { name: title, exact: true });
     await expect(chart).toHaveAttribute('width', '160');
     await expect(chart).toHaveAttribute('height', '40');
     await expect(chart.locator('title')).toHaveText(title);
@@ -82,7 +144,7 @@ test('TC-133 / E2E-21: exact copy, nine cards, floors, D-84 deltas and accessibl
 test('TC-134 / E2E-21: specified cells, client filter and keyboard row disclosure', async ({
   page,
 }) => {
-  const table = page.getByRole('table', { name: 'Questions', exact: true });
+  const table = page.getByRole('table', { name: 'Every question', exact: true });
   await expect(table.getByRole('columnheader')).toHaveText([
     'ID',
     'Question',
@@ -155,7 +217,7 @@ test('TC-134 / E2E-21: specified cells, client filter and keyboard row disclosur
         .getByRole('cell'),
     ).toHaveText([...cells]);
   }
-  const filter = page.getByRole('button', { name: 'Failures only', exact: true });
+  const filter = page.getByRole('button', { name: 'Misses only (2)', exact: true });
   await filter.focus();
   await page.keyboard.press('Enter');
   await expect(filter).toHaveAttribute('aria-pressed', 'true');
@@ -183,6 +245,6 @@ test('TC-134 / E2E-21: specified cells, client filter and keyboard row disclosur
   await expect(
     table.getByText('The claim about every query is unsupported.', { exact: true }),
   ).toHaveCount(0);
-  await page.getByRole('button', { name: 'All', exact: true }).click();
+  await page.getByRole('button', { name: 'All 4', exact: true }).click();
   await expect(table.getByRole('button')).toHaveText(['q01', 'q02', 'q03', 'q04']);
 });

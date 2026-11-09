@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { Schibsted_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SkipLink } from '@/components/layout/SkipLink';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { getEnv } from '@/lib/env';
 import './globals.css';
 
-const sans = Schibsted_Grotesk({
+const sans = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-schibsted',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 });
 const mono = JetBrains_Mono({

@@ -69,7 +69,7 @@ export function AskForm({
         <span
           id="question-counter"
           aria-live="off"
-          className={`mono ${question.length >= QUESTION.COUNTER_WARN_AT ? 'text-destructive' : 'text-muted-foreground'}`}
+          className={`mono ${question.length >= QUESTION.COUNTER_WARN_AT ? 'text-[var(--warn)]' : 'text-muted-foreground'}`}
         >
           {question.length} / {QUESTION.MAX_CHARS}
         </span>
