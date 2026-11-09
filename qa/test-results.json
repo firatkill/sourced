@@ -3876,6 +3876,154 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-167",
+      "ac_reference": "D-91; REDESIGN §3, §4",
+      "milestone": "v1.1 Chat redesign",
+      "title": "Chat history and New chat",
+      "description": "ask-history.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-167.",
+      "expected_result": "Turns stack in order with independent requests; the rail lists them and moves focus to a turn; New chat clears them; reload clears them; only one request runs at a time.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "ask-history.spec.ts passes; full E2E 116/116."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-168",
+      "ac_reference": "D-91; REDESIGN §3.3, §4.5",
+      "milestone": "v1.1 Chat redesign",
+      "title": "Source viewer and source cards",
+      "description": "ask-sources.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-168.",
+      "expected_result": "A chip or card opens the viewer on its passage with every verified quote marked; previous and next move across cited passages; Esc and Close return focus to the opener; the postgresql.org link has target _blank and rel noopener noreferrer.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "First run failed: Esc on the desktop aside did not return focus, and the test assumed one <mark> per passage (test fixed against the spec). Rerun passes in light and dark at 390, 768 and 1440 px."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-169",
+      "ac_reference": "D-91; REDESIGN §3, §3.3; NFR-09",
+      "milestone": "v1.1 Chat redesign",
+      "title": "Bottom sheet and rail menu are modal with a focus trap",
+      "description": "ask-sources.spec.ts; keyboard.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-169.",
+      "expected_result": "Below 1024 px the viewer is a modal sheet and below 768 px the rail is a menu dialog; Tab and Shift+Tab stay inside; Esc closes and returns focus.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "First run failed: native showModal let Tab leave the sheet; a shared focus trap now wraps both directions. Rerun passes."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-170",
+      "ac_reference": "D-91; REDESIGN §5",
+      "milestone": "v1.1 Chat redesign",
+      "title": "SQL highlighting and Copy code",
+      "description": "ask-code.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-170.",
+      "expected_result": "A fenced SQL block renders token spans in the code colours; Copy code copies the exact source, shows Copied for 2 s and announces it.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "ask-code.spec.ts passes in light and dark."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-171",
+      "ac_reference": "D-91; REDESIGN §5.2",
+      "milestone": "v1.1 Chat redesign",
+      "title": "SQL tokenizer",
+      "description": "highlight-sql.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-171.",
+      "expected_result": "Each token type, dollar quotes and comments are classified; every corpus SQL block round-trips exactly; 10,000 characters tokenize in under 20 ms.",
+      "status": "resolved",
+      "environment": "Local, Vitest",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "highlight-sql.test.ts passes; 156 corpus SQL blocks round-trip; 10,000 characters in 1.5 ms."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-172",
+      "ac_reference": "D-91; REDESIGN §6, §7",
+      "milestone": "v1.1 Chat redesign",
+      "title": "Redesigned /eval and /how-it-works",
+      "description": "eval-page.spec.ts; how-it-works.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-172.",
+      "expected_result": "Grouped metric cards with gates, rerank values, trends and filter counts; four-step list, prose and Privacy and Limits cards; copy as REDESIGN §7.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval-page.spec.ts and how-it-works.spec.ts pass; visual check in the browser."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-173",
+      "ac_reference": "D-91; REDESIGN §9",
+      "milestone": "v1.1 Chat redesign",
+      "title": "App matches the design canvas",
+      "description": "Canvas comparison.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-173.",
+      "expected_result": "Desktop chat with source viewer, welcome, phone sheet, states, /eval and /how-it-works match the canvas in light and dark themes.",
+      "status": "resolved",
+      "environment": "Local build, in-app browser, 1440x900 light and 390x844 dark",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Compared with the canvas: first pass showed text-link viewer controls, a plain postgresql.org link, a large session label, underlined actions and a text Ask button; fixed in a visual pass; second look matches Main, Welcome and Mobile."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null,
+      "automatable": false
     }
   ]
 }

@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { completeAnswer, expectedCopy } from './helpers/answer';
 
@@ -10,13 +11,13 @@ test('TC-093: clipboard plain text and exactly two-second Copied label', async (
   const fixture = await completeAnswer(page, testInfo);
   await page.clock.install({ time: 0 });
   await page.clock.pauseAt(1000);
-  await page.getByRole('button', { name: 'Copy answer', exact: true }).click();
+  await page.getByRole('button', { name: 'Copy as Markdown', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(expectedCopy(fixture));
   await page.clock.runFor(1999);
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeVisible();
   await page.clock.runFor(1);
-  await expect(page.getByRole('button', { name: 'Copy answer', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy as Markdown', exact: true })).toBeVisible();
 });
 
 test('TC-093: clipboard rejection falls back to textarea and restores focus', async ({
@@ -36,7 +37,7 @@ test('TC-093: clipboard rejection falls back to textarea and restores focus', as
       return false;
     };
   });
-  await page.getByRole('button', { name: 'Copy answer', exact: true }).click();
+  await page.getByRole('button', { name: 'Copy as Markdown', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Copied', exact: true })).toBeFocused();
   expect(await page.locator('html').getAttribute('data-copied')).toBe(expectedCopy(fixture));
   await expect(page.locator('textarea')).toHaveCount(1);

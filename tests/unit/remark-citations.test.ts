@@ -31,7 +31,7 @@ describe('UT-21 / TC-094 — text citations only (FR-05, TRD §15.5)', () => {
     const props = { text: 'Draft [P1] [P2]', passages: [passage], onSelect: () => undefined };
     const view = render(createElement(AnswerView, { ...props, citations: null }));
     expect(view.container.querySelector('button')).toBeNull();
-    expect(view.container.textContent).toBe('Draft P1 P2');
+    expect(view.container.textContent).toBe('Draft 1 2');
     view.rerender(createElement(AnswerView, { ...props, citations }));
     expect(
       view.getByRole('button', { name: 'Source P1: 11.8. Partial Indexes, 11.8. Partial Indexes' }),
@@ -63,16 +63,16 @@ describe('TC-092 — quote spans (FR-06, TRD §12.2, §15.5)', () => {
     const { container } = render(
       createElement(PassageCard, {
         passage: { ...passage, content: `${content}<img src=x>` },
-        citation: { label: 'P1', quote: 'supporting quote', quoteSpan: { start, end } },
-        selected: false,
-        verified: true,
+        citations: [{ label: 'P1', quote: 'supporting quote', quoteSpan: { start, end } }],
       }),
     );
     expect(container.querySelector('mark')?.textContent).toBe('supporting quote');
     expect(container.querySelector('mark')?.getAttribute('aria-description')).toBe(
       'Supporting quote',
     );
-    expect(container.querySelectorAll('article > p')).toHaveLength(3);
+    expect([...container.querySelectorAll('p')].map((p) => p.textContent).join('\n\n')).toBe(
+      `${content}<img src=x>`,
+    );
     expect(container.querySelector('img')).toBeNull();
   });
   it.each([
@@ -84,9 +84,7 @@ describe('TC-092 — quote spans (FR-06, TRD §12.2, §15.5)', () => {
     const { container } = render(
       createElement(PassageCard, {
         passage: { ...passage, content },
-        citation: { label: 'P1', quote: '', quoteSpan },
-        selected: false,
-        verified: true,
+        citations: [{ label: 'P1', quote: '', quoteSpan }],
       }),
     );
     expect(container.querySelector('mark')).toBeNull();

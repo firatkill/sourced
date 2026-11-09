@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { ask, openAsk } from './helpers/ask';
 
@@ -16,7 +17,11 @@ test('TC-097: E2E-08 not found has related reading without draft or highlights',
     ),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Related reading' })).toBeVisible();
-  await expect(page.getByRole('link', { name: /^Read in the PostgreSQL docs/ })).toHaveCount(6);
+  await expect(
+    page
+      .getByRole('article', { name: 'Answer' })
+      .getByRole('link', { name: /\(opens in a new tab\)$/ }),
+  ).toHaveCount(6);
   await expect(page.locator('mark')).toHaveCount(0);
   await expect(page.getByText(/^According to the documentation/)).toHaveCount(0);
   await expect(page.getByRole('status')).toHaveText(

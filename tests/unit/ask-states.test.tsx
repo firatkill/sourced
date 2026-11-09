@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // T-33: component coverage of TC-096–TC-106; browser E2E cases follow in T-34.
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AskApp } from '@/components/ask/AskApp';
 import { HowAnswered } from '@/components/ask/HowAnswered';
@@ -15,7 +15,9 @@ vi.mock('@/hooks/useAsk', async (importOriginal) => ({
 }));
 const question = 'How do partial indexes work?';
 const limits = { ipDaily: 3, globalDaily: 300 };
-const suggested = [{ id: 'partial' as const, question: 'When should I use a partial index?' }];
+const suggested = [
+  { id: 'partial' as const, question: 'When should I use a partial index?', topic: 'Indexes' },
+];
 function show(phase: Phase, demoMode: 'on' | 'readonly' | 'off' = 'on') {
   const submit = vi.fn(async () => {});
   const askAnother = vi.fn();
@@ -31,8 +33,22 @@ function show(phase: Phase, demoMode: 'on' | 'readonly' | 'off' = 'on') {
     inFlight: isInFlight(phase),
     status: askStatus(phase),
   });
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+  );
+  const view = render(
+    <AskApp demoMode={demoMode} limits={limits} suggested={suggested} copy={ASK_COPY} />,
+  );
+  if (!['idle', 'readonly', 'demoOff'].includes(phase.kind)) {
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'question' in phase ? phase.question : question },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
+    submit.mockClear();
+  }
   return {
-    ...render(<AskApp demoMode={demoMode} limits={limits} suggested={suggested} copy={ASK_COPY} />),
+    ...view,
     submit,
     askAnother,
   };
@@ -40,6 +56,7 @@ function show(phase: Phase, demoMode: 'on' | 'readonly' | 'off' = 'on') {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -156,9 +173,11 @@ describe('T-33 / PRD §9.2 disclosure (TC-096, TC-098, TC-099, TC-106)', () => {
         n === 1
           ? '1 citation was removed because its quote was not found in the passage.'
           : '2 citations were removed because their quotes were not found in the passages.';
-      expect(screen.getAllByText(expected)).toHaveLength(1);
+      expect(
+        screen.getByText(`Why ${String(n)} ${n === 1 ? 'citation was' : 'citations were'} removed`),
+      ).toBeTruthy();
       fireEvent.click(screen.getByRole('button', { name: 'How this was answered' }));
-      expect(screen.getAllByText(expected)).toHaveLength(2);
+      expect(screen.getAllByText(expected)).toHaveLength(1);
     },
   );
   it('TC-106 replaces timings and tokens with the cached date, retaining ranks and reranker copy', () => {
@@ -184,8 +203,8 @@ describe('T-33 / PRD §9.2 disclosure (TC-096, TC-098, TC-099, TC-106)', () => {
 });
 
 describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
-  it('TC-097 hides the draft and shows related reading without highlights', () => {
-    const { container, askAnother } = show({ kind: 'notFound', question, meta, done });
+  it('TC-097 hides the draft and shows related reading link cards without highlights', async () => {
+    const { container } = show({ kind: 'notFound', question, meta, done });
     expect(
       screen.getByRole('heading', {
         level: 2,
@@ -198,7 +217,11 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Related reading' })).toBeTruthy();
-    expect(screen.getByText(passage.content)).toBeTruthy();
+    expect(
+      screen
+        .getByRole('link', { name: `${passage.headingPath.at(-1)!} (opens in a new tab)` })
+        .getAttribute('href'),
+    ).toBe(passage.officialUrl);
     expect(container.querySelector('mark')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Sources' })).toBeNull();
     expect(screen.queryByText(citations.answer)).toBeNull();
@@ -206,7 +229,9 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       'No answer found in the docs. Related reading is listed.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Ask another question' }));
-    expect(askAnother).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('textbox'));
+    });
   });
   it.each(['ip', 'global'] as const)(
     'TC-100/101 shows %s quota, local reset time and announces the full copy',
@@ -282,7 +307,7 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
   );
   it.each([true, false])(
     'TC-103 provider error refunded=%s focuses retry and resubmits the same question',
-    (refunded) => {
+    async (refunded) => {
       const { submit } = show({
         kind: 'providerError',
         question: 'Original question',
@@ -302,8 +327,9 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       expect(screen.getByRole('status').textContent).toBe('The language model didn’t respond');
       const retry = screen.getByRole('button', { name: 'Try again' });
       expect(document.activeElement).toBe(retry);
+      await Promise.resolve();
       fireEvent.click(retry);
-      expect(submit).toHaveBeenCalledWith('Original question');
+      expect(submit).toHaveBeenCalledWith('Original question', undefined);
     },
   );
   it('TC-104 network error preserves partial text with neutral markers and focuses retry', async () => {
@@ -326,19 +352,17 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Try again' }));
   });
   it('TC-105 stopped keeps unverified text and related sources, announces Stop and offers another question', async () => {
-    const { askAnother } = show({ kind: 'stopped', question, partialText: 'Draft [P1]', meta });
+    show({ kind: 'stopped', question, partialText: 'Draft [P1]', meta });
     expect(
       screen.getByRole('heading', { name: 'Stopped. This partial answer was not verified.' }),
     ).toBeTruthy();
     expect(await screen.findByText(/Draft/)).toBeTruthy();
     expect(screen.getByRole('status').textContent).toBe('Stopped');
-    expect(screen.getByRole('heading', { name: 'Sources' })).toBeTruthy();
-    expect(
-      within(
-        screen.getByRole('region', { name: 'Stopped. This partial answer was not verified.' }),
-      ).queryByRole('button', { name: /^Source P1/ }),
-    ).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Sources' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Source P1/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Ask another question' }));
-    expect(askAnother).toHaveBeenCalledOnce();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('textbox'));
+    });
   });
 });

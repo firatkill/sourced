@@ -1,3 +1,4 @@
+import { ChatIcon } from './ChatIcon';
 import { ASK_COPY, formatAskCopy, removedCitationsCopy } from '@/lib/copy';
 import type { SseEvent } from '@/lib/sse/events';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -16,11 +17,12 @@ export function HowAnswered({
   citations: Citations | null;
 }) {
   return (
-    <Collapsible className="min-w-0 space-y-4">
-      <CollapsibleTrigger className="min-h-6 text-left underline underline-offset-4">
+    <Collapsible className="contents">
+      <CollapsibleTrigger className="answer-action group">
+        <ChatIcon name="right" size={15} className="group-data-[state=open]:rotate-90" />
         {ASK_COPY.disclosure}
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4">
+      <CollapsibleContent className="order-last w-full min-w-0 basis-full space-y-4 pt-4">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <caption className="mb-2 text-left">{ASK_COPY.rankedCaption}</caption>

@@ -24,8 +24,8 @@ export function MetricCard({ metric }: { metric: Metric }) {
       : 1;
   return (
     <article aria-label={metric.label} className="border-border bg-card rounded-md border p-5">
-      <h3 className="mono">{metric.label}</h3>
-      <p className="font-mono text-xl tabular-nums">{metric.value}</p>
+      <h3 className="font-sans text-[13px]">{metric.label}</h3>
+      <p className="font-sans text-[32px] font-bold tabular-nums">{metric.value}</p>
       {metric.gate && latest !== undefined && (
         <svg
           viewBox="0 0 100 8"

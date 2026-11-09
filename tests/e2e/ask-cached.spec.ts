@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { openAsk, liveAnswers, cachedAnswer } from './helpers/ask';
 
@@ -15,6 +16,9 @@ test('TC-106: E2E-25 cached answer disclosure and unchanged visitor quota', asyn
   await expect(page.getByRole('table', { name: 'Passages ranked for this answer' })).toBeVisible();
   await expect(page.getByText(/^Retrieval \d+ ms/)).toHaveCount(0);
   await expect(page.getByText(/^Tokens:/)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Ask another question' }).click();
+  await expect(page.getByRole('textbox')).toHaveAttribute(
+    'placeholder',
+    'Ask another question about PostgreSQL 17',
+  );
   await liveAnswers(page, 3);
 });

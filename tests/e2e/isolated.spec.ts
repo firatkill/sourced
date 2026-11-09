@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { ask, openAsk, cachedAnswer } from './helpers/ask';
 import { withGlobalCap } from './helpers/db';

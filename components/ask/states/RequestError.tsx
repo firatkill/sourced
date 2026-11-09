@@ -18,8 +18,8 @@ export function RequestError({
     retryRef.current?.focus();
   }, []);
   return (
-    <div className="space-y-4">
-      <h2 id="answer-heading">{heading}</h2>
+    <div className="space-y-4 rounded-md bg-[var(--danger-soft)] p-4 text-[var(--danger)]">
+      <h2>{heading}</h2>
       <p>{body}</p>
       {children}
       <button

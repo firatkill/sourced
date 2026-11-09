@@ -21,7 +21,7 @@ function subscribe(onChange: () => void) {
   };
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ label = false }: { label?: boolean }) {
   const dark = useSyncExternalStore(subscribe, effectiveTheme, () => false);
   function toggle() {
     const next = effectiveTheme() ? 'light' : 'dark';
@@ -34,12 +34,21 @@ export function ThemeToggle() {
   }
   return (
     <button
-      className="theme-toggle"
+      className={
+        label
+          ? 'flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]'
+          : 'theme-toggle'
+      }
       type="button"
       onClick={toggle}
       aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
     >
-      {dark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+      {dark ? (
+        <Sun size={label ? 16 : 18} aria-hidden="true" />
+      ) : (
+        <Moon size={label ? 16 : 18} aria-hidden="true" />
+      )}
+      {label && <span>{dark ? 'Switch to light theme' : 'Switch to dark theme'}</span>}
     </button>
   );
 }

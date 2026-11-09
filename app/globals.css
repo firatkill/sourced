@@ -266,3 +266,99 @@ mark {
   color: var(--ink);
   font-weight: 500;
 }
+
+.chat-main {
+  min-height: 0;
+  padding-block: 0;
+}
+.chat-shell p {
+  margin-top: 0;
+}
+.sql-keyword {
+  color: var(--sql-keyword);
+}
+.sql-function {
+  color: var(--sql-function);
+}
+.sql-string {
+  color: var(--sql-string);
+}
+.sql-number {
+  color: var(--sql-number);
+}
+.sql-comment {
+  color: var(--sql-comment);
+  font-style: italic;
+}
+.sql-operator {
+  color: var(--sql-operator);
+}
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.answer-caret {
+  animation: caret-blink 1s step-end infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .answer-caret {
+    animation: none;
+  }
+}
+
+.viewer-icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  color: var(--ink-2);
+}
+.viewer-icon:hover {
+  background: var(--rail);
+}
+.viewer-icon:disabled {
+  opacity: 0.4;
+}
+.source-primary {
+  background: var(--ink);
+  color: var(--surface);
+}
+:root[data-theme='dark'] .source-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .source-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+}
+.source-body [data-passage] {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.source-body mark {
+  background: var(--quote);
+  color: var(--ink);
+  border: 0;
+  border-radius: 3px;
+}
+.answer-action {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 12px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.answer-action:hover {
+  background: var(--rail);
+}

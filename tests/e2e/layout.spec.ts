@@ -12,22 +12,15 @@ test('TC-019: PRD §9.1 shared landmarks, exact copy and keyboard skip link', as
   await expect(skip).toBeFocused();
   await skip.press('Enter');
   await expect(page.getByRole('main')).toBeFocused();
-  await expect(
-    page.getByRole('banner').getByRole('link', { name: 'Sourced', exact: true }),
-  ).toHaveAttribute('href', '/');
   const nav = page.getByRole('navigation', { name: 'Main', exact: true });
-  await expect(nav.getByRole('link', { name: 'Ask', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await expect(nav.getByRole('link', { name: /Sourced/ })).toHaveAttribute('href', '/');
+  await expect(nav.getByRole('button', { name: 'New chat' })).toBeEnabled();
   for (const [name, href] of [
-    ['Ask', '/'],
     ['Evaluation', '/eval'],
     ['How it works', '/how-it-works'],
-    ['GitHub', 'https://github.com/firatkill/sourced'],
-  ] as const) {
+    ['Source on GitHub', 'https://github.com/firatkill/sourced'],
+  ] as const)
     await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
-  }
   const footer = page.getByRole('contentinfo');
   await expect(footer).toContainText('Built by Fırat Kıl · firatkil.com · Source on GitHub (MIT)');
   await expect(footer).toContainText(

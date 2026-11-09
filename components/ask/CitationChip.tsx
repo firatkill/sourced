@@ -12,23 +12,27 @@ export function CitationChip({
   onSelect: (label: string) => void;
 }) {
   const className =
-    'inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm border px-1 font-mono text-xs';
+    'inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-[6px] border px-1 font-mono text-xs';
   if (!passage)
     return (
       <span className={`${className} border-[var(--rule-strong)] text-[var(--ink-3)]`}>
-        {label}
+        {label.slice(1)}
       </span>
     );
   return (
     <button
       type="button"
-      className={`${className} border-[var(--accent)] text-[var(--accent)]`}
+      className="inline-flex min-h-6 min-w-6 items-center justify-center"
       aria-label={`Source ${label}: ${passage.documentTitle}, ${passage.headingPath.at(-1) ?? ''}`}
       onClick={() => {
         onSelect(label);
       }}
     >
-      {label}
+      <span
+        className={`${className} border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-soft-ink)]`}
+      >
+        {label.slice(1)}
+      </span>
     </button>
   );
 }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // T-40 / TC-146, FR-04–FR-07, NFR-09: lazy Markdown must preserve the answer lifecycle.
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { AskApp } from '@/components/ask/AskApp';
 import { useAsk, isInFlight, askStatus, type Phase } from '@/hooks/useAsk';
@@ -41,6 +41,10 @@ afterEach(() => {
 });
 
 it('TC-146: defers Markdown until submission and preserves streaming, verified chips, focus and deferred Copy actions', async () => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+  );
   const question = 'How do partial indexes work?';
   const askAnother = vi.fn();
   function phase(value: Phase) {
@@ -69,19 +73,21 @@ it('TC-146: defers Markdown until submission and preserves streaming, verified c
   const view = render(app());
   expect(loading.started).not.toHaveBeenCalled();
   expect(actionsLoading.started).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByRole('textbox'), { target: { value: question } });
+  fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
   phase({ kind: 'submitting', question });
   view.rerender(app());
   await waitFor(() => {
     expect(loading.started).toHaveBeenCalledOnce();
   });
-  const answer = screen.getByRole('region', { name: /^Answer$/ });
+  const answer = screen.getByRole('article', { name: /^Answer$/ });
   expect(answer.getAttribute('aria-busy')).toBe('true');
   expect(screen.getByRole('status').textContent).toBe('Searching the docs');
   expect(answer.querySelector('[aria-hidden="true"].min-h-7')).not.toBeNull();
 
   phase({ kind: 'streaming', question, meta, text: 'Latest streamed draft [P1]' });
   view.rerender(app());
-  expect(screen.getByRole('heading', { name: 'Sources' })).toBeTruthy();
+  expect(screen.queryByRole('region', { name: 'Sources' })).toBeNull();
   await act(async () => {
     loading.release();
     await loading.gate;
@@ -96,27 +102,21 @@ it('TC-146: defers Markdown until submission and preserves streaming, verified c
   await waitFor(() => {
     expect(actionsLoading.started).toHaveBeenCalledOnce();
   });
-  expect(screen.queryByRole('button', { name: 'Copy answer' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Copy as Markdown' })).toBeNull();
   const chip = await screen.findByRole('button', { name: /^Source P1:/ });
-  expect(screen.getByRole('region', { name: /^Answer$/ }).getAttribute('aria-busy')).toBe('false');
+  expect(screen.getByRole('article', { name: /^Answer$/ }).getAttribute('aria-busy')).toBe('false');
   expect(screen.queryByText(/Latest streamed draft/)).toBeNull();
   expect(screen.getByRole('status').textContent).toBe('Answer ready with 1 verified source.');
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn(() => ({ matches: true })),
-  );
-  const card = document.getElementById('source-P1')!;
-  const scrollIntoView = vi.fn();
-  card.scrollIntoView = scrollIntoView;
+  chip.focus();
   fireEvent.click(chip);
-  expect(document.activeElement).toBe(card);
-  expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', behavior: 'instant' });
+  const viewer = screen.getByRole('complementary', { name: 'Source viewer' });
+  expect(document.activeElement).toBe(viewer);
   await act(async () => {
     actionsLoading.release();
     await actionsLoading.gate;
   });
-  const copy = await screen.findByRole('button', { name: 'Copy answer' });
-  expect(document.activeElement).toBe(card);
+  const copy = await screen.findByRole('button', { name: 'Copy as Markdown' });
+  expect(document.activeElement).toBe(viewer);
   const writeText = vi.fn<(value: string) => Promise<void>>(async () => {});
   Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
   copy.focus();
@@ -128,6 +128,11 @@ it('TC-146: defers Markdown until submission and preserves streaming, verified c
   );
   expect(await screen.findByRole('button', { name: 'Copied' })).toBe(copy);
   expect(document.activeElement).toBe(copy);
-  fireEvent.click(screen.getByRole('button', { name: 'Ask another question' }));
-  expect(askAnother).toHaveBeenCalledOnce();
+  fireEvent.click(
+    within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', {
+      name: 'New chat',
+    }),
+  );
+  expect(screen.queryByRole('article', { name: 'Answer' })).toBeNull();
+  expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ask the PostgreSQL docs.');
 });

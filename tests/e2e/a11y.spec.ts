@@ -1,18 +1,33 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { ask, openAsk, expectDone, liveAnswers } from './helpers/ask';
 
 for (const theme of ['light', 'dark'] as const) {
-  for (const state of ['empty', 'done', 'not-found', 'rate-limited', '/eval', '/how-it-works']) {
+  for (const state of [
+    'empty',
+    'done',
+    'viewer',
+    'sheet',
+    'menu',
+    'not-found',
+    'rate-limited',
+    '/eval',
+    '/how-it-works',
+  ]) {
     test(`TC-107: E2E-17 ${theme} ${state} has no serious or critical accessibility violations`, async ({
       page,
     }, info) => {
       await page.emulateMedia({ colorScheme: theme });
       await openAsk(page, info);
       if (state.startsWith('/')) await page.goto(state);
-      if (state === 'done') {
+      if (state === 'sheet' || state === 'menu')
+        await page.setViewportSize({ width: 390, height: 844 });
+      if (state === 'menu') await page.getByRole('button', { name: 'Menu', exact: true }).click();
+      if (['done', 'viewer', 'sheet'].includes(state)) {
         await ask(page);
         await expectDone(page);
+        if (state !== 'done') await page.getByRole('button', { name: /^Source P1:/ }).click();
       }
       if (state === 'not-found') {
         await ask(page, 'mock:not-found');

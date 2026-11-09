@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { uniqueIp } from './helpers/ip';
@@ -59,90 +60,118 @@ async function checkTabRings(page: Page, reduced = false) {
   expect(visited.size).toBe(count);
 }
 
-test('TC-140: long answer code and passage lines scroll within their blocks at 360px', async ({
-  page,
-}, info) => {
-  await page.setViewportSize({ width: 360, height: 740 });
-  await routeLongAnswer(page);
-  await openAsk(page, info);
-  await ask(page);
-  await expect(page.getByRole('button', { name: 'Copy answer', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'How this was answered' }).click();
-  for (const block of [page.locator('pre'), page.locator('#source-P1 p').last()]) {
-    await expect(block).toHaveCSS('overflow-x', 'auto');
-    expect(await block.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-    expect(
-      await block.evaluate((el) => {
-        el.scrollLeft = 100;
-        return el.scrollLeft;
-      }),
-    ).toBeGreaterThan(0);
-  }
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
-    ),
-  ).toBe(true);
-});
+for (const theme of ['light', 'dark'] as const) {
+  test.describe(theme, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.emulateMedia({ colorScheme: theme });
+    });
+    test('TC-140: long answer code and passage lines scroll within their blocks at 360px', async ({
+      page,
+    }, info) => {
+      await page.setViewportSize({ width: 360, height: 740 });
+      await routeLongAnswer(page);
+      await openAsk(page, info);
+      await ask(page);
+      await expect(
+        page.getByRole('button', { name: 'Copy as Markdown', exact: true }),
+      ).toBeVisible();
+      await page.getByRole('button', { name: 'How this was answered' }).click();
+      for (const block of [page.locator('pre')]) {
+        await expect(block).toHaveCSS('overflow-x', 'auto');
+        expect(await block.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+        expect(
+          await block.evaluate((el) => {
+            el.scrollLeft = 100;
+            return el.scrollLeft;
+          }),
+        ).toBeGreaterThan(0);
+      }
+      await page.getByRole('button', { name: /^Source P1:/ }).click();
+      const passage = page
+        .getByRole('dialog', { name: 'Source viewer' })
+        .locator('[data-passage="P1"] p')
+        .last();
+      await expect(passage).toHaveCSS('overflow-x', 'auto');
+      expect(await passage.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+      expect(
+        await passage.evaluate((el) => {
+          el.scrollLeft = 100;
+          return el.scrollLeft;
+        }),
+      ).toBeGreaterThan(0);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+        ),
+      ).toBe(true);
+    });
 
-for (const path of ['/', '/eval', '/how-it-works']) {
-  test(`TC-142: every Tab stop has the specified focus ring on ${path}`, async ({ page }) => {
-    await page.goto(path);
-    await checkTabRings(page);
-  });
-}
+    for (const path of ['/', '/eval', '/how-it-works']) {
+      test(`TC-142: every Tab stop has the specified focus ring on ${path}`, async ({ page }) => {
+        await page.goto(path);
+        await checkTabRings(page);
+      });
+    }
 
-test('TC-143: reduced motion disables smooth scrolling and outline transitions', async ({
-  page,
-}, info) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await openAsk(page, info);
-  await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
-  await checkTabRings(page, true);
-  await ask(page);
-  await expectDone(page);
-  await page.evaluate(() => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- invoked below with its original element receiver
-    const original = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function (options) {
-      document.documentElement.dataset.scrollBehavior =
-        typeof options === 'object' ? (options.behavior ?? 'auto') : 'auto';
-      original.call(this, options);
-    };
-  });
-  const chip = page.getByRole('button', { name: /^Source P1:/ });
-  await chip.focus();
-  await page.keyboard.press('Enter');
-  await expect(page.locator('#source-P1')).toBeFocused();
-  await expect(page.locator('html')).toHaveAttribute('data-scroll-behavior', /^(auto|instant)$/);
-});
-
-for (const state of ['/', 'done', '/eval', '/how-it-works']) {
-  test(`TC-144: touch targets meet minimum size or spacing at 360px on ${state}`, async ({
-    page,
-  }, info) => {
-    await page.setViewportSize({ width: 360, height: 740 });
-    await openAsk(page, info);
-    if (state === 'done') {
+    test('TC-143: reduced motion disables smooth scrolling and outline transitions', async ({
+      page,
+    }, info) => {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await openAsk(page, info);
+      await expect(page.locator('html')).toHaveCSS('scroll-behavior', 'auto');
+      await checkTabRings(page, true);
       await ask(page);
       await expectDone(page);
-    } else if (state !== '/') await page.goto(state);
-    const targets = page.locator(interactive).filter({ visible: true });
-    const sizes = await targets.evaluateAll((elements) =>
-      elements.map((el) => {
-        const rect = el.getBoundingClientRect();
-        return {
-          name: el.getAttribute('aria-label') ?? el.textContent,
-          width: rect.width,
-          height: rect.height,
+      await page.evaluate(() => {
+        // eslint-disable-next-line @typescript-eslint/unbound-method -- invoked below with its original element receiver
+        const original = Element.prototype.scrollIntoView;
+        Element.prototype.scrollIntoView = function (options) {
+          document.documentElement.dataset.scrollBehavior =
+            typeof options === 'object' ? (options.behavior ?? 'auto') : 'auto';
+          original.call(this, options);
         };
-      }),
-    );
-    expect(sizes.length).toBeGreaterThan(0);
-    // Smaller inline links are permitted only when axe verifies the WCAG exception.
-    const undersized = sizes.filter(({ width, height }) => width < 24 || height < 24);
-    const result = await new AxeBuilder({ page }).withRules(['target-size']).analyze();
-    expect(result.incomplete, JSON.stringify(undersized)).toEqual([]);
-    expect(result.violations, JSON.stringify(undersized)).toEqual([]);
+      });
+      const chip = page.getByRole('button', { name: /^Source P1:/ });
+      await chip.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('complementary', { name: 'Source viewer' })).toBeFocused();
+      await page.keyboard.press('Escape');
+      await page.getByRole('region', { name: 'This session' }).getByRole('button').click();
+      await expect(page.locator('#turn-1')).toBeFocused();
+      await expect(page.locator('html')).toHaveAttribute(
+        'data-scroll-behavior',
+        /^(auto|instant)$/,
+      );
+    });
+
+    for (const state of ['/', 'done', '/eval', '/how-it-works']) {
+      test(`TC-144: touch targets meet minimum size or spacing at 360px on ${state}`, async ({
+        page,
+      }, info) => {
+        await page.setViewportSize({ width: 360, height: 740 });
+        await openAsk(page, info);
+        if (state === 'done') {
+          await ask(page);
+          await expectDone(page);
+        } else if (state !== '/') await page.goto(state);
+        const targets = page.locator(interactive).filter({ visible: true });
+        const sizes = await targets.evaluateAll((elements) =>
+          elements.map((el) => {
+            const rect = el.getBoundingClientRect();
+            return {
+              name: el.getAttribute('aria-label') ?? el.textContent,
+              width: rect.width,
+              height: rect.height,
+            };
+          }),
+        );
+        expect(sizes.length).toBeGreaterThan(0);
+        // Smaller inline links are permitted only when axe verifies the WCAG exception.
+        const undersized = sizes.filter(({ width, height }) => width < 24 || height < 24);
+        const result = await new AxeBuilder({ page }).withRules(['target-size']).analyze();
+        expect(result.incomplete, JSON.stringify(undersized)).toEqual([]);
+        expect(result.violations, JSON.stringify(undersized)).toEqual([]);
+      });
+    }
   });
 }

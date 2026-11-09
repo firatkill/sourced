@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SkipLink } from '@/components/layout/SkipLink';
-import { SiteHeader } from '@/components/layout/SiteHeader';
+import { PageShell } from '@/components/layout/PageShell';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { getEnv } from '@/lib/env';
 import './globals.css';
@@ -46,11 +46,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <SkipLink />
-        <SiteHeader />
-        <main id="content" className="shell" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter />
+        <PageShell footer={<SiteFooter />}>{children}</PageShell>
       </body>
     </html>
   );

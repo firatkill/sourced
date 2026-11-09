@@ -95,6 +95,12 @@ test('TC-133 / E2E-21: exact copy, grouped cards, floors, D-84 deltas and access
   await expect(page.getByRole('article')).toHaveCount(10);
   for (const [label, ...texts] of cards) {
     const card = page.getByRole('article', { name: label, exact: true });
+    // R2 item 7 / REDESIGN §2: metric labels and values use Inter, not code typography.
+    await expect(card.getByRole('heading')).toHaveCSS('font-size', '13px');
+    await expect(card.getByRole('heading')).toHaveCSS('font-family', /Inter/);
+    await expect(card.locator('p').first()).toHaveCSS('font-size', '32px');
+    await expect(card.locator('p').first()).toHaveCSS('font-weight', '700');
+    await expect(card.locator('p').first()).toHaveCSS('font-family', /Inter/);
     for (const text of texts) await expect(card.getByText(text, { exact: true })).toBeVisible();
     await expect(card.getByText('Each point is one committed run.', { exact: true })).toBeVisible();
     await expect(card.locator('svg[aria-hidden="true"] path')).toHaveCount(1);
