@@ -130,7 +130,7 @@ a:hover {
 }
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline-offset: 2px;
 }
 .site-header {
   border-bottom: 1px solid var(--rule);
@@ -203,5 +203,14 @@ mark {
 @media (max-width: 399px) {
   .shell {
     padding-inline: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  :focus-visible {
+    transition: none;
   }
 }

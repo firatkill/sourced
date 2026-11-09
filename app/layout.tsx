@@ -33,6 +33,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <script
           nonce={nonce}
+          suppressHydrationWarning
           // eslint-disable-next-line react/no-danger -- constant theme script, TRD §15.3
           dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }}
         />

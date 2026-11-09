@@ -21,7 +21,7 @@ export function SourcesPanel({
   return (
     <section
       aria-labelledby="sources-heading"
-      className="space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:p-1"
+      className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:p-1"
     >
       <h2 id="sources-heading">Sources</h2>
       {ordered.map((passage) => (

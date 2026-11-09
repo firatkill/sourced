@@ -6,7 +6,7 @@ import { AnswerView } from '@/components/ask/AnswerView';
 import { EVAL_COPY } from './copy';
 
 const buttonClass =
-  'min-h-9 cursor-pointer rounded-md border border-border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring';
+  'min-h-9 cursor-pointer rounded-md border border-border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 const ignoreSelection = () => undefined;
 const typeLabels: Partial<Record<string, string>> = EVAL_COPY.types;
 

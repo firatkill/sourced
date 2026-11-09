@@ -3301,6 +3301,174 @@
       "clickup_task": null,
       "retraction_reason": null,
       "automatable": false
+    },
+    {
+      "tc_reference": "TC-140",
+      "ac_reference": "T-40; NFR-10",
+      "milestone": "M4 Polish and deploy",
+      "title": "Long code lines scroll inside their block",
+      "description": "T-40 step 3; E2E-19.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-140.",
+      "expected_result": "At 360 px an answer with a long line in a code block and a passage with a long unbroken line scroll inside their own block (overflow-x auto, scrollWidth > clientWidth on the block) while the page has no horizontal scroll.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "accessibility-polish.spec.ts TC-140 passes: code block and passage line scroll inside their blocks at 360 px, page has no horizontal scroll; full E2E 65/65."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-141",
+      "ac_reference": "T-40; NFR-10",
+      "milestone": "M4 Polish and deploy",
+      "title": "No horizontal scroll at 1920 px",
+      "description": "E2E-19.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-141.",
+      "expected_result": "At 1920 × 1080, /, the done state, /eval, /how-it-works and the 404 page have scrollWidth <= clientWidth.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "responsive.spec.ts E2E-19 at 1920px passes."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-142",
+      "ac_reference": "T-40; NFR-09",
+      "milestone": "M4 Polish and deploy",
+      "title": "Visible focus ring on every interactive element",
+      "description": "TRD §15.6.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-142.",
+      "expected_result": "Each focusable element reached by Tab on /, /eval and /how-it-works shows a 2 px solid outline in --accent with 2 px offset under :focus-visible.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "First run failed: shadcn Button and Textarea replaced the outline with a ring (fixed by removing outline-none and ring classes) and the test counted the disabled Ask button as a tab stop (test fixed against the spec: disabled controls are not focusable). Rerun passes on /, /eval, /how-it-works."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-143",
+      "ac_reference": "T-40; NFR-09",
+      "milestone": "M4 Polish and deploy",
+      "title": "Reduced motion respected",
+      "description": "TRD §15.6.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-143.",
+      "expected_result": "With prefers-reduced-motion: reduce, html scroll-behavior is auto and focus outlines have no transition; activating a citation chip moves focus without smooth scrolling.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "accessibility-polish.spec.ts TC-143 passes: scroll-behavior auto, no outline transition, chip focus without smooth scroll."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-144",
+      "ac_reference": "T-40; NFR-09",
+      "milestone": "M4 Polish and deploy",
+      "title": "Touch targets at least 24 × 24 px",
+      "description": "TRD §15.6.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-144.",
+      "expected_result": "At 360 px every visible button, link and chip on /, the done state, /eval and /how-it-works has a hit area of at least 24 × 24 px, or meets the WCAG 2.2 spacing exception (axe target-size rule passes).",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "accessibility-polish.spec.ts TC-144 passes at 360 px on /, done, /eval, /how-it-works including axe target-size."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-145",
+      "ac_reference": "T-40; NFR-09",
+      "milestone": "M4 Polish and deploy",
+      "title": "No hydration or console errors on page load",
+      "description": "TRD §15.3; D-26.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-145.",
+      "expected_result": "Loading /, /eval and /how-it-works in both themes logs no console error or React hydration warning (including the theme-script nonce).",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "theme.spec.ts TC-145 passes for 2 schemes x 3 stored themes x 3 pages; nonce hydration warning fixed with suppressHydrationWarning on the theme script only."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-146",
+      "ac_reference": "T-40; NFR-08",
+      "milestone": "M4 Polish and deploy",
+      "title": "First-load JavaScript for / within 180 KB gzip",
+      "description": "TRD §22.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-146.",
+      "expected_result": "The TRD §22 command against pnpm build && pnpm start prints ≤ 180 KB.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start -p 3105",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "First measurement 192.3 KB (fail). AnswerView and AnswerActions now load on demand so the Markdown pipeline is not in the initial scripts of /; TRD §22 command prints 157.7 KB (reviewer re-measured)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-147",
+      "ac_reference": "T-40; NFR-07",
+      "milestone": "M4 Polish and deploy",
+      "title": "Lighthouse mobile on the local production build",
+      "description": "T-40 step 4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-147.",
+      "expected_result": "Lighthouse mobile on pnpm start: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 95, LCP ≤ 2.5 s, CLS ≤ 0.05; scores recorded.",
+      "status": "pending_decision",
+      "environment": "Local production build",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Not measured: Lighthouse is not installed and downloading it with npx was blocked in this agent environment. Owner runs Lighthouse (Chrome DevTools, mobile) or allows the npx run; listed in docs/PROGRESS.md (open questions); no ClickUp in this repository."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

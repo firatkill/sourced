@@ -57,7 +57,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | done | b396f38, 398d88c, 41425df |
 | T-38 | M3 Eval and CI | `/eval` page | done | HEAD |
 | T-39 | M3 Eval and CI | `/how-it-works` page | done | HEAD |
-| T-40 | M4 Polish and deploy | Accessibility, keyboard and responsive pass | todo | — |
+| T-40 | M4 Polish and deploy | Accessibility, keyboard and responsive pass | doing | HEAD |
 | T-41 | M4 Polish and deploy | Security review | todo | — |
 | T-42 | M4 Polish and deploy | Supabase, OpenAI project and production data | todo | — |
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | todo | — |
@@ -65,6 +65,9 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-45 | M4 Polish and deploy | Release v1.0.0 | todo | — |
 
 ## Open questions for the owner
+
+- T-40 (TC-147): Lighthouse mobile on the local production build is not measured. It is not installed and this agent environment blocked downloading it with `npx`. Either run it yourself (Chrome DevTools → Lighthouse, mobile, on `pnpm build && pnpm start`) or allow `npx -y lighthouse@12.8.2`. NFR-07 is measured again on production in T-43.
+- T-41/T-42: approve creating the GitHub `production` environment and turning on Dependabot alerts (TRD §19 item 9; secret scanning and push protection are already on).
 
 
 - D-82: turn on "share inputs and outputs with OpenAI" for the sourced-eval OpenAI project only (and for the project behind your local key if you want local eval runs free). Keep it off for the production project. Without it, eval judge calls are billed at the gpt-5.4 list price (about $0.70 per full run).
@@ -195,3 +198,5 @@ T-38 local acceptance: `/eval` renders committed results without a database: nin
 T-39 local acceptance: `/how-it-works` with the PRD §9.6 copy, an ordered-list pipeline diagram (two lanes, aria-hidden SVG arrows, one column below 640 px), sections 1–8 and `#privacy`; every number comes from `lib/config.ts` and the plan's grep returns nothing. The footer and under-input links already pointed to `#privacy`. Reviewer checked the section bodies against the code (cache hits skip the quota, reset at UTC midnight) and removed one sentence in Limits that the PRD does not make. E2E-22 passes; lint, typecheck, 771 unit and 142 integration tests, build and the full E2E suite (49) pass. TC-136–TC-138 resolved.
 
 M3 complete (2026-11-09): T-35 to T-39 done; T-37's `workflow_dispatch` run is green (D-85) and a `lib/prompts/` PR starts `eval.yml` (TC-130).
+
+T-40 local acceptance (2026-11-09): long code and passage lines scroll inside their blocks at 360 px; 1920 px added to E2E-19; the §15.6 focus ring now applies to the shadcn Button and Textarea (their ring classes were removed); reduced motion turns off smooth scrolling and outline transitions; touch targets pass at 360 px; the theme-script nonce hydration warning is gone (`suppressHydrationWarning` on that script only, CSP unchanged). First-load JS for `/` was 192.3 KB, over the 180 KB budget; `AnswerView` and `AnswerActions` now load on demand, so the Markdown pipeline is not in the initial scripts, and the TRD §22 command prints 157.7 KB. Lint, typecheck, unit (772), integration (142), build and the full E2E suite (65) pass. TC-140–TC-146 resolved. Lighthouse (TC-147) is not measured yet; see open questions.

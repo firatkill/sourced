@@ -23,3 +23,38 @@ test('TC-018: E2E-20 toggle persists before rendering after reload', async ({ pa
   await page.reload({ waitUntil: 'domcontentloaded' });
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('light');
 });
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  for (const stored of [null, 'light', 'dark'] as const) {
+    test(`TC-145: clean console with system ${colorScheme}, stored ${String(stored)}`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      page.on('console', (message) => {
+        if (message.type() === 'error' || /hydration|hydrated|did not match/i.test(message.text()))
+          errors.push(message.text());
+      });
+      await page.emulateMedia({ colorScheme });
+      await page.addInitScript((theme) => {
+        if (theme) localStorage.setItem('sourced-theme', theme);
+        else localStorage.removeItem('sourced-theme');
+      }, stored);
+      for (const path of ['/', '/eval', '/how-it-works']) {
+        const response = await page.goto(path);
+        const csp = response?.headers()['content-security-policy'] ?? '';
+        const scriptPolicy = csp.split(';').find((part) => part.trim().startsWith('script-src '));
+        expect(scriptPolicy).toContain("'nonce-");
+        expect(scriptPolicy).not.toContain("'unsafe-inline'");
+        await expect(page.locator('html')).toHaveCSS('color-scheme', stored ?? colorScheme);
+        // Interact to prove hydration finished before inspecting the console.
+        await page.getByRole('button', { name: /Switch to .* theme/ }).click();
+        await expect(page.locator('html')).toHaveCSS(
+          'color-scheme',
+          (stored ?? colorScheme) === 'light' ? 'dark' : 'light',
+        );
+        expect(errors).toEqual([]);
+      }
+    });
+  }
+}

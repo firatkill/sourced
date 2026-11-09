@@ -44,7 +44,7 @@ export function PassageCard({
         const from = validSpan ? Math.max(0, validSpan.start - start) : 0;
         const to = validSpan ? Math.min(text.length, validSpan.end - start) : 0;
         return (
-          <p key={start} className="break-words whitespace-pre-wrap">
+          <p key={start} className="overflow-x-auto whitespace-pre-wrap">
             {from < to ? (
               <>
                 {text.slice(0, from)}

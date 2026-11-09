@@ -4,8 +4,11 @@ import { ask, openAsk, expectDone } from './helpers/ask';
 for (const viewport of [
   { width: 360, height: 740 },
   { width: 1024, height: 768 },
+  { width: 1920, height: 1080 },
 ]) {
-  test(`TC-109: E2E-19 responsive pages at ${String(viewport.width)}px`, async ({ page }, info) => {
+  test(`TC-109 / TC-141: E2E-19 responsive pages at ${String(viewport.width)}px`, async ({
+    page,
+  }, info) => {
     await page.setViewportSize(viewport);
     await openAsk(page, info);
     const noOverflow = async () => {

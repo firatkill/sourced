@@ -18,7 +18,7 @@ export function AnswerView({
   onSelect: (label: string) => void;
 }) {
   return (
-    <div className="space-y-4 break-words [&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap">
+    <div className="space-y-4 break-words [&_pre]:overflow-x-auto [&_pre]:whitespace-pre">
       <Markdown
         skipHtml
         allowedElements={['p', 'ul', 'ol', 'li', 'code', 'pre', 'strong', 'em', 'br', 'span']}
