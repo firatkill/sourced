@@ -2,6 +2,7 @@
 
 import type { Ref } from 'react';
 import { Square } from 'lucide-react';
+import { ASK_COPY } from '@/lib/copy';
 import { QUESTION } from '@/lib/config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,7 +45,9 @@ export function AskForm({
         ref={inputRef}
         id="question"
         name="question"
-        placeholder="e.g. When does a partial index help?"
+        placeholder={
+          disabled ? ASK_COPY.readonlyPlaceholder : 'e.g. When does a partial index help?'
+        }
         value={question}
         maxLength={QUESTION.MAX_CHARS}
         readOnly={inFlight}

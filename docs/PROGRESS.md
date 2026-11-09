@@ -50,7 +50,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | HEAD |
 | T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | HEAD |
 | T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | HEAD |
-| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | todo | — |
+| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | HEAD |
 | T-34 | M2 Ask, stream, citations | E2E suite for the ask page | todo | — |
 | T-35 | M3 Eval and CI | Golden set and validator | todo | — |
 | T-36 | M3 Eval and CI | Eval harness | todo | — |
@@ -172,3 +172,5 @@ T-30 local acceptance: useAsk with exported askReducer per TRD §15.4 and D-77 (
 T-31 local acceptance: ask page form, counter, suggested chips and status line with corpus copy centralized in lib/copy.ts (FR-74). E2E-01–E2E-03 pass; full E2E suite 11 passed; build passes. Reviewer checked the empty and validation states in a browser. TC-088–TC-090 resolved.
 
 T-32 local acceptance: answer view with safe Markdown and citation chips (remark plugin, D-79 adds @types/mdast), sources panel with highlighted quotes and official links, copy answer. UT-21, UT-28 pass; E2E-04–E2E-06 run against the real mock server (an earlier version stubbed the API in the page and was rewritten); full E2E suite 16 passed; no raw HTML outside app/layout.tsx. 'Checking citations' phase covered by UT-20 (D-80). Reviewer relinked node_modules to the default pnpm store after a store was created inside .git. TC-091–TC-095 resolved.
+
+T-33 local acceptance: "How this was answered" disclosure and every PRD §9.3 state (not found, rate limited, read-only, demo off, provider, network and server errors, stopped) with copy in lib/copy.ts, including D-81's proposed quote-fallback line and removal reasons (owner confirmation pending). 22 component tests; 45 grep -F checks of the §9.3 strings pass (reviewer spot-checked 10); manual mock checks of not-found, provider error, drop and Stop. Lint, typecheck, 698 unit and 138 integration tests pass. E2E coverage of these states follows in T-34. Open item for T-40: a theme-script nonce hydration warning in the browser console (app/layout.tsx).
