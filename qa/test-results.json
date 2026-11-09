@@ -3019,6 +3019,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-127",
+      "ac_reference": "T-37; FR-43",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Floors, ceilings, regressions, no baseline",
+      "description": "UT-23 eval-thresholds.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-127.",
+      "expected_result": "Each floor and ceiling failure is reported with kind and limit; regression beyond maxRegression fails; no baseline skips regression and reports \"No baseline\"; exit 1 on any failure.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-23: each floor, ceiling and regression failure with kind and limit; equality passes; no baseline skips regression."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-128",
+      "ac_reference": "T-37; FR-43",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "First committed run passes every floor",
+      "description": "T-37 step 2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-128.",
+      "expected_result": "The baseline results file committed in eval/results passes all floors and ceilings; no floor lowered.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; live",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Committed baseline eval/results/2026-11-09.json: pass true, failures []; thresholds.json unchanged from TRD §17.5."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-129",
+      "ac_reference": "T-37; D-17",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "eval.yml matches the normative workflow",
+      "description": "TRD §25.2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-129.",
+      "expected_result": "Workflow file equals TRD §25.2: triggers, path filter excluding eval/results, fork skip, environment eval, services, steps.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval.yml byte-identical to the TRD §25.2 block (reviewer diff)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-130",
+      "ac_reference": "T-37; D-17",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "eval.yml runs green in GitHub",
+      "description": "T-37 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-130.",
+      "expected_result": "workflow_dispatch run is green with cost below EVAL_MAX_COST_USD; a PR changing lib/prompts/ triggers the workflow. Needs the owner's eval environment and secret.",
+      "status": "pending_decision",
+      "environment": "GitHub Actions",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Waiting for the owner to add the OPENAI_API_KEY secret to the eval environment; then dispatch and test-PR checks."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }
