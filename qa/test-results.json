@@ -3583,12 +3583,16 @@
       "description": "TRD §19.",
       "steps_to_reproduce": "See qa/test-cases.md TC-153.",
       "expected_result": "Each of the eleven TRD §19 items is checked with evidence (file, test or command) and listed in the T-41 notes; Dependabot alerts and secret scanning with push protection are enabled on the repository.",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "Local repository; GitHub settings",
       "attempts": [
         {
           "result": "pending",
           "note": "Items 1-8, 10, 11 verified with evidence (T-41 notes in docs/PROGRESS.md). Item 9: audit clean, secret scanning and push protection on, Dependabot alerts off; enabling them needs the owner's approval, listed in docs/PROGRESS.md (open questions); no ClickUp in this repository."
+        },
+        {
+          "result": "pass",
+          "note": "Owner approved (D-86); Dependabot alerts enabled (GET vulnerability-alerts 204). All eleven TRD §19 items now verified; evidence in docs/PROGRESS.md T-41 notes."
         }
       ],
       "regression_of": null,
