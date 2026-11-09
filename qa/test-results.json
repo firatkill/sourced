@@ -2305,6 +2305,111 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-091",
+      "ac_reference": "T-32; FR-04; FR-11",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Streaming answer and ask-again",
+      "description": "E2E-04.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-091.",
+      "expected_result": "Status phases appear; text streams; chips become buttons; done announcement; ask another question keeps the text selected and focused.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-32: E2E-04 submits a real unique question to the mock server on 3100: phases Searching/Reading/Writing and the done announcement, incremental text, neutral then active chips, ask-again keeps the question selected and focused. First version stubbed /api/ask in the page; rewritten against the real server after review. 'Checking citations' is covered by UT-20 (D-80)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-092",
+      "ac_reference": "T-32; FR-05; FR-06",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Sources panel and chip navigation",
+      "description": "E2E-05.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-092.",
+      "expected_result": "Chip click focuses card; mark contains quote; link href equals officialUrl with target and rel; uncited badge shown.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-32: E2E-05 desktop and mobile: chip focuses its card, <mark> holds the quote (UTF-16 span), docs link equals officialUrl with target and rel, uncited badge and ordering."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-093",
+      "ac_reference": "T-32; FR-07",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Copy answer",
+      "description": "E2E-06; UT-28.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-093.",
+      "expected_result": "Clipboard text matches FR-07 format; label shows Copied for 2 s.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-32: E2E-06 and UT-28: clipboard text matches FR-07, Copied label for exactly 2 s, textarea fallback when clipboard permission is denied (browser-only case simulated)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-094",
+      "ac_reference": "T-32; FR-05",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Citation chips from text only",
+      "description": "UT-21.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-094.",
+      "expected_result": "Chips created from text markers, never inside code; labels P1–P6 only.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-32: UT-21 creates chips from text markers only, never inside code; labels P1–P6 only."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-095",
+      "ac_reference": "T-32; NFR-14; D-26",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "No raw HTML rendering",
+      "description": "T-32 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-095.",
+      "expected_result": "dangerouslySetInnerHTML appears only in app/layout.tsx.",
+      "status": "resolved",
+      "environment": "macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-32: grep for dangerouslySetInnerHTML outside app/layout.tsx prints nothing (reviewer re-ran it); Markdown rendered with skipHtml and the TRD allowed-elements list."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

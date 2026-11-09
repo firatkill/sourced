@@ -1,5 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
+import { AnswerView } from './AnswerView';
+import { SourcesPanel } from './SourcesPanel';
+import { AnswerActions } from './AnswerActions';
 import { useAsk } from '@/hooks/useAsk';
 import type { SuggestedId } from '@/lib/suggested';
 import { AskForm } from './AskForm';
@@ -22,6 +26,38 @@ export function AskApp({ demoMode, limits, suggested, copy }: AskAppProps) {
     ask.phase.kind !== 'validationError' &&
     ask.phase.kind !== 'readonly' &&
     ask.phase.kind !== 'demoOff';
+
+  const [selected, setSelected] = useState<string | null>(null);
+  const selectionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(
+    () => () => {
+      clearTimeout(selectionTimer.current);
+    },
+    [],
+  );
+  const meta = 'meta' in ask.phase ? ask.phase.meta : null;
+  const text =
+    'text' in ask.phase ? ask.phase.text : 'partialText' in ask.phase ? ask.phase.partialText : '';
+  const selectSource = (label: string) => {
+    const card = document.getElementById(`source-${label}`);
+    card?.focus({ preventScroll: true });
+    card?.scrollIntoView({
+      block: 'nearest',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    });
+    setSelected(label);
+    clearTimeout(selectionTimer.current);
+    selectionTimer.current = setTimeout(() => {
+      setSelected(null);
+    }, 2000);
+  };
+  const count = ask.citations?.valid.length ?? 0;
+  const announcement =
+    ask.phase.kind === 'done'
+      ? `Answer ready with ${String(count)} verified ${count === 1 ? 'source' : 'sources'}.`
+      : ask.status.replace(/…$/, '');
 
   return (
     <div className="space-y-8">
@@ -55,12 +91,45 @@ export function AskApp({ demoMode, limits, suggested, copy }: AskAppProps) {
           aria-busy={ask.inFlight}
           className="border-border space-y-4 border-t pt-8"
         >
-          <h2 id="answer-heading">Answer</h2>
-          <StatusLine text={ask.status} />
+          <div className="grid items-start gap-8 lg:grid-cols-[3fr_2fr]">
+            <div className="min-w-0 space-y-4">
+              <h2 id="answer-heading">Answer</h2>
+              {meta?.cached && <p>Answered in advance</p>}
+              <StatusLine text={ask.status} />
+              <AnswerView
+                text={text}
+                passages={meta?.passages ?? []}
+                citations={ask.citations}
+                onSelect={selectSource}
+              />
+              {ask.citations && ask.citations.invalid.length > 0 && (
+                <p>
+                  {ask.citations.invalid.length === 1
+                    ? '1 citation was removed because its quote was not found in the passage.'
+                    : `${String(ask.citations.invalid.length)} citations were removed because their quotes were not found in the passages.`}
+                </p>
+              )}
+              {ask.phase.kind === 'done' && (
+                <AnswerActions
+                  key={ask.phase.done.requestId}
+                  citations={ask.phase.citations}
+                  passages={ask.phase.meta.passages}
+                  onAnother={ask.askAnother}
+                />
+              )}
+            </div>
+            {meta && (
+              <SourcesPanel
+                passages={meta.passages}
+                citations={ask.citations}
+                selected={selected}
+              />
+            )}
+          </div>
         </section>
       )}
       <div role="status" aria-live="polite" className="sr-only">
-        {ask.status.replace(/…$/, '')}
+        {announcement}
       </div>
     </div>
   );
