@@ -6,7 +6,7 @@
 | Owner | Fırat Kıl |
 | Repository | github.com/firatkill/sourced (MIT) |
 | Live demo | https://sourced.firatkil.com |
-| Status | v1 approved for implementation. v2 (RAG kit) direction approved by the owner on 2026-11-09 (D-63); v2 requirements are not yet in the TRD or the implementation plan. |
+| Status | v1 approved for implementation. v2 (RAG kit) direction approved by the owner on 2026-11-09 (D-63); v2 is specified in TRD Part II (sections 28 to 41) and planned as T-46 to T-76; it is built after v1.0.0. |
 | Companion docs | `docs/TRD.md` (how), `docs/IMPLEMENTATION_PLAN.md` (in what order), `AGENTS.md` (rules for coding agents) |
 
 This document defines what Sourced does and why. Requirement IDs (US-xx, FR-xx, NFR-xx, D-xx) are stable. The TRD and the implementation plan reference them. Do not renumber; append new IDs at the end of each list.

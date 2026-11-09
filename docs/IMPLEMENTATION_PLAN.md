@@ -1,6 +1,6 @@
 # Sourced: Implementation Plan
 
-Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `AGENTS.md` first, then `docs/PRD.md` (what) and `docs/TRD.md` (how). This plan says in what order and how to know each step is done.
+Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to M4, T-01 to T-45), then to the v2.0.0 RAG kit (M5 to M8, T-46 to T-76, specified in TRD Part II). Read `AGENTS.md` first, then `docs/PRD.md` (what) and `docs/TRD.md` (how). This plan says in what order and how to know each step is done.
 
 ## How to use this plan
 
@@ -19,6 +19,11 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
 | M2 Ask, stream, citations | T-18 – T-34 | `/api/ask` streams verified answers; every ask page state covered by E2E |
 | M3 Eval and CI | T-35 – T-39 | `pnpm eval` passes floors; eval workflow; `/eval` and `/how-it-works` pages |
 | M4 Polish and deploy | T-40 – T-45 | Accessibility, security, production deploy, README, release |
+| M5 Configuration seams *(v2)* | T-46 – T-52 | Example corpus unchanged on the kit configuration; second fixture corpus runs in mock mode |
+| M6 Sources and CLI *(v2)* | T-53 – T-64 | All source types and the `sourced` CLI; Docker path; any-corpus check passes |
+| M7 Quality on any corpus *(v2)* | T-65 – T-68 | `inspect`, generated golden sets, eval and comparison on kit corpora |
+| M8 Agent guidance and v2.0 release *(v2)* | T-69 – T-76 | Skills, private profile, user-facing agent files, newcomer check, v2.0.0 |
+| M9 Chat and integrations *(v2.1)* | planned | Follow-ups, MCP server, API and widget, dedicated rerankers (PRD FR-86, FR-91 to FR-93); tasks are written when v2.0.0 ships |
 
 ---
 
@@ -576,6 +581,286 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
 
 ---
 
+## M5 Configuration seams *(v2)*
+
+v2 tasks start after v1.0.0 is tagged (PRD section 16). "TRD §n" in these tasks refers to Part II sections 28 to 41. Every M5 task keeps the example corpus's behaviour identical to v1.0.0: E2E-01 to E2E-25 pass unchanged and `pnpm eval` on the example stays within `maxRegression` of the v1.0.0 release run.
+
+### T-46 Migration `0003_kit` and per-document chunk uniqueness
+
+- **Goal**: The database can hold any corpus: corpus metadata, source columns, page ranges, resumable ingest items, and chunk uniqueness per document.
+- **Implements**: FR-61, FR-72 (schema), FR-67 (page columns); TRD §30.1
+- **Files**: `lib/db/schema.ts`, `drizzle/0003_kit.sql`, `lib/ingest/upsert.ts` (conflict target), `tests/integration/migrations.test.ts`, IT-15.
+- **Steps**:
+  1. Ask the owner to approve dropping `chunks_content_hash_key` (AGENTS.md checkpoint 4; TRD §30.1 explains why). Record the answer in the PRD decisions log.
+  2. Write the schema changes and the migration exactly as TRD §30.1. Add `'cli'` to the `query_log.source` check.
+  3. Change the upsert conflict target to `(document_id, content_hash)`.
+- **Acceptance**: migrations apply on an empty database and on a database holding the v1 example corpus; IT-15 passes; re-running `pnpm ingest --offline` on the example reports 0 inserts.
+- **Depends on**: v1.0.0
+
+### T-47 Kit configuration, roles and corpus schema management
+
+- **Goal**: `sourced.config.ts` is loaded, validated and snapshotted; providers are resolved per role; the embedding column and full-text configuration follow the configuration.
+- **Implements**: FR-59, FR-61, FR-62; TRD §28.3, §29.1–29.3, §30.2, §31.1, §31.3; A-17, A-18
+- **Files**: `lib/kit/config-schema.ts`, `lib/kit/load-config.ts`, `lib/kit/runtime-config.ts`, `lib/kit/vector-schema.ts`, `lib/kit/fts.ts`, `lib/llm/index.ts` (`getProviders`), `lib/llm/models.ts`, `lib/retrieval/search.ts`, call sites of `getProvider()`, `lib/errors.ts` (`CONFIG_INVALID`, `CORPUS_MISMATCH`, `CORPUS_EMPTY`), TRD §18 table, UT-32, IT-12, IT-13.
+- **Steps**:
+  1. Implement the schema and cross-field rules as written in TRD §29.
+  2. Implement the snapshot flow and `getKitConfig()`.
+  3. Implement `ensureCorpusSchema` and call it from ingest and from app startup (read-only check in the app).
+  4. Bind `regconfig` and the vector type in the search SQL; keep the statement otherwise identical.
+  5. Replace `getProvider()` with `getProviders()`; resolve unset roles to `chat`.
+  6. Verify A-17 and A-18; record in the decisions log.
+- **Acceptance**: UT-32, IT-12 and IT-13 pass; the v1 example works with a temporary `sourced.config.ts` that mirrors the v1 constants; `getProvider` no longer exists.
+- **Depends on**: T-46
+
+### T-48 Copy and prompts from configuration
+
+- **Goal**: No string that names the corpus is hard-coded in `app/`, `components/` or `lib/`.
+- **Implements**: FR-63, FR-74 (copy part); TRD §29.2 (`FINAL_PASSAGES` up to 9), §29.5
+- **Files**: `lib/kit/copy.ts`, `lib/prompts/system.ts`, `lib/config.ts` (`NOT_FOUND_SENTENCE` removed), ask page components, footer, `/how-it-works`, `lib/citations/parse.ts` (marker regex `[P1]`–`[P9]`), UT-33.
+- **Steps**:
+  1. Implement `getCopy()` with the defaults table.
+  2. Route every corpus-dependent string through it. Bump `PROMPT_VERSION` only if the rendered example prompt changes (it must not).
+  3. Widen the citation marker regex to `[P1]`–`[P9]` and validate `finalPassages` against it.
+  4. Add a lint check (`scripts/check-corpus-literals.ts`, run in `ci.yml` static job) that fails on the strings `PostgreSQL`, `postgresql.org` and `35 pages` outside `sourced.config.ts`, `corpus/`, `eval/`, `docs/`, `tests/` and `qa/`.
+- **Acceptance**: UT-33 passes; E2E-01 to E2E-25 pass against the example; the literal check passes; the rendered example system prompt is byte-identical to v1.
+- **Depends on**: T-47
+
+### T-49 Gemini, Anthropic and Ollama providers
+
+- **Goal**: Chat and embedding roles can use OpenAI, Gemini, Anthropic (chat only) or Ollama.
+- **Implements**: FR-60, FR-56 (superseded); TRD §31.2–31.4; A-19
+- **Files**: `lib/llm/gemini.ts`, `lib/llm/anthropic.ts`, `lib/llm/ollama.ts`, `lib/llm/models.ts`, `lib/env.ts` (key variables, `OLLAMA_BASE_URL`), `lib/cost/estimate.ts` (pricing lookup, `null` cost), TRD §5 table, `.env.example`, UT-49.
+- **Steps**:
+  1. Ask the owner to approve the packages in TRD §41 for this task.
+  2. Implement each provider behind the unchanged interface, with v1's error mapping and `maxRetries: 0`.
+  3. Implement pricing lookup with demo env overrides (TRD §29.4) and unknown-price handling.
+  4. Verify A-19 with a local Ollama (manual, not in tests); record the result.
+- **Acceptance**: UT-49 passes with mocked transports; one manual live call per provider succeeds and is recorded in `qa/test-results.json` as a manual case; no test makes a network call.
+- **Depends on**: T-47
+
+### T-50 Example corpus in the kit layout
+
+- **Goal**: The PostgreSQL example is an ordinary kit configuration.
+- **Implements**: FR-74, FR-33 (amended), FR-40 (amended); TRD §28.2, §29.4; NFR-16
+- **Files**: `sourced.config.ts`, move `corpus/manifest.json` content into it, `corpus/raw/` → `corpus/postgres-17/raw/pg17-*` (git mv), `corpus/LICENSE-POSTGRESQL.txt` and `NOTICE` → `corpus/postgres-17/`, `eval/golden.jsonl`, `eval/results/` → `eval/postgres-17/`, `lib/ingest/presets/postgres-docbook.ts` (v1 parser rules moved unchanged), `lib/ingest/parse-html.ts` (preset dispatch), `.github/workflows/eval.yml` path filters, `lib/env.ts` (`EVAL_RESULTS_DIR` default), IT-16.
+- **Steps**:
+  1. Write the example configuration (TRD §29.4) with one `urls` source per v1 manifest section, each with its `group`.
+  2. Move files with `git mv` so history follows.
+  3. Move the DocBook rules into the preset; `parseHtml` dispatches on `html.preset`.
+  4. Update the eval workflow paths (D-30 equivalents under `eval/postgres-17/`).
+- **Acceptance**: IT-16 passes (identical chunk hashes and counts); `/eval` renders the committed v1 results from the new path; `pnpm eval` on the example within `maxRegression`.
+- **Depends on**: T-48
+
+### T-51 Deployment profiles
+
+- **Goal**: Quotas, demo mode, IP hashing and the suggested cache run only in `public-demo`.
+- **Implements**: FR-64; FR-26 to FR-32 (scoped)
+- **Files**: `lib/kit/profile.ts`, `app/api/ask/route.ts`, `lib/ratelimit/*`, `lib/cache/*`, ask page (suggested chips and helper text by profile), E2E fixtures for `local`, unit tests.
+- **Steps**: gate each feature on the profile as PRD FR-64 states; `private` additionally requires `SOURCED_ACCESS_TOKEN` to be set (startup check only; the access flow is T-74).
+- **Acceptance**: unit tests cover each profile; E2E-01 to E2E-25 still pass with the example's `public-demo` profile; a `local` E2E run shows no quota copy and no cache label.
+- **Depends on**: T-50
+
+### T-52 Second fixture corpus and M5 exit
+
+- **Goal**: Prove the seams with a corpus that differs in language, source type and copy.
+- **Implements**: M5 exit criteria (PRD section 12)
+- **Files**: `tests/fixtures/kit-tr/` (a small Turkish Markdown and HTML folder with its own `sourced.config.ts`), E2E-26, `qa/m5-report.md`.
+- **Steps**: ingest the fixture in mock mode through the existing ingest script with the folder files pre-converted by a test helper (loaders arrive in M6); run E2E-26.
+- **Acceptance**: E2E-26 passes; IT-13 passes on this fixture; milestone report written (`qa-milestone-docs`).
+- **Depends on**: T-51
+
+## M6 Sources and CLI *(v2)*
+
+### T-53 Source drivers and multi-host fetching
+
+- **Goal**: Folder, Git path, URL list, sitemap and crawl sources discover and load documents.
+- **Implements**: FR-65, FR-66; TRD §32
+- **Files**: `lib/sources/types.ts`, `folder.ts`, `git.ts`, `urls.ts`, `sitemap.ts`, `crawl.ts`, `lib/ingest/fetch.ts` (per-host limiter, conditional requests), `lib/ingest/robots.ts` (per host), `.gitignore`, UT-34 to UT-37.
+- **Steps**: ask approval for `picomatch` and `fast-xml-parser`; implement TRD §32 as written; keep v1 fetch constants.
+- **Acceptance**: UT-34 to UT-37 pass with injected fetch and clock; the example still ingests offline with identical hashes (IT-16).
+- **Depends on**: T-52
+
+### T-54 Generic HTML parser
+
+- **Goal**: Unknown documentation sites parse into clean sections.
+- **Implements**: FR-68; TRD §33.1, §33.2; A-20; NFR-25
+- **Files**: `lib/ingest/parse-html-generic.ts`, `tests/fixtures/sites/` (five unrelated documentation sites, saved pages with their licences noted), UT-38.
+- **Steps**: ask approval for `@mozilla/readability` and `linkedom`; verify A-20; implement the algorithm; write fixture expectations by reading the saved pages, not from parser output.
+- **Acceptance**: UT-38 passes; coverage ≥ 90% for the file.
+- **Depends on**: T-53
+
+### T-55 Markdown and MDX parser
+
+- **Implements**: FR-69; TRD §33.3; NFR-25
+- **Files**: `lib/ingest/parse-markdown.ts`, fixtures, UT-39.
+- **Steps**: ask approval for the `unified`/`remark` packages; implement.
+- **Acceptance**: UT-39 passes; coverage ≥ 90%.
+- **Depends on**: T-53
+
+### T-56 PDF parser
+
+- **Implements**: FR-70 (PDF); TRD §33.4; A-21; NFR-25
+- **Files**: `lib/ingest/parse-pdf.ts`, fixtures (two text-layer PDFs with headings, one scanned PDF), UT-40.
+- **Steps**: ask approval for `unpdf`; verify A-21; implement.
+- **Acceptance**: UT-40 passes; coverage ≥ 90%; the scanned fixture is reported `needs_ocr`.
+- **Depends on**: T-53
+
+### T-57 `.docx` parser
+
+- **Implements**: FR-70 (`.docx`), D-70; TRD §33.5; A-26; NFR-25
+- **Files**: `lib/ingest/parse-docx.ts`, fixtures (headings, nested lists, tables, no-heading document), UT-41.
+- **Steps**: ask approval for `mammoth`; verify A-26; implement.
+- **Acceptance**: UT-41 passes; coverage ≥ 90%.
+- **Depends on**: T-54 (reuses the generic section builder)
+
+### T-58 CLI framework
+
+- **Goal**: One `sourced` entry point with the JSON envelope, exit codes and interaction rules.
+- **Implements**: FR-76, FR-77; TRD §34.1–34.3; NFR-22
+- **Files**: `scripts/sourced.ts`, `lib/cli/*` (router, envelope, schemas, prompts, output), `package.json` scripts (`sourced`, v1 aliases), `config:snapshot` command, UT-45.
+- **Steps**: ask approval for `@inquirer/prompts` and moving `tsx` to runtime dependencies; implement the envelope and router; port the v1 ingest and eval scripts behind subcommands without changing their behaviour.
+- **Acceptance**: UT-45 passes (including the no-secret snapshot); `pnpm ingest` and `pnpm eval` still work as aliases.
+- **Depends on**: T-52
+
+### T-59 Ingest command: boilerplate, resume, dry run and confirmation
+
+- **Implements**: FR-71, FR-72, FR-73, FR-37 (across sources); TRD §33.6–33.8; NFR-21 (resume)
+- **Files**: `lib/ingest/boilerplate.ts`, `lib/ingest/checkpoint.ts`, `lib/ingest/upsert.ts`, `lib/cli/commands/ingest.ts`, `lib/env.ts` (`INGEST_CONFIRM_ABOVE_USD`), UT-42, UT-44, IT-14, IT-17, IT-18.
+- **Acceptance**: listed tests pass; the mixed-folder fixture (IT-17) ingests end to end in mock mode; interrupting with SIGINT and resuming produces the same counts as one run.
+- **Depends on**: T-53 to T-58
+
+### T-60 Contextual embedding input
+
+- **Implements**: FR-75; TRD §33.6
+- **Files**: `lib/ingest/chunk.ts` (embedding input), `lib/ingest/upsert.ts` (hash versioning), UT-43, `eval/postgres-17/results/`.
+- **Steps**: implement; run `sourced eval --compare` on the example with the flag on and off (live, deliberate, within the eval budget); set the example's flag from the result and record a decisions log row.
+- **Acceptance**: UT-43 passes; the comparison is committed; the example's setting follows the no-regression rule.
+- **Depends on**: T-59
+
+### T-61 `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check`
+
+- **Implements**: FR-78, FR-79, FR-80, FR-81; TRD §34.1, §34.4
+- **Files**: `lib/cli/commands/*.ts`, `.gitignore` handling, `.sourced/mounts`.
+- **Steps**: implement each command on the Node path; `add` detects a sitemap for a bare site URL (`/sitemap.xml`, then `robots.txt` `Sitemap:` lines) and proposes `sitemap`, else `crawl`.
+- **Acceptance**: CT tests for these commands (written in T-63) are drafted here and pass; `ask --trace` output matches the FR-08 data for the same question in the app.
+- **Depends on**: T-59
+
+### T-62 Docker path
+
+- **Implements**: FR-94, D-72; TRD §35; A-22, A-23
+- **Files**: `Dockerfile`, `.dockerignore`, `docker-compose.yml`, `scripts/docker-entrypoint.sh`, `sourced`, `sourced.cmd`, `.github/workflows/ci.yml` (`docker` job, TRD §39.5).
+- **Steps**: implement; verify A-22; verify A-23 on macOS, Linux and Windows (manual; record the platforms that were checked).
+- **Acceptance**: the `docker` CI job passes; on a machine with only Docker installed, the TRD §35.4 sequence reaches a cited answer with the example corpus in mock mode.
+- **Depends on**: T-61
+
+### T-63 Contract tests and scale check
+
+- **Implements**: NFR-21, NFR-22; TRD §39.3
+- **Files**: `tests/contract/*`, `vitest.config.ts` (project `contract`), `ci.yml`, `scripts/bench-search.ts`.
+- **Steps**: write CT-01 to CT-14; generate a synthetic 100,000-chunk corpus with mock embeddings and measure hybrid search p95 warm.
+- **Acceptance**: CT-01 to CT-14 pass in CI; search p95 ≤ 300 ms recorded in `qa/`.
+- **Depends on**: T-62
+
+### T-64 Any-corpus check and M6 exit
+
+- **Implements**: PRD section 11 any-corpus check; A-25
+- **Files**: `qa/m6-report.md`, `examples/mongodb/sourced.config.ts` (not committed corpus data), `examples/mixed-folder/` (small licensed files).
+- **Steps**: verify A-25; on a clean machine with only Docker, run the sequence for the MongoDB sitemap (live embeddings, within an owner-approved budget) and for the mixed folder; record timings against NFR-20.
+- **Acceptance**: both reach cited answers within NFR-20; findings logged; milestone report written.
+- **Depends on**: T-63
+
+## M7 Quality on any corpus *(v2)*
+
+### T-65 `inspect`
+
+- **Implements**: FR-82; TRD §36.4
+- **Files**: `lib/inspect/*`, `lib/cli/commands/inspect.ts`, UT-46.
+- **Acceptance**: UT-46 passes; `inspect` on the mixed-folder example reports the scanned PDF and any boilerplate removed.
+- **Depends on**: T-64
+
+### T-66 `eval:generate`, `eval:review` and the built-in injection set
+
+- **Implements**: FR-83; TRD §36.2, §36.3
+- **Files**: `lib/eval/generate.ts`, `lib/prompts/generate.ts` (prompt text pinned and versioned in this task), `eval/shared/injection.jsonl`, `lib/cli/commands/eval-generate.ts`, `eval-review.ts`, UT-47.
+- **Acceptance**: UT-47 passes in mock mode; one live run on the MongoDB example produces candidates the owner reviews; cost recorded.
+- **Depends on**: T-65
+
+### T-67 Eval on kit corpora and comparison
+
+- **Implements**: FR-84, FR-85; TRD §36.1, §36.5
+- **Files**: `lib/eval/golden.ts` (schema changes), `lib/eval/validate.ts` (profiles), `lib/eval/compare.ts`, `scripts/eval.ts`, `eval/postgres-17/golden.jsonl` (`chapter` → `group`, mechanical), unit tests.
+- **Acceptance**: the example's golden set validates under the example profile; `--compare` prints deltas and exits 1 on regression in a unit test; `/eval` still renders.
+- **Depends on**: T-66
+
+### T-68 Quality check on a new corpus and M7 exit
+
+- **Implements**: PRD section 11 quality check
+- **Steps**: build a reviewed golden set of at least 30 questions for the MongoDB example with `eval:generate`; run `sourced eval`; record results in `eval/mongodb/results/` (results only, no corpus data).
+- **Acceptance**: default floors met, or the gaps and fixes are recorded and the owner decides; milestone report written.
+- **Depends on**: T-67
+
+## M8 Agent guidance and v2.0 release *(v2)*
+
+### T-69 Shared skill rules and CLI reference
+
+- **Implements**: FR-88, FR-89; TRD §37.1, §37.3
+- **Files**: `.agents/skills/_shared/rules.md`, `_shared/cli-reference.md`, `scripts/check-skills.ts --write`.
+- **Acceptance**: the generated reference lists every command, flag, result field and error code from `lib/cli/schemas`.
+- **Depends on**: T-68
+
+### T-70 `sourced-setup` skill
+
+- **Implements**: FR-88 (`/setup`), FR-89; TRD §37.3
+- **Files**: `.agents/skills/sourced-setup/SKILL.md`, `.claude/commands/setup.md`.
+- **Steps**: write the step script for the Docker path first, with the Node path as a branch; one question per message; cost and privacy before the first paid call; key entry in `.env.local` only.
+- **Acceptance**: a dry rehearsal in Claude Code on a clean clone with the mock provider reaches a cited answer; transcript in `qa/release-v2/rehearsal-setup.md`.
+- **Depends on**: T-69
+
+### T-71 `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills
+
+- **Implements**: FR-88; TRD §37.3
+- **Acceptance**: `check-skills` passes; one rehearsal each, transcripts in `qa/release-v2/`.
+- **Depends on**: T-70
+
+### T-72 `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills
+
+- **Implements**: FR-85 (agent loop), FR-88; TRD §37.3
+- **Acceptance**: `check-skills` passes; `/tune` rehearsal keeps or reverts a change by `eval --compare`; `/deploy` rehearsal stops at `deploy:check` without creating any external resource.
+- **Depends on**: T-71
+
+### T-73 Command pointers, permissions and skill checks in CI
+
+- **Implements**: FR-88; TRD §37.4, §37.5; A-24
+- **Files**: `.claude/commands/*.md`, `.claude/settings.json`, `ci.yml` (`static` job runs `check-skills`), UT-50.
+- **Steps**: verify A-24 for Claude Code and Codex; keep the existing attribution settings in `.claude/settings.json`.
+- **Acceptance**: UT-50 passes; CI runs the check.
+- **Depends on**: T-72
+
+### T-74 `private` profile access
+
+- **Implements**: FR-90, NFR-12 (amended); TRD §38
+- **Files**: `middleware.ts`, `app/access/page.tsx`, `app/api/access/route.ts`, `lib/access/*`, `lib/errors.ts` (`ACCESS_DENIED`), `docs/PRD.md` (access page copy in section 9, new subsection), UT-48, E2E-27, E2E-28.
+- **Acceptance**: UT-48, E2E-27, E2E-28 pass; `deploy:check --profile private` fails without the token.
+- **Depends on**: T-51, T-61
+
+### T-75 Agent files for users; contributor rules moved
+
+- **Implements**: FR-87, D-66; TRD §37.2
+- **Files**: `AGENTS.md` (new user-facing content), `docs/contributing/AGENTS.md` (today's file, `git mv`), `CONTRIBUTING.md`, `.prettierignore` (path update), links in `docs/*.md`.
+- **Steps**: move first, then write the new root file; update every reference to `AGENTS.md` sections in the specs to the new path.
+- **Acceptance**: no spec links to a moved section at the old path (`grep -rn "AGENTS.md" docs/`); `CLAUDE.md` still imports the root file.
+- **Depends on**: T-73
+
+### T-76 README, newcomer release check and v2.0.0
+
+- **Implements**: FR-57 (superseded by the new README section), G-6, G-7, NFR-20, NFR-24; PRD section 11
+- **Files**: `README.md` ("Use your own documents", Docker path first), `CHANGELOG.md`, `qa/release-v2/`.
+- **Steps**: run the newcomer release check in Claude Code and in Codex on clean machines with only Docker (D-71); run the v2 release checklist below; tag `v2.0.0` after the owner's approval.
+- **Acceptance**: both newcomer transcripts reach a cited answer with no FR-89 rule break; release checklist complete.
+- **Depends on**: T-74, T-75
+
+---
+
 ## Traceability: functional requirements to tasks and tests
 
 | FR | Tasks | Tests |
@@ -638,6 +923,42 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0. Read `
 | FR-56 | T-18 | mock-provider.test.ts (interface conformance) |
 | FR-57 | T-44 | README checklist |
 | FR-58 | T-44 (Could) | manual |
+| FR-59 | T-47 | UT-32 |
+| FR-60 | T-49 | UT-49 |
+| FR-61 | T-46, T-47 | IT-12 |
+| FR-62 | T-47 | IT-13 |
+| FR-63 | T-48 | UT-33, E2E-26 |
+| FR-64 | T-51 | profile unit tests, E2E-01 to E2E-25 |
+| FR-65 | T-53 | UT-34, UT-35, UT-36 |
+| FR-66 | T-53 | UT-37 |
+| FR-67 | T-46, T-54 to T-57 | IT-17, E2E-28 |
+| FR-68 | T-54 | UT-38 |
+| FR-69 | T-55 | UT-39 |
+| FR-70 | T-56, T-57 | UT-40, UT-41 |
+| FR-71 | T-59 | UT-42 |
+| FR-72 | T-46, T-59 | IT-14 |
+| FR-73 | T-59 | UT-44 |
+| FR-74 | T-48, T-50 | `check-corpus-literals`, IT-16 |
+| FR-75 | T-60 | UT-43, eval comparison |
+| FR-76 | T-58 | CT-01 to CT-14 |
+| FR-77 | T-58 | UT-45, CT-01 to CT-14 |
+| FR-78 | T-61 | CT (doctor) |
+| FR-79 | T-61 | CT (init) |
+| FR-80 | T-61 | CT (ask) |
+| FR-81 | T-61, T-74 | CT (deploy:check) |
+| FR-82 | T-65 | UT-46 |
+| FR-83 | T-66 | UT-47 |
+| FR-84 | T-67, T-68 | eval unit tests, MongoDB results |
+| FR-85 | T-67, T-72 | compare unit test, `/tune` rehearsal |
+| FR-86 | M9 (Could) | — |
+| FR-87 | T-75 | grep check |
+| FR-88 | T-69 to T-73 | UT-50, rehearsals, newcomer check |
+| FR-89 | T-69 to T-72, T-76 | transcript review |
+| FR-90 | T-51, T-74 | UT-48, E2E-27 |
+| FR-91 | M9 (Could) | — |
+| FR-92 | M9 (Could) | — |
+| FR-93 | M9 (Could) | — |
+| FR-94 | T-62 | Docker CI job, any-corpus check |
 
 ## Release checklist
 
@@ -682,3 +1003,21 @@ Docs and release
 - [ ] Attribution: footer line, `corpus/LICENSE-POSTGRESQL.txt`, `NOTICE`.
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
+
+## Release checklist v2.0.0
+
+Functional
+- [ ] All Must FRs from FR-59 to FR-94 implemented (FR-86, FR-91 to FR-93 are v2.1); any Should not done has a decisions log entry.
+- [ ] Example corpus: E2E-01 to E2E-25 pass and the release eval run passes all floors, as for v1.0.0.
+- [ ] Any-corpus check (T-64) and quality check (T-68) results committed under `qa/`.
+
+Kit and agents
+- [ ] Newcomer release check passed in Claude Code and in Codex (D-71), transcripts in `qa/release-v2/`, no FR-89 rule break.
+- [ ] `docker compose up` and the TRD §35.4 sequence verified on macOS, Windows and Linux with only Docker installed.
+- [ ] `check-skills`, contract tests and the `docker` job green on `main`.
+- [ ] No secret printed by any command (UT-45 snapshot) and none in transcripts.
+
+Docs and release
+- [ ] README "Use your own documents" leads with the Docker path; the Node path is documented for contributors.
+- [ ] Root `AGENTS.md` is user-facing; `docs/contributing/AGENTS.md` and `CONTRIBUTING.md` exist and are linked.
+- [ ] `CHANGELOG.md` v2.0.0 entry; tag `v2.0.0` after the owner's approval; GitHub release notes list best-effort agents and any known issues there.

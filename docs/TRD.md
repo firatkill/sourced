@@ -2,6 +2,8 @@
 
 This document specifies how Sourced is built. It implements the requirements in `docs/PRD.md` (IDs FR-xx, NFR-xx, D-xx) and is executed in the order given by `docs/IMPLEMENTATION_PLAN.md` (IDs T-xx). Where this document and the PRD disagree, the PRD wins for behaviour and copy, and this document wins for technical detail. Report any contradiction as an issue instead of guessing.
 
+Part I (sections 1 to 27) specifies v1.0.0. Part II (sections 28 to 41, at the end of this document) specifies the v2 RAG kit (PRD FR-59 to FR-94) and is built only after v1.0.0 is tagged.
+
 Conventions in this document:
 
 - "Must" is mandatory. "Pin" means write an exact version (no `^` or `~`) in `package.json`.
@@ -3087,3 +3089,768 @@ The README must contain, in this order:
 Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.
 
 T-06 approved compatibility exception (D-52): pin Next.js 15.5.28; override only its transitive PostCSS to 8.5.31. Use middleware.ts and TypeScript JSX preserve plus a CSS side-effect module declaration. The guarded Webpack hook omits exactly the unused legacy nomodule asset emitter and fails if its expected internal shape changes. NFR-18 browsers support modules; the all-referenced-script gzip measurement and 120 KB scaffold ceiling remain unchanged. Review this hook and override on every framework upgrade.
+
+---
+
+# Part II: v2 RAG kit
+
+Sections 28 to 41 specify how v2 is built. They implement PRD requirements FR-59 to FR-94, NFR-20 to NFR-25 and decisions D-63 to D-72, and are executed by tasks T-46 to T-76 in `docs/IMPLEMENTATION_PLAN.md` (milestones M5 to M8). Part I (sections 1 to 27) stays the specification of v1.0.0. Where a Part II section changes a Part I section, it says so and names the task that makes the change; until that task lands, Part I holds. Test IDs continue the Part I numbering: unit UT-32 onward, integration IT-12 onward, E2E E2E-26 onward, and a new contract-test series CT-01 onward (section 39). Assumptions continue at A-17.
+
+Rule carried over from PRD section 16: no Part II code is written before v1.0.0 is tagged, except that new v1 code follows FR-74.
+
+## 28. Architecture changes
+
+### 28.1 Overview
+
+```text
+                      sourced.config.ts  (developer-owned, typed, validated)
+                              │  loadConfig() in the CLI only
+                              ▼
+                     .sourced/config.json  (resolved snapshot; read by the app)
+                              │
+  sources ──► loaders ──► ParsedDocument ──► boilerplate filter ──► chunker ──► embedder ──► Postgres
+  (folder, md,   (lib/sources/*)     (lib/ingest/parse-*)                      (provider     (chunks,
+   html, pdf,                                                                   per role)    corpus_meta)
+   docx, urls,                                                                                  │
+   sitemap,                                                                                     ▼
+   crawl, git)                                                      app: /api/ask → retrieval → rerank → generate → verify
+                                                                    CLI: ask --trace, inspect, eval, eval:generate
+```
+
+Three changes run through every module:
+
+1. **Configuration.** Values that v1 hard-codes for the PostgreSQL corpus (corpus name, copy, embedding model and dimensions, full-text configuration, sources, golden-set grouping) move into `sourced.config.ts`. Engine constants that are not corpus-specific (RRF k, timeouts, quote rules) stay in `lib/config.ts`; the configuration may override only the ones section 29.2 lists.
+2. **Roles and providers.** Each model role (`chat`, `rerank`, `judge`, `embed`, `generate`) names its own provider and model. `getProvider()` becomes `getProviders()` returning one `LlmProvider` per role (section 31).
+3. **One CLI.** Every developer-facing operation is a subcommand of `scripts/sourced.ts` with a stable `--json` contract (section 34). The Docker path (section 35) and the coding-agent skills (section 37) call only this CLI.
+
+### 28.2 Repository layout additions
+
+```text
+sourced.config.ts               # developer-owned; the example corpus ships as the default content
+sourced                         # POSIX launcher for the Docker path (section 35.3)
+sourced.cmd                     # Windows launcher
+Dockerfile                      # kit image (section 35.1)
+.dockerignore
+.sourced/                       # git-ignored: config.json snapshot, mounts, ingest checkpoints, cache index
+corpus/<name>/                  # one directory per corpus (FR-74)
+  raw/                          # fetched pages and copied files; git-ignored unless config says commit
+  LICENSE*, NOTICE              # optional attribution files
+eval/<name>/
+  golden.jsonl                  # accepted questions
+  candidates.jsonl              # eval:generate output awaiting review
+  thresholds.json               # optional overrides of the default floors
+  results/                      # committed eval results
+eval/shared/injection.jsonl     # built-in injection questions (section 36.3)
+lib/kit/config-schema.ts        # Zod schema for sourced.config.ts (normative, section 29.1)
+lib/kit/load-config.ts          # CLI-side loader: tsx import, validate, write snapshot
+lib/kit/runtime-config.ts       # app-side reader of .sourced/config.json (server-only)
+lib/kit/copy.ts                 # corpus-dependent copy rendered from config (FR-63)
+lib/kit/vector-schema.ts        # creates and checks the embedding column for the configured dimensions
+lib/sources/                    # one file per source type (section 32)
+lib/ingest/parse-markdown.ts    # Markdown and MDX parser
+lib/ingest/parse-pdf.ts         # PDF parser
+lib/ingest/parse-docx.ts        # .docx parser
+lib/ingest/parse-html-generic.ts# main-content extraction for unknown sites
+lib/ingest/presets/postgres-docbook.ts  # v1 parse-html.ts rules as a named preset
+lib/ingest/boilerplate.ts       # repeated-block removal (FR-71)
+lib/ingest/checkpoint.ts        # resumable ingest (FR-72)
+lib/llm/gemini.ts, anthropic.ts, ollama.ts
+lib/inspect/                    # corpus health report (FR-82)
+lib/eval/generate.ts            # golden candidate generation (FR-83)
+lib/access/                     # private-profile access token (FR-90)
+lib/cli/                        # CLI framework: commands, JSON envelope, exit codes, prompts
+scripts/sourced.ts              # CLI entry point
+scripts/check-skills.ts         # verifies skills reference only existing commands and flags
+.agents/skills/<skill>/SKILL.md # portable skills (section 37)
+.claude/commands/*.md           # thin pointers to the skills
+docs/contributing/AGENTS.md     # moved contributor rules (FR-87, T-75)
+CONTRIBUTING.md
+```
+
+The v1 example corpus moves from `corpus/manifest.json` + `corpus/raw/` to `corpus/postgres-17/` and its manifest content becomes the `sources` entry of the example `sourced.config.ts` (T-50). `eval/golden.jsonl` and `eval/results/` move to `eval/postgres-17/` (T-50). `eval.yml` path filters and `EVAL_RESULTS_DIR` default change in the same task.
+
+### 28.3 Runtime configuration flow
+
+- `sourced.config.ts` is TypeScript so editors give completion through `defineConfig()`. It is loaded only by the CLI, with `tsx`, never by the Next.js server.
+- Every CLI command that reads configuration validates it with `KitConfigSchema` (section 29.1), computes `configHash` (SHA-256 of the canonical JSON of the validated object), and writes `.sourced/config.json` = `{ schemaVersion: 1, configHash, writtenAt, config }`.
+- The app reads `.sourced/config.json` through `getKitConfig()` in `lib/kit/runtime-config.ts` (memoized, `server-only`). If the file is missing, the app fails at startup with "Run ./sourced init first." If its `configHash` differs from the hash stored in `corpus_meta` for the ingested corpus in a way that affects retrieval (embedding provider, model or dimensions, full-text configuration), search refuses with `CORPUS_MISMATCH` (section 30.3).
+- The Docker image copies no configuration: the repository is mounted, so a change to `sourced.config.ts` takes effect after any CLI command rewrites the snapshot and the app restarts (`./sourced dev` restarts the app container).
+- Vercel and other hosts: `pnpm build` runs `sourced config:snapshot` first, so the snapshot is part of the build output. `deploy:check` (FR-81) verifies this.
+
+## 29. Kit configuration
+
+### 29.1 Schema (normative, `lib/kit/config-schema.ts`)
+
+```ts
+import { z } from 'zod';
+
+const RoleModel = z.object({
+  provider: z.enum(['openai', 'gemini', 'anthropic', 'ollama', 'mock']),
+  model: z.string().min(1),
+});
+
+const EmbedModel = RoleModel.extend({
+  provider: z.enum(['openai', 'gemini', 'ollama', 'mock']),   // anthropic has no embeddings (FR-60)
+  dimensions: z.number().int().positive().max(4000),
+});
+
+const Pricing = z.object({                       // USD per 1M tokens; omit for unknown, 0 for local
+  inputPerMTok: z.number().nonnegative(),
+  outputPerMTok: z.number().nonnegative().default(0),
+});
+
+const SourceBase = z.object({
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),
+  group: z.string().regex(/^[a-z0-9-]{1,40}$/).optional(),   // replaces the v1 golden "chapter"
+  include: z.array(z.string()).default([]),                  // picomatch globs on path or URL path
+  exclude: z.array(z.string()).default([]),
+  html: z.object({
+    preset: z.enum(['generic', 'postgres-docbook']).default('generic'),
+    contentSelector: z.string().optional(),
+    removeSelectors: z.array(z.string()).default([]),
+  }).default({}),
+});
+
+export const SourceSchema = z.discriminatedUnion('type', [
+  SourceBase.extend({ type: z.literal('folder'), path: z.string().min(1), commitRaw: z.boolean().default(false) }),
+  SourceBase.extend({ type: z.literal('urls'), urls: z.array(z.url()).min(1), commitRaw: z.boolean().default(false) }),
+  SourceBase.extend({ type: z.literal('sitemap'), url: z.url(), maxPages: z.number().int().positive().default(5000), commitRaw: z.boolean().default(false) }),
+  SourceBase.extend({ type: z.literal('crawl'), root: z.url(), maxDepth: z.number().int().min(0).max(10).default(3),
+                      maxPages: z.number().int().positive().default(1000), commitRaw: z.boolean().default(false) }),
+  SourceBase.extend({ type: z.literal('git'), path: z.string().min(1), subdir: z.string().default('') }),
+]);
+
+export const KitConfigSchema = z.object({
+  schemaVersion: z.literal(1),
+  corpus: z.object({
+    name: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/),     // directory name under corpus/ and eval/
+    title: z.string().min(1).max(60),                        // "PostgreSQL 17 docs"
+    description: z.string().min(1).max(200),
+    language: z.string().regex(/^[a-z]{2}$/),               // ISO 639-1
+    attribution: z.string().max(300).optional(),
+    linkLabel: z.string().max(40).default('Read the source'),
+  }),
+  sources: z.array(SourceSchema).min(1),
+  models: z.object({
+    chat: RoleModel,
+    rerank: RoleModel.optional(),                            // defaults to chat
+    judge: RoleModel.optional(),                             // defaults to chat
+    generate: RoleModel.optional(),                          // eval:generate; defaults to chat
+    embed: EmbedModel,
+  }),
+  pricing: z.record(z.string(), Pricing).default({}),         // key: "<provider>:<model>"
+  profile: z.enum(['local', 'private', 'public-demo']).default('local'),
+  copy: z.object({
+    hero: z.string().max(120).optional(),
+    lead: z.string().max(300).optional(),
+    notFound: z.string().max(120).optional(),
+    suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200) })).max(6).default([]),
+  }).default({}),
+  overrides: z.object({                                       // section 29.2
+    chunking: z.object({ minTokens: z.number().int(), targetTokens: z.number().int(), maxTokens: z.number().int(), overlapTokens: z.number().int() }).partial().default({}),
+    retrieval: z.object({ vectorCandidates: z.number().int(), ftsCandidates: z.number().int(), rerankCandidates: z.number().int(), finalPassages: z.number().int().min(1).max(9) }).partial().default({}),
+    contextualEmbedding: z.boolean().default(true),
+  }).default({}),
+}).superRefine(validateKitConfig);                          // cross-field rules, section 29.3
+
+export type KitConfig = z.infer<typeof KitConfigSchema>;
+export const defineConfig = (config: z.input<typeof KitConfigSchema>) => config;
+```
+
+### 29.2 What a configuration may override
+
+| Constant group (`lib/config.ts`) | Overridable | Bounds |
+|---|---|---|
+| `CHUNKING.MIN_TOKENS`, `TARGET_TOKENS`, `MAX_TOKENS`, `OVERLAP_TOKENS` | yes | `200 ≤ min < target < max ≤ 1500`; `overlap ≤ min / 4` |
+| `RETRIEVAL.VECTOR_CANDIDATES`, `FTS_CANDIDATES` | yes | 10–200 |
+| `RETRIEVAL.RERANK_CANDIDATES` | yes | `finalPassages ≤ rerank ≤ min(vector + fts, 50)` |
+| `RETRIEVAL.FINAL_PASSAGES` | yes | 1–9 (labels `[P1]` to `[P9]`; the citation regex in TRD §14.3 is widened to one digit 1–9 in T-48) |
+| `RETRIEVAL.HNSW_EF_SEARCH` | derived | `max(100, vectorCandidates × 2)` |
+| Everything else (timeouts, quote rules, RRF k, SSE, fetch rules) | no | — |
+
+### 29.3 Cross-field rules (`validateKitConfig`)
+
+1. `models.embed.dimensions` must match the known dimensions of the model for OpenAI and Gemini (table in `lib/llm/models.ts`, checked in T-47 against A-17); for Ollama it is checked by `doctor` with one embedding call.
+2. Source ids are unique. `folder` and `git` paths are resolved relative to the repository; an absolute path outside the repository is allowed and recorded in `.sourced/mounts` (section 35.3).
+3. `profile: 'public-demo'` requires `copy.suggested` to have 1–6 entries (the cache needs them) and every role to have `pricing` (cost caps need prices).
+4. `corpus.language` maps to a PostgreSQL text search configuration through the table in section 30.2; unknown languages map to `simple` with a warning.
+5. Any `mock` provider is rejected when `NODE_ENV=production` or `VERCEL_ENV=production`.
+
+### 29.4 Example configuration (the v1 corpus)
+
+```ts
+import { defineConfig } from './lib/kit/config-schema';
+
+export default defineConfig({
+  schemaVersion: 1,
+  corpus: {
+    name: 'postgres-17',
+    title: 'PostgreSQL docs',
+    description: '35 pages of the PostgreSQL 17 documentation',
+    language: 'en',
+    attribution: 'PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the PostgreSQL License.',
+    linkLabel: 'Read in the PostgreSQL docs',
+  },
+  sources: [{
+    id: 'pg17', type: 'urls', commitRaw: true,
+    html: { preset: 'postgres-docbook', contentSelector: '#docContent',
+            removeSelectors: ['.navheader', '.navfooter', '.toc', 'script', 'style', 'img', 'a.id_link'] },
+    urls: [ /* the 35 pinned URLs from corpus/manifest.json, in the same order */ ],
+  }],
+  models: {
+    chat: { provider: 'openai', model: '<CHAT_MODEL pinned in T-18>' },
+    embed: { provider: 'openai', model: 'text-embedding-3-small', dimensions: 1536 },
+  },
+  profile: 'public-demo',
+  copy: {
+    hero: 'Ask the PostgreSQL docs. Every claim shows its source.',
+    lead: 'Answers come only from 35 pages of the PostgreSQL 17 documentation. Each citation is checked against the passage it points to before you see it.',
+    notFound: "I couldn't find this in the PostgreSQL docs.",
+    suggested: [ /* the six PRD §9.2 chips with their ids */ ],
+  },
+});
+```
+
+The hosted demo keeps reading `CHAT_MODEL`, `JUDGE_MODEL` and the `PRICE_*` variables (Part I §5): when those variables are set they override `models.chat.model`, `models.judge.model` and the matching `pricing` entries, so production secrets and pins stay in Vercel environment variables (D-64). For every other deployment the configuration is the source.
+
+The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become separate sources with a `group` each, so the example's golden-set grouping keeps working (section 36.1).
+
+### 29.5 Copy rendering (FR-63, `lib/kit/copy.ts`)
+
+`getCopy(config)` returns the corpus-dependent strings. Defaults when `copy.*` is unset:
+
+| Key | Default |
+|---|---|
+| Document title | `Sourced: answers from {corpus.title}` |
+| `hero` | `Ask {corpus.title}. Every claim shows its source.` |
+| `lead` | `Answers come only from {corpus.description}. Each citation is checked against the passage it points to before you see it.` |
+| `notFound` | `I couldn't find this in {corpus.title}.` |
+| Not-found body | `Sourced only answers from the {documentCount} documents it has indexed. These passages came closest:` |
+| Link label | `corpus.linkLabel` |
+| Footer line 2 | `corpus.attribution`, omitted when unset |
+
+`{documentCount}` comes from `corpus_meta.documents_total`. The example configuration sets values that reproduce PRD §9 byte for byte; E2E-01 to E2E-25 keep asserting the v1 strings against the example. The prompt's not-found sentence (TRD §13.1) is `getCopy().notFound`; changing it bumps `PROMPT_VERSION` like any prompt change.
+
+## 30. Database changes
+
+### 30.1 New and changed tables (normative DDL, migration `0003_kit.sql`)
+
+```sql
+CREATE TABLE corpus_meta (
+  id                 smallint PRIMARY KEY DEFAULT 1 CHECK (id = 1),     -- one corpus per database
+  corpus_name        text        NOT NULL,
+  embed_provider     text        NOT NULL,
+  embed_model        text        NOT NULL,
+  embed_dimensions   integer     NOT NULL CHECK (embed_dimensions > 0),
+  vector_type        text        NOT NULL CHECK (vector_type IN ('vector', 'halfvec')),
+  fts_config         regconfig   NOT NULL,
+  retrieval_hash     text        NOT NULL,          -- sha256 of embed provider, model, dimensions, fts_config
+  documents_total    integer     NOT NULL DEFAULT 0,
+  updated_at         timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE documents ADD COLUMN source_id   text;      -- null only for rows written by v1
+ALTER TABLE documents ADD COLUMN source_kind text;      -- 'web' | 'file'
+ALTER TABLE documents ADD COLUMN mime_type   text;
+ALTER TABLE chunks    ADD COLUMN page_from   integer;   -- PDF only
+ALTER TABLE chunks    ADD COLUMN page_to     integer;
+ALTER TABLE chunks    ADD COLUMN embed_text_version smallint NOT NULL DEFAULT 0;   -- 0 = v1 (content only), 1 = contextual (FR-75)
+
+ALTER TABLE chunks DROP CONSTRAINT chunks_content_hash_key;
+ALTER TABLE chunks ADD CONSTRAINT chunks_document_content_hash_key UNIQUE (document_id, content_hash);
+
+CREATE TABLE ingest_items (
+  run_id        bigint  NOT NULL REFERENCES ingest_runs (id) ON DELETE CASCADE,
+  document_key  text    NOT NULL,                 -- '<source_id>:<normalized path or URL>'
+  status        text    NOT NULL CHECK (status IN ('pending', 'done', 'failed', 'skipped')),
+  chunks        integer NOT NULL DEFAULT 0,
+  tokens        integer NOT NULL DEFAULT 0,
+  error         text,
+  updated_at    timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (run_id, document_key)
+);
+ALTER TABLE ingest_runs ADD COLUMN config_hash text;
+```
+
+Migration notes:
+
+- Dropping `chunks_content_hash_key` is not additive. It is the one exception to the additive-only rule in AGENTS.md and needs the owner's approval in T-46 (checkpoint 4). Reason: in arbitrary corpora the same chunk text (a shared disclaimer, a repeated code sample) appears in several documents; with a global unique key the second document's upsert silently re-parents the chunk (`ON CONFLICT (content_hash)` in `lib/ingest/upsert.ts`). The upsert's conflict target changes to `(document_id, content_hash)` in the same task.
+- `documents.slug` keeps its unique constraint; v2 writes `slug = document_key` (section 32.1). The v1 regex check on slugs lives in the manifest schema, not the database, and is replaced by `SourceSchema`.
+
+### 30.2 Embedding column and full-text column (`lib/kit/vector-schema.ts`)
+
+The embedding column type and the generated `tsv` column depend on the configuration, so they are managed by the kit, not by Drizzle migrations.
+
+| Dimensions | Column | HNSW operator class |
+|---|---|---|
+| ≤ 2000 | `vector(n)` | `vector_cosine_ops` |
+| 2001–4000 | `halfvec(n)` | `halfvec_cosine_ops` |
+
+(pgvector's HNSW limits: 2,000 dimensions for `vector`, 4,000 for `halfvec`; verify in A-18.)
+
+`ensureCorpusSchema(sql, config)`:
+
+1. Reads `corpus_meta`. If it is empty and `chunks` is empty: `ALTER TABLE chunks ALTER COLUMN embedding TYPE <type>(<n>)`, drop and recreate `chunks_embedding_hnsw_idx` with the operator class, drop and re-add `tsv` as `GENERATED ALWAYS AS (to_tsvector('<fts_config>'::regconfig, content)) STORED`, recreate `chunks_tsv_gin_idx`, insert `corpus_meta`.
+2. If `corpus_meta` exists and its `retrieval_hash` equals the configuration's: no-op.
+3. If it differs: return `CORPUS_MISMATCH` with the stored and configured values. Only `sourced ingest --rebuild` (which requires confirmation or `--yes`, section 34.3) truncates `chunks` and `documents`, then runs step 1.
+
+Language map (FR-62), a constant in `lib/kit/fts.ts`: `en→english, de→german, fr→french, es→spanish, it→italian, pt→portuguese, nl→dutch, tr→turkish, ru→russian, sv→swedish, da→danish, no→norwegian, fi→finnish, hu→hungarian, ro→romanian`; any other code → `simple`. `doctor` confirms the configuration exists with `SELECT cfgname FROM pg_ts_config`.
+
+The search SQL (TRD §9.2) changes in T-47: `'english'::regconfig` becomes a bound `regconfig` parameter from `corpus_meta.fts_config`, and the `::vector` cast becomes `::<vector_type>`. The statement text stays otherwise identical.
+
+### 30.3 New error codes
+
+Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
+
+| Code | Where | HTTP / exit | User copy |
+|---|---|---|---|
+| `CONFIG_INVALID` | CLI, app startup | exit 1; app 500 | CLI: the field path and the fix. App: server error copy. |
+| `CORPUS_MISMATCH` | search, eval | exit 2; app `error` event `RETRIEVAL_ERROR` copy, log names the mismatch | "The corpus was indexed with a different embedding model or language. Run ./sourced ingest --rebuild." (CLI only) |
+| `CORPUS_EMPTY` | search, `ask`, `dev` | exit 2; app shows the not-found state | "Nothing is indexed yet. Run ./sourced ingest." (CLI only) |
+| `SOURCE_FAILED` | ingest | per-document item `failed`; run continues | Listed in the report with the reason |
+| `ACCESS_DENIED` | `/api/ask`, pages | 401 JSON / token prompt | PRD-level copy added in T-74: H2 "This chatbot is private", body "Enter the access token you were given.", button "Continue", error "That token is not valid." |
+| `NEEDS_CONFIRMATION` | CLI | exit 2 | The estimate and the flag to pass (`--yes`) |
+
+## 31. Providers
+
+### 31.1 Roles
+
+`getProviders(): Record<Role, LlmProvider>` with `Role = 'chat' | 'rerank' | 'judge' | 'generate' | 'embed'`. Unset optional roles resolve to `chat`. The `LlmProvider` interface (TRD §13.0) is unchanged except that `model` becomes the role name and the `name` union widens to `'openai' | 'gemini' | 'anthropic' | 'ollama' | 'mock'`. Call sites change from `provider.streamText({ model: 'chat' })` to `providers.chat.streamText(...)` in T-47.
+
+### 31.2 Provider files
+
+| File | Package | Key variable | Notes |
+|---|---|---|---|
+| `lib/llm/openai.ts` | `@ai-sdk/openai` (pinned in v1) | `OPENAI_API_KEY` | Unchanged behaviour. `dimensions` passed from config. |
+| `lib/llm/gemini.ts` | `@ai-sdk/google` | `GOOGLE_GENERATIVE_AI_API_KEY` | Embedding `outputDimensionality` from config. |
+| `lib/llm/anthropic.ts` | `@ai-sdk/anthropic` | `ANTHROPIC_API_KEY` | `embed()` throws `CONFIG_INVALID` (never reached: the schema rejects it). |
+| `lib/llm/ollama.ts` | AI SDK community Ollama provider, or Ollama's OpenAI-compatible endpoint through `@ai-sdk/openai-compatible` (decided by A-19) | `OLLAMA_BASE_URL` (default `http://localhost:11434`; `http://host.docker.internal:11434` on the Docker path) | No key. Pricing 0. Structured output through JSON mode with Zod validation; if the model cannot produce valid JSON for rerank, the rerank fallback applies as in v1. |
+| `lib/llm/mock.ts` | — | — | Dimensions from config (feature hashing into `n` dimensions). |
+
+Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR` / `PROVIDER_TIMEOUT` exactly as TRD §13.0 describes for OpenAI. Each new runtime package needs the owner's approval in its task (AGENTS.md checkpoint 5).
+
+### 31.3 Capability flags
+
+`lib/llm/models.ts` holds a table keyed by `<provider>:<model>` with `supportsTemperature`, `reasoning`, `embedDimensions` (allowed values), `maxOutputTokens`. Unknown chat models default to `supportsTemperature: true, reasoning: false`; `doctor` makes one call to confirm and prints the result. This replaces the single `MODEL_SUPPORTS_TEMPERATURE` constant from T-18.
+
+### 31.4 Pricing and cost
+
+Cost estimates (TRD §21) read prices from `pricing["<provider>:<model>"]`, with the `PRICE_*` variables overriding for the demo (section 29.4). A role without a price yields `costUsdEstimate: null`, shown as "unknown" in the CLI and in "How this was answered". The eval budget guard (TRD §17.7) and the ingest confirmation (section 33.6) treat an unknown price as follows: Ollama counts as 0; any other unknown price requires `--yes` with the message "Price unknown for <provider>:<model>; add it to pricing in sourced.config.ts to get an estimate."
+
+## 32. Sources
+
+### 32.1 Interfaces (normative, `lib/sources/types.ts`)
+
+```ts
+export type DocumentRef = {
+  key: string;            // '<sourceId>:<normalized path or URL>' ; stable across runs
+  sourceId: string;
+  location: { kind: 'web'; url: string } | { kind: 'file'; path: string };
+  group: string | undefined;
+};
+export type RawDocument = DocumentRef & {
+  bytes: Uint8Array;
+  mimeType: 'text/html' | 'text/markdown' | 'text/mdx' | 'application/pdf'
+          | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'text/plain';
+  fetchedAt: Date;
+  contentHash: string;    // sha256 hex of bytes
+};
+export interface SourceDriver<S> {
+  discover(source: S, ctx: SourceContext): AsyncIterable<DocumentRef>;
+  load(ref: DocumentRef, ctx: SourceContext): Promise<RawDocument>;
+}
+export type SourceContext = {
+  repoRoot: string;
+  rawDir: string;                       // corpus/<name>/raw/<sourceId>/
+  offline: boolean;
+  refresh: boolean;
+  fetch: typeof fetch;                  // injectable (tests block network)
+  sleep: (ms: number) => Promise<void>;
+  now: () => number;
+  onEvent: (e: SourceEvent) => void;    // progress for the CLI
+};
+```
+
+Key normalization: URLs drop the fragment, sort query parameters, remove a trailing `index.html`; file paths are POSIX, relative to the source root, case preserved.
+
+### 32.2 Drivers
+
+| Type | `discover` | `load` | Raw cache path |
+|---|---|---|---|
+| `folder` | Walk `path` recursively with `include`/`exclude` (picomatch). Skip dot-files, `node_modules`, files over 50 MB (reported). Extension → MIME: `.md` markdown, `.mdx` mdx, `.html`/`.htm` html, `.pdf` pdf, `.docx` docx, `.txt` plain; others skipped and counted. | Read bytes. | none (files stay where they are) |
+| `git` | As `folder` on `path/subdir`; records `git rev-parse HEAD` in the ingest run. Never clones or fetches. | as `folder` | none |
+| `urls` | The list, filtered by include/exclude. | Fetch (section 32.3). | `raw/<sourceId>/<sha1(url)>.<ext>` + `index.json` (url, etag, last-modified, contentHash) |
+| `sitemap` | Fetch `url`; follow `<sitemapindex>` up to 3 levels; collect `<loc>`; same origin as the sitemap only; filter; cap at `maxPages` (reported if hit). | Fetch. | as `urls` |
+| `crawl` | BFS from `root`: same origin and path prefix as `root`, `maxDepth`, `maxPages`, include/exclude, links from `<a href>` in the extracted main content and the page's nav (so section indexes are followed), ignoring `rel=nofollow` and non-HTML links except `.pdf`. | Fetch. | as `urls` |
+
+### 32.3 Fetching rules (FR-66)
+
+`lib/ingest/fetch.ts` generalizes from one host to many: one rate-limiter per host (`FETCH.MIN_INTERVAL_MS`, honouring `Crawl-delay` when larger), `robots.txt` per host fetched once per run and checked with the existing `robots-parser` logic (fail closed except 404), the existing User-Agent, timeout and retry schedule, and conditional requests (`If-None-Match`, `If-Modified-Since`) on refresh. `--offline` never fetches and fails a document whose raw file is missing (item `failed`, run continues). Raw files are git-ignored through `corpus/*/raw/` in `.gitignore`, except sources with `commitRaw: true` (the example), which `sourced init` adds as `!corpus/<name>/raw/<sourceId>/` negations.
+
+## 33. Ingestion pipeline changes
+
+### 33.1 Parsers
+
+All parsers return the v1 `ParsedDocument` (`lib/ingest/parse-html.ts` types `Section`, `Block`), plus optional `pages` on blocks for PDF. Anchors:
+
+| Format | Section anchor | Citation link |
+|---|---|---|
+| HTML (web) | nearest enclosing element `id`, else a slug of the heading (`#<slug>`), else none | `url#anchor` |
+| HTML (file) | as above | `file://` is never linked; the sources card shows `path › heading` |
+| Markdown / MDX | GitHub-style heading slug | web source: `url#slug`; file: `path › heading` |
+| PDF | `p<from>` or `p<from>-<to>` | web: `url#page=<from>`; file: `path, page <from>` |
+| `.docx` | heading slug | `path › heading` |
+| Plain text | `l<line>` of the chunk start | `path, line <n>` |
+
+The golden-set anchor regex (TRD §17.2) widens in T-67 to `^[^#\s]+#[^\s]+$` so file and page anchors validate.
+
+### 33.2 Generic HTML (`parse-html-generic.ts`, FR-68)
+
+1. If the source sets `contentSelector`, use it (v1 behaviour, including fallback warning).
+2. Else run Mozilla Readability on a DOM built with `linkedom` (A-20) to find the main content; if Readability returns under 200 characters of text, fall back to the largest of `main`, `article`, `[role=main]`, `#content`, `.content` by text length; else `body` minus `nav, header, footer, aside, [role=navigation], script, style, noscript, form`.
+3. Remove `removeSelectors`.
+4. Build sections from `h1`–`h6` in document order: each heading opens a section at its level, closing deeper or equal open sections. Text before the first heading belongs to a root section titled with the page `<title>`.
+5. Blocks: `p`, `li` groups, `pre`/`code` (code), `table` (rows joined with ` | `), `blockquote` and admonition classes (`.note`, `.warning`, `.tip`, `.admonition`, `.callout`) as notes.
+6. A page with no block text is reported as `empty` and not stored.
+
+The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtml` dispatches on `html.preset`. The example corpus must produce byte-identical chunks after the move (T-50 acceptance; NFR-16).
+
+### 33.3 Markdown and MDX (`parse-markdown.ts`, FR-69)
+
+`unified` + `remark-parse` + `remark-gfm` + `remark-frontmatter` (+ `remark-mdx` for `.mdx`). Title: front matter `title`, else first `h1`, else file name. MDX: drop `mdxjsEsm` nodes (imports, exports); for `mdxJsxFlowElement`/`mdxJsxTextElement` keep the text of their children; drop expressions. Code fences become code blocks with the language kept in a `lang` field (not embedded). Links keep their text only.
+
+### 33.4 PDF (`parse-pdf.ts`, FR-70)
+
+`unpdf` (a `pdfjs-dist` wrapper that runs in Node without a canvas; A-21). Per page: text items with font size. Headings: lines whose font size is at least 1.25× the page's median size and under 120 characters. Sections from detected headings; if none are found, one section per page. Each block records its page. A PDF whose total extracted text is under 20 characters per page on average is reported `needs_ocr` and skipped.
+
+### 33.5 `.docx` (`parse-docx.ts`, D-70)
+
+`mammoth` converts to HTML with its default style map (Word heading styles → `h1`–`h6`); images are dropped (`convertImage` returns nothing). The HTML goes through the generic HTML section builder (section 33.2 steps 4–5, no main-content detection). Title: core properties `dc:title`, else the first heading, else the file name. Warnings from mammoth are counted in the report.
+
+### 33.6 Boilerplate, chunking, embedding, upsert
+
+- **Boilerplate (FR-71).** After parsing all documents of a run, hash each normalized block (TRD §14.2 normalization). A block whose hash appears in at least `max(5, 30%)` of documents in the same source is removed everywhere in that source, unless the source has fewer than 10 documents. Removed counts go to the report and to `inspect`.
+- **Chunking.** v1 algorithm (TRD §10.4) with the configured bounds. Tokenizer stays `cl100k_base` for every provider: token counts are used for packing and estimates, not billing; estimates for non-OpenAI providers are labelled "approximate".
+- **Contextual embedding (FR-75).** When `overrides.contextualEmbedding` is true, the embedding input is `"{document title}\n{heading path joined with ' › '}\n\n{chunk content}"` and `embed_text_version = 1`. The content hash used for change detection becomes `sha256(embed_text_version + '\0' + embedding input)`, so switching the flag re-embeds everything once. The example corpus turns it on only if T-60's eval comparison shows no regression; otherwise the example sets it to false and the decision is logged.
+- **Upsert.** v1 logic per document, keyed by `document_key`, conflict target `(document_id, content_hash)`. Documents present in the database for a configured source but no longer discovered are deleted at the end of a successful run (FR-37 across sources). Documents of a source removed from the configuration are deleted by `sourced sources remove <id>` (with confirmation), not by ingest.
+
+### 33.7 Resumable ingestion (FR-72, `lib/ingest/checkpoint.ts`)
+
+1. A run starts by looking for the latest `ingest_runs` row with `status='running'` or `'failed'` and the same `config_hash`. If found and `--restart` is not given, the run resumes it: documents with an `ingest_items.status='done'` row are skipped (their chunks are already committed).
+2. Otherwise a new run row is inserted and every discovered document gets a `pending` item.
+3. Each document is processed in its own transaction (parse → chunk → embed changed chunks → upsert → item `done`). Embedding batches (`EMBEDDING.BATCH_SIZE`) run with `EMBEDDING.CONCURRENCY` across documents; a document commits only when all its batches succeed.
+4. `SIGINT` finishes the in-flight document, marks the run `failed` with `error='interrupted'`, prints how to resume, exits 130.
+5. `corpus_version` is computed only when every item is `done` or `skipped`.
+
+### 33.8 Dry run and confirmation (FR-73)
+
+`ingest --dry-run` runs discover, load (from cache or network, respecting `--offline`), parse, boilerplate and chunking, compares chunk hashes with the database (read-only) and reports per source: documents, new/changed/unchanged/deleted chunks, embedding tokens for new and changed chunks, estimated cost. A real run computes the same estimate first; if it exceeds `INGEST_CONFIRM_ABOVE_USD` (env, default `1.00`) or the price is unknown and tokens exceed 1,000,000, it stops with `NEEDS_CONFIRMATION` unless `--yes` is given or the terminal confirmation is answered `y`.
+
+## 34. CLI
+
+### 34.1 Commands (normative names and flags)
+
+| Command | Flags | Writes | Result object (`result` in section 34.2) |
+|---|---|---|---|
+| `doctor` | `--no-network` | nothing | `{ checks: { id, ok, detail, fix? }[] }` |
+| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example` | `sourced.config.ts`, `.env.local` (names only), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
+| `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
+| `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
+| `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | report (section 34.4) |
+| `inspect` | `--source <id>` | `corpus/<name>/inspect.json` | section 36.4 |
+| `ask` | `"<question>" --trace` | `query_log` row (source `cli`) | `{ outcome, answer, citations, trace? }` |
+| `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` |
+| `eval:review` | `--apply` (non-interactive: apply `status` edits made in the file) | moves accepted candidates to `golden.jsonl` | `{ accepted, rejected, edited }` |
+| `eval` | `--compare <results-file|baseline> --validate-only --ci --yes` | `eval/<name>/results/<runId>.json/.md` | v1 results summary + `comparison?` |
+| `dev` | `--port` | — | starts the app; with `--json` prints `{ url }` once ready |
+| `down` | — | — | stops containers (Docker path) |
+| `deploy:check` | `--profile` | — | `{ checks }` as `doctor` |
+| `config:snapshot` | — | `.sourced/config.json` | `{ configHash }` |
+
+`query_log.source` check constraint gains `'cli'` (migration `0003_kit.sql`). v1 script names remain as aliases: `pnpm ingest` → `sourced ingest`, `pnpm eval` → `sourced eval`, `pnpm eval:validate` → `sourced eval --validate-only`, `pnpm cache:suggested` unchanged.
+
+### 34.2 JSON envelope (normative, `lib/cli/envelope.ts`)
+
+```ts
+export const CliEnvelope = z.object({
+  schemaVersion: z.literal(1),
+  command: z.string(),
+  ok: z.boolean(),
+  result: z.unknown().optional(),                 // per-command schema in lib/cli/schemas/*.ts
+  error: z.object({
+    code: z.enum(ERROR_CODES),
+    message: z.string(),                          // plain sentence, no secrets, no stack
+    fix: z.string().optional(),                   // the next command or edit
+  }).optional(),
+  warnings: z.array(z.object({ code: z.string(), message: z.string() })).default([]),
+});
+```
+
+With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
+
+### 34.3 Interaction rules
+
+- Commands never read a secret from stdin and never print an environment variable's value. Keys are checked by presence and by an authenticated call; output shows at most the last 4 characters (`sk-…a1b2`).
+- A command that needs confirmation asks only when stdin is a TTY and `--json` is off; otherwise it exits 2 with `NEEDS_CONFIRMATION`.
+- `--rebuild` and `sources remove` are destructive and always need confirmation or `--yes`.
+- Every human-readable failure ends with one line `Next: <command or edit>`.
+
+### 34.4 `doctor` checks (FR-78)
+
+`docker` (Docker path: `docker version`, Compose v2), `node` (Node path: ≥ 22, pnpm version from `packageManager`), `ports` (3000 and the DB port free or used by our containers), `disk` (≥ 2 GB free in the Docker data root or repository volume), `database` (connect, `vector` extension and version, migrations applied), `fts` (configured regconfig exists), `config` (valid, snapshot current), `keys` (each configured provider: OpenAI `GET /v1/models`, Gemini model list, Anthropic `GET /v1/models`, Ollama `GET /api/tags` and the configured models pulled), `dimensions` (one embedding call returns the configured length; skipped with a warning when the user passes `--no-network`), `corpus` (ingested? matches configuration?), `writable` (corpus and eval directories). Each failing check has a `fix`.
+
+## 35. Docker path (FR-94, D-72)
+
+### 35.1 Image (`Dockerfile`)
+
+Multi-stage, base `node:22-bookworm-slim` pinned by digest at build time (A-22):
+
+1. `deps`: `corepack enable`, `pnpm install --frozen-lockfile`.
+2. `build`: copy sources, `pnpm build` with a placeholder snapshot (the real snapshot is read at runtime from the mounted repository, section 28.3).
+3. `runtime`: production `node_modules`, `.next`, `scripts`, `lib`, `tsx`; non-root user `sourced` (uid 1000 by default, overridable with build arg `UID` so files written to the mounted repository are owned by the host user on Linux). Entrypoint `scripts/docker-entrypoint.sh` with subcommands `app` and `cli`.
+
+The image contains no secrets, no `.env.local` and no corpus data.
+
+### 35.2 Compose (`docker-compose.yml`, replaces the v1 file in T-62)
+
+```yaml
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment: { POSTGRES_USER: sourced, POSTGRES_PASSWORD: sourced, POSTGRES_DB: sourced }
+    ports: ['127.0.0.1:5433:5432']           # loopback only
+    volumes: [pgdata:/var/lib/postgresql/data, ./docker/initdb:/docker-entrypoint-initdb.d:ro]
+    healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sourced -d sourced'], interval: 5s, timeout: 5s, retries: 20 }
+  app:
+    build: { context: ., args: { UID: '${SOURCED_UID:-1000}' } }
+    command: app                               # runs migrations, then `next start`
+    env_file: [.env.local]
+    environment: { DATABASE_URL: 'postgres://sourced:sourced@db:5432/sourced', OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}' }
+    ports: ['127.0.0.1:${SOURCED_PORT:-3000}:3000']
+    volumes: ['.:/workspace']
+    working_dir: /workspace
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on: { db: { condition: service_healthy } }
+  cli:
+    build: { context: ., args: { UID: '${SOURCED_UID:-1000}' } }
+    profiles: [cli]                            # not started by `docker compose up`
+    entrypoint: ['/app/scripts/docker-entrypoint.sh', 'cli']
+    env_file: [.env.local]
+    environment: { DATABASE_URL: 'postgres://sourced:sourced@db:5432/sourced', SOURCED_DOCKER: '1', OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}' }
+    volumes: ['.:/workspace']
+    working_dir: /workspace
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on: { db: { condition: service_healthy } }
+volumes:
+  pgdata:
+```
+
+`.env.local` must exist before `docker compose up`; `./sourced init` creates it. The Node path keeps using `pnpm db:up` against the same `db` service.
+
+### 35.3 Launchers
+
+`./sourced <args>` (POSIX `sh`) and `sourced.cmd <args>` (Windows `cmd`):
+
+1. If `.env.local` is missing and the command is not `init` or `doctor`, print "Run ./sourced init first." and exit 2.
+2. Read `.sourced/mounts` (one absolute host path per line, written by `add` for folder sources outside the repository) and turn each into `-v "<path>:<path>:ro"`.
+3. Run `docker compose run --rm -T` (TTY allocated when the launcher's stdin is a TTY) with those volumes, `SOURCED_UID=$(id -u)` on POSIX, and the arguments.
+4. `dev` is special-cased: `docker compose up -d app`, wait for `/api/health`, print the URL; `down` runs `docker compose down` (keeps `pgdata`).
+
+`doctor` itself works without Docker: when `docker` is not on `PATH`, the launcher prints the install link for the platform (Docker Desktop for macOS and Windows, Docker Engine for Linux) and exits 2.
+
+### 35.4 First run
+
+```bash
+./sourced init        # asks a few questions, writes config and .env.local, builds the image, starts the database
+# the user fills the API key line in .env.local
+./sourced add https://www.mongodb.com/docs/sitemap.xml
+./sourced ingest --dry-run
+./sourced ingest
+./sourced dev         # http://localhost:3000
+```
+
+The image build on first run takes a few minutes; `init` prints that before starting it.
+
+## 36. Quality on any corpus
+
+### 36.1 Golden set for kit corpora
+
+`GoldenEntry` (TRD §17.2) changes in T-67: `chapter` becomes `group: z.string()` (a source `group` or `'none'`), the anchor regex widens (section 33.1), and `origin: z.enum(['handwritten', 'generated']).default('handwritten')` is added. The v1 composition rules (32/5/3 and per-chapter counts) move to the example's validator profile; kit corpora use these rules: at least 20 answerable, at least 3 unanswerable, all built-in injection entries (section 36.3), every anchor present in `chunks`.
+
+### 36.2 `eval:generate` (FR-83, `lib/eval/generate.ts`)
+
+1. Sample chunks stratified by source and document: `--count` answerable targets (default 30), at most 2 per document, preferring chunks of 300+ tokens, deterministic for a given `corpus_version` and seed.
+2. For each sampled chunk, one `generate` role call with the chunk, its heading path and neighbours, returning `{ question, reference_answer, expected_anchors }` (structured output). The prompt text is pinned in T-66 and versioned like the other prompts. Rules: question answerable from the chunk alone, natural wording that avoids copying the heading, 6–25 words, reference answer ≤ 80 words from the chunk.
+3. Each candidate is checked before it is written: the anchors exist; the expected chunk is in the RRF top 20 for the question (otherwise the candidate is kept but flagged `hardRetrieval: true` for the reviewer).
+4. Unanswerable candidates: one call per source group asking for questions a user of this corpus would plausibly ask that the given table of contents does not cover; each is flagged `needsHumanCheck: true` and cannot be accepted in `--yes` mode.
+5. Output `candidates.jsonl`: `GoldenEntry` fields plus `status: 'pending'`, `flags`, `sourceChunkId`.
+6. Cost: estimated before calls (tokens × `generate` price), `EVAL_MAX_COST_USD` guard.
+
+`eval:review` walks pending candidates in the terminal (accept, edit in `$EDITOR`, reject, skip) and appends accepted ones to `golden.jsonl` with `origin: 'generated'` and the next free id. Agents use the file workflow instead: they show candidates to the user in chat and set `status` by editing `candidates.jsonl`, then run `eval:review --apply`.
+
+### 36.3 Built-in injection set
+
+`eval/shared/injection.jsonl`: four corpus-independent question-borne injections (system prompt extraction, role change, instruction to answer from outside knowledge, instruction to cite a passage that does not exist), each with `forbidden_strings`. They are always part of a kit corpus's eval. A passage-borne injection needs a fixture in the corpus, so kit corpora report injection resistance as "question-borne only" unless the developer adds a fixture source.
+
+### 36.4 `inspect` (FR-82)
+
+| Finding | Rule | Severity |
+|---|---|---|
+| `empty_document` | parsed document with no blocks | warn |
+| `needs_ocr` | PDF rule in section 33.4 | warn |
+| `tiny_chunks` | > 20% of chunks under `minTokens / 2` | warn |
+| `oversized_chunks` | any chunk over `maxTokens` (code blocks that cannot split) | info |
+| `near_duplicates` | pairs with cosine similarity ≥ 0.98 across different documents, > 2% of chunks | warn |
+| `boilerplate_removed` | count per source | info |
+| `language_mismatch` | detected language (stopword-ratio heuristic over 200 sampled chunks, `lib/inspect/language.ts`) differs from `corpus.language` | warn |
+| `skipped_files` | unsupported extensions, files over 50 MB | info |
+| `failed_items` | items `failed` in the last run, with reasons | error |
+
+Each finding has `affects` (retrieval, citations, cost) and `fix` text. The result is written to `corpus/<name>/inspect.json` and summarized on stdout.
+
+### 36.5 Eval on kit corpora and comparison (FR-84, FR-85)
+
+`sourced eval` runs the v1 harness (TRD §17) against `eval/<name>/golden.jsonl` with floors from `eval/<name>/thresholds.json` when present, else the v1 `eval/thresholds.json` values as defaults. A below-floor metric gets a `likelyCause` from a fixed table: low recall with `tiny_chunks` or `oversized_chunks` → chunking; low recall with `language_mismatch` → language; low citation validity → quote fallback rate and model; low correct refusal → not-found sentence or model. `--compare <file|baseline>` prints per-metric deltas and the questions whose result changed, and exits 1 if any metric regresses beyond `maxRegression`.
+
+## 37. Coding-agent guidance (FR-87 to FR-89)
+
+### 37.1 Files
+
+```text
+AGENTS.md                         # user-facing, ≤ 80 lines (section 37.2)
+CLAUDE.md                         # "@AGENTS.md" (unchanged)
+.agents/skills/
+  sourced-setup/SKILL.md
+  sourced-add-docs/SKILL.md
+  sourced-ingest/SKILL.md
+  sourced-check-quality/SKILL.md
+  sourced-tune/SKILL.md
+  sourced-troubleshoot/SKILL.md
+  sourced-deploy/SKILL.md
+  _shared/rules.md                # the FR-89 rules, included by reference from every skill
+  _shared/cli-reference.md        # generated from lib/cli/schemas by scripts/check-skills.ts --write
+.claude/commands/{setup,add-docs,ingest,check-quality,tune,troubleshoot,deploy}.md   # 3–5 lines each: "Follow .agents/skills/sourced-<name>/SKILL.md."
+.claude/settings.json             # permissions allowlist (section 37.4) plus the existing attribution settings
+docs/contributing/AGENTS.md       # today's AGENTS.md, moved
+CONTRIBUTING.md                   # how to contribute; links docs/contributing/AGENTS.md
+```
+
+### 37.2 Root `AGENTS.md` content (user-facing)
+
+1. What Sourced is, in three sentences.
+2. "If the user wants a chatbot over their documents, use the `sourced-setup` skill." One line per other skill with its trigger.
+3. The FR-89 rules verbatim.
+4. How to run commands: `./sourced <command> --json` on the Docker path; `pnpm sourced <command> --json` if `node_modules` exists and the user chose the Node path.
+5. "If the user wants to change Sourced itself, read `docs/contributing/AGENTS.md` first."
+
+### 37.3 Skill format
+
+Each `SKILL.md` has front matter `name`, `description` (with trigger phrases, as in the Agent Skills format), and sections: **When to use**, **Before you start** (which checks to run), **Steps** (numbered; each names the exact command, what to tell the user before it, how to read the result fields, and the branch for each failure code), **Never** (skill-specific additions to the shared rules), **Done when**. Skills reference result fields by their JSON path (`result.checks[].ok`), never by prose output. `sourced-setup` asks at most one question per message and offers defaults: "Where are your documents?", "Which provider do you have a key for? (OpenAI, Google, Anthropic, or local with Ollama)", then explains cost and privacy with the dry-run numbers before the first paid call.
+
+### 37.4 Permissions (`.claude/settings.json`)
+
+Allow without prompting: `Bash(./sourced doctor:*)`, `Bash(./sourced sources list:*)`, `Bash(./sourced inspect:*)`, `Bash(./sourced ingest --dry-run:*)`, `Bash(./sourced ask:*)`, `Bash(./sourced eval:generate --dry-run:*)` and the `pnpm sourced` equivalents. Everything that writes configuration, spends money, deletes data or deploys (`init`, `add`, `ingest` without `--dry-run`, `eval:generate`, `eval`, `sources remove`, `dev`, `down`) stays behind Claude Code's normal permission prompt, so the user approves it. Codex uses its own approval mode; the skills tell the agent to ask the user in chat before those commands regardless of tool.
+
+### 37.5 Skill checks (`scripts/check-skills.ts`, CI)
+
+Fails when a skill names a command or flag that `lib/cli` does not define, a result field path that the command's schema does not have, or an error code outside `ERROR_CODES`; when `.claude/commands/*.md` points to a missing skill; when `_shared/cli-reference.md` is stale. Runs in `ci.yml` `static` job from T-73.
+
+## 38. Access control for the `private` profile (FR-90)
+
+- Env `SOURCED_ACCESS_TOKEN` (required for `private`, ≥ 24 characters; `init --profile private` generates one with `crypto.randomBytes(24).toString('base64url')` and writes it to `.env.local`, then tells the user where it is without printing it).
+- Middleware (`middleware.ts`) checks every page and `/api/ask` request when `profile === 'private'`: cookie `sourced_access` must equal `base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1'))`, compared in constant time. `/api/health`, static assets and `/access` are exempt.
+- `/access` page: one password-type input, POST to `/api/access` which validates the token, sets the cookie (`HttpOnly; Secure` outside localhost; `SameSite=Lax`; `Path=/`; 30 days) and redirects to `/`. Failed attempts are rate-limited per visitor hash with the existing limiter (bucket `access:<hash>`, 10 per hour).
+- Without a valid cookie: pages redirect to `/access`; `/api/ask` returns 401 `ACCESS_DENIED`.
+- Rotating the token invalidates every cookie.
+- The `public-demo` and `local` profiles never set this cookie; PRD NFR-12 holds for them unchanged.
+
+## 39. Testing additions
+
+### 39.1 Unit tests
+
+| ID | Subject |
+|---|---|
+| UT-32 | `KitConfigSchema` and `validateKitConfig`: every rule in sections 29.1–29.3, error paths name the field |
+| UT-33 | `getCopy`: defaults, overrides, example config reproduces PRD §9 strings |
+| UT-34 | Key normalization for URLs and paths |
+| UT-35 | Folder driver: include/exclude, skips, MIME mapping (in-memory fs fixture) |
+| UT-36 | Sitemap and crawl discovery with an injected fetch: index nesting, origin and prefix limits, caps |
+| UT-37 | Per-host rate limiting and robots handling with fake clock |
+| UT-38 | Generic HTML parser on five site fixtures (NFR-25) |
+| UT-39 | Markdown and MDX parser |
+| UT-40 | PDF parser: headings, pages, `needs_ocr` |
+| UT-41 | `.docx` parser: headings, lists, tables, title fallback |
+| UT-42 | Boilerplate removal thresholds |
+| UT-43 | Contextual embedding input and hash versioning |
+| UT-44 | Dry-run estimate and confirmation rules, unknown prices |
+| UT-45 | CLI envelope, exit codes, no secret in output (snapshot over every command with a fake env containing keys) |
+| UT-46 | `inspect` findings on synthetic chunk sets |
+| UT-47 | `eval:generate` sampling determinism and candidate checks (mock provider) |
+| UT-48 | Access token cookie derivation and middleware decisions |
+| UT-49 | Provider files: error mapping and option passing for Gemini, Anthropic, Ollama with mocked transports |
+| UT-50 | `check-skills` on good and broken skill fixtures |
+
+### 39.2 Integration tests
+
+| ID | Subject |
+|---|---|
+| IT-12 | `ensureCorpusSchema`: fresh setup for 768 (`vector`) and 3072 (`halfvec`) dimensions, no-op on same hash, `CORPUS_MISMATCH` on change, `--rebuild` path |
+| IT-13 | Search with a non-English `regconfig` (Turkish fixture corpus) returns keyword hits that `english` misses |
+| IT-14 | Resumable ingest: interrupt after N documents (injected failure), resume skips done items, final counts equal an uninterrupted run |
+| IT-15 | Same chunk text in two documents: both stored, both retrievable (constraint change) |
+| IT-16 | Example corpus after the move to `corpus/postgres-17/`: identical chunk hashes and counts to v1 (NFR-16) |
+| IT-17 | Mixed folder fixture (md, mdx, html, pdf, docx, txt) ingests end to end in mock mode; anchors per section 33.1 |
+| IT-18 | `sources remove` deletes only that source's documents |
+
+### 39.3 Contract tests (`tests/contract`, Vitest project `contract`)
+
+CT-01 to CT-14: one per command in section 34.1, running the real CLI as a child process against the integration database in mock mode with `--json`, validating stdout against the command's schema and checking the exit code for success and for each documented failure. Contract schemas are snapshot-tested; a schema change without a `schemaVersion` bump fails (NFR-22).
+
+### 39.4 E2E additions
+
+| ID | Subject |
+|---|---|
+| E2E-26 | Ask page on a second fixture corpus (Turkish, folder source) renders copy from its configuration |
+| E2E-27 | `private` profile: redirect to `/access`, wrong token error, right token sets cookie, `/api/ask` 401 without cookie |
+| E2E-28 | PDF and file citations render `path, page n` without a link |
+
+### 39.5 Docker smoke test (CI job `docker`, from T-62)
+
+Build the image, `docker compose up -d db`, run `./sourced init --example --profile local --json` with mock providers, `./sourced ingest --offline --yes --json`, `./sourced dev`, `curl /api/health`, `./sourced ask "When should I use a partial index?" --json` and assert `ok: true`, then `./sourced down`. No network except image pulls and the npm registry during build.
+
+### 39.6 Manual release checks
+
+The PRD section 11 checks (any-corpus, newcomer, quality on a new corpus) are run by hand per the release checklist in the plan. The newcomer check is recorded as a transcript in `qa/release-v2/` (agent, version, date, every prompt and approval) and reviewed for FR-89 rule breaks.
+
+## 40. Assumptions to verify (v2)
+
+| # | Assumption | Verify how | Task | If false |
+|---|---|---|---|---|
+| A-17 | Embedding models and their dimensions: OpenAI `text-embedding-3-small`/`-large`, Gemini current embedding model and its `outputDimensionality` options | Provider docs at task time | T-47 | Update `lib/llm/models.ts` |
+| A-18 | pgvector version in `pgvector/pgvector:pg17` supports `halfvec` and HNSW up to 4,000 dimensions; `vector` HNSW limit 2,000 | pgvector README; IT-12 | T-47 | Restrict `dimensions` to the supported maximum and document it |
+| A-19 | A maintained AI SDK provider for Ollama (chat, structured output, embeddings), or Ollama's OpenAI-compatible endpoint works through `@ai-sdk/openai-compatible` | Package docs, one live call against a local Ollama | T-49 | Use the OpenAI-compatible route |
+| A-20 | `@mozilla/readability` runs on a `linkedom` document in Node | Unit test on fixtures | T-54 | Use `jsdom` (already a dev dependency) as a runtime dependency |
+| A-21 | `unpdf` extracts text with font sizes in Node 22 without native modules | Unit test on fixtures | T-56 | `pdfjs-dist` legacy build directly |
+| A-22 | `node:22-bookworm-slim` digest and that `next start` runs as a non-root user with the repository mounted read-write | Build and run | T-62 | Adjust user handling |
+| A-23 | `host.docker.internal` with `host-gateway` reaches a host Ollama on Linux, macOS and Windows Docker Desktop | Manual on each OS | T-62 | Document `OLLAMA_BASE_URL` override |
+| A-24 | Claude Code reads commands from `.claude/commands/` and Codex discovers skills in `.agents/skills/` in their current versions | Tool docs; manual check | T-73 | Add per-tool pointer files as the tools document |
+| A-25 | MongoDB documentation publishes a crawlable sitemap and its `robots.txt` allows the pages | Read `robots.txt` and the sitemap | T-64 | Use a crawl source with include rules, or pick another public documentation set for the release check and record it |
+| A-26 | `mammoth` handles current Word files with heading styles, lists and tables | Unit test on fixtures | T-57 | Fall back to `docx`-XML parsing with `fast-xml-parser` |
+
+Record results in the PRD decisions log with the next free `D-` number.
+
+## 41. New runtime dependencies (owner approval per task, AGENTS.md checkpoint 5)
+
+| Package | Purpose | Task |
+|---|---|---|
+| `@ai-sdk/google`, `@ai-sdk/anthropic` | Gemini and Anthropic providers | T-49 |
+| Ollama provider or `@ai-sdk/openai-compatible` | Ollama | T-49 |
+| `picomatch` | include/exclude globs | T-53 |
+| `fast-xml-parser` | sitemaps | T-53 |
+| `@mozilla/readability`, `linkedom` | generic HTML | T-54 |
+| `unified`, `remark-parse`, `remark-gfm`, `remark-frontmatter`, `remark-mdx` | Markdown and MDX | T-55 |
+| `unpdf` | PDF | T-56 |
+| `mammoth` | `.docx` | T-57 |
+| `@inquirer/prompts` | interactive CLI prompts | T-58 |
+
+`tsx` moves from dev to runtime dependencies (the CLI runs in the image). Versions are pinned at task time.
