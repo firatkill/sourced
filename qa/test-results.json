@@ -3599,6 +3599,69 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-154",
+      "ac_reference": "T-42; FR-29; D-16",
+      "milestone": "M4 Polish and deploy",
+      "title": "Production database migrated and ingested",
+      "description": "T-42 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-154.",
+      "expected_result": "migrate.yml with input migrate is green; chunks count equals the local live ingest count; answer_cache has 6 rows; no fixture documents.",
+      "status": "pending_decision",
+      "environment": "Production Supabase (eu-central-1) and OpenAI project sourced",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Production migrated locally (TRD §26.1 step 4), ingested (35 docs, 201 chunks, 0 fixtures = local ingest) and 6 answer_cache rows. migrate.yml run 42623978452 failed: MIGRATION_DATABASE_URL secret is not a valid URL. Owner re-sets the secret (docs/PROGRESS.md open questions); no ClickUp in this repository."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-155",
+      "ac_reference": "T-42; A-07; NFR-13",
+      "milestone": "M4 Polish and deploy",
+      "title": "Supabase hardening and free-plan limits",
+      "description": "TRD §26.1 steps 5–6.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-155.",
+      "expected_result": "Data API is off; A-07 findings (size limit, pause policy, pooler activity, connection limits) recorded in the decisions log.",
+      "status": "resolved",
+      "environment": "Production Supabase (eu-central-1) and OpenAI project sourced",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Owner turned off the Data API; A-07 recorded as D-87: 500 MB limit, pause after one week without activity; keepalive every three days stays inside it."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-156",
+      "ac_reference": "T-42; A-06; NFR-13",
+      "milestone": "M4 Polish and deploy",
+      "title": "OpenAI production project capped",
+      "description": "TRD §26.2; §21.2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-156.",
+      "expected_result": "Production project key restricted to the project; monthly budget with 50% alert; prepaid credit with auto-recharge off; data sharing off (D-82); worst-case monthly LLM cost from §21.2 within the budget, with RATE_LIMIT_GLOBAL_DAILY lowered if needed.",
+      "status": "resolved",
+      "environment": "Production Supabase (eu-central-1) and OpenAI project sourced",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Owner: project key, hard-stop monthly budget $2 with alert, only gpt-6-luna and text-embedding-3-small allowed, data sharing off (D-87). Worst case from the six cached answers ($0.000918/question): RATE_LIMIT_GLOBAL_DAILY 70 gives $1.93/month (D-88)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
