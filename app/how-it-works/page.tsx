@@ -2,16 +2,19 @@ import type { Metadata } from 'next';
 import { PipelineDiagram } from '@/components/how/PipelineDiagram';
 import { CHUNKING, GENERATION, RETRIEVAL } from '@/lib/config';
 
-export const metadata: Metadata = { title: 'How it works · Sourced' };
+const LEAD =
+  'A question goes through four steps on the server: hybrid search, reranking, generation with citations, and citation checking. The documents were prepared once, offline.';
+
+export const metadata: Metadata = {
+  title: 'How it works · Sourced',
+  description: LEAD,
+};
 
 export default function HowItWorks() {
   return (
     <article>
       <h1>How Sourced answers a question</h1>
-      <p className="mt-4 max-w-[68ch]">
-        A question goes through four steps on the server: hybrid search, reranking, generation with
-        citations, and citation checking. The documents were prepared once, offline.
-      </p>
+      <p className="mt-4 max-w-[68ch]">{LEAD}</p>
       <PipelineDiagram />
       <div className="max-w-[68ch] space-y-8 [&_h2]:mb-3">
         <section>

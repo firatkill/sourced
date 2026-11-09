@@ -5,6 +5,7 @@ import { Schibsted_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { SkipLink } from '@/components/layout/SkipLink';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
+import { getEnv } from '@/lib/env';
 import './globals.css';
 
 const sans = Schibsted_Grotesk({
@@ -21,10 +22,13 @@ const mono = JetBrains_Mono({
 });
 const THEME_SCRIPT =
   "try { const t = localStorage.getItem('sourced-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}";
-export const metadata: Metadata = {
-  title: 'Sourced: answers that show their sources',
-  icons: { icon: '/favicon.svg' },
-};
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL(getEnv().NEXT_PUBLIC_SITE_URL),
+    title: 'Sourced: answers that show their sources',
+    icons: { icon: '/favicon.svg' },
+  };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const nonce = (await headers()).get('x-nonce') ?? undefined;
