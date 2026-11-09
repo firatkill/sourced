@@ -47,7 +47,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | HEAD |
 | T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | HEAD |
 | T-29 | M2 Ask, stream, citations | `GET /api/health` | done | HEAD |
-| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | todo | — |
+| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | HEAD |
 | T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | todo | — |
 | T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | todo | — |
 | T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | todo | — |
@@ -166,3 +166,5 @@ T-27 local acceptance: logQuery per TRD §20.2 with Zod-validated input, salted 
 T-28 local acceptance: POST /api/ask in the normative handler order (TRD §11.2): content type, body size, validation details, origin check, demo modes, suggested-id resolution, cache replay, quotas with Retry-After, SSE stream with validated send, heartbeat, single abort controller, refund at most once before the first token, query log and §16.1 cleanup in after(). logQuery now uses bound postgres.js SQL (Drizzle's insert path altered the shared client's codecs). UT-18, IT-08, IT-09 pass; lint, typecheck, 632 unit and 132 integration tests and the production build pass; manual curl stream checked. TC-070 and TC-080–TC-085 resolved.
 
 T-29 local acceptance: GET /api/health per TRD §11.3 (SELECT 1, counts, corpus version, 3 s timeout, no LLM call); IT-10 passes; curl prints "ok"; Playwright readiness URLs point to /api/health. Lint, typecheck and 138 integration tests pass. TC-086 resolved.
+
+T-30 local acceptance: useAsk with exported askReducer per TRD §15.4 and D-77 (token after the 600 ms timer returns to streaming; notFound awaiting done is in-flight), frame-batched text updates, SSE transport through the shared parser, HTTP error mapping (D-33, D-78), Stop via AbortController. UT-20: 34 tests, one per transition row. Lint, typecheck, 666 unit tests pass; client imports pass the ESLint boundary rules. TC-087 resolved.

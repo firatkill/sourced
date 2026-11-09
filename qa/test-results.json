@@ -2221,6 +2221,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-087",
+      "ac_reference": "T-30; FR-03; FR-04; FR-09–FR-11",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "useAsk reducer transitions",
+      "description": "UT-20.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-087.",
+      "expected_result": "Every row of TRD §15.4 transition table holds.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-30: UT-20 has one test per row of the TRD §15.4 transition table (20 rows including D-77) plus notFound-holding in-flight cases: 34 tests pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
