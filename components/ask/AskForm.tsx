@@ -54,7 +54,7 @@ export function AskForm({
         disabled={disabled}
         aria-invalid={error !== null}
         aria-describedby={`question-counter question-helper${error === null ? '' : ' question-error'}`}
-        className="bg-card focus-visible:outline-ring! min-h-32 text-[17px]! leading-7 transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2!"
+        className="bg-card focus-visible:outline-ring! min-h-32 text-[17px]! leading-7 transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-solid!"
         onChange={(event) => {
           onChange(event.target.value);
         }}
@@ -80,7 +80,7 @@ export function AskForm({
               event.preventDefault();
               onStop();
             }}
-            className="focus-visible:outline-ring! transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2!"
+            className="focus-visible:outline-ring! transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-solid!"
           >
             <Square aria-hidden="true" />
             Stop
@@ -89,7 +89,7 @@ export function AskForm({
           <Button
             type="submit"
             disabled={disabled || question.trim().length === 0}
-            className="focus-visible:outline-ring! transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2!"
+            className="focus-visible:outline-ring! transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-solid!"
           >
             Ask
           </Button>

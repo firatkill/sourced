@@ -2410,6 +2410,321 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-096",
+      "ac_reference": "T-33; FR-08",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "How this was answered",
+      "description": "E2E-07.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-096.",
+      "expected_result": "Table columns, rerank line, timings, tokens and cost shown as PRD §9.2.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-07 disclosure table columns, rerank line, timings, tokens and cost from real SSE data."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-097",
+      "ac_reference": "T-33; FR-09",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Not-found state",
+      "description": "E2E-08.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-097.",
+      "expected_result": "Exact heading and body; related reading cards; no unverified draft text.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-08 mock:not-found heading, body and related reading cards without highlights."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-098",
+      "ac_reference": "T-33; FR-21",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Removed citations note",
+      "description": "E2E-09.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-098.",
+      "expected_result": "Invalid markers absent; note reads 2 citations were removed…",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-09 mock:invalid-citation removes both markers; note reads 2 citations were removed…; per-citation reasons (D-81) shown."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-099",
+      "ac_reference": "T-33; FR-19",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Quote fallback",
+      "description": "E2E-10.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-099.",
+      "expected_result": "Answer completes with valid chips; disclosure shows fallback used.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-10 mock:no-block completes with valid chips; disclosure shows the quote fallback line (D-81)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-100",
+      "ac_reference": "T-33; FR-26",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Visitor rate limit state",
+      "description": "E2E-11.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-100.",
+      "expected_result": "4th live question shows visitor copy with reset time; suggested chip still answers.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-11 fourth live question shows visitor copy with reset time; suggested chip still answers."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-101",
+      "ac_reference": "T-33; FR-27",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Global rate limit state",
+      "description": "E2E-12 @isolated.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-101.",
+      "expected_result": "Global copy shown; global row restored in finally.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-12 @isolated sets the global row to the cap via a localhost-only helper and restores it in finally; global copy shown."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-102",
+      "ac_reference": "T-33; FR-30",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Read-only and off modes",
+      "description": "E2E-13; E2E-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-102.",
+      "expected_result": "3101: banner, disabled input, chip answers with Answered in advance. 3102: demo-off copy and links.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-13 port 3101 banner, disabled input, chip answers with Answered in advance; E2E-14 port 3102 demo-off copy and links."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-103",
+      "ac_reference": "T-33; FR-32",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Provider error states",
+      "description": "E2E-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-103.",
+      "expected_result": "mock:provider-error copy includes not counted; Try again resubmits; mock:error-midstream copy omits it.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-15 mock:provider-error copy with not counted and Try again resubmits; mock:error-midstream without it."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-104",
+      "ac_reference": "T-33",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Network error state",
+      "description": "E2E-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-104.",
+      "expected_result": "Connection lost with partial answer label for mock:drop and for an aborted request.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-16 mock:drop and a page.route abort both show Connection lost with the partial answer label (the TRD-sanctioned stub)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-105",
+      "ac_reference": "T-33; FR-10",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Stop",
+      "description": "E2E-24.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-105.",
+      "expected_result": "Stop shows the stopped label and partial text.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-24 mock:slow + Stop shows the stopped label and partial text. Reviewer removed a 10 s wait; passes with the 3 s default."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-106",
+      "ac_reference": "T-33; FR-29",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Cached suggested answer",
+      "description": "E2E-25.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-106.",
+      "expected_result": "Chip shows Answered in advance and cached disclosure line; visitor quota unchanged.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-25 chip shows Answered in advance and the cached disclosure line; visitor quota unchanged afterwards."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-107",
+      "ac_reference": "T-34; NFR-09",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Accessibility scan",
+      "description": "E2E-17.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-107.",
+      "expected_result": "Zero serious or critical axe violations in each state and theme.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-17 axe WCAG 2.2 AA in 12 state/theme combinations: zero serious or critical violations."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-108",
+      "ac_reference": "T-34; NFR-09; FR-03; FR-10",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Keyboard operation",
+      "description": "E2E-18.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-108.",
+      "expected_result": "Skip link, tab order, Enter/Shift+Enter, chips, disclosure and Stop work by keyboard.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-18 keyboard path including skip link, Enter/Shift+Enter, chips, disclosure and Stop. Found missing focus outline on the input and buttons (NFR-09); fixed in AskForm.tsx."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-109",
+      "ac_reference": "T-34; NFR-10",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Responsive layout",
+      "description": "E2E-19.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-109.",
+      "expected_result": "No horizontal scroll at 360 and 1024 px; sources below answer at 360.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: E2E-19 no horizontal scroll at 360 and 1024 px; sources below the answer at 360 px."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-110",
+      "ac_reference": "T-34",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "E2E suite repeatable and within CI budget",
+      "description": "T-34 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-110.",
+      "expected_result": "Full suite passes twice on the same day; CI e2e job green and ≤ 12 minutes.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start ×3, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-34: full suite passed twice on 2026-11-09 (44 tests, 16.3 s and 16.7 s); reviewer ran it a third time: 44 passed. CI e2e duration checked after push."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
