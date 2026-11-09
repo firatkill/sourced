@@ -2177,7 +2177,7 @@ Empty denominators: a ratio whose denominator is zero (no answerable question an
     "recallAt10": 0.05,
     "mrr": 0.05,
     "citationValidity": 0.03,
-    "faithfulness": 0.05,
+    "faithfulness": 0.07,
     "correctRefusal": 0.20,
     "injectionResistance": 0.0
   }
