@@ -56,7 +56,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-36 | M3 Eval and CI | Eval harness | done | HEAD |
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | doing | b396f38, 398d88c |
 | T-38 | M3 Eval and CI | `/eval` page | done | HEAD |
-| T-39 | M3 Eval and CI | `/how-it-works` page | todo | — |
+| T-39 | M3 Eval and CI | `/how-it-works` page | done | HEAD |
 | T-40 | M4 Polish and deploy | Accessibility, keyboard and responsive pass | todo | — |
 | T-41 | M4 Polish and deploy | Security review | todo | — |
 | T-42 | M4 Polish and deploy | Supabase, OpenAI project and production data | todo | — |
@@ -190,3 +190,7 @@ T-36 local acceptance: `pnpm eval` with metrics (TRD §17.4), judge (normative p
 T-37 local acceptance: `lib/eval/thresholds.ts` implements TRD §17.5 (equality at a limit passes); baseline is `--baseline` or the latest committed results file by `runId`, excluding the file being written; `eval.yml` is byte-identical to TRD §25.2. UT-23 passes; 766 unit and 142 integration tests pass; coverage 98.27%. The 2026-11-09 live run is committed as the baseline and re-checks as pass with no failures; a live two-question `--no-write` run shows it in the baseline column. `eval/results/` is excluded from Prettier because the files are generated. Remaining: the owner adds the `OPENAI_API_KEY` secret to the GitHub `eval` environment (variables already set), then a green `workflow_dispatch` run and a prompt-change PR trigger check (TC-130). TC-127–TC-129 resolved.
 
 T-38 local acceptance: `/eval` renders committed results without a database: nine metric cards with floors, D-84 ceilings and deltas, the without-reranking row, 160 × 40 SVG trends, the questions table with "Failures only" and keyboard row expansion (answers through the safe Markdown component), the empty state and the methodology section. Invalid result files are skipped with a warning. UT-31, the loader tests and E2E-21 pass; lint, typecheck, 771 unit and 142 integration tests, build and the full E2E suite (46) pass; `page.js.nft.json` lists `eval/results/2026-11-09.json`. Reviewer checked the page in a browser with the real 2026-11-09 run (cards, filter showing q010 and q027). TC-131–TC-135 resolved; TC-139 (light/dark, keyboard, narrow width) stays for the M4 browser pass.
+
+T-39 local acceptance: `/how-it-works` with the PRD §9.6 copy, an ordered-list pipeline diagram (two lanes, aria-hidden SVG arrows, one column below 640 px), sections 1–8 and `#privacy`; every number comes from `lib/config.ts` and the plan's grep returns nothing. The footer and under-input links already pointed to `#privacy`. Reviewer checked the section bodies against the code (cache hits skip the quota, reset at UTC midnight) and removed one sentence in Limits that the PRD does not make. E2E-22 passes; lint, typecheck, 771 unit and 142 integration tests, build and the full E2E suite (49) pass. TC-136–TC-138 resolved.
+
+M3 complete except T-37's GitHub run (2026-11-09): T-35, T-36, T-38, T-39 done; T-37 waits for the owner's `OPENAI_API_KEY` secret in the `eval` environment (TC-130).

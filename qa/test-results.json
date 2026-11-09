@@ -3208,6 +3208,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-136",
+      "ac_reference": "T-39; FR-47",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "/how-it-works diagram and sections",
+      "description": "E2E-22 how-it-works.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-136.",
+      "expected_result": "PRD §9.6 title, H1 and lead; diagram nodes in the specified order for both lanes and the caption; H2 sections 1–8 and Privacy; Limits states the four limits.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock; Playwright",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-22: title, H1, lead, both diagram lanes in order, caption, H2s 1–8 and Privacy, the four limits."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-137",
+      "ac_reference": "T-39; FR-48",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Privacy anchor and links",
+      "description": "E2E-22 how-it-works.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-137.",
+      "expected_result": "#privacy section has the exact PRD privacy text; footer and the under-input link lead to /how-it-works#privacy.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock; Playwright",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-22: exact privacy text; footer and under-input links land on /how-it-works#privacy."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-138",
+      "ac_reference": "T-39; FR-47",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Numbers come from lib/config.ts",
+      "description": "T-39 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-138.",
+      "expected_result": "grep -nE '\\b(40",
+      "status": "resolved",
+      "environment": "macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Plan grep on page and diagram returns nothing (exit 1); numbers imported from lib/config.ts."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-139",
+      "ac_reference": "T-38; T-39; NFR-09",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "/eval and /how-it-works in a real browser",
+      "description": "M3 manual.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-139.",
+      "expected_result": "Light and dark themes, keyboard-only use, diagram reflows to one column below 640 px, trend charts readable.",
+      "status": "manual_required",
+      "environment": "Real browser, M4",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Light/dark, keyboard-only and narrow-width pass for /eval and /how-it-works with T-40's browser pass."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
