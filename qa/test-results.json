@@ -3092,11 +3092,15 @@
       "steps_to_reproduce": "See qa/test-cases.md TC-130.",
       "expected_result": "workflow_dispatch run is green with cost below EVAL_MAX_COST_USD; a PR changing lib/prompts/ triggers the workflow. Needs the owner's eval environment and secret.",
       "status": "pending_decision",
-      "environment": "GitHub Actions",
+      "environment": "GitHub Actions eval environment",
       "attempts": [
         {
           "result": "pending",
           "note": "Waiting for the owner to add the OPENAI_API_KEY secret to the eval environment; then dispatch and test-PR checks."
+        },
+        {
+          "result": "pending",
+          "note": "workflow_dispatch run 42614841254 on 41425df green, $0.33 (D-85 after run 42613501509 failed faithfulness regression on variance). PR trigger on lib/prompts/ not yet exercised: owner go-ahead for a throwaway PR is listed in docs/PROGRESS.md (open questions); no ClickUp in this repository."
         }
       ],
       "regression_of": null,
