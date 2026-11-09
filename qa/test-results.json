@@ -3771,6 +3771,90 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-162",
+      "ac_reference": "T-44; FR-57; G-1",
+      "milestone": "M4 Polish and deploy",
+      "title": "README sections complete",
+      "description": "TRD §27.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-162.",
+      "expected_result": "README.md contains every TRD §27 section in order and the metrics table copied from the latest eval/results/*.md.",
+      "status": "resolved",
+      "environment": "Local repository",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "README.md has all TRD §27 sections in order with the byte-exact first sentence, the TRD Mermaid diagram and the metrics table from eval/results/2026-11-09.md unchanged; tests/unit/readme.test.ts passes."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-163",
+      "ac_reference": "T-44; PRD §11",
+      "milestone": "M4 Polish and deploy",
+      "title": "Fresh clone without an API key",
+      "description": "T-44 step 4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-163.",
+      "expected_result": "On a clean directory, following only the README \"Run locally without an API key\" commands reaches a working mock ask page in ≤ 15 minutes.",
+      "status": "resolved",
+      "environment": "Fresh clone of 560d5c4 into a clean directory, macOS, Docker",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Only the six README commands: install, cp env, db:up, db:migrate, db:seed, dev:mock. Health ok (mock, 35 docs, 201 chunks), / 200, a mock question streamed meta/token/citations/done. 61 s total (pnpm store was warm; a cold install adds the download time), well under 15 minutes."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-164",
+      "ac_reference": "T-44; G-4",
+      "milestone": "M4 Polish and deploy",
+      "title": "Demo GIF",
+      "description": "T-44 step 2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-164.",
+      "expected_result": "docs/assets/demo.gif is light theme, 1200 px wide, ≤ 20 s and ≤ 4 MB.",
+      "status": "resolved",
+      "environment": "Production https://sourced.firatkil.com, Playwright Chromium, ffmpeg",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "docs/assets/demo.gif: light theme, 1200 x 760, 14.5 s, 3.6 MB; suggested question, answer, citation chip with highlighted quote, How this was answered expanded. The cached answer appears without visible streaming."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-165",
+      "ac_reference": "T-44; FR-58",
+      "milestone": "M4 Polish and deploy",
+      "title": "Page metadata and Open Graph image",
+      "description": "T-44 files.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-165.",
+      "expected_result": "/, /eval and /how-it-works have a title, a description and an og:image that returns an image, or the item is skipped with a decisions log entry.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "metadata.spec.ts passes: /, /eval, /how-it-works have a description and an og:image that returns 200 image/png 1200x630; full E2E 80/80."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
