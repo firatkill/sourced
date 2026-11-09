@@ -8,7 +8,7 @@ A small, production-quality RAG app and starter kit: every claim in the answer c
 
 ## Demo
 
-![A suggested question streams an answer, a citation opens its highlighted quote, and How this was answered expands.](docs/assets/demo.gif)
+![A suggested question gets a checked answer, a citation opens the source viewer with its quote highlighted, and How this was answered expands.](docs/assets/demo.gif)
 
 ## How it works
 
