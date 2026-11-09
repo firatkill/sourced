@@ -53,7 +53,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | HEAD |
 | T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | HEAD |
 | T-35 | M3 Eval and CI | Golden set and validator | done | HEAD |
-| T-36 | M3 Eval and CI | Eval harness | todo | — |
+| T-36 | M3 Eval and CI | Eval harness | done | HEAD |
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | todo | — |
 | T-38 | M3 Eval and CI | `/eval` page | todo | — |
 | T-39 | M3 Eval and CI | `/how-it-works` page | todo | — |
@@ -182,3 +182,5 @@ T-34 local acceptance: E2E-07–E2E-19, E2E-24, E2E-25 against the real mock ser
 M2 complete (2026-11-09): T-18–T-34 done.
 
 T-35 local acceptance: 40-entry golden set (32 answerable, 5 unanswerable, 3 injection) with anchors read from the raw HTML and reference answers written from the passages; unanswerable entries record their grep terms (q007's only match mentions logical replication in passing). Validator checks rules 1–7, lists missing anchors and prints the distribution table. UT-25 (20) and IT-11 (4) pass; lint, typecheck, 718 unit and 142 integration tests pass; `LLM_MODE=mock pnpm eval:validate` exits 0. Reviewer spot-checked anchors and reference answers. TC-113–TC-117 resolved.
+
+T-36 local acceptance: `pnpm eval` with metrics (TRD §17.4), judge (normative prompt, gpt-5.4, D-82), budget guard (§17.7), results schema and Markdown; judge failures count as errors (D-83). UT-22, UT-26 and 23 further unit tests pass (741 unit, 142 integration; coverage 98.25%). Mock smoke `--limit 3 --no-write` exits 1 (empty categories) and mock without `--no-write` exits 2. First live run (2026-11-09, after `db:reset` and live ingest with fixtures, $0.0020): all floors and ceilings pass — recall@5 0.97, recall@10 0.97, MRR 0.94 (without rerank 0.94 / 0.97 / 0.86), citation validity 1.00, faithfulness 1.00, false refusal 0.03 (q027), correct refusal 1.00, injection resistance 1.00, p95 6.8 s, $0.34 total at list price; results file validates against `EvalResult`. Reviewer read 10 judge decisions (q004, q005, q009, q010, q014, q016, q018, q026, q031, q033) and agrees with all 10. Rerank falls back with `empty_output` on the five unanswerable questions (reported, by design). The results file is committed with T-37 as the baseline. TC-118–TC-126 resolved.

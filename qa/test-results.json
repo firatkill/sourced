@@ -2830,6 +2830,195 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-118",
+      "ac_reference": "T-36; FR-41",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Retrieval metrics: recall@k and reciprocal rank",
+      "description": "UT-22 eval-metrics.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-118.",
+      "expected_result": "recall@5/@10 and RR follow TRD §17.4 on reranked and RRF lists, including partial anchor hits and no hit (RR 0).",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-22 recall@k and RR on reranked and RRF lists incl. partial and no hit."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-119",
+      "ac_reference": "T-36; FR-41",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Answer metrics and empty denominators",
+      "description": "UT-22 eval-metrics.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-119.",
+      "expected_result": "Citation validity, faithfulness, false and correct refusal, injection resistance (question-borne vs passage-borne rules) match §17.4; any empty denominator reports 0.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-22 answer metrics per §17.4 incl. passage-borne injection rule and empty denominators reported as 0."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-120",
+      "ac_reference": "T-36; FR-41",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Latency percentiles and cost",
+      "description": "UT-22 eval-metrics.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-120.",
+      "expected_result": "Nearest-rank p50/p95 on known arrays (odd, even, single value); cost total and per-question per §17.4.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-22 nearest-rank p50/p95 (odd, even, single) and cost totals."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-121",
+      "ac_reference": "T-36; FR-44",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Budget projection and baseline scaling",
+      "description": "UT-26 budget.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-121.",
+      "expected_result": "Projection equals the §17.7 formula; with a baseline the max of formula and scaled baseline cost is used; projected > EVAL_MAX_COST_USD aborts with exit 3.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-26 projection formula, baseline scaling max, abort exit 3."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-122",
+      "ac_reference": "T-36; FR-44",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Accrued cost abort and zero prices",
+      "description": "UT-26 budget.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-122.",
+      "expected_result": "Accrued cost above the limit stops the run with exit 3 and no results written; any zero PRICE_* in live mode exits 2 with the §17.7 message.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-26 accrued abort exit 3 with no files written; zero price exits 2 with the §17.7 message."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-123",
+      "ac_reference": "T-36; FR-42",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Results schema and Markdown output",
+      "description": "TRD §17.6.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-123.",
+      "expected_result": "A produced result validates against EvalResult; per-question pass follows §17.6 rules; Markdown has header, metrics table, failures and per-question table; file suffix -2 when the date file exists.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval-results tests: schema, per-question pass, Markdown sections, -2 suffix. Live file validated against EvalResult by reviewer."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-124",
+      "ac_reference": "T-36; FR-41",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Eval preconditions and exit codes",
+      "description": "TRD §17.1 steps 1–2, 8.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-124.",
+      "expected_result": "Mock mode without --no-write exits 2; a database without fixtures or with a mismatched embedding model exits 2 with the exact §17.1 messages.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval-cli tests: mock without --no-write exits 2; no fixtures and model mismatch exit 2 with §17.1 messages."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-125",
+      "ac_reference": "T-36; FR-41",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Mock pipeline smoke run",
+      "description": "T-36 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-125.",
+      "expected_result": "LLM_MODE=mock pnpm eval --limit 3 --no-write on a mock-ingested DB with fixtures runs all three questions, prints the metrics table and exits 0 or 1 (never 2 or 3).",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "LLM_MODE=mock pnpm eval --limit 3 --no-write ran q001–q003, printed metrics, exit 1 (empty categories)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-126",
+      "ac_reference": "T-36; A-02; FR-41; FR-42",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "First live eval run and judge review",
+      "description": "T-36 acceptance (live).",
+      "steps_to_reproduce": "See qa/test-cases.md TC-126.",
+      "expected_result": "pnpm eval writes eval/results/<date>.json and .md that validate against EvalResult; cost within EVAL_MAX_COST_USD; 10 judge decisions reviewed by hand with agreement recorded.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; live gpt-6-luna + gpt-5.4 judge",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Live run 2026-11-09 passes all floors; results JSON validates; 10 judge decisions reviewed, 10/10 agreement; total $0.34 at list price."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
