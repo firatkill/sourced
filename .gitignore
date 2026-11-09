@@ -11,3 +11,6 @@ eval/.cache/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Codex orchestration prompts and run logs (local only)
+.codex-prompts/
