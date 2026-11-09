@@ -1,3 +1,4 @@
+// Throwaway: checks the eval.yml pull_request path filter (TC-130). Not for merge.
 export type SourcePassage = {
   documentTitle: string;
   headingPath: readonly string[];
