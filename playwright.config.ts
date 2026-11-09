@@ -15,7 +15,7 @@ const server = (port: number, extra: Record<string, string>) => ({
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- normative TRD §23.4 numeric port
   command: `pnpm exec next start -p ${port}`,
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- normative TRD §23.4 numeric port
-  url: `http://localhost:${port}`,
+  url: `http://localhost:${port}/api/health`,
   reuseExistingServer: !process.env.CI,
   timeout: 120_000,
   env: {

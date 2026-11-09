@@ -2200,6 +2200,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-086",
+      "ac_reference": "T-29; FR-51",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Health endpoint",
+      "description": "IT-10.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-086.",
+      "expected_result": "200 with counts when DB is up; 503 when the DB URL points to a closed port.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-29: IT-10 returns 200 with corpus counts and version, 503 degraded with corpus null against a closed port (env and pool restored in finally), 3,000 ms timeout; curl against dev:mock printed \"ok\". Playwright web servers now wait on /api/health."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
