@@ -1688,6 +1688,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-062",
+      "ac_reference": "T-21; FR-12–FR-14",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Retrieval pipeline end to end (mock)",
+      "description": "T-21 integration acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-062.",
+      "expected_result": "≤ 6 passages labelled P1..Pn; officialUrl includes the section fragment; timings present; rerankFallback false in mock.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-21: pipeline.test.ts ingests tests/fixtures/html in beforeAll; ≤ 6 passages labelled P1..Pn, officialUrl with section fragment, embed/search/rerank timings, rerankFallback false in mock; provider and search errors mapped (RETRIEVAL_ERROR uses the TRD §18 message)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-063",
+      "ac_reference": "T-21; FR-12",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Zero retrieval results",
+      "description": "TRD §9.1.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-063.",
+      "expected_result": "An empty result set yields zero passages and leads to the not-found path, not an error.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-21: empty chunks table returns zero passages without an error."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
