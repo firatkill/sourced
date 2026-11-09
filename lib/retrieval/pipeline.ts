@@ -13,13 +13,14 @@ export async function retrieve(
   const embedding = await embedQuery(question, signal);
   const embedMs = performance.now() - started;
   const searchStarted = performance.now();
-  let candidates: RetrievalResult['candidates'];
+  let searched: Awaited<ReturnType<typeof search>>;
   try {
-    candidates = await search(embedding.vector, question);
+    searched = await search(embedding.vector, question);
   } catch (cause) {
     signal.throwIfAborted();
     throw new AppError('RETRIEVAL_ERROR', RETRIEVAL_ERROR_MESSAGE, { cause });
   }
+  const candidates = searched.chunks;
   const searchMs = performance.now() - searchStarted;
   const result = await rerank(question, candidates, signal);
   const passages = result.reranked.slice(0, RETRIEVAL.FINAL_PASSAGES).map((chunk, index) => {
@@ -33,6 +34,8 @@ export async function retrieve(
   });
   return {
     candidates,
+    vectorCandidates: searched.vectorCandidates,
+    ftsCandidates: searched.ftsCandidates,
     reranked: result.reranked,
     passages,
     rerankFallback: result.rerankFallback,
@@ -44,4 +47,12 @@ export async function retrieve(
     },
     timingsMs: { embed: embedMs, search: searchMs, rerank: result.rerankMs },
   };
+}
+
+/** TRD §9.5: a whole-word preview, with an ellipsis only when cut. */
+export function passageSnippet(content: string): string {
+  if (content.length <= RETRIEVAL.SNIPPET_CHARS) return content;
+  const prefix = content.slice(0, RETRIEVAL.SNIPPET_CHARS);
+  if (/\s/.test(content.charAt(RETRIEVAL.SNIPPET_CHARS))) return `${prefix.trimEnd()}…`;
+  return `${prefix.replace(/\S*$/, '').trimEnd()}…`;
 }

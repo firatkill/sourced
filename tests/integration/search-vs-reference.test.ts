@@ -53,7 +53,9 @@ test('TC-051: IT-02 SQL equals reference for 200 deterministic random chunks and
       RETRIEVAL.RRF_K,
       RETRIEVAL.RERANK_CANDIDATES,
     );
-    const actual = await search(vector, question);
+    const { chunks: actual, vectorCandidates, ftsCandidates } = await search(vector, question);
+    expect(vectorCandidates).toBe(vectorRows.length);
+    expect(ftsCandidates).toBe(ftsRows.length);
     expect(actual.map((row) => row.chunkId)).toEqual(expected.map((row) => row.id));
     for (const [position, row] of actual.entries()) {
       expect(row.rrfScore).toBeCloseTo(expected[position]!.score, 12);

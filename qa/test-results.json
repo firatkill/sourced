@@ -1655,17 +1655,21 @@
       "description": "TRD §13.1.1.",
       "steps_to_reproduce": "See qa/test-cases.md TC-060.",
       "expected_result": "Prompt asks for under 250 words; generation passes MAX_OUTPUT_TOKENS (default 700).",
-      "status": "pending_decision",
-      "environment": "macOS; Node 22; LLM_MODE=mock",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
       "attempts": [
         {
           "result": "pending",
           "note": "T-19: prompt asks for under 250 words (from GENERATION.ANSWER_WORD_LIMIT). The MAX_OUTPUT_TOKENS argument on the generation call is verified with answer orchestration in T-26."
+        },
+        {
+          "result": "pass",
+          "note": "T-26: the generation call passes MAX_OUTPUT_TOKENS from env (default 700), asserted in answer.test.ts; prompt word limit covered in T-19."
         }
       ],
       "regression_of": null,
       "root_cause_group": null,
-      "clickup_task": "Deferred to T-26 (docs/IMPLEMENTATION_PLAN.md); no ClickUp in this repository",
+      "clickup_task": null,
       "retraction_reason": null
     },
     {
@@ -1934,6 +1938,111 @@
         {
           "result": "pass",
           "note": "T-25: refund(ipHash, day) decrements both original-day counters once and never below 0; the at-most-once-per-request guard is verified with the route in T-28 (IT-08)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-074",
+      "ac_reference": "T-26; FR-09; FR-22",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Answer orchestration event order",
+      "description": "answer.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-074.",
+      "expected_result": "Default: meta → token+ → citations → done; mock:not-found → not-found; mock:invalid-citation removes exactly 2; mock:no-block uses the quote fallback.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-26: answer.test.ts asserts meta → token+ → citations → done (default), not-found (mock:not-found), exactly 2 removed citations (mock:invalid-citation), quote fallback (mock:no-block), zero passages → not found, delimiter-free JSON tail handled. Review found meta candidate counts taken from the fused top 20; fixed per D-76 (40/17 regression)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-075",
+      "ac_reference": "T-26; FR-29",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Answer cache keys and staleness",
+      "description": "IT-07.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-075.",
+      "expected_result": "Write and current lookup; stale entries served only in readonly; key includes corpus, prompt and model versions.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-26: IT-07 covers write, current lookup, stale lookup only in readonly, key including corpus, prompt and model versions; mock-mode key uses chat model 'mock' (D-25)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-076",
+      "ac_reference": "T-26; FR-29",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Seed creates suggested cache",
+      "description": "T-26 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-076.",
+      "expected_result": "`pnpm db:seed` creates 6 answer_cache rows.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-26: pnpm db:reset && pnpm db:seed creates 6 answer_cache rows, all chat_model mock (reviewer checked the table)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-077",
+      "ac_reference": "T-26; FR-31",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Per-question cost estimate",
+      "description": "UT-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-077.",
+      "expected_result": "Formula uses env prices; zero fallback tokens; reasoning tokens added to output.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-26: UT-16 covers the TRD §21.1 formula with env prices, zero fallback tokens and separately reported reasoning tokens."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-078",
+      "ac_reference": "T-26",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Server modules import from scripts",
+      "description": "UT-24.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-078.",
+      "expected_result": "tsx with react-server condition imports db client, env and answer modules without opening a connection.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; local Postgres 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-26: UT-24 spawns tsx with the react-server condition importing db client, env and answer modules without opening a connection."
         }
       ],
       "regression_of": null,

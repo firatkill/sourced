@@ -21,6 +21,8 @@ export type Passage = RetrievedChunk & {
 };
 
 export type RetrievalResult = {
+  vectorCandidates: number; // vector list size before fusion
+  ftsCandidates: number; // full-text list size before fusion
   candidates: RetrievedChunk[]; // up to 20, RRF order
   reranked: RetrievedChunk[]; // up to 20, rerank order (or RRF on fallback)
   passages: Passage[]; // first 6 of reranked

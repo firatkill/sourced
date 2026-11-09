@@ -43,7 +43,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | HEAD |
 | T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | HEAD |
 | T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | HEAD |
-| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | todo | — |
+| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | HEAD |
 | T-27 | M2 Ask, stream, citations | Cost estimate and query log | todo | — |
 | T-28 | M2 Ask, stream, citations | `POST /api/ask` | todo | — |
 | T-29 | M2 Ask, stream, citations | `GET /api/health` | todo | — |
@@ -158,3 +158,5 @@ T-23 local acceptance: normalizer (TRD §14.2 normative), code-aware marker pars
 T-24 local acceptance: normative SSE event schemas (§12.2) and client parser (§12.4), encoder and heartbeat bytes (§12.3), plus a startHeartbeat helper the route will use. UT-12–UT-14 pass (103 cases); lib/sse 100% lines with a 90% floor added. Lint, typecheck, 629 tests with coverage pass. TC-068 and TC-069 resolved; TC-070's route-level check moves to T-28.
 
 T-25 local acceptance: normative limiter SQL (TRD §16.1) and visitor hashing (§16.2). UT-15 and IT-06 pass, including 50 concurrent requests with limit 10 → exactly 10 successes; lib/ratelimit 100% lines with a 90% floor added. Lint, typecheck, 644 tests with coverage pass. TC-071–TC-073 resolved; the per-request refund guard and the §16.1 cleanup are wired in T-28.
+
+T-26 local acceptance: answerQuestion per TRD §14.4 (first-token watchdog, total timeout, splitter, §14.1 JSON tail, verification with quote fallback), cost estimate (§21.1), answer cache with versioned keys and replay (§16.3), `pnpm cache:suggested [--mock]`, seed creates 6 mock cache rows. Review: meta candidate counts fixed per D-76; internal error message centralized. Lint, typecheck, 611 unit and 63 integration tests pass. TC-060 and TC-074–TC-078 resolved. Local database now holds the mock-seeded corpus (re-ingest live with `pnpm ingest --offline` when needed).

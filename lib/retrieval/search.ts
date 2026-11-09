@@ -4,6 +4,11 @@ import { getSql } from '@/lib/db/client';
 import type { RetrievedChunk } from './types';
 
 type SearchLimits = { vectorCandidates?: number; ftsCandidates?: number; limit?: number };
+type SearchResult = {
+  chunks: RetrievedChunk[];
+  vectorCandidates: number;
+  ftsCandidates: number;
+};
 type SearchRow = {
   chunk_id: string;
   rrf_score: number;
@@ -25,7 +30,7 @@ export async function searchInTransaction(
   vector: number[],
   question: string,
   limits: SearchLimits = {},
-): Promise<RetrievedChunk[]> {
+): Promise<SearchResult> {
   await tx.unsafe(`SET LOCAL hnsw.ef_search = ${String(RETRIEVAL.HNSW_EF_SEARCH)}`);
   const rows = await tx<SearchRow[]>`WITH vector_hits AS (
   SELECT v.id,
@@ -84,27 +89,40 @@ ORDER BY fu.rrf_score DESC,
          LEAST(COALESCE(fu.vector_rank, 2147483647), COALESCE(fu.fts_rank, 2147483647)) ASC,
          fu.id ASC
 LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
-  return rows.map((row) => ({
-    chunkId: row.chunk_id,
-    rrfScore: row.rrf_score,
-    vectorRank: row.vector_rank,
-    ftsRank: row.fts_rank,
-    vectorDistance: row.vector_distance,
-    ftsScore: row.fts_score,
-    headingPath: row.heading_path,
-    anchor: row.anchor,
-    content: row.content,
-    tokenCount: row.token_count,
-    documentTitle: row.document_title,
-    documentUrl: row.document_url,
-    slug: row.slug,
-  }));
+  const [vectorCount] = await tx<{ count: number }[]>`
+    SELECT LEAST(${limits.vectorCandidates ?? RETRIEVAL.VECTOR_CANDIDATES}::int,
+      (SELECT count(*) FROM chunks))::int AS count`;
+  const [ftsCount] = await tx<{ count: number }[]>`
+    SELECT count(*)::int AS count FROM (
+      SELECT 1 FROM chunks c
+      WHERE c.tsv @@ websearch_to_tsquery('english'::regconfig, ${question}::text)
+      LIMIT ${limits.ftsCandidates ?? RETRIEVAL.FTS_CANDIDATES}::int
+    ) AS fts_candidates`;
+  return {
+    vectorCandidates: vectorCount?.count ?? 0,
+    ftsCandidates: ftsCount?.count ?? 0,
+    chunks: rows.map((row) => ({
+      chunkId: row.chunk_id,
+      rrfScore: row.rrf_score,
+      vectorRank: row.vector_rank,
+      ftsRank: row.fts_rank,
+      vectorDistance: row.vector_distance,
+      ftsScore: row.fts_score,
+      headingPath: row.heading_path,
+      anchor: row.anchor,
+      content: row.content,
+      tokenCount: row.token_count,
+      documentTitle: row.document_title,
+      documentUrl: row.document_url,
+      slug: row.slug,
+    })),
+  };
 }
 
 export async function search(
   vector: number[],
   question: string,
   limits: SearchLimits = {},
-): Promise<RetrievedChunk[]> {
+): Promise<SearchResult> {
   return getSql().begin((tx) => searchInTransaction(tx, vector, question, limits));
 }

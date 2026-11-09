@@ -6,10 +6,7 @@ import { assertIngestAllowed, loadCorpus } from '@/lib/ingest/load';
 import { ingestCorpus } from '@/lib/ingest/upsert';
 import { formatIngestReport } from '@/lib/ingest/report';
 
-// T-26 supplies the mock suggested-answer cache after its schema contract is implemented.
-function seedSuggestedCache(): Promise<void> {
-  return Promise.resolve();
-}
+import { seedSuggestedCache } from './cache-suggested';
 
 try {
   const env = getEnv();
