@@ -34,6 +34,7 @@ export default defineConfig({
         'lib/ingest/chunk.ts': { lines: 90 },
         'lib/retrieval/rrf.ts': { lines: 90 },
         'lib/generation/stream-splitter.ts': { lines: 90 },
+        'lib/citations/**': { lines: 90 },
       },
     },
     projects: [

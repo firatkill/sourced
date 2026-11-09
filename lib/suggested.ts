@@ -1,3 +1,5 @@
+import { normalize } from '@/lib/citations/normalize';
+
 export const SUGGESTED = [
   { id: 'iso', question: 'What is the difference between REPEATABLE READ and SERIALIZABLE?' },
   { id: 'partial', question: 'When should I use a partial index?' },
@@ -8,4 +10,7 @@ export const SUGGESTED = [
 ] as const;
 export const SUGGESTED_IDS = ['iso', 'partial', 'explain', 'jsonb', 'rls', 'wraparound'] as const;
 export type SuggestedId = (typeof SUGGESTED_IDS)[number];
-// Normalized matching is implemented with the citation normalizer in T-23.
+export function matchSuggested(question: string): SuggestedId | null {
+  const normalized = normalize(question);
+  return SUGGESTED.find((suggestion) => normalize(suggestion.question) === normalized)?.id ?? null;
+}

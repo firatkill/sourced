@@ -40,7 +40,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | HEAD |
 | T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | HEAD |
 | T-22 | M2 Ask, stream, citations | Stream splitter | done | HEAD |
-| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | todo | — |
+| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | HEAD |
 | T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | todo | — |
 | T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | todo | — |
 | T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | todo | — |
@@ -152,3 +152,5 @@ T-20 local acceptance: listwise rerank per TRD §9.4 with RERANK_TIMEOUT_MS, cli
 T-21 local acceptance: embedQuery (QUERY_TIMEOUT_MS, one retry after 300 ms on network/5xx/429) and retrieve (embed → search → rerank → P1..Pn with officialUrl and timings). Integration test with the HTML fixtures passes; lint, typecheck, 440 unit and 30 integration tests pass; pipeline 100% lines. TC-062 and TC-063 resolved. Reviewer moved the 'Search failed.' message into lib/errors.ts. The §9.5 snippet is produced where the meta event is built (T-26).
 
 T-22 local acceptance: normative stream splitter (TRD §14.1) with UT-07 over every split position; 100% lines; per-file 90% coverage floor added. Lint, typecheck, unit, integration and coverage (479 tests) pass. TC-064 resolved. The §14.1 trailing-JSON rule is applied in answer orchestration (T-26).
+
+T-23 local acceptance: normalizer (TRD §14.2 normative), code-aware marker parsing, block parsing and verification per §14.3, matchSuggested. UT-08, UT-09, UT-19 pass; lib/citations 100% lines with a 90% floor added. Lint, typecheck, 526 tests with coverage pass. TC-065–TC-067 resolved.

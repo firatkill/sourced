@@ -1751,6 +1751,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-065",
+      "ac_reference": "T-23; FR-20; D-22",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Quote normalization",
+      "description": "UT-08.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-065.",
+      "expected_result": "NFKC, lowercase, punctuation/symbols to spaces, whitespace collapse; offsets map back to original substrings.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-23: normalizeWithMap byte-identical to TRD §14.2; UT-08 covers NFKC ligatures and full-width characters, case, punctuation, curly quotes, em dash, underscores, whitespace and offset round-trips."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-066",
+      "ac_reference": "T-23; FR-18–FR-22",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Citation parsing and verification",
+      "description": "UT-09.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-066.",
+      "expected_result": "Markers parsed (grouped, case, ignored in code); out-of-range, missing-quote, short-quote (< 4 words) and not-in-passage citations invalid with reasons; invalid markers removed with correct spacing; zero valid → not found.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-23: UT-09 covers grouped and lowercase markers, markers inside inline and fenced code ignored, fenced and invalid blocks, every invalid reason (UNKNOWN_PASSAGE, NO_QUOTE, QUOTE_TOO_SHORT, QUOTE_TOO_LONG, QUOTE_NOT_FOUND), whole-word matching, spans, marker removal and spacing, not-found sentence and uncited answers. lib/citations 100% lines; 90% floor added."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-067",
+      "ac_reference": "T-23; FR-02",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Suggested question matching",
+      "description": "UT-19.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-067.",
+      "expected_result": "matchSuggested normalizes case, whitespace and punctuation and returns the suggested id only for the six questions.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-23: matchSuggested uses the citation normalizer; UT-19 matches case, whitespace and punctuation variants and rejects near misses."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
