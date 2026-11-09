@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { AnswerView } from './AnswerView';
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
 import { SourcesPanel } from './SourcesPanel';
-import { AnswerActions } from './AnswerActions';
 import { useAsk } from '@/hooks/useAsk';
 import type { SuggestedId } from '@/lib/suggested';
 import { AskForm } from './AskForm';
@@ -16,6 +14,22 @@ import { DemoOff, ReadonlyBanner } from './states/DemoState';
 import { RateLimited, rateLimitCopy } from './states/RateLimited';
 import { RequestError } from './states/RequestError';
 import { Stopped } from './states/Stopped';
+
+// Keep the Markdown pipeline out of the empty Ask page's initial scripts.
+const AnswerActions = lazy(async () => ({
+  default: (await import('./AnswerActions')).AnswerActions,
+}));
+const MarkdownAnswer = lazy(async () => ({ default: (await import('./AnswerView')).AnswerView }));
+
+function AnswerView(props: ComponentProps<typeof MarkdownAnswer>) {
+  return (
+    <div className="min-h-7">
+      <Suspense fallback={<div aria-hidden="true" className="min-h-7" />}>
+        <MarkdownAnswer {...props} />
+      </Suspense>
+    </div>
+  );
+}
 
 type AskAppProps = {
   demoMode: 'on' | 'readonly' | 'off';
@@ -152,12 +166,16 @@ export function AskApp({ demoMode, limits, suggested, copy }: AskAppProps) {
               <p>{removedCitationsCopy(ask.citations.invalid.length)}</p>
             )}
             {ask.phase.kind === 'done' && (
-              <AnswerActions
+              <Suspense
                 key={ask.phase.done.requestId}
-                citations={ask.phase.citations}
-                passages={ask.phase.meta.passages}
-                onAnother={ask.askAnother}
-              />
+                fallback={<div aria-hidden="true" className="min-h-7" />}
+              >
+                <AnswerActions
+                  citations={ask.phase.citations}
+                  passages={ask.phase.meta.passages}
+                  onAnother={ask.askAnother}
+                />
+              </Suspense>
             )}
           </>
         );

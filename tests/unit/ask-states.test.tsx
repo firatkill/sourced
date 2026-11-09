@@ -306,14 +306,14 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       expect(submit).toHaveBeenCalledWith('Original question');
     },
   );
-  it('TC-104 network error preserves partial text with neutral markers and focuses retry', () => {
+  it('TC-104 network error preserves partial text with neutral markers and focuses retry', async () => {
     show({ kind: 'networkError', question, partialText: 'Unverified draft [P1]' });
     expect(screen.getByRole('heading', { name: 'Connection lost' })).toBeTruthy();
     expect(
       screen.getByText('The answer stopped arriving. Check your connection and try again.'),
     ).toBeTruthy();
     expect(screen.getByText('Partial answer, not verified')).toBeTruthy();
-    expect(screen.getByText(/Unverified draft/)).toBeTruthy();
+    expect(await screen.findByText(/Unverified draft/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Source P1/ })).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Try again' }));
   });
@@ -325,12 +325,12 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
     ).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Try again' }));
   });
-  it('TC-105 stopped keeps unverified text and related sources, announces Stop and offers another question', () => {
+  it('TC-105 stopped keeps unverified text and related sources, announces Stop and offers another question', async () => {
     const { askAnother } = show({ kind: 'stopped', question, partialText: 'Draft [P1]', meta });
     expect(
       screen.getByRole('heading', { name: 'Stopped. This partial answer was not verified.' }),
     ).toBeTruthy();
-    expect(screen.getByText(/Draft/)).toBeTruthy();
+    expect(await screen.findByText(/Draft/)).toBeTruthy();
     expect(screen.getByRole('status').textContent).toBe('Stopped');
     expect(screen.getByRole('heading', { name: 'Sources' })).toBeTruthy();
     expect(
