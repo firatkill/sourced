@@ -66,6 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
+- D-82: turn on "share inputs and outputs with OpenAI" for the sourced-eval OpenAI project only (and for the project behind your local key if you want local eval runs free). Keep it off for the production project. Without it, eval judge calls are billed at the gpt-5.4 list price (about $0.70 per full run).
+
 
 
 
