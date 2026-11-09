@@ -617,6 +617,7 @@ No prompt-only defence is complete. A model can still be manipulated into produc
 | D-70 | `.docx` is a v2.0 source format (FR-65, FR-67, FR-70). | Resolves Q-03. Internal handbooks are often Word files. | Owner, 2026-11-09 |
 | D-71 | The newcomer release check must pass in Claude Code and in Codex before a release; other agents are best effort (NFR-24). | Resolves Q-04. Two agents keep the manual check affordable; the skills use the portable format, so others are likely to work. | Owner, 2026-11-09 |
 | D-72 | The Docker-only path is the default way to run the kit: the developer installs Docker and nothing else (FR-94). The Node path stays for contributors and developers who change the code. | A newcomer should install one thing and run one command; no Node or PostgreSQL version problems on their machine. | Owner, 2026-11-09 |
+| D-73 | Structured-output calls set `providerOptions.openai.strictJsonSchema = false` explicitly. TRD §13.0 said non-strict was the SDK default; installed `@ai-sdk/openai` 4.0.99 defaults to strict (`openai-chat-language-model.ts` and `openai-responses-language-model.ts`: `strictJsonSchema ?? true`). | Keeps D-31's behaviour (non-strict mode, Zod validation after parse); corrects a factual error in the TRD. Technical detail decided by the reviewer during T-18. | Verified 2026-11-09 against installed SDK source |
 
 ## 16. v1 to v2 transition and open questions *(v2)*
 
