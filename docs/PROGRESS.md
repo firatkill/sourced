@@ -52,7 +52,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | HEAD |
 | T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | HEAD |
 | T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | HEAD |
-| T-35 | M3 Eval and CI | Golden set and validator | todo | — |
+| T-35 | M3 Eval and CI | Golden set and validator | done | HEAD |
 | T-36 | M3 Eval and CI | Eval harness | todo | — |
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | todo | — |
 | T-38 | M3 Eval and CI | `/eval` page | todo | — |
@@ -180,3 +180,5 @@ T-33 local acceptance: "How this was answered" disclosure and every PRD §9.3 st
 T-34 local acceptance: E2E-07–E2E-19, E2E-24, E2E-25 against the real mock servers (only E2E-16 stubs a network abort, as the TRD says); global-cap test isolated and restored in finally; axe zero serious/critical in 12 combinations. Found and fixed a missing visible focus outline (NFR-09). Full suite 44 passed twice the same day; reviewer removed two 10 s waits and reran: 44 passed. TC-096–TC-110 resolved. Manual VoiceOver/browser pass (TC-111) and latency measurement (TC-112) remain for M4.
 
 M2 complete (2026-11-09): T-18–T-34 done.
+
+T-35 local acceptance: 40-entry golden set (32 answerable, 5 unanswerable, 3 injection) with anchors read from the raw HTML and reference answers written from the passages; unanswerable entries record their grep terms (q007's only match mentions logical replication in passing). Validator checks rules 1–7, lists missing anchors and prints the distribution table. UT-25 (20) and IT-11 (4) pass; lint, typecheck, 718 unit and 142 integration tests pass; `LLM_MODE=mock pnpm eval:validate` exits 0. Reviewer spot-checked anchors and reference answers. TC-113–TC-117 resolved.

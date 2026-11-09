@@ -2725,6 +2725,111 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-113",
+      "ac_reference": "T-35; FR-40",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Golden set parses and meets distribution rules",
+      "description": "UT-25 golden.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-113.",
+      "expected_result": "40 entries parse with GoldenEntry; 32/5/3 split; chapter counts per rule 2; ≥6 multi-anchor, ≥6 exact identifier, ≥6 paraphrase; ≥3 near-domain and ≥1 off-domain unanswerable; 6–25 words; reference answers ≤80 words; ids q001–q040 unique.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-25: 20 tests pass; validator prints 32/5/3 and rule 2 chapter counts; 6 multi-anchor, 13 identifier, 9 paraphrase, 4 near-domain, 1 off-domain."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-114",
+      "ac_reference": "T-35; FR-40",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "GoldenEntry rejects invalid entries",
+      "description": "TRD §17.2 schema.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-114.",
+      "expected_result": "Answerable without anchors, non-answerable with anchors, injection without forbidden_strings, bad id and malformed anchor are each rejected.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-25 rejects each superRefine rule, bad id and malformed anchor; IT-11 reports line numbers for malformed input."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-115",
+      "ac_reference": "T-35; FR-40",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "eval:validate checks anchors against the corpus",
+      "description": "IT-11 eval-validate.test.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-115.",
+      "expected_result": "Passes on a golden subset whose anchors exist in fixture chunks; exits non-zero listing the missing anchor when one does not exist.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-11: subset with fixture anchors exits 0; unknown anchor exits 1 and is listed (4 tests)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-116",
+      "ac_reference": "T-35; FR-40",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "pnpm eval:validate on the full corpus",
+      "description": "T-35 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-116.",
+      "expected_result": "Exits 0 against a database ingested with --include-fixtures and prints the distribution table matching rule 2.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "LLM_MODE=mock pnpm eval:validate exits 0 after mock ingest with fixtures; distribution table matches rule 2. Rerun by reviewer."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-117",
+      "ac_reference": "T-35; FR-40",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Golden content checked against the raw HTML",
+      "description": "TRD §17.2 rules 4, 6, 8.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-117.",
+      "expected_result": "Every answerable anchor is the section that contains the answer; for each unanswerable entry, a grep -il of its key terms in corpus/raw finds no page that answers it (a passing mention is fine and is noted); corrected example anchors carry a note. Reviewer spot-check of 10 entries.",
+      "status": "resolved",
+      "environment": "macOS; reviewer review of eval/golden.jsonl against corpus/raw",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Reviewer checked anchors exist for 6 entries and the q018 supporting sentence in the raw HTML; read reference answers for q012, q027, q033, q034, q040; unanswerable notes record grep terms (q007 passing mention only)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
