@@ -62,7 +62,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-42 | M4 Polish and deploy | Supabase, OpenAI project and production data | done | 786499f, 5cd2a5b |
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | done | 190dafa, HEAD |
 | T-44 | M4 Polish and deploy | README, demo GIF and diagrams | done | 560d5c4 |
-| T-45 | M4 Polish and deploy | Release v1.0.0 | done | release PR |
+| T-45 | M4 Polish and deploy | Release v1.0.0 | done | ea39e59 (tag v1.0.0) |
 
 ## Open questions for the owner
 

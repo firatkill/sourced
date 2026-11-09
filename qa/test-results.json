@@ -3855,6 +3855,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-166",
+      "ac_reference": "T-45; PRD §11; PRD §12",
+      "milestone": "M4 Polish and deploy",
+      "title": "Release v1.0.0",
+      "description": "Release checklist.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-166.",
+      "expected_result": "Every release checklist item is checked; tag v1.0.0 and GitHub release with the CHANGELOG entry exist; repository description, topics and website set.",
+      "status": "pending_decision",
+      "environment": "GitHub release v1.0.0, production",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Tag v1.0.0 on ea39e59, GitHub release with the CHANGELOG entry, description, website and the six topics set; release PR firatkill/sourced#3 green and merged. Checklist items left open by owner decision D-90 (Lighthouse, VoiceOver, real phone, runbook and rollback tests, 7-day Supabase activity, firatkil.com link) due 2026-11-16/17; listed in docs/PROGRESS.md; no ClickUp in this repository."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }
