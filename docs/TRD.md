@@ -1923,6 +1923,7 @@ Transitions:
 | submitting | `meta` | streaming (text '') |
 | streaming | `token` | streaming (text += delta; React state updated at most once per animation frame) |
 | streaming | 600 ms without a `token` after at least one token (client timer; the server sends no "model finished" event) | verifying (status "Checking citations…") |
+| verifying (not holding citations) | `token` | streaming (text += delta); the 600 ms timer restarts (D-77) |
 | streaming, verifying | `citations` with `notFound: false` | verifying, holding the citations payload until `done` |
 | streaming, verifying | `citations` with `notFound: true` | notFound, holding until `done` (`done` fills the disclosure data) |
 | verifying (holding citations) | `done` | done |
@@ -1940,7 +1941,7 @@ Transitions:
 
 Initial phase: `readonly` banner and `demoOff` come from the `demoMode` prop, not from a request.
 
-Status line text is derived, not stored: `submitting` → "Searching the docs…"; `streaming` with `text === ''` → "Reading {meta.passages.length} passages…"; `streaming` with text → "Writing the answer…"; `verifying` → "Checking citations…". The live region announces each change of this text (without the ellipsis), never tokens. "In-flight" means `submitting`, `streaming` or `verifying`; "any terminal" means every other phase except `idle` and `validationError`.
+Status line text is derived, not stored: `submitting` → "Searching the docs…"; `streaming` with `text === ''` → "Reading {meta.passages.length} passages…"; `streaming` with text → "Writing the answer…"; `verifying` → "Checking citations…". The live region announces each change of this text (without the ellipsis), never tokens. "In-flight" means `submitting`, `streaming`, `verifying`, or `notFound` while it still holds for `done` (D-77); "any terminal" means every other phase except `idle` and `validationError`.
 
 ### 15.5 Answer rendering
 
