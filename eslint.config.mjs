@@ -36,16 +36,46 @@ export default defineConfig([
         'error',
         {
           patterns: [
-            '@/lib/env',
-            '@/lib/db/*',
-            '@/lib/llm/*',
-            '@/lib/logger',
-            '@/lib/ratelimit/*',
-            '@/lib/cache/*',
-            '@/lib/querylog/*',
-            '@/lib/ingest/*',
-            '@/lib/generation/*',
+            {
+              regex:
+                '^(@/|(?:\\.\\.?/)+)lib/(?:env(?:\\.ts)?|logger(?:\\.ts)?|(?:db|llm|ratelimit|cache|querylog|ingest|generation)(?:/.*)?)$',
+            },
           ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['app/api/**/route.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [{ regex: '^(@/|(?:\\.\\.?/)+)(?:components|hooks)(?:/.*)?$' }] },
+      ],
+    },
+  },
+  {
+    files: ['lib/{retrieval,generation,citations}/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': ['error', { patterns: ['next/*'] }] },
+  },
+  {
+    files: ['middleware.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [{ regex: '^(@/|(?:\\.\\.?/)+)lib/(?:logger(?:\\.ts)?|(?:db|llm)(?:/.*)?)$' }],
+        },
+      ],
+    },
+  },
+  {
+    files: ['scripts/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [{ group: ['next/*'] }, { regex: '^(@/|(?:\\.\\.?/)+)components(?:/.*)?$' }],
         },
       ],
     },
