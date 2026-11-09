@@ -3291,7 +3291,8 @@
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": null,
-      "retraction_reason": null
+      "retraction_reason": null,
+      "automatable": false
     }
   ]
 }
