@@ -3608,12 +3608,16 @@
       "description": "T-42 acceptance.",
       "steps_to_reproduce": "See qa/test-cases.md TC-154.",
       "expected_result": "migrate.yml with input migrate is green; chunks count equals the local live ingest count; answer_cache has 6 rows; no fixture documents.",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "Production Supabase (eu-central-1) and OpenAI project sourced",
       "attempts": [
         {
           "result": "pending",
           "note": "Production migrated locally (TRD §26.1 step 4), ingested (35 docs, 201 chunks, 0 fixtures = local ingest) and 6 answer_cache rows. migrate.yml run 42623978452 failed: MIGRATION_DATABASE_URL secret is not a valid URL. Owner re-sets the secret (docs/PROGRESS.md open questions); no ClickUp in this repository."
+        },
+        {
+          "result": "pass",
+          "note": "Owner re-set MIGRATION_DATABASE_URL; migrate.yml run 42628495057 green (migrations applied, no-op). Production: 35 documents, 0 fixtures, 201 chunks (= local ingest), 6 answer_cache rows."
         }
       ],
       "regression_of": null,
