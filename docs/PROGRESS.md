@@ -36,7 +36,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
 | T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | HEAD |
 | T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | HEAD |
-| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | todo | — |
+| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | HEAD |
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | todo | — |
 | T-21 | M2 Ask, stream, citations | Retrieval pipeline | todo | — |
 | T-22 | M2 Ask, stream, citations | Stream splitter | todo | — |
@@ -144,3 +144,5 @@ T-17 local acceptance (2026-11-09, D-62): live offline ingest of 35 documents, 2
 Orchestration (2026-11-09): from M2 on, Codex implements each task from a prompt in the git-ignored `.codex-prompts/`; the reviewer (Claude Code) checks the diff against the specs, re-runs the checks, commits and updates this file.
 
 T-18 local acceptance: OpenAI streamText/generateObject (AI SDK 7 `streamText`, `generateText` + `Output.object`) with maxRetries 0, explicit non-strict schema (D-73), conditional temperature, exact TRD §18 messages; every mock script of TRD §23.3. Pinned gpt-6-luna (D-74). Scratch live call streamed text with usage. Lint, typecheck, 85 unit and 18 integration tests, coverage 97.16% lines pass. TC-054–TC-057 resolved. Review round found three deviations, fixed by Codex in the same session.
+
+T-19 local acceptance: six prompt modules per TRD §13 with values imported from lib/config.ts; sanitization follows D-75 (control characters removed first). UT-10 and UT-11 pass (330 cases); system prompt byte-identical to TRD §13.1, independently re-checked by the reviewer; PROMPT_VERSION 2026-10-v1. Lint, typecheck, 415 unit and 18 integration tests pass. TC-058 and TC-059 resolved; TC-060's token-cap half moves to T-26. ESLint now ignores the local `.codex-prompts/` folder.

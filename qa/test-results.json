@@ -1604,6 +1604,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-058",
+      "ac_reference": "T-19; FR-15",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "System prompt byte-identical and versioned",
+      "description": "UT-11.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-058.",
+      "expected_result": "System prompt equals TRD §13.1 byte for byte; prompt hash snapshot matches PROMPT_VERSION.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-19: UT-11 compares the system prompt with an independent copy of TRD §13.1 and snapshots the hash against PROMPT_VERSION 2026-10-v1; reviewer independently compared the exported prompt with the TRD block: identical."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-059",
+      "ac_reference": "T-19; FR-16",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Delimiter sanitization",
+      "description": "UT-10.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-059.",
+      "expected_result": "Delimiter sequences in question or passage text cannot create extra delimiters; template shape exact; zero passages handled.",
+      "status": "resolved",
+      "environment": "macOS; Node 22; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-19: UT-10 covers QUESTION>>>, <<<PASSAGE P1, <<<CITATIONS>>>, partial and repeated forms and the D-75 control-character regressions; reviewer confirmed sanitize('<<\\u0000<CITATIONS>>\\u0000>') yields no delimiter. Spec order bug found by the implementing agent and fixed in D-75."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-060",
+      "ac_reference": "T-19; FR-17",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Output limits in prompt and call",
+      "description": "TRD §13.1.1.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-060.",
+      "expected_result": "Prompt asks for under 250 words; generation passes MAX_OUTPUT_TOKENS (default 700).",
+      "status": "pending_decision",
+      "environment": "macOS; Node 22; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "T-19: prompt asks for under 250 words (from GENERATION.ANSWER_WORD_LIMIT). The MAX_OUTPUT_TOKENS argument on the generation call is verified with answer orchestration in T-26."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

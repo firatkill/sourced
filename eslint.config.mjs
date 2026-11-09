@@ -14,6 +14,7 @@ export default defineConfig([
     'coverage/**',
     'playwright-report/**',
     'test-results/**',
+    '.codex-prompts/**',
   ]),
   {
     files: ['**/*.{ts,tsx}'],
