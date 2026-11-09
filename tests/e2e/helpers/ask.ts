@@ -18,14 +18,18 @@ export async function expectDone(page: Page) {
   await expect(page.getByRole('status').filter({ hasText: /^Answer ready/ })).toHaveText(
     'Answer ready with 2 verified sources.',
   );
-  await expect(page.getByRole('button', { name: 'Copy answer', exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole('article', { name: 'Answer', exact: true })
+      .last()
+      .getByRole('button', { name: 'Copy as Markdown', exact: true }),
+  ).toBeVisible();
 }
 
 export async function liveAnswers(page: Page, count: number) {
   for (let i = 0; i < count; i++) {
     await ask(page);
     await expectDone(page);
-    await page.getByRole('button', { name: 'Ask another question' }).click();
   }
 }
 

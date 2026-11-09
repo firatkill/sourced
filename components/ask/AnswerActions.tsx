@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChatIcon } from './ChatIcon';
 import { formatCopy } from '@/lib/copy-format';
 import type { SseEvent } from '@/lib/sse/events';
 
@@ -8,11 +9,9 @@ type Meta = Extract<SseEvent, { event: 'meta' }>['data'];
 export function AnswerActions({
   citations,
   passages,
-  onAnother,
 }: {
   citations: Citations;
   passages: Meta['passages'];
-  onAnother: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -54,15 +53,14 @@ export function AnswerActions({
   return (
     <div className="flex flex-wrap gap-4">
       <button
+        className="answer-action"
         type="button"
         onClick={() => {
           void copy();
         }}
       >
-        {copied ? 'Copied' : 'Copy answer'}
-      </button>
-      <button type="button" onClick={onAnother}>
-        Ask another question
+        <ChatIcon name="copy" size={15} />
+        {copied ? 'Copied' : 'Copy as Markdown'}
       </button>
     </div>
   );

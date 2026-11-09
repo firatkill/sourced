@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { readAnswer, submitAnswer } from './helpers/answer';
 
@@ -15,18 +16,18 @@ test('TC-091: phases, incremental text, verification, and ask-again focus', asyn
   await page.addInitScript(() => {
     window.answerObservations = [];
     new MutationObserver(() => {
-      const answer = document.querySelector('section[aria-labelledby="answer-heading"]');
+      const answer = document.querySelector('article[aria-label="Answer"]');
       if (!answer) return;
       window.answerObservations.push({
         status: document.querySelector('[role="status"]')?.textContent ?? '',
         text: answer.textContent,
         busy: answer.getAttribute('aria-busy'),
-        neutral: [...answer.querySelectorAll('span')].some((span) => span.textContent === 'P1'),
+        neutral: [...answer.querySelectorAll('span')].some((span) => span.textContent === '1'),
       });
     }).observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
   });
   const { question, response } = await submitAnswer(page, testInfo);
-  const answer = page.locator('section[aria-labelledby="answer-heading"]');
+  const answer = page.locator('article[aria-label="Answer"]');
   await expect(page.getByRole('status')).toHaveText('Answer ready with 2 verified sources.');
   const result = readAnswer(await response);
   expect(result.events[0]?.event).toBe('meta');
@@ -42,17 +43,14 @@ test('TC-091: phases, incremental text, verification, and ask-again focus', asyn
   expect(observations.some((item) => item.busy === 'true' && item.neutral)).toBe(true);
   await expect(answer.getByRole('button', { name: /^Source P/ })).toHaveCount(2);
   await expect(answer).toHaveAttribute('aria-busy', 'false');
-  await page.getByRole('button', { name: 'Ask another question' }).click();
   const input = page.getByRole('textbox', { name: 'Your question' });
-  await expect(input).toBeFocused();
-  await expect(input).toHaveValue(question);
-  expect(
-    await input.evaluate((element: HTMLTextAreaElement) => [
-      element.selectionStart,
-      element.selectionEnd,
-    ]),
-  ).toEqual([0, question.length]);
-  await expect(answer).toHaveCount(0);
+  await expect(input).toHaveAttribute('placeholder', 'Ask another question about PostgreSQL 17');
+  await expect(answer).toHaveCount(1);
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: question, exact: true })
+    .click();
+  await expect(page.locator('#turn-1')).toBeFocused();
   await expect
     .poll(() =>
       page.evaluate(() => [...new Set(window.answerObservations.map((item) => item.status))]),

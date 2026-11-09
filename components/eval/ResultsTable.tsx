@@ -6,7 +6,7 @@ import { AnswerView } from '@/components/ask/AnswerView';
 import { EVAL_COPY } from './copy';
 
 const buttonClass =
-  'min-h-9 cursor-pointer rounded-md border border-border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+  'min-h-11 cursor-pointer rounded-md border border-border px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 const ignoreSelection = () => undefined;
 const typeLabels: Partial<Record<string, string>> = EVAL_COPY.types;
 
@@ -17,18 +17,20 @@ export function ResultsTable({ questions }: { questions: QuestionResult[] }) {
   return (
     <section aria-labelledby={`${id}-heading`} className="space-y-5">
       <h2 id={`${id}-heading`}>{EVAL_COPY.questions}</h2>
-      <div className="flex gap-3">
+      <div className="border-border inline-flex flex-wrap gap-1 rounded-md border bg-[var(--rail)] p-1">
         {[false, true].map((failures) => (
           <button
             key={String(failures)}
             type="button"
             aria-pressed={failuresOnly === failures}
-            className={`${buttonClass} ${failuresOnly === failures ? 'border-primary text-primary' : ''}`}
+            className={`${buttonClass} ${failuresOnly === failures ? 'border-primary bg-card text-primary' : ''}`}
             onClick={() => {
               setFailuresOnly(failures);
             }}
           >
-            {failures ? EVAL_COPY.failures : EVAL_COPY.all}
+            {failures
+              ? EVAL_COPY.failures(questions.filter((question) => !question.pass).length)
+              : EVAL_COPY.all(questions.length)}
           </button>
         ))}
       </div>

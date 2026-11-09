@@ -1,95 +1,41 @@
-import { CHUNKING, RETRIEVAL } from '@/lib/config';
+import { RETRIEVAL } from '@/lib/config';
 
-const requestSteps = [
-  ['Question'],
-  ['Embed'],
-  [
-    `Vector search (top ${String(RETRIEVAL.VECTOR_CANDIDATES)})`,
-    `Keyword search (top ${String(RETRIEVAL.FTS_CANDIDATES)})`,
-  ],
-  [`Reciprocal Rank Fusion (top ${String(RETRIEVAL.RERANK_CANDIDATES)})`],
-  [`Rerank (top ${String(RETRIEVAL.FINAL_PASSAGES)})`],
-  ['Generate with [P#] citations'],
-  ['Verify quotes'],
-  ['Answer'],
+const steps = [
+  {
+    label: '01 · SEARCH',
+    title: 'Two searches, one list',
+    body: `Meaning search finds ${String(RETRIEVAL.VECTOR_CANDIDATES)} passages, keyword search finds ${String(RETRIEVAL.FTS_CANDIDATES)}. Reciprocal Rank Fusion merges them and keeps the top ${String(RETRIEVAL.RERANK_CANDIDATES)}.`,
+  },
+  {
+    label: '02 · RERANK',
+    title: 'The model picks six',
+    body: `The language model orders the ${String(RETRIEVAL.RERANK_CANDIDATES)} by how well they answer your question. If it takes longer than ${String(RETRIEVAL.RERANK_TIMEOUT_MS / 1000)} s, the search order is used.`,
+  },
+  {
+    label: '03 · WRITE',
+    title: 'An answer with receipts',
+    body: `The answer streams from the top ${String(RETRIEVAL.FINAL_PASSAGES)} passages only. For every claim, the model names its passage and the exact sentence that supports it.`,
+  },
+  {
+    label: '04 · CHECK',
+    title: 'Every quote is verified',
+    body: 'The server looks for each quote in its passage. A citation that fails is removed. If none survive, you get "not in the docs" instead of a guess.',
+  },
 ];
-const offlineSteps = [
-  ['35 doc pages'],
-  ['Parse'],
-  [`Chunk (${String(CHUNKING.MIN_TOKENS)}–${String(CHUNKING.MAX_TOKENS)} tokens)`],
-  ['Embed'],
-  ['Postgres + pgvector'],
-];
-
-// Keep arrows connected when a lane wraps, while DOM order stays sequential.
-const positions = [
-  'sm:row-start-1 sm:col-start-1 lg:row-start-1 lg:col-start-1',
-  'sm:row-start-1 sm:col-start-2 lg:row-start-1 lg:col-start-2',
-  'sm:row-start-2 sm:col-start-2 lg:row-start-1 lg:col-start-3',
-  'sm:row-start-2 sm:col-start-1 lg:row-start-1 lg:col-start-4',
-  'sm:row-start-3 sm:col-start-1 lg:row-start-2 lg:col-start-4',
-  'sm:row-start-3 sm:col-start-2 lg:row-start-2 lg:col-start-3',
-  'sm:row-start-4 sm:col-start-2 lg:row-start-2 lg:col-start-2',
-  'sm:row-start-4 sm:col-start-1 lg:row-start-2 lg:col-start-1',
-];
-
-function Lane({ label, steps }: { label: string; steps: string[][] }) {
-  return (
-    <ol
-      aria-label={label}
-      className="grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-4"
-    >
-      {steps.map((step, index) => (
-        <li
-          key={step.join()}
-          className={`relative grid content-center gap-2 ${positions[index] ?? ''}`}
-        >
-          {step.map((text) => (
-            <span
-              key={text}
-              className="border-border bg-card rounded-md border p-3 font-mono text-[13px] leading-5"
-            >
-              {text}
-            </span>
-          ))}
-          {index < steps.length - 1 && (
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className={`text-muted-foreground absolute -bottom-6 left-1/2 size-6 -translate-x-1/2 ${
-                index % 2 === 1
-                  ? ''
-                  : index % 4 === 0
-                    ? 'sm:top-1/2 sm:-right-6 sm:bottom-auto sm:left-auto sm:translate-x-0 sm:-translate-y-1/2 sm:-rotate-90'
-                    : 'sm:top-1/2 sm:right-auto sm:bottom-auto sm:-left-6 sm:translate-x-0 sm:-translate-y-1/2 sm:rotate-90'
-              } ${
-                index === 3
-                  ? 'lg:top-auto lg:right-auto lg:-bottom-6 lg:left-1/2 lg:-translate-x-1/2 lg:translate-y-0 lg:rotate-0'
-                  : index < 3
-                    ? 'lg:top-1/2 lg:-right-6 lg:bottom-auto lg:left-auto lg:translate-x-0 lg:-translate-y-1/2 lg:-rotate-90'
-                    : 'lg:top-1/2 lg:right-auto lg:bottom-auto lg:-left-6 lg:translate-x-0 lg:-translate-y-1/2 lg:rotate-90'
-              }`}
-            >
-              <path d="M12 3v18m-7-7 7 7 7-7" />
-            </svg>
-          )}
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 export function PipelineDiagram() {
   return (
-    <figure className="my-8 space-y-8">
-      <Lane label="Request path" steps={requestSteps} />
-      <Lane label="Offline ingestion" steps={offlineSteps} />
-      <figcaption className="small text-muted-foreground">
-        Request path above, offline ingestion below.
-      </figcaption>
-    </figure>
+    <ol
+      aria-label="Pipeline"
+      className="my-12 grid list-none gap-3 p-0 sm:grid-cols-2 lg:grid-cols-4"
+    >
+      {steps.map((step) => (
+        <li key={step.label} className="border-border bg-card rounded-lg border p-5">
+          <span className="text-primary font-mono text-xs font-medium">{step.label}</span>
+          <h3 className="mt-2 font-semibold">{step.title}</h3>
+          <p className="text-sm text-[var(--ink-2)]">{step.body}</p>
+        </li>
+      ))}
+    </ol>
   );
 }

@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { uniqueIp } from './helpers/ip';
 
@@ -66,13 +67,14 @@ test('T-31: suggested chip submits immediately and Stop cancels the pending requ
       question: 'When should I use a partial index?',
       suggestedId: 'partial',
     });
-    await expect(input).toHaveValue('When should I use a partial index?');
+    await expect(page.locator('#turn-1')).toContainText('When should I use a partial index?');
+    await expect(input).toHaveValue('');
     await expect(input).toHaveAttribute('readonly', '');
     await expect(page.getByText('Searching the docs…', { exact: true })).toBeVisible();
     await expect(page.getByRole('status')).toHaveText('Searching the docs');
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await expect(input).not.toHaveAttribute('readonly', '');
-    await expect(page.getByRole('button', { name: 'Ask', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Ask', exact: true })).toBeDisabled();
   } finally {
     release();
     await page.unrouteAll({ behavior: 'wait' });

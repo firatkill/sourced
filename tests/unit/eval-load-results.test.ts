@@ -40,7 +40,10 @@ test('TC-132: validates fixtures, sorts by runId rather than filename, warns wit
     writeFile(join(path, 'ignored.md'), 'must not parse'),
     mkdir(join(path, 'unreadable.json')),
   ]);
-  expect(await loadResults()).toEqual([EvalResult.parse(older), EvalResult.parse(newer)]);
+  expect(await loadResults()).toEqual([
+    { ...EvalResult.parse(older), sourceFile: 'z.json' },
+    { ...EvalResult.parse(newer), sourceFile: 'a.json' },
+  ]);
   expect(warn).toHaveBeenCalledTimes(3);
   for (const file of ['invalid-schema.json', 'invalid-json.json', 'unreadable.json']) {
     expect(warn).toHaveBeenCalledWith({ file }, 'Skipping invalid evaluation results file');

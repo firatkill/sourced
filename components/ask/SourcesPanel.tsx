@@ -1,38 +1,45 @@
 import type { SseEvent } from '@/lib/sse/events';
-import { PassageCard } from './PassageCard';
-
 type Meta = Extract<SseEvent, { event: 'meta' }>['data'];
 type Citations = Extract<SseEvent, { event: 'citations' }>['data'];
-
 export function SourcesPanel({
   passages,
   citations,
   selected,
+  onSelect,
 }: {
   passages: Meta['passages'];
-  citations: Citations | null;
+  citations: Citations;
   selected: string | null;
+  onSelect: (label: string) => void;
 }) {
-  const cited = new Set(citations?.valid.map((citation) => citation.label));
-  const ordered = [...passages].sort(
-    (a, b) =>
-      Number(cited.has(b.label)) - Number(cited.has(a.label)) || a.label.localeCompare(b.label),
-  );
   return (
-    <section
-      aria-labelledby="sources-heading"
-      className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:p-1"
-    >
-      <h2 id="sources-heading">Sources</h2>
-      {ordered.map((passage) => (
-        <PassageCard
-          key={passage.label}
-          passage={passage}
-          citation={citations?.valid.find((citation) => citation.label === passage.label)}
-          selected={selected === passage.label}
-          verified={citations !== null}
-        />
-      ))}
+    <section aria-label="Sources" className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {passages
+        .filter((p) => citations.valid.some((c) => c.label === p.label))
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            aria-current={selected === p.label ? 'true' : undefined}
+            className="flex min-h-16 min-w-0 items-start gap-3 rounded-xl border border-[var(--rule)] bg-[var(--surface)] px-3.5 py-3 text-left aria-current:border-[1.5px] aria-current:border-[var(--accent)] aria-current:bg-[var(--accent-soft)]"
+            onClick={() => {
+              onSelect(p.label);
+            }}
+          >
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-[6px] bg-[var(--accent-soft)] font-mono text-xs text-[var(--accent-soft-ink)]">
+              {p.label.slice(1)}
+            </span>
+            <span className="min-w-0 leading-[1.35] break-words">
+              <span className="block text-sm font-semibold">
+                {p.headingPath.at(-1) ?? p.documentTitle}
+              </span>
+              <span className="block text-xs text-[var(--ink-3)]">
+                {p.headingPath.slice(0, -1).join(' › ') || p.documentTitle}
+              </span>
+            </span>
+          </button>
+        ))}
     </section>
   );
 }

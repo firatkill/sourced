@@ -1812,3 +1812,87 @@ Source: PRD NFR-04, NFR-07–NFR-14, FR-29, FR-57, FR-58, §11, §12; TRD §15.3
   1. Walk the checklist; gh release view v1.0.0; gh repo view.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Every release checklist item is checked; tag v1.0.0 and GitHub release with the CHANGELOG entry exist; repository description, topics and website set.
+
+## v1.1 Chat redesign
+
+Source: docs/REDESIGN.md (D-91) and the "Sourced redesign" canvas. Designed from the spec before the R2 code.
+
+| TC ID  | AC Reference                    | TRD test ID / source                    | Title                                                  | Priority | Automatable | Expected result                                                                                                                                                                                                                                 |
+| ------ | ------------------------------- | --------------------------------------- | ------------------------------------------------------ | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-167 | D-91; REDESIGN §3, §4           | ask-history.spec.ts                     | Chat history and New chat                              | High     | yes         | Turns stack in order with independent requests; the rail lists them and moves focus to a turn; New chat clears them; reload clears them; only one request runs at a time.                                                                       |
+| TC-168 | D-91; REDESIGN §3.3, §4.5       | ask-sources.spec.ts                     | Source viewer and source cards                         | Critical | yes         | A chip or card opens the viewer on its passage with every verified quote marked; previous and next move across cited passages; Esc and Close return focus to the opener; the postgresql.org link has target _blank and rel noopener noreferrer. |
+| TC-169 | D-91; REDESIGN §3, §3.3; NFR-09 | ask-sources.spec.ts; keyboard.spec.ts   | Bottom sheet and rail menu are modal with a focus trap | High     | yes         | Below 1024 px the viewer is a modal sheet and below 768 px the rail is a menu dialog; Tab and Shift+Tab stay inside; Esc closes and returns focus.                                                                                              |
+| TC-170 | D-91; REDESIGN §5               | ask-code.spec.ts                        | SQL highlighting and Copy code                         | High     | yes         | A fenced SQL block renders token spans in the code colours; Copy code copies the exact source, shows Copied for 2 s and announces it.                                                                                                           |
+| TC-171 | D-91; REDESIGN §5.2             | highlight-sql.test.ts                   | SQL tokenizer                                          | High     | yes         | Each token type, dollar quotes and comments are classified; every corpus SQL block round-trips exactly; 10,000 characters tokenize in under 20 ms.                                                                                              |
+| TC-172 | D-91; REDESIGN §6, §7           | eval-page.spec.ts; how-it-works.spec.ts | Redesigned /eval and /how-it-works                     | High     | yes         | Grouped metric cards with gates, rerank values, trends and filter counts; four-step list, prose and Privacy and Limits cards; copy as REDESIGN §7.                                                                                              |
+| TC-173 | D-91; REDESIGN §9               | Canvas comparison                       | App matches the design canvas                          | Medium   | no          | Desktop chat with source viewer, welcome, phone sheet, states, /eval and /how-it-works match the canvas in light and dark themes.                                                                                                               |
+
+### TC-167: Chat history and New chat
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §3, §4; ask-history.spec.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Turns stack in order with independent requests; the rail lists them and moves focus to a turn; New chat clears them; reload clears them; only one request runs at a time.
+
+### TC-168: Source viewer and source cards
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §3.3, §4.5; ask-sources.spec.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A chip or card opens the viewer on its passage with every verified quote marked; previous and next move across cited passages; Esc and Close return focus to the opener; the postgresql.org link has target _blank and rel noopener noreferrer.
+
+### TC-169: Bottom sheet and rail menu are modal with a focus trap
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §3, §3.3; NFR-09; ask-sources.spec.ts; keyboard.spec.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Below 1024 px the viewer is a modal sheet and below 768 px the rail is a menu dialog; Tab and Shift+Tab stay inside; Esc closes and returns focus.
+
+### TC-170: SQL highlighting and Copy code
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §5; ask-code.spec.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A fenced SQL block renders token spans in the code colours; Copy code copies the exact source, shows Copied for 2 s and announces it.
+
+### TC-171: SQL tokenizer
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §5.2; highlight-sql.test.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each token type, dollar quotes and comments are classified; every corpus SQL block round-trips exactly; 10,000 characters tokenize in under 20 ms.
+
+### TC-172: Redesigned /eval and /how-it-works
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §6, §7; eval-page.spec.ts; how-it-works.spec.ts.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Grouped metric cards with gates, rerank values, trends and filter counts; four-step list, prose and Privacy and Limits cards; copy as REDESIGN §7.
+
+### TC-173: App matches the design canvas
+
+- Milestone: v1.1 Chat redesign
+- Requirement: D-91; REDESIGN §9; Canvas comparison.
+- Preconditions: mock mode against pnpm build && pnpm start.
+- Steps:
+  1. Run the listed spec or compare with the canvas.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Desktop chat with source viewer, welcome, phone sheet, states, /eval and /how-it-works match the canvas in light and dark themes.

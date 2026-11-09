@@ -47,6 +47,16 @@ for (const colorScheme of ['light', 'dark'] as const) {
         expect(scriptPolicy).toContain("'nonce-");
         expect(scriptPolicy).not.toContain("'unsafe-inline'");
         await expect(page.locator('html')).toHaveCSS('color-scheme', stored ?? colorScheme);
+        // REDESIGN §2 token values apply on ask and both content pages.
+        await expect(page.locator('body')).toHaveCSS(
+          'background-color',
+          (stored ?? colorScheme) === 'dark' ? 'rgb(17, 19, 23)' : 'rgb(250, 250, 248)',
+        );
+        await expect(page.locator('body')).toHaveCSS(
+          'color',
+          (stored ?? colorScheme) === 'dark' ? 'rgb(236, 238, 242)' : 'rgb(22, 24, 29)',
+        );
+        await expect(page.locator('body')).toHaveCSS('font-size', '16px');
         // Interact to prove hydration finished before inspecting the console.
         await page.getByRole('button', { name: /Switch to .* theme/ }).click();
         await expect(page.locator('html')).toHaveCSS(

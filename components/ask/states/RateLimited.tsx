@@ -34,8 +34,8 @@ export function RateLimited({
   scope: 'ip' | 'global';
 }) {
   return (
-    <div className="space-y-4">
-      <h2 id="answer-heading">{heading}</h2>
+    <div className="space-y-4 rounded-md bg-[var(--warn-soft)] p-4 text-[var(--warn)]">
+      <h2>{heading}</h2>
       <p>{body}</p>
       {scope === 'ip' && <p>{ASK_COPY.suggestedStillWork}</p>}
     </div>

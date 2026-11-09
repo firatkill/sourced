@@ -1,85 +1,91 @@
 'use client';
 
-import { lazy, Suspense, useEffect, useRef, useState, type ComponentProps } from 'react';
-import { SourcesPanel } from './SourcesPanel';
+import { useEffect, useRef, useState } from 'react';
 import { useAsk } from '@/hooks/useAsk';
+import { QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
+import { ASK_COPY } from '@/lib/copy';
 import { AskForm } from './AskForm';
 import { SuggestedQuestions } from './SuggestedQuestions';
-import { StatusLine } from './StatusLine';
-import { ASK_COPY, formatAskCopy, removedCitationsCopy } from '@/lib/copy';
-import { HowAnswered } from './HowAnswered';
-import { NotFound } from './states/NotFound';
 import { DemoOff, ReadonlyBanner } from './states/DemoState';
-import { RateLimited, rateLimitCopy } from './states/RateLimited';
-import { RequestError } from './states/RequestError';
-import { Stopped } from './states/Stopped';
+import { rateLimitCopy } from './states/RateLimited';
+import { ChatRail } from './ChatRail';
+import { Turn, type ChatTurn } from './Turn';
+import { SourceViewer } from './SourceViewer';
 
-// Keep the Markdown pipeline out of the empty Ask page's initial scripts.
-const AnswerActions = lazy(async () => ({
-  default: (await import('./AnswerActions')).AnswerActions,
-}));
-const MarkdownAnswer = lazy(async () => ({ default: (await import('./AnswerView')).AnswerView }));
-
-function AnswerView(props: ComponentProps<typeof MarkdownAnswer>) {
-  return (
-    <div className="min-h-7">
-      <Suspense fallback={<div aria-hidden="true" className="min-h-7" />}>
-        <MarkdownAnswer {...props} />
-      </Suspense>
-    </div>
-  );
-}
-
-type AskAppProps = {
+type Props = {
   demoMode: 'on' | 'readonly' | 'off';
   limits: { ipDaily: number; globalDaily: number };
-  suggested: readonly { id: SuggestedId; question: string }[];
+  suggested: readonly { id: SuggestedId; question: string; topic: string }[];
   copy: { hero: string; lead: string };
 };
-
-export function AskApp({ demoMode, limits, suggested, copy }: AskAppProps) {
+export function AskApp(props: Props) {
+  const [session, setSession] = useState(0);
+  const [mode, setMode] = useState(props.demoMode);
+  return (
+    <Conversation
+      key={session}
+      {...props}
+      demoMode={mode}
+      onMode={setMode}
+      onNew={() => {
+        setSession((n) => n + 1);
+      }}
+    />
+  );
+}
+function Conversation({
+  demoMode,
+  limits,
+  suggested,
+  copy,
+  onNew,
+  onMode,
+}: Props & { onNew: () => void; onMode: (mode: Props['demoMode']) => void }) {
   const ask = useAsk(demoMode);
-  // HTTP demo-mode responses also apply to subsequent cached questions.
+  const [history, setHistory] = useState<ChatTurn[]>([]);
+  const [active, setActive] = useState<{ id: number; question: string } | null>(null);
+  const [draft, setDraft] = useState('');
+  const [viewer, setViewer] = useState<{ turn: number; label: string } | null>(null);
   const [effectiveMode, setEffectiveMode] = useState(demoMode);
+  const busyRef = useRef(false);
+  const viewerOpener = useRef<HTMLElement | null>(null);
   const responseMode =
     ask.phase.kind === 'readonly' ? 'readonly' : ask.phase.kind === 'demoOff' ? 'off' : null;
   if (responseMode !== null && effectiveMode !== responseMode) setEffectiveMode(responseMode);
-  const disabled = effectiveMode !== 'on';
-  const showAnswer =
-    ask.phase.kind !== 'idle' &&
-    ask.phase.kind !== 'validationError' &&
-    ask.phase.kind !== 'readonly' &&
-    ask.phase.kind !== 'demoOff';
-
-  const [selected, setSelected] = useState<string | null>(null);
-  const selectionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(
-    () => () => {
-      clearTimeout(selectionTimer.current);
-    },
-    [],
-  );
-  const meta = 'meta' in ask.phase ? ask.phase.meta : null;
-  const text =
-    'text' in ask.phase ? ask.phase.text : 'partialText' in ask.phase ? ask.phase.partialText : '';
-  const selectSource = (label: string) => {
-    const card = document.getElementById(`source-${label}`);
-    card?.focus({ preventScroll: true });
-    card?.scrollIntoView({
-      block: 'nearest',
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 'instant'
-        : 'smooth',
-    });
-    setSelected(label);
-    clearTimeout(selectionTimer.current);
-    selectionTimer.current = setTimeout(() => {
-      setSelected(null);
-    }, 2000);
-  };
+  useEffect(() => {
+    onMode(effectiveMode);
+  }, [effectiveMode, onMode]);
+  const current: ChatTurn | null = active
+    ? { ...active, phase: ask.phase, citations: ask.citations }
+    : null;
+  const turns = current ? [...history, current] : history;
+  const selectedTurn = turns.find((turn) => turn.id === viewer?.turn);
+  const selectedMeta =
+    selectedTurn && 'meta' in selectedTurn.phase ? selectedTurn.phase.meta : null;
+  async function submit(question: string, id?: SuggestedId, retry = false) {
+    if (ask.inFlight || busyRef.current) return;
+    const valid =
+      question.trim().length >= QUESTION.MIN_CHARS && question.trim().length <= QUESTION.MAX_CHARS;
+    if (!valid) {
+      if (current) setHistory((previous) => [...previous, current]);
+      setActive(null);
+      void ask.submit(question, id);
+      return;
+    }
+    busyRef.current = true;
+    setViewer(null);
+    if (current && !retry) setHistory((previous) => [...previous, current]);
+    setActive({ id: retry && active ? active.id : turns.length + 1, question });
+    setDraft('');
+    try {
+      await ask.submit(question, id);
+    } finally {
+      busyRef.current = false;
+    }
+  }
   const count = ask.citations?.valid.length ?? 0;
-  const rateCopy =
+  const rate =
     ask.phase.kind === 'rateLimited'
       ? rateLimitCopy(ask.phase.scope, ask.phase.resetAt, limits)
       : null;
@@ -92,163 +98,143 @@ export function AskApp({ demoMode, limits, suggested, copy }: AskAppProps) {
           ? ASK_COPY.stoppedAnnouncement
           : ask.phase.kind === 'providerError'
             ? ASK_COPY.providerHeading
-            : rateCopy
-              ? `${rateCopy.heading}. ${rateCopy.body}`
+            : rate
+              ? `${rate.heading}. ${rate.body}`
               : ask.status.replace(/…$/, '');
   useEffect(() => {
-    if (ask.phase.kind === 'rateLimited') ask.inputRef.current?.focus();
-  }, [ask.phase.kind, ask.inputRef]);
-
-  const partialAnswer = (
-    <AnswerView
-      text={text}
-      passages={meta?.passages ?? []}
-      citations={null}
-      onSelect={selectSource}
+    if (ask.phase.kind === 'rateLimited' || ask.phase.kind === 'submitting')
+      ask.inputRef.current?.focus();
+  }, [ask.phase.kind, ask.inputRef, active?.id]);
+  const composer = (
+    <AskForm
+      question={draft}
+      onChange={setDraft}
+      onSubmit={() => {
+        void submit(draft);
+      }}
+      inputRef={ask.inputRef}
+      inFlight={ask.inFlight}
+      disabled={effectiveMode !== 'on'}
+      dailyLimit={limits.ipDaily}
+      error={ask.phase.kind === 'validationError' ? ask.phase.message : null}
+      hasTurns={turns.length > 0}
     />
   );
-  const renderAnswer = () => {
-    switch (ask.phase.kind) {
-      case 'notFound':
-        return <NotFound passages={meta?.passages ?? []} onAnother={ask.askAnother} />;
-      case 'rateLimited':
-        return rateCopy && <RateLimited {...rateCopy} scope={ask.phase.scope} />;
-      case 'providerError':
-      case 'serverError':
-      case 'networkError': {
-        const phase = ask.phase;
-        const heading =
-          phase.kind === 'providerError'
-            ? ASK_COPY.providerHeading
-            : phase.kind === 'serverError'
-              ? ASK_COPY.serverHeading
-              : ASK_COPY.networkHeading;
-        const body =
-          phase.kind === 'providerError'
-            ? phase.refunded
-              ? ASK_COPY.providerRefundedBody
-              : ASK_COPY.providerBody
-            : phase.kind === 'serverError'
-              ? formatAskCopy(ASK_COPY.serverBody, { requestId: phase.requestId.slice(0, 8) })
-              : ASK_COPY.networkBody;
-        return (
-          <RequestError
-            heading={heading}
-            body={body}
-            onRetry={() => {
-              void ask.submit(phase.question);
-            }}
-          >
-            {phase.kind === 'networkError' && (
+  const suggestions = (
+    <SuggestedQuestions
+      suggested={suggested}
+      disabled={ask.inFlight}
+      onSelect={(question, id) => {
+        void submit(question, id);
+      }}
+    />
+  );
+  return (
+    <div className="chat-shell flex h-dvh flex-col md:flex-row">
+      <ChatRail
+        turns={turns}
+        busy={ask.inFlight}
+        onNew={() => {
+          if (!ask.inFlight) onNew();
+        }}
+      />
+      <main
+        id="content"
+        tabIndex={-1}
+        className="chat-main flex min-h-0 min-w-0 flex-1 flex-col p-0"
+      >
+        <header className="flex h-[60px] shrink-0 flex-col justify-center border-b border-[var(--rule)] px-5">
+          <p className="truncate text-sm font-semibold">{turns[0]?.question ?? copy.hero}</p>
+          <p className="text-xs text-[var(--ink-3)]">{ASK_COPY.headerScope}</p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
+          <div className="mx-auto w-full max-w-[760px] space-y-10">
+            {turns.length === 0 ? (
+              effectiveMode === 'off' ? (
+                <DemoOff />
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {effectiveMode === 'readonly' ? (
+                      <ReadonlyBanner />
+                    ) : (
+                      <>
+                        <h1>{copy.hero}</h1>
+                        <p className="text-[var(--ink-2)]">{copy.lead}</p>
+                      </>
+                    )}
+                  </div>
+                  {composer}
+                  {suggestions}
+                  <p className="text-sm text-[var(--ink-3)]">
+                    {ASK_COPY.scope}{' '}
+                    <a href="/eval" className="text-[var(--accent)] underline">
+                      {ASK_COPY.scopeLink}
+                    </a>
+                  </p>
+                </>
+              )
+            ) : (
               <>
-                <p>{ASK_COPY.partialLabel}</p>
-                {partialAnswer}
+                {(ask.phase.kind === 'rateLimited' || effectiveMode === 'readonly') && suggestions}
+                {turns.map((turn) => (
+                  <Turn
+                    key={turn.id}
+                    turn={turn}
+                    limits={limits}
+                    selected={viewer?.turn === turn.id ? viewer.label : null}
+                    onSelect={(label) => {
+                      viewerOpener.current =
+                        document.activeElement instanceof HTMLElement
+                          ? document.activeElement
+                          : null;
+                      setViewer({ turn: turn.id, label });
+                    }}
+                    onRetry={() => {
+                      void submit(turn.question, undefined, turn.id === active?.id);
+                    }}
+                    onStop={() => {
+                      ask.stop();
+                      busyRef.current = false;
+                    }}
+                    onAnother={() => {
+                      setDraft(turn.question);
+                      requestAnimationFrame(() => {
+                        ask.inputRef.current?.focus();
+                        ask.inputRef.current?.select();
+                      });
+                    }}
+                  />
+                ))}
               </>
             )}
-          </RequestError>
-        );
-      }
-      case 'stopped':
-        return <Stopped onAnother={ask.askAnother}>{partialAnswer}</Stopped>;
-      default:
-        return (
-          <>
-            <h2 id="answer-heading">Answer</h2>
-            {meta?.cached && <p>Answered in advance</p>}
-            <StatusLine text={ask.status} />
-            <AnswerView
-              text={text}
-              passages={meta?.passages ?? []}
-              citations={ask.citations}
-              onSelect={selectSource}
-            />
-            {ask.citations && ask.citations.invalid.length > 0 && (
-              <p>{removedCitationsCopy(ask.citations.invalid.length)}</p>
-            )}
-            {ask.phase.kind === 'done' && (
-              <Suspense
-                key={ask.phase.done.requestId}
-                fallback={<div aria-hidden="true" className="min-h-7" />}
-              >
-                <AnswerActions
-                  citations={ask.phase.citations}
-                  passages={ask.phase.meta.passages}
-                  onAnother={ask.askAnother}
-                />
-              </Suspense>
-            )}
-          </>
-        );
-    }
-  };
-  const showSources = meta !== null && ask.phase.kind !== 'notFound';
-
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="max-w-[24ch]">{copy.hero}</h1>
-        <p className="text-[var(--ink-2)]">{copy.lead}</p>
-      </div>
-      {effectiveMode === 'off' ? (
-        <DemoOff />
-      ) : (
-        <>
-          {effectiveMode === 'readonly' && <ReadonlyBanner />}
-          <AskForm
-            question={ask.question}
-            onChange={ask.setQuestion}
-            onSubmit={() => {
-              void ask.submit(ask.question);
-            }}
-            onStop={ask.stop}
-            inputRef={ask.inputRef}
-            inFlight={ask.inFlight}
-            disabled={disabled}
-            dailyLimit={limits.ipDaily}
-            error={ask.phase.kind === 'validationError' ? ask.phase.message : null}
-          />
-          <SuggestedQuestions
-            suggested={suggested}
-            disabled={ask.inFlight}
-            onSelect={(question, id) => {
-              void ask.submit(question, id);
-            }}
-          />
-        </>
-      )}
-      {showAnswer && effectiveMode !== 'off' && (
-        <section
-          aria-labelledby="answer-heading"
-          aria-busy={ask.inFlight}
-          className="border-border space-y-4 border-t pt-8"
-        >
-          <div className={showSources ? 'grid items-start gap-8 lg:grid-cols-[3fr_2fr]' : ''}>
-            <div className="min-w-0 space-y-4">
-              {renderAnswer()}
-              {(ask.phase.kind === 'done' || ask.phase.kind === 'notFound') &&
-                meta &&
-                ask.phase.done && (
-                  <HowAnswered
-                    key={ask.phase.done.requestId}
-                    meta={meta}
-                    done={ask.phase.done}
-                    citations={ask.citations}
-                  />
-                )}
-            </div>
-            {showSources && (
-              <SourcesPanel
-                passages={meta.passages}
-                citations={ask.citations}
-                selected={selected}
-              />
-            )}
           </div>
-        </section>
+        </div>
+        {turns.length > 0 && effectiveMode !== 'off' && (
+          <div className="shrink-0 border-t border-[var(--rule)] bg-[var(--ground)] px-4 py-3 sm:px-8">
+            <div className="mx-auto max-w-[760px]">{composer}</div>
+          </div>
+        )}
+        <div role="status" aria-live="polite" className="sr-only" data-ask-status>
+          {announcement}
+        </div>
+      </main>
+      {viewer && selectedMeta && selectedTurn?.citations && (
+        <SourceViewer
+          passages={selectedMeta.passages}
+          citations={selectedTurn.citations}
+          label={viewer.label}
+          onSelect={(label) => {
+            setViewer({ ...viewer, label });
+          }}
+          onClose={() => {
+            setViewer(null);
+            requestAnimationFrame(() => {
+              if (viewerOpener.current?.isConnected) viewerOpener.current.focus();
+            });
+          }}
+        />
       )}
-      <div role="status" aria-live="polite" className="sr-only">
-        {announcement}
-      </div>
     </div>
   );
 }

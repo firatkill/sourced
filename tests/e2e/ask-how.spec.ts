@@ -1,3 +1,4 @@
+// REDESIGN §3–§4, §7: chat turns retain the existing state and accessibility contracts.
 import { expect, test } from '@playwright/test';
 import { completeAnswer } from './helpers/answer';
 
@@ -5,6 +6,12 @@ test('TC-096: E2E-07 disclosure reports real retrieval, timings, tokens and cost
   page,
 }, info) => {
   const { meta, done } = await completeAnswer(page, info);
+  await expect(
+    page.getByText(
+      `${String(meta.retrieval.vectorCandidates)} + ${String(meta.retrieval.ftsCandidates)} candidates · ${String(meta.passages.length)} passages read · ${(done.latencyMs.total / 1000).toFixed(1)} s`,
+      { exact: true },
+    ),
+  ).toBeVisible();
   const disclosure = page.getByRole('button', { name: 'How this was answered' });
   await expect(disclosure).toHaveAttribute('aria-expanded', 'false');
   await disclosure.click();

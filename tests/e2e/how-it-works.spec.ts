@@ -9,45 +9,41 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.setExtraHTTPHeaders({ 'x-real-ip': uniqueIp(testInfo) });
 });
 
-test('TC-136: E2E-22 PRD §9.6 diagram, exact copy, sections and limits', async ({ page }) => {
+test('TC-136: E2E-22 REDESIGN §6.2 / §7 pipeline, exact copy, sections and limits', async ({
+  page,
+}) => {
   await page.goto('/how-it-works');
   await expect(page).toHaveTitle('How it works · Sourced');
   const main = page.getByRole('main');
-  await expect(main.getByRole('heading', { level: 1 })).toHaveText(
-    'How Sourced answers a question',
-  );
+  await expect(main.getByRole('heading', { level: 1 })).toHaveText('What happens when you ask');
   await expect(main.locator('article > p')).toHaveText(
-    'A question goes through four steps on the server: hybrid search, reranking, generation with citations, and citation checking. The documents were prepared once, offline.',
+    'Four steps run on the server for every question. The documentation itself was split, embedded and stored once, ahead of time.',
   );
-  const request = main.getByRole('list', { name: 'Request path' });
-  const offline = main.getByRole('list', { name: 'Offline ingestion' });
-  await expect(request.locator('li > span')).toHaveText([
-    'Question',
-    'Embed',
-    'Vector search (top 40)',
-    'Keyword search (top 40)',
-    'Reciprocal Rank Fusion (top 20)',
-    'Rerank (top 6)',
-    'Generate with [P#] citations',
-    'Verify quotes',
-    'Answer',
+  const pipeline = main.getByRole('list', { name: 'Pipeline' });
+  await expect(pipeline).toHaveJSProperty('tagName', 'OL');
+  await expect(pipeline.getByRole('listitem')).toHaveCount(4);
+  await expect(pipeline.locator('li > span')).toHaveText([
+    '01 · SEARCH',
+    '02 · RERANK',
+    '03 · WRITE',
+    '04 · CHECK',
   ]);
-  await expect(offline.locator('li > span')).toHaveText([
-    '35 doc pages',
-    'Parse',
-    'Chunk (500–800 tokens)',
-    'Embed',
-    'Postgres + pgvector',
+  await expect(pipeline.getByRole('heading', { level: 3 })).toHaveText([
+    'Two searches, one list',
+    'The model picks six',
+    'An answer with receipts',
+    'Every quote is verified',
   ]);
-  await expect(main.locator('figure > ol')).toHaveCount(2);
-  await expect(main.locator('figure > ol').nth(0)).toHaveAttribute('aria-label', 'Request path');
-  await expect(main.locator('figure > ol').nth(1)).toHaveAttribute(
-    'aria-label',
-    'Offline ingestion',
-  );
-  await expect(main.locator('figcaption')).toHaveText(
-    'Request path above, offline ingestion below.',
-  );
+  await expect(pipeline.locator('li > p')).toHaveText([
+    'Meaning search finds 40 passages, keyword search finds 40. Reciprocal Rank Fusion merges them and keeps the top 20.',
+    'The language model orders the 20 by how well they answer your question. If it takes longer than 4 s, the search order is used.',
+    'The answer streams from the top 6 passages only. For every claim, the model names its passage and the exact sentence that supports it.',
+    'The server looks for each quote in its passage. A citation that fails is removed. If none survive, you get "not in the docs" instead of a guess.',
+  ]);
+  await expect(main.getByRole('complementary').getByRole('heading', { level: 2 })).toHaveText([
+    'Privacy',
+    '7. Limits',
+  ]);
   await expect(main.getByRole('heading', { level: 2 })).toHaveText([
     '1. Preparing the documents',
     '2. Hybrid search',
@@ -55,9 +51,9 @@ test('TC-136: E2E-22 PRD §9.6 diagram, exact copy, sections and limits', async 
     '4. Writing the answer',
     '5. Checking every citation',
     '6. Measuring quality',
-    '7. Limits',
     '8. Cost controls',
     'Privacy',
+    '7. Limits',
   ]);
   const limits = main
     .locator('section')
@@ -94,3 +90,27 @@ test('TC-138: T-39 copy uses config constants instead of duplicated numbers', as
     expect(source.replace(/className="[^"]*"/g, '')).not.toMatch(/\b(40|60|20|500|800|80)\b/);
   }
 });
+
+// REDESIGN §6.2: 4 / 2 / 1 columns at the specified breakpoints, both themes.
+for (const theme of ['light', 'dark'] as const) {
+  test(`R1 pipeline reflows in ${theme} theme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme });
+    for (const [width, columns] of [
+      [1440, 4],
+      [768, 2],
+      [360, 1],
+    ] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/how-it-works');
+      const pipeline = page.getByRole('list', { name: 'Pipeline' });
+      expect(
+        await pipeline.evaluate(
+          (element) => getComputedStyle(element).gridTemplateColumns.split(' ').length,
+        ),
+      ).toBe(columns);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    }
+  });
+}

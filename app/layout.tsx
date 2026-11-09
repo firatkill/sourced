@@ -1,17 +1,17 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
-import { Schibsted_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import { SkipLink } from '@/components/layout/SkipLink';
-import { SiteHeader } from '@/components/layout/SiteHeader';
+import { PageShell } from '@/components/layout/PageShell';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { getEnv } from '@/lib/env';
 import './globals.css';
 
-const sans = Schibsted_Grotesk({
+const sans = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-schibsted',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 });
 const mono = JetBrains_Mono({
@@ -46,11 +46,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <SkipLink />
-        <SiteHeader />
-        <main id="content" className="shell" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter />
+        <PageShell footer={<SiteFooter />}>{children}</PageShell>
       </body>
     </html>
   );
