@@ -3666,6 +3666,111 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-157",
+      "ac_reference": "T-43; NFR-04; D-20",
+      "milestone": "M4 Polish and deploy",
+      "title": "Production health and CSP",
+      "description": "T-43 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-157.",
+      "expected_result": "https://sourced.firatkil.com/api/health returns status ok, db ok, llmMode live; the home page response has the nonce CSP; DNS resolves through the Vercel CNAME with a valid certificate.",
+      "status": "resolved",
+      "environment": "Production https://sourced.firatkil.com (Vercel fra1, Supabase eu-central-1)",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Health ok/db ok/llmMode live on the domain and sourced-nine.vercel.app; nonce CSP with upgrade-insecure-requests and HSTS; dig CNAME -> Vercel DNS; valid certificate (HTTP/2 200 over https)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-158",
+      "ac_reference": "T-43; A-08; A-09",
+      "milestone": "M4 Polish and deploy",
+      "title": "Function duration and IP header trust on a preview",
+      "description": "TRD §24.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-158.",
+      "expected_result": "maxDuration set per the verified Hobby limit; a spoofed x-real-ip on a preview deployment does not change the visitor hash; findings recorded in the decisions log.",
+      "status": "resolved",
+      "environment": "Production https://sourced.firatkil.com (Vercel fra1, Supabase eu-central-1)",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "A-08 from Vercel docs: Hobby single region (fra1 confirmed by x-vercel-id), 300 s max, maxDuration 60 kept. A-09: two live asks with spoofed x-real-ip/x-forwarded-for landed in one rate-limit bucket (count 2). Done on production because previews have DEMO_MODE=off. D-89."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-159",
+      "ac_reference": "T-43; NFR-04",
+      "milestone": "M4 Polish and deploy",
+      "title": "Keepalive workflow",
+      "description": "TRD §25.4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-159.",
+      "expected_result": "keepalive.yml is byte-identical to TRD §25.4 with schedule 17 6 */3 * *; a workflow_dispatch run is green and its log shows \"db\":\"ok\".",
+      "status": "resolved",
+      "environment": "GitHub Actions",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "keepalive.yml byte-identical to TRD §25.4, schedule 17 6 */3 * *; workflow_dispatch run 42632733771 green, log shows \"db\":\"ok\"."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-160",
+      "ac_reference": "T-43; FR-29; NFR-12",
+      "milestone": "M4 Polish and deploy",
+      "title": "Production answers and privacy",
+      "description": "T-43 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-160.",
+      "expected_result": "One suggested and one live question answer with verified citations on production; the two newest query_log rows have source cache and live and question_text null.",
+      "status": "resolved",
+      "environment": "Production https://sourced.firatkil.com (Vercel fra1, Supabase eu-central-1)",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Suggested question rendered in the browser (Answered in advance, sources); two live questions answered with 3 and 2 valid citations, 0 removed; newest query_log rows source cache and live with question_text null."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-161",
+      "ac_reference": "T-43; NFR-01–NFR-07",
+      "milestone": "M4 Polish and deploy",
+      "title": "Production performance measurements",
+      "description": "TRD §22.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-161.",
+      "expected_result": "Warm p95 meta, first token and done, cold start, cached answer and Lighthouse median recorded against their budgets; at most ordinary manual use, no load testing.",
+      "status": "pending_decision",
+      "environment": "Production https://sourced.firatkil.com (Vercel fra1, Supabase eu-central-1)",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "At launch: live total 7.2 s and 7.6 s (2 requests), cached 9 ms server. p95 budgets need >= 30 live requests from normal use over the first week (no load testing); Lighthouse on production not run (npx blocked in this agent environment). Listed in docs/PROGRESS.md; no ClickUp in this repository."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }
