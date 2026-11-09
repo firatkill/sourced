@@ -3469,6 +3469,132 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-148",
+      "ac_reference": "T-41; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "CSP nonce and security headers",
+      "description": "E2E-23 security-headers.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-148.",
+      "expected_result": "Every page and /api/health response carries the TRD §19 CSP with a nonce that differs between two requests; every inline script carries that nonce; HSTS, X-Content-Type-Options, Referrer-Policy, X-Frame-Options, COOP, Permissions-Policy and X-Request-Id match §19 item 4.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "security-headers.spec.ts: 12 cases (/, /eval, /how-it-works, /api/health on ports 3100-3102) pass; exact §19 CSP and headers, nonce differs per request, every script carries the nonce. Full E2E 77/77."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-149",
+      "ac_reference": "T-41; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "Cross-origin POST is rejected",
+      "description": "TRD §11.2; T-41 step 4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-149.",
+      "expected_result": "POST /api/ask with Origin: https://evil.example returns 403 with the origin error code and no stream.",
+      "status": "resolved",
+      "environment": "Local, pnpm build && next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "curl POST /api/ask with Origin https://evil.example -> 403 application/json ORIGIN_FORBIDDEN; integration test ask-route.test.ts:267 (TC-080/082) also asserts no query_log row."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-150",
+      "ac_reference": "T-41; NFR-12; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "No process.env or console outside allowed files",
+      "description": "T-41 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-150.",
+      "expected_result": "grep -rn \"process.env\" app lib components hooks middleware.ts excluding lib/env.ts prints nothing; grep -rn \"console\\.\" app lib components hooks prints nothing.",
+      "status": "resolved",
+      "environment": "Local repository",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Both T-41 greps (process.env outside lib/env.ts, console.) print nothing."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-151",
+      "ac_reference": "T-41; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "Client code cannot import server modules",
+      "description": "TRD §19 item 5; TRD §8.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-151.",
+      "expected_result": "ESLint no-restricted-imports (final TRD §8 rules) reports an error when a file under components/ or hooks/ imports lib/env, lib/db, lib/llm, lib/logger, lib/ratelimit or another server-only module.",
+      "status": "resolved",
+      "environment": "Local, Vitest",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eslint.config.mjs enforces every TRD §8 row (client, api routes, retrieval/generation/citations, middleware, scripts; alias and relative forms); tests/unit/eslint-boundaries.test.ts 146 assertions pass; repository lint clean."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-152",
+      "ac_reference": "T-41; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "Production dependency audit clean",
+      "description": "TRD §19 item 9.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-152.",
+      "expected_result": "pnpm audit --prod --audit-level high exits 0.",
+      "status": "resolved",
+      "environment": "Local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm audit --prod --audit-level high: No known vulnerabilities found."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-153",
+      "ac_reference": "T-41; NFR-12; NFR-14",
+      "milestone": "M4 Polish and deploy",
+      "title": "Security checklist reviewed with evidence",
+      "description": "TRD §19.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-153.",
+      "expected_result": "Each of the eleven TRD §19 items is checked with evidence (file, test or command) and listed in the T-41 notes; Dependabot alerts and secret scanning with push protection are enabled on the repository.",
+      "status": "pending_decision",
+      "environment": "Local repository; GitHub settings",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Items 1-8, 10, 11 verified with evidence (T-41 notes in docs/PROGRESS.md). Item 9: audit clean, secret scanning and push protection on, Dependabot alerts off; enabling them needs the owner's approval, listed in docs/PROGRESS.md (open questions); no ClickUp in this repository."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }
