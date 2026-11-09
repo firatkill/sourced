@@ -3103,6 +3103,111 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-131",
+      "ac_reference": "T-38; FR-45",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "/eval empty state",
+      "description": "UT-31 eval-page-empty.test.tsx.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-131.",
+      "expected_result": "EvalView with no runs shows H2 \"No evaluation runs yet\" and the PRD §9.5 body text.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-31: <EvalView runs={[]} /> shows the PRD §9.5 empty heading and body."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-132",
+      "ac_reference": "T-38; FR-45",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Results loader skips invalid files",
+      "description": "TRD §15.7.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-132.",
+      "expected_result": "load-results parses valid files sorted by runId and skips an invalid file with a warning log.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Loader tests: valid files sorted by runId; invalid file skipped with a warning that has no file contents."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-133",
+      "ac_reference": "T-38; FR-45; FR-46",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "/eval metric cards, floors, deltas and trend",
+      "description": "E2E-21 eval-page.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-133.",
+      "expected_result": "PRD §9.5 title, H1, lead and run line; nine metric cards with floor captions, signed deltas with a true minus, \"Below floor\" on the failing metric; without-rerank row; one trend SVG per metric with an accessible title.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock; Playwright",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-21: title, H1, lead, run line, nine cards, floors, D-84 ceilings, signed deltas with true minus, Below floor, without-rerank row, trend SVG titles."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-134",
+      "ac_reference": "T-38; FR-45",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "/eval questions table, filter and row expand",
+      "description": "E2E-21 eval-page.spec.ts.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-134.",
+      "expected_result": "Columns and cell formats per TRD §15.7; \"Failures only\" shows only failing rows; expanding a row shows answer, cited passages and judge notes; keyboard operable.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock; Playwright",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-21: columns and formats, Failures only filter, keyboard row expansion. Reviewer also checked the filter on the live run in a browser."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-135",
+      "ac_reference": "T-38; FR-42",
+      "milestone": "M3 Evaluation and content pages",
+      "title": "Results bundled into the /eval function",
+      "description": "T-38 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-135.",
+      "expected_result": "After pnpm build, .next/server/app/eval/page.js.nft.json lists the eval/results JSON files.",
+      "status": "resolved",
+      "environment": "macOS; local Docker PostgreSQL 17; LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm build; .next/server/app/eval/page.js.nft.json lists eval/results/2026-11-09.json."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

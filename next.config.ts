@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 type BuildConfig = { plugins?: unknown[] };
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: { '/eval': ['./eval/results/**/*.json'] },
   outputFileTracingRoot: import.meta.dirname,
   webpack(config: BuildConfig, { isServer }) {
     if (!isServer) {
