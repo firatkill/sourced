@@ -1730,6 +1730,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-064",
+      "ac_reference": "T-22; FR-19",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Stream splitter at every boundary",
+      "description": "UT-07.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-064.",
+      "expected_result": "The delimiter is never streamed for any split position; text before it is streamed in order; block after it captured; partial prefixes flushed; coverage ≥ 90%.",
+      "status": "resolved",
+      "environment": "macOS; Node 22",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-22: splitter byte-identical to TRD §14.1 (normative); UT-07 loops over every split position and covers no delimiter, delimiter at start, interrupted prefixes, trailing content and end-of-stream flush; 100% lines; per-file 90% floor added to vitest.config.ts."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

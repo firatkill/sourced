@@ -39,7 +39,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | HEAD |
 | T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | HEAD |
 | T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | HEAD |
-| T-22 | M2 Ask, stream, citations | Stream splitter | todo | — |
+| T-22 | M2 Ask, stream, citations | Stream splitter | done | HEAD |
 | T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | todo | — |
 | T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | todo | — |
 | T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | todo | — |
@@ -150,3 +150,5 @@ T-19 local acceptance: six prompt modules per TRD §13 with values imported from
 T-20 local acceptance: listwise rerank per TRD §9.4 with RERANK_TIMEOUT_MS, client abort rethrown, fallback reasons timeout / error / invalid_output / empty_output. Provider errors now keep their original error as `cause` (never logged or sent) so `isInvalidOutput` can classify schema failures, as TRD §13.0 requires. UT-06 (21 cases) passes; lint, typecheck, 440 unit and 18 integration tests pass; reranker 100% lines. TC-061 resolved. The eval gate for `lib/retrieval/**` changes applies once the harness exists (T-36/T-37).
 
 T-21 local acceptance: embedQuery (QUERY_TIMEOUT_MS, one retry after 300 ms on network/5xx/429) and retrieve (embed → search → rerank → P1..Pn with officialUrl and timings). Integration test with the HTML fixtures passes; lint, typecheck, 440 unit and 30 integration tests pass; pipeline 100% lines. TC-062 and TC-063 resolved. Reviewer moved the 'Search failed.' message into lib/errors.ts. The §9.5 snippet is produced where the meta event is built (T-26).
+
+T-22 local acceptance: normative stream splitter (TRD §14.1) with UT-07 over every split position; 100% lines; per-file 90% coverage floor added. Lint, typecheck, unit, integration and coverage (479 tests) pass. TC-064 resolved. The §14.1 trailing-JSON rule is applied in answer orchestration (T-26).
