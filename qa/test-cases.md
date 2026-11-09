@@ -1204,3 +1204,307 @@ Source: PRD §7.1–7.6, §9.2–9.4, FR-51–FR-56, NFR-01–NFR-05, NFR-09, NF
   1. Measure locally with the live model and record; production in M4.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Measured p95 meta ≤ 2,000 ms, first token ≤ 3,500 ms, done ≤ 12,000 ms; recorded, measured on production in M4.
+
+## M3 Evaluation and content pages
+
+Source: PRD §7.8, FR-40–FR-48, §9.5, §9.6; TRD §15.7, §15.8, §17, §23 (UT-22, UT-23, UT-25, UT-26, UT-31, IT-11, E2E-21, E2E-22), §25.2; implementation plan T-35–T-39. Designed from the specs before the code.
+
+| TC ID  | AC Reference             | TRD test ID / source           | Title                                           | Priority | Automatable | Expected result                                                                                                                                                                                                                                |
+| ------ | ------------------------ | ------------------------------ | ----------------------------------------------- | -------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-113 | T-35; FR-40              | UT-25 golden.test.ts           | Golden set parses and meets distribution rules  | Critical | yes         | 40 entries parse with GoldenEntry; 32/5/3 split; chapter counts per rule 2; ≥6 multi-anchor, ≥6 exact identifier, ≥6 paraphrase; ≥3 near-domain and ≥1 off-domain unanswerable; 6–25 words; reference answers ≤80 words; ids q001–q040 unique. |
+| TC-114 | T-35; FR-40              | TRD §17.2 schema               | GoldenEntry rejects invalid entries             | High     | yes         | Answerable without anchors, non-answerable with anchors, injection without forbidden_strings, bad id and malformed anchor are each rejected.                                                                                                   |
+| TC-115 | T-35; FR-40              | IT-11 eval-validate.test.ts    | eval:validate checks anchors against the corpus | Critical | yes         | Passes on a golden subset whose anchors exist in fixture chunks; exits non-zero listing the missing anchor when one does not exist.                                                                                                            |
+| TC-116 | T-35; FR-40              | T-35 acceptance                | pnpm eval:validate on the full corpus           | Critical | yes         | Exits 0 against a database ingested with --include-fixtures and prints the distribution table matching rule 2.                                                                                                                                 |
+| TC-117 | T-35; FR-40              | TRD §17.2 rules 4, 6, 8        | Golden content checked against the raw HTML     | High     | no          | Every answerable anchor is the section that contains the answer; unanswerable key terms are absent from corpus/raw (grep -il); corrected example anchors carry a note. Reviewer spot-check of 10 entries.                                      |
+| TC-118 | T-36; FR-41              | UT-22 eval-metrics.test.ts     | Retrieval metrics: recall@k and reciprocal rank | Critical | yes         | recall@5/@10 and RR follow TRD §17.4 on reranked and RRF lists, including partial anchor hits and no hit (RR 0).                                                                                                                               |
+| TC-119 | T-36; FR-41              | UT-22 eval-metrics.test.ts     | Answer metrics and empty denominators           | Critical | yes         | Citation validity, faithfulness, false and correct refusal, injection resistance (question-borne vs passage-borne rules) match §17.4; any empty denominator reports 0.                                                                         |
+| TC-120 | T-36; FR-41              | UT-22 eval-metrics.test.ts     | Latency percentiles and cost                    | High     | yes         | Nearest-rank p50/p95 on known arrays (odd, even, single value); cost total and per-question per §17.4.                                                                                                                                         |
+| TC-121 | T-36; FR-44              | UT-26 budget.test.ts           | Budget projection and baseline scaling          | Critical | yes         | Projection equals the §17.7 formula; with a baseline the max of formula and scaled baseline cost is used; projected > EVAL_MAX_COST_USD aborts with exit 3.                                                                                    |
+| TC-122 | T-36; FR-44              | UT-26 budget.test.ts           | Accrued cost abort and zero prices              | Critical | yes         | Accrued cost above the limit stops the run with exit 3 and no results written; any zero PRICE_* in live mode exits 2 with the §17.7 message.                                                                                                   |
+| TC-123 | T-36; FR-42              | TRD §17.6                      | Results schema and Markdown output              | High     | yes         | A produced result validates against EvalResult; per-question pass follows §17.6 rules; Markdown has header, metrics table, failures and per-question table; file suffix -2 when the date file exists.                                          |
+| TC-124 | T-36; FR-41              | TRD §17.1 steps 1–2, 8         | Eval preconditions and exit codes               | High     | yes         | Mock mode without --no-write exits 2; a database without fixtures or with a mismatched embedding model exits 2 with the exact §17.1 messages.                                                                                                  |
+| TC-125 | T-36; FR-41              | T-36 acceptance                | Mock pipeline smoke run                         | Critical | yes         | LLM_MODE=mock pnpm eval --limit 3 --no-write on a mock-ingested DB with fixtures runs all three questions, prints the metrics table and exits 0 or 1 (never 2 or 3).                                                                           |
+| TC-126 | T-36; A-02; FR-41; FR-42 | T-36 acceptance (live)         | First live eval run and judge review            | Critical | no          | pnpm eval writes eval/results/<date>.json and .md that validate against EvalResult; cost within EVAL_MAX_COST_USD; 10 judge decisions reviewed by hand with agreement recorded.                                                                |
+| TC-127 | T-37; FR-43              | UT-23 eval-thresholds.test.ts  | Floors, ceilings, regressions, no baseline      | Critical | yes         | Each floor and ceiling failure is reported with kind and limit; regression beyond maxRegression fails; no baseline skips regression and reports "No baseline"; exit 1 on any failure.                                                          |
+| TC-128 | T-37; FR-43              | T-37 step 2                    | First committed run passes every floor          | Critical | no          | The baseline results file committed in eval/results passes all floors and ceilings; no floor lowered.                                                                                                                                          |
+| TC-129 | T-37; D-17               | TRD §25.2                      | eval.yml matches the normative workflow         | High     | yes         | Workflow file equals TRD §25.2: triggers, path filter excluding eval/results, fork skip, environment eval, services, steps.                                                                                                                    |
+| TC-130 | T-37; D-17               | T-37 acceptance                | eval.yml runs green in GitHub                   | High     | no          | workflow_dispatch run is green with cost below EVAL_MAX_COST_USD; a PR changing lib/prompts/ triggers the workflow. Needs the owner's eval environment and secret.                                                                             |
+| TC-131 | T-38; FR-45              | UT-31 eval-page-empty.test.tsx | /eval empty state                               | High     | yes         | EvalView with no runs shows H2 "No evaluation runs yet" and the PRD §9.5 body text.                                                                                                                                                            |
+| TC-132 | T-38; FR-45              | TRD §15.7                      | Results loader skips invalid files              | High     | yes         | load-results parses valid files sorted by runId and skips an invalid file with a warning log.                                                                                                                                                  |
+| TC-133 | T-38; FR-45; FR-46       | E2E-21 eval-page.spec.ts       | /eval metric cards, floors, deltas and trend    | Critical | yes         | PRD §9.5 title, H1, lead and run line; nine metric cards with floor captions, signed deltas with a true minus, "Below floor" on the failing metric; without-rerank row; one trend SVG per metric with an accessible title.                     |
+| TC-134 | T-38; FR-45              | E2E-21 eval-page.spec.ts       | /eval questions table, filter and row expand    | High     | yes         | Columns and cell formats per TRD §15.7; "Failures only" shows only failing rows; expanding a row shows answer, cited passages and judge notes; keyboard operable.                                                                              |
+| TC-135 | T-38; FR-42              | T-38 acceptance                | Results bundled into the /eval function         | Medium   | yes         | After pnpm build, .next/server/app/eval/page.js.nft.json lists the eval/results JSON files.                                                                                                                                                    |
+| TC-136 | T-39; FR-47              | E2E-22 how-it-works.spec.ts    | /how-it-works diagram and sections              | High     | yes         | PRD §9.6 title, H1 and lead; diagram nodes in the specified order for both lanes and the caption; H2 sections 1–8 and Privacy; Limits states the four limits.                                                                                  |
+| TC-137 | T-39; FR-48              | E2E-22 how-it-works.spec.ts    | Privacy anchor and links                        | High     | yes         | #privacy section has the exact PRD privacy text; footer and the under-input link lead to /how-it-works#privacy.                                                                                                                                |
+| TC-138 | T-39; FR-47              | T-39 acceptance                | Numbers come from lib/config.ts                 | Medium   | yes         | grep -nE '\b(40                                                                                                                                                                                                                                | 60  | 20  | 500 | 800 | 80)\b' on the page and diagram returns nothing outside Tailwind class names. |
+| TC-139 | T-38; T-39; NFR-09       | M3 manual                      | /eval and /how-it-works in a real browser       | Medium   | no          | Light and dark themes, keyboard-only use, diagram reflows to one column below 640 px, trend charts readable.                                                                                                                                   |
+
+### TC-113: Golden set parses and meets distribution rules
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-35; FR-40; UT-25 golden.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Parse eval/golden.jsonl line by line and check rules 1–5 and 7 of TRD §17.2.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: 40 entries parse with GoldenEntry; 32/5/3 split; chapter counts per rule 2; ≥6 multi-anchor, ≥6 exact identifier, ≥6 paraphrase; ≥3 near-domain and ≥1 off-domain unanswerable; 6–25 words; reference answers ≤80 words; ids q001–q040 unique.
+
+### TC-114: GoldenEntry rejects invalid entries
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-35; FR-40; TRD §17.2 schema.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Feed one invalid entry per superRefine rule and regex to GoldenEntry.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Answerable without anchors, non-answerable with anchors, injection without forbidden_strings, bad id and malformed anchor are each rejected.
+
+### TC-115: eval:validate checks anchors against the corpus
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-35; FR-40; IT-11 eval-validate.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Ingest fixtures into the test DB; run the validator on a valid subset, then on a subset with one unknown anchor.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Passes on a golden subset whose anchors exist in fixture chunks; exits non-zero listing the missing anchor when one does not exist.
+
+### TC-116: pnpm eval:validate on the full corpus
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-35; FR-40; T-35 acceptance.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. pnpm ingest --offline --include-fixtures; pnpm eval:validate.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Exits 0 against a database ingested with --include-fixtures and prints the distribution table matching rule 2.
+
+### TC-117: Golden content checked against the raw HTML
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-35; FR-40; TRD §17.2 rules 4, 6, 8.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Open the raw HTML for 10 sampled answerable entries; grep the unanswerable key terms.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every answerable anchor is the section that contains the answer; unanswerable key terms are absent from corpus/raw (grep -il); corrected example anchors carry a note. Reviewer spot-check of 10 entries.
+
+### TC-118: Retrieval metrics: recall@k and reciprocal rank
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-41; UT-22 eval-metrics.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Compute metrics on hand-built per-question records with known answers.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: recall@5/@10 and RR follow TRD §17.4 on reranked and RRF lists, including partial anchor hits and no hit (RR 0).
+
+### TC-119: Answer metrics and empty denominators
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-41; UT-22 eval-metrics.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Aggregate synthetic records covering each outcome and an all-not-found run.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Citation validity, faithfulness, false and correct refusal, injection resistance (question-borne vs passage-borne rules) match §17.4; any empty denominator reports 0.
+
+### TC-120: Latency percentiles and cost
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-41; UT-22 eval-metrics.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the percentile and cost helpers on fixed inputs.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Nearest-rank p50/p95 on known arrays (odd, even, single value); cost total and per-question per §17.4.
+
+### TC-121: Budget projection and baseline scaling
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-44; UT-26 budget.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Call the budget helpers with fixed prices, N, |A| and a baseline.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Projection equals the §17.7 formula; with a baseline the max of formula and scaled baseline cost is used; projected > EVAL_MAX_COST_USD aborts with exit 3.
+
+### TC-122: Accrued cost abort and zero prices
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-44; UT-26 budget.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Drive the accrual tracker past the limit; validate env with a zero price.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Accrued cost above the limit stops the run with exit 3 and no results written; any zero PRICE_* in live mode exits 2 with the §17.7 message.
+
+### TC-123: Results schema and Markdown output
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-42; TRD §17.6.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Build a result from synthetic records; render Markdown; write twice to a temp dir.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A produced result validates against EvalResult; per-question pass follows §17.6 rules; Markdown has header, metrics table, failures and per-question table; file suffix -2 when the date file exists.
+
+### TC-124: Eval preconditions and exit codes
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-41; TRD §17.1 steps 1–2, 8.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the eval entry with each misconfiguration against the test DB.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Mock mode without --no-write exits 2; a database without fixtures or with a mismatched embedding model exits 2 with the exact §17.1 messages.
+
+### TC-125: Mock pipeline smoke run
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; FR-41; T-36 acceptance.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. LLM_MODE=mock pnpm ingest --offline --include-fixtures; LLM_MODE=mock pnpm eval --limit 3 --no-write.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: LLM_MODE=mock pnpm eval --limit 3 --no-write on a mock-ingested DB with fixtures runs all three questions, prints the metrics table and exits 0 or 1 (never 2 or 3).
+
+### TC-126: First live eval run and judge review
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-36; A-02; FR-41; FR-42; T-36 acceptance (live).
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Live: pnpm db:reset; pnpm ingest --offline --include-fixtures; pnpm eval; review 10 judge rows.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: pnpm eval writes eval/results/<date>.json and .md that validate against EvalResult; cost within EVAL_MAX_COST_USD; 10 judge decisions reviewed by hand with agreement recorded.
+
+### TC-127: Floors, ceilings, regressions, no baseline
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-37; FR-43; UT-23 eval-thresholds.test.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Check synthetic metrics against thresholds.json with and without a baseline.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each floor and ceiling failure is reported with kind and limit; regression beyond maxRegression fails; no baseline skips regression and reports "No baseline"; exit 1 on any failure.
+
+### TC-128: First committed run passes every floor
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-37; FR-43; T-37 step 2.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Inspect the committed results file and thresholds.json diff.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The baseline results file committed in eval/results passes all floors and ceilings; no floor lowered.
+
+### TC-129: eval.yml matches the normative workflow
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-37; D-17; TRD §25.2.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Diff .github/workflows/eval.yml against the TRD block.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Workflow file equals TRD §25.2: triggers, path filter excluding eval/results, fork skip, environment eval, services, steps.
+
+### TC-130: eval.yml runs green in GitHub
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-37; D-17; T-37 acceptance.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Owner sets up environment; dispatch the workflow; open a test PR.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: workflow_dispatch run is green with cost below EVAL_MAX_COST_USD; a PR changing lib/prompts/ triggers the workflow. Needs the owner's eval environment and secret.
+
+### TC-131: /eval empty state
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; FR-45; UT-31 eval-page-empty.test.tsx.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Render <EvalView runs={[]} /> in jsdom.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: EvalView with no runs shows H2 "No evaluation runs yet" and the PRD §9.5 body text.
+
+### TC-132: Results loader skips invalid files
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; FR-45; TRD §15.7.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Point the loader at a temp dir with two valid files and one invalid file.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: load-results parses valid files sorted by runId and skips an invalid file with a warning log.
+
+### TC-133: /eval metric cards, floors, deltas and trend
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; FR-45; FR-46; E2E-21 eval-page.spec.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Serve the fixture results (two runs, one failing); open /eval.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: PRD §9.5 title, H1, lead and run line; nine metric cards with floor captions, signed deltas with a true minus, "Below floor" on the failing metric; without-rerank row; one trend SVG per metric with an accessible title.
+
+### TC-134: /eval questions table, filter and row expand
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; FR-45; E2E-21 eval-page.spec.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. On /eval, toggle the filter and expand a row by keyboard.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Columns and cell formats per TRD §15.7; "Failures only" shows only failing rows; expanding a row shows answer, cited passages and judge notes; keyboard operable.
+
+### TC-135: Results bundled into the /eval function
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; FR-42; T-38 acceptance.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. pnpm build; inspect the trace file.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: After pnpm build, .next/server/app/eval/page.js.nft.json lists the eval/results JSON files.
+
+### TC-136: /how-it-works diagram and sections
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-39; FR-47; E2E-22 how-it-works.spec.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Open /how-it-works.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: PRD §9.6 title, H1 and lead; diagram nodes in the specified order for both lanes and the caption; H2 sections 1–8 and Privacy; Limits states the four limits.
+
+### TC-137: Privacy anchor and links
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-39; FR-48; E2E-22 how-it-works.spec.ts.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Follow the footer and under-input links.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: #privacy section has the exact PRD privacy text; footer and the under-input link lead to /how-it-works#privacy.
+
+### TC-138: Numbers come from lib/config.ts
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-39; FR-47; T-39 acceptance.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Run the grep from the plan.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: grep -nE '\b(40|60|20|500|800|80)\b' on the page and diagram returns nothing outside Tailwind class names.
+
+### TC-139: /eval and /how-it-works in a real browser
+
+- Milestone: M3 Evaluation and content pages
+- Requirement: T-38; T-39; NFR-09; M3 manual.
+- Preconditions: M2 complete; the corresponding task implemented; mock mode unless the case says live.
+- Steps:
+  1. Live browser pass on both pages.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Light and dark themes, keyboard-only use, diagram reflows to one column below 640 px, trend charts readable.
