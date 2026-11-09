@@ -48,7 +48,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | HEAD |
 | T-29 | M2 Ask, stream, citations | `GET /api/health` | done | HEAD |
 | T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | HEAD |
-| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | todo | — |
+| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | HEAD |
 | T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | todo | — |
 | T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | todo | — |
 | T-34 | M2 Ask, stream, citations | E2E suite for the ask page | todo | — |
@@ -168,3 +168,5 @@ T-28 local acceptance: POST /api/ask in the normative handler order (TRD §11.2)
 T-29 local acceptance: GET /api/health per TRD §11.3 (SELECT 1, counts, corpus version, 3 s timeout, no LLM call); IT-10 passes; curl prints "ok"; Playwright readiness URLs point to /api/health. Lint, typecheck and 138 integration tests pass. TC-086 resolved.
 
 T-30 local acceptance: useAsk with exported askReducer per TRD §15.4 and D-77 (token after the 600 ms timer returns to streaming; notFound awaiting done is in-flight), frame-batched text updates, SSE transport through the shared parser, HTTP error mapping (D-33, D-78), Stop via AbortController. UT-20: 34 tests, one per transition row. Lint, typecheck, 666 unit tests pass; client imports pass the ESLint boundary rules. TC-087 resolved.
+
+T-31 local acceptance: ask page form, counter, suggested chips and status line with corpus copy centralized in lib/copy.ts (FR-74). E2E-01–E2E-03 pass; full E2E suite 11 passed; build passes. Reviewer checked the empty and validation states in a browser. TC-088–TC-090 resolved.

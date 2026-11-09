@@ -2242,6 +2242,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-088",
+      "ac_reference": "T-31; FR-02; FR-50",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Empty state copy",
+      "description": "E2E-01.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-088.",
+      "expected_result": "H1, lead, label, counter 0 / 500, six chips and three footer lines match PRD §9.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-31: E2E-01 asserts H1, lead, label, 0 / 500 counter, six chips and the three footer lines byte-exact; reviewer also checked the page visually in a browser."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-089",
+      "ac_reference": "T-31; FR-01",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Typing counter",
+      "description": "E2E-02.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-089.",
+      "expected_result": "Counter updates; warning colour at 450; maxLength blocks the 501st character.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-31: E2E-02 counter updates, warning colour at 450, maxLength blocks the 501st character."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-090",
+      "ac_reference": "T-31; FR-01",
+      "milestone": "M2 Ask, stream, citations",
+      "title": "Validation messages",
+      "description": "E2E-03.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-090.",
+      "expected_result": "Empty and 2-character submits show exact copy with aria-invalid; server 400 for 600 characters is mapped.",
+      "status": "resolved",
+      "environment": "macOS; Chromium (Playwright); next start, LLM_MODE=mock",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "T-31: E2E-03 empty and 2-character submits show exact copy with aria-invalid and role=alert; server 400 for 600 characters asserted on the JSON body. First run had 2 failures (ambiguous alert selector, Stop resubmission), fixed and rerun."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
