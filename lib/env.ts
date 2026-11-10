@@ -1,6 +1,5 @@
 import 'server-only';
 import { z } from 'zod';
-import snapshot from '@/.sourced/config.json';
 
 // Defined by next.config.ts; CLI/tests use Node's current on-disk snapshot.
 declare const SOURCED_NODE_RUNTIME: boolean;
@@ -16,11 +15,17 @@ const providerConfigSchema = z.object({
   }),
 });
 function providerConfig() {
-  // Edge middleware uses the build snapshot. Node must read the mounted snapshot
-  // at runtime (TRD §28.3), without pulling Node imports into the Edge bundle.
-  let value: unknown = snapshot;
-  if (typeof SOURCED_NODE_RUNTIME === 'undefined' || SOURCED_NODE_RUNTIME) {
+  // No generated imports: snapshot creation itself imports this module.
+  // Edge and fresh clones retain the example's strict live-mode requirements.
+  if (typeof SOURCED_NODE_RUNTIME !== 'undefined' && !SOURCED_NODE_RUNTIME) return;
+  if (typeof process.getBuiltinModule !== 'function') return;
+  let value: unknown;
+  try {
     value = JSON.parse(process.getBuiltinModule('fs').readFileSync('.sourced/config.json', 'utf8'));
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
+      return;
+    throw error;
   }
   return providerConfigSchema.parse(value).config;
 }
@@ -122,13 +127,13 @@ export function getEnv(): Env {
     .superRefine((env, ctx) => {
       if (env.LLM_MODE === 'live') {
         const config = providerConfig();
-        const keys = new Set<string>();
-        for (const model of Object.values(config.models)) {
+        const keys = new Set<string>(config ? [] : ['OPENAI_API_KEY']);
+        for (const model of Object.values(config?.models ?? {})) {
           if (model.provider === 'openai') keys.add('OPENAI_API_KEY');
           if (model.provider === 'gemini') keys.add('GOOGLE_GENERATIVE_AI_API_KEY');
           if (model.provider === 'anthropic') keys.add('ANTHROPIC_API_KEY');
         }
-        if (config.profile === 'public-demo')
+        if (!config || config.profile === 'public-demo')
           for (const key of [
             'CHAT_MODEL',
             'PRICE_CHAT_INPUT_PER_MTOK',

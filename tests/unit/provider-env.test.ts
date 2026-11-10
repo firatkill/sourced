@@ -10,9 +10,9 @@ const configuration = vi.hoisted(() => ({
     judge: { provider: 'ollama', model: 'llama3.2' },
   },
 }));
-vi.mock('@/.sourced/config.json', () => ({ default: { config: configuration } }));
 beforeEach(() => {
-  vi.stubGlobal('SOURCED_NODE_RUNTIME', false);
+  vi.stubGlobal('SOURCED_NODE_RUNTIME', true);
+  vi.spyOn(fs, 'readFileSync').mockImplementation(() => JSON.stringify({ config: configuration }));
   vi.stubEnv('LLM_MODE', 'live');
   for (const name of [
     'OPENAI_API_KEY',
@@ -67,4 +67,36 @@ test('TC-185 / UT-49: Node validates the runtime snapshot rather than the bundle
     .mockReturnValue(JSON.stringify({ config: configuration }));
   expect(getEnv().OLLAMA_BASE_URL).toBe('http://localhost:11434');
   expect(read).toHaveBeenCalledWith('.sourced/config.json', 'utf8');
+});
+
+// Fresh-clone regression requirements 1–2; TRD §5 / FR-60.
+test.each(['missing', 'edge', 'no-filesystem'] as const)(
+  'fresh clone: %s fallback preserves demo live credentials',
+  (runtime) => {
+    if (runtime === 'missing')
+      vi.mocked(fs.readFileSync).mockImplementation(() => {
+        throw Object.assign(new Error('missing'), { code: 'ENOENT' });
+      });
+    if (runtime === 'edge') vi.stubGlobal('SOURCED_NODE_RUNTIME', false);
+    if (runtime === 'no-filesystem')
+      vi.stubGlobal('process', { ...process, getBuiltinModule: undefined });
+    for (const name of [
+      'OPENAI_API_KEY',
+      'CHAT_MODEL',
+      'PRICE_CHAT_INPUT_PER_MTOK',
+      'PRICE_CHAT_OUTPUT_PER_MTOK',
+      'PRICE_EMBED_PER_MTOK',
+    ])
+      expect(() => getEnv()).toThrow(name);
+    vi.stubEnv('OPENAI_API_KEY', 'test-placeholder');
+    vi.stubEnv('CHAT_MODEL', 'test-chat');
+    vi.stubEnv('PRICE_CHAT_INPUT_PER_MTOK', '0');
+    vi.stubEnv('PRICE_CHAT_OUTPUT_PER_MTOK', '0');
+    vi.stubEnv('PRICE_EMBED_PER_MTOK', '0');
+    expect(getEnv().LLM_MODE).toBe('live');
+  },
+);
+test('fresh clone: corrupt snapshots do not silently fall back', () => {
+  vi.mocked(fs.readFileSync).mockReturnValue('invalid json');
+  expect(() => getEnv()).toThrow();
 });

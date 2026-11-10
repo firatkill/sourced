@@ -1,8 +1,13 @@
-import snapshotCopy from '@/.sourced/copy.json';
 import type { CorpusCopy } from '@/lib/kit/copy';
 
 // Only rendered public copy crosses the client boundary; no server config or models.
-export const CORPUS_COPY: CorpusCopy = snapshotCopy;
+declare const SOURCED_CORPUS_COPY: CorpusCopy;
+export const CORPUS_COPY: CorpusCopy =
+  typeof SOURCED_CORPUS_COPY !== 'undefined'
+    ? SOURCED_CORPUS_COPY
+    : (JSON.parse(
+        process.getBuiltinModule('fs').readFileSync('.sourced/copy.json', 'utf8'),
+      ) as CorpusCopy);
 
 // Corpus-specific UI copy (PRD §9.2–9.3, FR-74).
 export const ASK_COPY = {
