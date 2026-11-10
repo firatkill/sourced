@@ -71,6 +71,7 @@ const schema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url(),
   ALLOWED_ORIGINS: z.string().default(''),
   INGEST_INCLUDE_FIXTURES: flag('false'),
+  INGEST_CONFIRM_ABOVE_USD: z.coerce.number().nonnegative().default(1),
   EVAL_MAX_COST_USD: z.coerce.number().positive().default(1),
   EVAL_RESULTS_DIR: z.string().default('eval/postgres-17/results'),
   MOCK_STREAM_DELAY_MS: z.coerce.number().int().nonnegative().default(10),

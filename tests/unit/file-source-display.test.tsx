@@ -71,3 +71,27 @@ test('TC-200 / FR-67 / D-102: PDF viewer, related reading and copied citations s
   expect(screen.queryByRole('link')).toBeNull();
   expect(formatCopy(citations, [pdf])).toContain('manual/guide.pdf, page 2');
 });
+
+test('TC-207 / FR-67: plain text viewer and related reading show path and line without links', () => {
+  const text = PassageDto.parse({ ...file, filePath: 'manual/guide.txt', lineFrom: 12 });
+  vi.stubGlobal('matchMedia', () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  const viewer = render(
+    <SourceViewer
+      passages={[text]}
+      citations={citations}
+      label={text.label}
+      onSelect={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(screen.getByText('manual/guide.txt, line 12')).toBeTruthy();
+  expect(screen.queryByRole('link')).toBeNull();
+  viewer.unmount();
+  render(<NotFound passages={[text]} onAnother={vi.fn()} />);
+  expect(screen.getByText('manual/guide.txt, line 12')).toBeTruthy();
+  expect(screen.queryByRole('link')).toBeNull();
+});

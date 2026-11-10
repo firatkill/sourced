@@ -22,7 +22,9 @@ export function NotFound({
             {passage.filePath}
             {passage.pageFrom !== undefined
               ? `, page ${String(passage.pageFrom)}`
-              : ` › ${passage.headingPath.join(' › ')}`}
+              : passage.lineFrom !== undefined
+                ? `, line ${String(passage.lineFrom)}`
+                : ` › ${passage.headingPath.join(' › ')}`}
           </p>
         ) : (
           <a

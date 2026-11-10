@@ -9,7 +9,7 @@ export type Block = (
   | { kind: 'code'; text: string; lang?: string }
   | { kind: 'table'; rows: string[] }
   | { kind: 'note'; label: string; text: string }
-) & { pages?: number[] };
+) & { pages?: number[]; lineFrom?: number };
 export type Section = {
   id: string;
   level: number;

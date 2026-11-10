@@ -5,6 +5,7 @@ const PassageBase = z.object({
   chunkId: z.string(),
   documentTitle: z.string(),
   headingPath: z.array(z.string()).min(1),
+  lineFrom: z.number().int().positive().optional(),
   pageFrom: z.number().int().positive().optional(),
   pageTo: z.number().int().positive().optional(),
   snippet: z.string(),

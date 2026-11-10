@@ -4658,6 +4658,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-204",
+      "ac_reference": "T-59; FR-71",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Boilerplate removal",
+      "description": "UT-42.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-204.",
+      "expected_result": "Blocks repeated on a large share of documents are removed before chunking and counted in the report.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-42 boilerplate.test.ts: per-source max(5, 30%) threshold, skipped under 10 documents, normalization, counts in the D-109 report"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-205",
+      "ac_reference": "T-59; FR-72; NFR-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Resumable ingest",
+      "description": "IT-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-205.",
+      "expected_result": "An interrupted ingest resumes, re-embeds no completed document and ends with the same counts as an uninterrupted run; SIGINT then resume gives the same counts.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-14 resume: injected failure after N documents, resume skips done items and re-embeds none, final counts and hashes equal an uninterrupted run; real CLI SIGINT exits 130, run failed/interrupted, no corpus version; interrupted 3 docs/3 chunks, resumed and uninterrupted 6 docs/7 chunks/177 tokens with identical corpus version"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-206",
+      "ac_reference": "T-59; FR-73",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Dry run and confirmation",
+      "description": "UT-44.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-206.",
+      "expected_result": "--dry-run reports documents, chunks, tokens and cost per source without embedding calls; a run above INGEST_CONFIRM_ABOVE_USD asks or needs --yes; unknown prices follow TRD §31.4.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-44 and CLI integration: dry run reports per-source counts and cost with no writes; confirmation above INGEST_CONFIRM_ABOVE_USD interactive or --yes; unknown prices per D-112; NEEDS_CONFIRMATION exit 2"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-207",
+      "ac_reference": "T-59; FR-65; FR-67",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Mixed folder end to end",
+      "description": "IT-17.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-207.",
+      "expected_result": "A folder with md, mdx, html, pdf, docx and txt ingests in mock mode with anchors per TRD §33.1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-17 mixed-folder: md, mdx, html, pdf, docx and txt ingest end to end in mock mode with anchors per TRD §33.1; plain text cites path, line N without a link"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

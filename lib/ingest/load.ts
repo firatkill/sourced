@@ -22,6 +22,8 @@ import { createFetchSession } from './fetch';
 import { parseHtml, type ParsedDocument } from './parse-html';
 import { parseMarkdown } from './parse-markdown';
 import { parsePdf } from './parse-pdf';
+import { parseText } from './parse-text';
+import { removeBoilerplate } from './boilerplate';
 import { parseDocx } from './parse-docx';
 import { chunkDocument } from './chunk';
 import type { IngestDocument } from './upsert';
@@ -38,6 +40,9 @@ const Metadata = z.object({
 export type LoadedCorpus = (IngestDocument & { document: ParsedDocument })[] & {
   sources: { id: string; revision?: string }[];
   failedKeys: string[];
+  discoveredKeys: string[];
+  skippedItems: { key: string; reason: string }[];
+  boilerplateRemoved?: Record<string, number>;
   warnings: number;
   warningsBySource?: Record<string, number>;
 };
@@ -64,6 +69,8 @@ export async function loadCorpus(options: {
   const documents: LoadedCorpus = Object.assign([], {
     sources: [] as LoadedCorpus['sources'],
     failedKeys: [] as string[],
+    discoveredKeys: [] as string[],
+    skippedItems: [] as { key: string; reason: string }[],
     warnings: 0,
     warningsBySource: {},
   });
@@ -77,6 +84,10 @@ export async function loadCorpus(options: {
     sleep: (ms) => setTimeout(ms),
     onEvent(event) {
       options.onEvent?.(event);
+      if (event.type === 'discovered' && !documents.discoveredKeys.includes(event.key))
+        documents.discoveredKeys.push(event.key);
+      if (event.type === 'skipped')
+        documents.skippedItems.push({ key: event.key, reason: event.reason });
       if (event.type === 'failed' && !documents.failedKeys.includes(event.key))
         documents.failedKeys.push(event.key);
       if (event.type === 'revision') {
@@ -136,7 +147,7 @@ export async function loadCorpus(options: {
           !options.parse &&
           !isPdf &&
           !isDocx &&
-          !['text/html', 'text/markdown', 'text/mdx'].includes(raw.mimeType)
+          !['text/html', 'text/markdown', 'text/mdx', 'text/plain'].includes(raw.mimeType)
         )
           throw new AppError(
             'UNSUPPORTED_MEDIA_TYPE',
@@ -159,28 +170,25 @@ export async function loadCorpus(options: {
         } else
           document = options.parse
             ? options.parse(raw, source)
-            : raw.mimeType === 'text/markdown' || raw.mimeType === 'text/mdx'
-              ? parseMarkdown(
-                  Buffer.from(raw.bytes).toString('utf8'),
-                  slug,
-                  raw.mimeType === 'text/mdx',
-                )
-              : parseHtml(Buffer.from(raw.bytes).toString('utf8'), {
-                  slug,
-                  section: source.group ?? source.id,
-                  html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
-                });
+            : raw.mimeType === 'text/plain'
+              ? parseText(Buffer.from(raw.bytes).toString('utf8'), slug)
+              : raw.mimeType === 'text/markdown' || raw.mimeType === 'text/mdx'
+                ? parseMarkdown(
+                    Buffer.from(raw.bytes).toString('utf8'),
+                    slug,
+                    raw.mimeType === 'text/mdx',
+                  )
+                : parseHtml(Buffer.from(raw.bytes).toString('utf8'), {
+                    slug,
+                    section: source.group ?? source.id,
+                    html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
+                  });
       } catch (error) {
         context.onEvent({
           type: 'failed',
           key: ref.key,
           code: error instanceof AppError ? error.code : 'INTERNAL_ERROR',
         });
-        continue;
-      }
-      const chunks = chunkDocument(document, slug);
-      if (!chunks.length) {
-        context.onEvent({ type: 'skipped', key: ref.key, reason: 'empty' });
         continue;
       }
       documents.push({
@@ -195,7 +203,7 @@ export async function loadCorpus(options: {
         section: source.group ?? source.id,
         contentHash: raw.contentHash,
         isFixture: false,
-        chunks,
+        chunks: [],
         document,
       });
     }
@@ -218,9 +226,21 @@ export async function loadCorpus(options: {
         version: metadata.version,
         contentHash: sha256Hex(bytes),
         isFixture: true,
-        chunks: chunkDocument(document, page.slug),
+        chunks: [],
         document,
       });
+    }
+  }
+  if (!options.fetchOnly) {
+    documents.boilerplateRemoved = removeBoilerplate(documents);
+    for (let index = documents.length - 1; index >= 0; index--) {
+      const doc = documents[index];
+      if (!doc) continue;
+      doc.chunks = chunkDocument(doc.document, doc.locationSlug ?? doc.slug);
+      if (!doc.chunks.length) {
+        ctx.onEvent({ type: 'skipped', key: doc.slug, reason: 'empty' });
+        documents.splice(index, 1);
+      }
     }
   }
   if (options.fetchOnly && documents.failedKeys.length)

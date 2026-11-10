@@ -137,7 +137,12 @@ export async function dispatch(
       (error.name === 'ExitPromptError' || error.name === 'AbortPromptError')
     )
       return {
-        envelope: failure(command, 'INTERNAL_ERROR', 'The command was interrupted.'),
+        envelope: failure(
+          command,
+          'INTERNAL_ERROR',
+          'The command was interrupted.',
+          command === 'ingest' ? 'pnpm sourced ingest' : 'pnpm sourced --help',
+        ),
         exitCode: 130,
       };
     if (error instanceof RobotsDisallowedError)
@@ -153,7 +158,7 @@ export async function dispatch(
     if (error instanceof AppError) {
       const action = ['NEEDS_CONFIRMATION', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'].includes(error.code);
       const messages = {
-        NEEDS_CONFIRMATION: 'Confirmation is required before changing data.',
+        NEEDS_CONFIRMATION: error.message,
         CORPUS_MISMATCH: 'The corpus was indexed with a different embedding model or language.',
         CORPUS_EMPTY: 'Nothing is indexed yet.',
       };
@@ -166,7 +171,7 @@ export async function dispatch(
       const fix =
         error.code === 'NEEDS_CONFIRMATION'
           ? command === 'ingest'
-            ? 'pnpm sourced ingest --rebuild --yes'
+            ? 'pnpm sourced ingest --yes'
             : 'pnpm sourced sources remove <id> --yes'
           : error.code === 'CORPUS_MISMATCH'
             ? 'pnpm sourced ingest --rebuild'
@@ -199,11 +204,6 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       return { result: { configHash: configHash(await loadConfig()) } };
     }
     case 'ingest': {
-      if (input.values.restart)
-        throw new AppError(
-          'INTERNAL_ERROR',
-          'Ingest resume and --restart are not implemented yet (T-59).',
-        );
       const { runIngest } = await import('./commands/ingest');
       return { result: await runIngest(input, context) };
     }

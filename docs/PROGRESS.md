@@ -76,8 +76,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-56 | M6 Sources and CLI | PDF parser | done | 8ae9b15 |
 | T-57 | M6 Sources and CLI | `.docx` parser | done | f12b559 |
 | T-58 | M6 Sources and CLI | CLI framework | done | 0e313ff |
-| T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | doing | |
-| T-60 | M6 Sources and CLI | Contextual embedding input | todo | |
+| T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | done | HEAD |
+| T-60 | M6 Sources and CLI | Contextual embedding input | doing | |
 | T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | todo | |
 | T-62 | M6 Sources and CLI | Docker path | todo | |
 | T-63 | M6 Sources and CLI | Contract tests and scale check | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- T-59 note (reviewer): one unit run out of 14 failed once in a fresh worktree on 2026-11-10 and the test name was not captured; 13 runs passed after it. The fresh-worktree check now prints failing test names. E2E observations in M6: `theme.spec.ts` (TC-145, open, separate fix proposed) and once `a11y.spec.ts` rate-limited (TC-107) under a slow full run, 12 of 12 alone.
 
 - T-57 note (reviewer): `lib/ingest/parse-docx.ts` and the fixture generator use mammoth's internal `mammoth/lib/zipfile` module (typed in `global.d.ts`) to read core properties and write fixtures without another dependency. It is not a public API: re-check it whenever `mammoth` (pinned 1.13.0) is upgraded.
 

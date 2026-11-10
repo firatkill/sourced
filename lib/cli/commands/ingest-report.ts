@@ -12,6 +12,7 @@ export async function planIngest(
   events: SourceEvent[],
   model: string,
   price: number | undefined,
+  rebuild = false,
 ): Promise<IngestSource[]> {
   const previous = await sql<
     {
@@ -46,7 +47,8 @@ export async function planIngest(
     for (const chunk of doc.chunks) {
       const hash = chunkContentHash(doc.locationSlug ?? doc.slug, chunk);
       const prior = previous.find(
-        (p) => p.slug === doc.slug && p.content_hash === hash && p.embedding_model === model,
+        (p) =>
+          !rebuild && p.slug === doc.slug && p.content_hash === hash && p.embedding_model === model,
       );
       if (!prior) {
         source.chunks.new++;
@@ -69,7 +71,9 @@ export async function planIngest(
     const legacy = loaded.find((d) => d.url === prior.url);
     const id = prior.source_id ?? legacy?.sourceId ?? fallback;
     if (!sources.some((s) => s.id === id)) continue;
+    if (!doc && loaded.discoveredKeys.includes(prior.slug)) continue;
     if (
+      rebuild ||
       !doc ||
       !doc.chunks.some(
         (c) =>
@@ -93,6 +97,7 @@ export async function planIngest(
       source.documents.discovered,
       source.documents.done + source.documents.failed,
     );
+    source.boilerplateRemoved = loaded.boilerplateRemoved?.[source.id] ?? 0;
     source.warnings = loaded.warningsBySource?.[source.id] ?? 0;
     source.estimatedCostUsd =
       price === undefined ? null : (source.embeddingTokens * price) / 1_000_000;

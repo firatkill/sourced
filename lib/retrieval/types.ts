@@ -3,6 +3,7 @@ export type RetrievedChunk = {
   documentTitle: string;
   documentUrl: string; // web URL or local file path, without anchor
   sourceKind?: 'web' | 'file'; // absent only for legacy callers
+  lineFrom?: number;
   pageFrom?: number;
   pageTo?: number;
   slug: string;

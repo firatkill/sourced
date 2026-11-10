@@ -26,6 +26,7 @@ type SearchRow = {
   document_title: string;
   document_url: string;
   source_kind: 'web' | 'file' | null;
+  mime_type: string | null;
   page_from: number | null;
   page_to: number | null;
   slug: string;
@@ -87,6 +88,7 @@ SELECT fu.id::text                 AS chunk_id,
        c.anchor,
        c.content,
        c.token_count,
+       d.mime_type,
        c.page_from,
        c.page_to,
        d.title                     AS document_title,
@@ -123,6 +125,9 @@ LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
       anchor: row.anchor,
       content: row.content,
       tokenCount: row.token_count,
+      ...(row.mime_type === 'text/plain' && /#l[1-9]\d*$/.test(row.anchor)
+        ? { lineFrom: Number(row.anchor.split('#l')[1]) }
+        : {}),
       ...(row.page_from != null ? { pageFrom: row.page_from } : {}),
       ...(row.page_to != null ? { pageTo: row.page_to } : {}),
       documentTitle: row.document_title,

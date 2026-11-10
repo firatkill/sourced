@@ -68,10 +68,12 @@ function finish(envelope: Parameters<typeof formatEnvelope>[0], exitCode: number
 }
 import { CliEnvelope } from '@/lib/cli/envelope';
 const interrupt = () => {
+  // Ingest owns graceful draining while its SIGINT listener is installed.
+  if (process.listenerCount('SIGINT') > 1) return;
   finish(failure('sourced', 'INTERNAL_ERROR', 'The command was interrupted.'), 130);
   process.exit(130);
 };
-process.once('SIGINT', interrupt);
+process.on('SIGINT', interrupt);
 try {
   const result = await dispatch(args, {
     progress,

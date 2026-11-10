@@ -16,6 +16,7 @@ const failureSchema = z.object({
   responseHeaders: z.record(z.string(), z.string()).optional(),
 });
 type Options = {
+  concurrency?: number;
   provider?: Pick<LlmProvider, 'embed'>;
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
@@ -85,7 +86,10 @@ export async function embedBatches(
     }
   };
   await Promise.all(
-    Array.from({ length: Math.min(EMBEDDING.CONCURRENCY, batches.length) }, worker),
+    Array.from(
+      { length: Math.min(options.concurrency ?? EMBEDDING.CONCURRENCY, batches.length) },
+      worker,
+    ),
   );
   return {
     vectors: results.flatMap((result) => result.vectors),

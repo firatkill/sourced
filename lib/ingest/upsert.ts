@@ -1,4 +1,6 @@
 import type postgres from 'postgres';
+import { EMBEDDING } from '@/lib/config';
+import { startRun, prepareItems, IngestInterrupted } from './checkpoint';
 import { AppError } from '@/lib/errors';
 import { sha256Hex } from '@/lib/hash';
 import type { LlmProvider } from '@/lib/llm/types';
@@ -31,16 +33,34 @@ type IngestOptions = {
   includeFixtures: boolean;
   pricePerMillion: number;
   now?: () => number;
+  configHash?: string;
+  restart?: boolean;
+  signal?: AbortSignal;
+  onDocument?: (key: string) => void | Promise<void>;
+  onProgress?: (message: string) => void;
 };
 
 async function upsertDocument(
   sql: postgres.Sql,
   document: PreparedDocument,
   known: Set<string>,
-  vectors: Map<string, number[]>,
+  provider: Pick<LlmProvider, 'embed'>,
   model: string,
+  runId: string,
+  price: number,
 ) {
   return sql.begin(async (tx) => {
+    const missing = document.chunks.filter((chunk) => !known.has(chunk.contentHash));
+    const embedded = await embedBatches(
+      missing.map((chunk) => `${chunk.headingPath.join(' › ')}\n\n${chunk.content}`),
+      { provider, concurrency: 1 },
+    );
+    const vectors = new Map<string, number[]>();
+    for (const [index, chunk] of missing.entries()) {
+      const vector = embedded.vectors[index];
+      if (!vector) throw new AppError('INTERNAL_ERROR', 'Missing embedding result.');
+      vectors.set(chunk.contentHash, vector);
+    }
     // D-101: replace v1 identities transactionally before the unique URL is reused.
     const legacyChunks = document.sourceId
       ? await tx`DELETE FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE url=${document.url} AND slug<>${document.slug} AND source_id IS NULL) RETURNING id`
@@ -177,7 +197,7 @@ async function upsertDocument(
             (u.ordinal, ARRAY(SELECT jsonb_array_elements_text(u.heading_path_json::jsonb)), u.anchor, u.page_from, u.page_to)
       RETURNING c.id`
       : [];
-    return {
+    const counts = {
       changed: previous[0]?.content_hash !== document.contentHash ? 1 : 0,
       inserted: inserted.filter((row) => row.inserted).length,
       updated: updated.length + inserted.filter((row) => !row.inserted).length,
@@ -185,6 +205,9 @@ async function upsertDocument(
       deleted: deleted.length + legacyChunks.length,
       removed: legacyDocuments.length,
     };
+    await tx`UPDATE ingest_items SET status='done',chunks=${document.chunks.length},tokens=${embedded.tokens},error=NULL,updated_at=now() WHERE run_id=${runId} AND document_key=${document.slug}`;
+    await tx`UPDATE ingest_runs SET documents_changed=documents_changed+${counts.changed}, chunks_inserted=chunks_inserted+${counts.inserted}, chunks_updated=chunks_updated+${counts.updated}, chunks_unchanged=chunks_unchanged+${counts.unchanged}, chunks_deleted=chunks_deleted+${counts.deleted}, embedding_tokens=embedding_tokens+${embedded.tokens}, cost_usd_estimate=cost_usd_estimate+${(embedded.tokens * price) / 1_000_000} WHERE id=${runId}`;
+    return { ...counts, tokens: embedded.tokens, inputs: missing.length };
   });
 }
 
@@ -192,11 +215,7 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
   const { sql, embeddingModel, includeFixtures } = options;
   const now = options.now ?? Date.now;
   const started = now();
-  const [run] = await sql<
-    { id: bigint }[]
-  >`INSERT INTO ingest_runs (status,include_fixtures,embedding_model) VALUES ('running',${includeFixtures},${embeddingModel}) RETURNING id`;
-  if (!run) throw new AppError('INTERNAL_ERROR', 'Ingest run could not be started.');
-  const runId = String(run.id);
+  const runId = await startRun(sql, options);
   try {
     const loaded = await options.loadDocuments();
     const sources =
@@ -227,84 +246,125 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
       values.add(row.content_hash);
       known.set(row.slug, values);
     }
-    const missing = documents.flatMap((doc) =>
-      doc.chunks.filter((chunk) => !known.get(doc.slug)?.has(chunk.contentHash)),
-    );
-    const embedded = await embedBatches(
-      missing.map((chunk) => `${chunk.headingPath.join(' › ')}\n\n${chunk.content}`),
-      { provider: options.provider },
-    );
-    const vectors = new Map<string, number[]>();
-    for (const [index, chunk] of missing.entries()) {
-      const vector = embedded.vectors[index];
-      if (!vector) throw new AppError('INTERNAL_ERROR', 'Missing embedding result.');
-      vectors.set(chunk.contentHash, vector);
-    }
+    const extra = loaded as IngestDocument[] & {
+      discoveredKeys?: string[];
+      skippedItems?: { key: string; reason: string }[];
+    };
+    const keys = [
+      ...documents.map((doc) => doc.slug),
+      ...(extra.discoveredKeys ?? []),
+      ...failedKeys,
+      ...(extra.skippedItems ?? []).map((item) => item.key),
+    ];
+    const done = await prepareItems(sql, runId, keys, extra.skippedItems ?? [], failedKeys);
+    const [prior] = await sql`SELECT * FROM ingest_runs WHERE id=${runId}`;
     const report: IngestReport = {
       runId,
-      corpusVersion: sha256Hex(
-        [
-          ...hashes,
-          ...sources
-            .filter((source) => source.revision)
-            .map((source) => `${source.id}:${source.revision ?? ''}`),
-        ]
-          .sort()
-          .join('\n'),
-      ),
+      corpusVersion: '',
       sources,
       warnings: loaded.warnings ?? 0,
       documentsTotal: documents.length,
-      documentsChanged: 0,
+      documentsChanged: Number(prior?.documents_changed ?? 0),
       documentsRemoved: 0,
       chunksTotal: chunks.length,
-      chunksInserted: 0,
-      chunksUpdated: 0,
-      chunksUnchanged: 0,
-      chunksDeleted: 0,
-      embeddingInputs: missing.length,
-      embeddingTokens: embedded.tokens,
-      costUsdEstimate: (embedded.tokens * options.pricePerMillion) / 1_000_000,
+      chunksInserted: Number(prior?.chunks_inserted ?? 0),
+      chunksUpdated: Number(prior?.chunks_updated ?? 0),
+      chunksUnchanged: Number(prior?.chunks_unchanged ?? 0),
+      chunksDeleted: Number(prior?.chunks_deleted ?? 0),
+      embeddingInputs: Number(prior?.chunks_inserted ?? 0),
+      embeddingTokens: Number(prior?.embedding_tokens ?? 0),
+      costUsdEstimate: Number(prior?.cost_usd_estimate ?? 0),
       includeFixtures,
       durationMs: 0,
     };
-    for (const document of documents) {
-      const counts = await upsertDocument(
-        sql,
-        document,
-        known.get(document.slug) ?? new Set(),
-        vectors,
-        embeddingModel,
+    let cursor = 0;
+    let failure: Error | undefined;
+    const worker = async () => {
+      while (!failure && !options.signal?.aborted) {
+        const document = documents[cursor++];
+        if (!document) return;
+        if (done.has(document.slug)) continue;
+        try {
+          const counts = await upsertDocument(
+            sql,
+            document,
+            known.get(document.slug) ?? new Set(),
+            options.provider,
+            embeddingModel,
+            runId,
+            options.pricePerMillion,
+          );
+          report.documentsChanged += counts.changed;
+          report.documentsRemoved += counts.removed;
+          report.chunksInserted += counts.inserted;
+          report.chunksUpdated += counts.updated;
+          report.chunksUnchanged += counts.unchanged;
+          report.chunksDeleted += counts.deleted;
+          report.embeddingInputs += counts.inputs;
+          report.embeddingTokens += counts.tokens;
+          report.costUsdEstimate += (counts.tokens * options.pricePerMillion) / 1_000_000;
+          done.add(document.slug);
+          options.onProgress?.(
+            `${String(done.size)}/${String(documents.length)} documents done; ${String(report.chunksInserted)} chunks embedded; ${String(report.embeddingTokens)} tokens; est. $${report.costUsdEstimate.toFixed(4)}`,
+          );
+          await options.onDocument?.(document.slug);
+        } catch (error) {
+          failure =
+            error instanceof Error ? error : new AppError('INTERNAL_ERROR', 'Ingestion failed.');
+          await sql`UPDATE ingest_items SET status='failed',error='Document ingest failed.',updated_at=now() WHERE run_id=${runId} AND document_key=${document.slug} AND status<>'done'`;
+        }
+      }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(EMBEDDING.CONCURRENCY, documents.length) }, worker),
+    );
+    if (options.signal?.aborted) throw new IngestInterrupted();
+    if (failure) throw failure;
+    const pending =
+      await sql`SELECT document_key FROM ingest_items WHERE run_id=${runId} AND status NOT IN ('done','skipped')`;
+    if (pending.length && !failedKeys.length)
+      throw new AppError(
+        'INTERNAL_ERROR',
+        'Ingestion has unfinished items. Run sourced ingest to resume.',
       );
-      report.documentsChanged += counts.changed;
-      report.documentsRemoved += counts.removed;
-      report.chunksInserted += counts.inserted;
-      report.chunksUpdated += counts.updated;
-      report.chunksUnchanged += counts.unchanged;
-      report.chunksDeleted += counts.deleted;
-    }
     if (failedKeys.length)
       throw new AppError(
         'INTERNAL_ERROR',
         `Ingestion failed for ${String(failedKeys.length)} source items; successful items were kept.`,
       );
-    const slugs = documents.map((doc) => doc.slug);
+    report.corpusVersion = sha256Hex(
+      [
+        ...hashes,
+        ...sources
+          .filter((source) => source.revision)
+          .map((source) => `${source.id}:${source.revision ?? ''}`),
+      ]
+        .sort()
+        .join('\n'),
+    );
+    const slugs = [...new Set(keys)];
     const sourceIds = sources.map((source) => source.id);
     const scoped = 'sources' in loaded;
     await sql.begin(async (tx) => {
       const removedChunks = await tx<
         { count: number }[]
-      >`SELECT count(*)::int AS count FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE ((NOT ${scoped} OR source_id IS NULL OR source_id = ANY(${tx.array(sourceIds, 25)}::text[])) AND NOT (slug = ANY(${tx.array(slugs, 25)}::text[]))) OR (is_fixture AND NOT ${includeFixtures}))`;
+      >`SELECT count(*)::int AS count FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE ((NOT ${scoped} OR source_id = ANY(${tx.array(sourceIds, 25)}::text[])) AND NOT (slug = ANY(${tx.array(slugs, 25)}::text[]))) OR (is_fixture AND NOT ${includeFixtures}))`;
       const removedDocuments =
-        await tx`DELETE FROM documents WHERE ((NOT ${scoped} OR source_id IS NULL OR source_id = ANY(${tx.array(sourceIds, 25)}::text[])) AND NOT (slug = ANY(${tx.array(slugs, 25)}::text[]))) OR (is_fixture AND NOT ${includeFixtures}) RETURNING id`;
+        await tx`DELETE FROM documents WHERE ((NOT ${scoped} OR source_id = ANY(${tx.array(sourceIds, 25)}::text[])) AND NOT (slug = ANY(${tx.array(slugs, 25)}::text[]))) OR (is_fixture AND NOT ${includeFixtures}) RETURNING id`;
       report.documentsRemoved += removedDocuments.length;
       report.chunksDeleted += removedChunks[0]?.count ?? 0;
+      if (options.signal?.aborted) throw new IngestInterrupted();
+      report.durationMs = now() - started;
+      await tx`UPDATE ingest_runs SET status='succeeded',finished_at=now(),corpus_version=${report.corpusVersion},documents_total=${report.documentsTotal},documents_changed=${report.documentsChanged},chunks_inserted=${report.chunksInserted},chunks_updated=${report.chunksUpdated},chunks_unchanged=${report.chunksUnchanged},chunks_deleted=${report.chunksDeleted},embedding_tokens=${report.embeddingTokens},cost_usd_estimate=${report.costUsdEstimate} WHERE id=${runId}`;
     });
-    report.durationMs = now() - started;
-    await sql`UPDATE ingest_runs SET status='succeeded',finished_at=now(),corpus_version=${report.corpusVersion},documents_total=${report.documentsTotal},documents_changed=${report.documentsChanged},chunks_inserted=${report.chunksInserted},chunks_updated=${report.chunksUpdated},chunks_unchanged=${report.chunksUnchanged},chunks_deleted=${report.chunksDeleted},embedding_tokens=${report.embeddingTokens},cost_usd_estimate=${report.costUsdEstimate} WHERE id=${runId}`;
     return report;
   } catch (error) {
-    const message = error instanceof AppError ? error.message : 'Ingestion failed.';
+    const message =
+      error instanceof IngestInterrupted
+        ? 'interrupted'
+        : error instanceof AppError
+          ? error.message
+          : 'Ingestion failed.';
     await sql`UPDATE ingest_runs SET status='failed',finished_at=now(),error=${message} WHERE id=${runId}`;
     throw error;
   }

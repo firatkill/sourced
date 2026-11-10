@@ -66,6 +66,7 @@ async function runAnswer(input: {
       headingPath: p.headingPath,
       officialUrl: p.officialUrl,
       ...(p.officialUrl === null ? { filePath: p.filePath } : {}),
+      ...(p.lineFrom !== undefined ? { lineFrom: p.lineFrom } : {}),
       ...(p.pageFrom !== undefined ? { pageFrom: p.pageFrom } : {}),
       ...(p.pageTo !== undefined ? { pageTo: p.pageTo } : {}),
       snippet: passageSnippet(p.content),

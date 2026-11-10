@@ -9,10 +9,17 @@ export type Chunk = {
   anchor: string;
   content: string;
   tokenCount: number;
+  lineFrom?: number;
   pageFrom?: number;
   pageTo?: number;
 };
-type Unit = { text: string; literal: boolean; pages?: number[] };
+type Unit = {
+  text: string;
+  literal: boolean;
+  pages?: number[];
+  lineFrom?: number;
+  offset?: number;
+};
 export const sentences = (text: string) => text.split(/(?<=[.!?])\s+(?=[A-Z0-9("'])/);
 const join = (units: Unit[]) => units.map((unit) => unit.text).join('\n\n');
 
@@ -64,27 +71,53 @@ function textUnitsFor(block: Block): Unit[] {
   const literal = block.kind === 'code' || block.kind === 'table';
   if (countTokens(text) <= CHUNKING.MAX_TOKENS) return text ? [{ text, literal }] : [];
   const parts = literal ? text.split('\n') : sentences(text);
-  const separator = literal ? '\n' : ' ';
+  const defaultSeparator = literal ? '\n' : ' ';
   const units: Unit[] = [];
   let current = '';
+  let currentOffset = 0;
+  let sourceCursor = 0;
   for (const part of parts) {
+    const partOffset = text.indexOf(part, sourceCursor);
+    const separator =
+      block.lineFrom !== undefined ? text.slice(sourceCursor, partOffset) : defaultSeparator;
+    sourceCursor = partOffset + part.length;
     if (current && countTokens(current + separator + part) > CHUNKING.TARGET_TOKENS) {
-      units.push({ text: current, literal });
+      units.push({ text: current, literal, offset: currentOffset });
       current = '';
     }
     if (countTokens(part) > CHUNKING.MAX_TOKENS) {
-      units.push(...splitTokens(part).map((piece) => ({ text: piece, literal })));
-    } else current = current ? current + separator + part : part;
+      let offset = partOffset;
+      units.push(
+        ...splitTokens(part).map((piece) => {
+          const unit = { text: piece, literal, offset };
+          offset += piece.length;
+          return unit;
+        }),
+      );
+    } else {
+      if (!current) currentOffset = partOffset;
+      current = current ? current + separator + part : part;
+    }
   }
-  if (current) units.push({ text: current, literal });
+  if (current) units.push({ text: current, literal, offset: currentOffset });
   return units;
 }
 
 function unitsFor(block: Block): Unit[] {
-  return textUnitsFor(block).map((unit) => ({
-    ...unit,
-    ...(block.pages ? { pages: block.pages } : {}),
-  }));
+  let cursor = 0;
+  return textUnitsFor(block).map((unit) => {
+    const text = render(block);
+    const offset = text.indexOf(unit.text, cursor);
+    const start = unit.offset ?? (offset < 0 ? cursor : offset);
+    cursor = start + unit.text.length;
+    return {
+      ...unit,
+      ...(block.pages ? { pages: block.pages } : {}),
+      ...(block.lineFrom !== undefined
+        ? { lineFrom: block.lineFrom + text.slice(0, start).split('\n').length - 1 }
+        : {}),
+    };
+  });
 }
 
 function tailOverlap(current: Unit[]): Unit[] {
@@ -105,12 +138,25 @@ function tailOverlap(current: Unit[]): Unit[] {
     start = sentence.start;
   }
   cursor = 0;
+  let lineFrom: number | undefined;
   const pages = current.flatMap((unit) => {
     const end = cursor + unit.text.length;
+    if (lineFrom === undefined && end > start && unit.lineFrom !== undefined)
+      lineFrom =
+        unit.lineFrom + unit.text.slice(0, Math.max(0, start - cursor)).split('\n').length - 1;
     cursor = end + 2;
     return end > start ? (unit.pages ?? []) : [];
   });
-  return overlap ? [{ text: overlap, literal: false, ...(pages.length ? { pages } : {}) }] : [];
+  return overlap
+    ? [
+        {
+          text: lineFrom !== undefined ? full.slice(start) : overlap,
+          literal: false,
+          ...(lineFrom !== undefined ? { lineFrom } : {}),
+          ...(pages.length ? { pages } : {}),
+        },
+      ]
+    : [];
 }
 
 function pageRange(pages: number[]): { pageFrom?: number; pageTo?: number } {
@@ -119,14 +165,17 @@ function pageRange(pages: number[]): { pageFrom?: number; pageTo?: number } {
 const pageAnchor = (from: number, to: number) =>
   from === to ? `p${String(from)}` : `p${String(from)}-${String(to)}`;
 
-function splitSection(blocks: Block[]): { content: string; pageFrom?: number; pageTo?: number }[] {
-  const pieces: { content: string; pageFrom?: number; pageTo?: number }[] = [];
+function splitSection(
+  blocks: Block[],
+): { content: string; lineFrom?: number; pageFrom?: number; pageTo?: number }[] {
+  const pieces: { content: string; lineFrom?: number; pageFrom?: number; pageTo?: number }[] = [];
   let current: Unit[] = [];
   let hasNewText = false;
   const emit = () => {
     if (hasNewText)
       pieces.push({
         content: join(current),
+        ...(current[0]?.lineFrom !== undefined ? { lineFrom: current[0].lineFrom } : {}),
         ...pageRange(current.flatMap((unit) => unit.pages ?? [])),
       });
   };
@@ -156,7 +205,7 @@ export function chunkDocument(doc: ParsedDocument, slug: string): Chunk[] {
       chunks.push({
         ordinal: chunks.length,
         headingPath,
-        anchor: `${slug}#${range.pageFrom !== undefined && range.pageTo !== undefined ? pageAnchor(range.pageFrom, range.pageTo) : section.id}`,
+        anchor: `${slug}#${range.pageFrom !== undefined && range.pageTo !== undefined ? pageAnchor(range.pageFrom, range.pageTo) : range.lineFrom !== undefined ? `l${String(range.lineFrom)}` : section.id}`,
         ...range,
         content,
         tokenCount: countTokens(content),
@@ -180,6 +229,10 @@ export function chunkDocument(doc: ParsedDocument, slug: string): Chunk[] {
         next.pageFrom = Math.min(chunk.pageFrom, next.pageFrom);
         next.pageTo = Math.max(chunk.pageTo, next.pageTo);
         next.anchor = `${slug}#${pageAnchor(next.pageFrom, next.pageTo)}`;
+      }
+      if (chunk.lineFrom !== undefined) {
+        next.lineFrom = chunk.lineFrom;
+        next.anchor = `${slug}#l${String(chunk.lineFrom)}`;
       }
       next.content = content;
       next.tokenCount = tokenCount;

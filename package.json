@@ -31,7 +31,7 @@
     "eval:validate": "pnpm sourced eval --validate-only",
     "check:corpus-literals": "tsx scripts/check-corpus-literals.ts",
     "config:snapshot": "pnpm sourced config:snapshot",
-    "sourced": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/sourced.ts"
+    "sourced": "node --import tsx --conditions=react-server --env-file-if-exists=.env.local scripts/sourced.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.85",
