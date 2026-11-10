@@ -3249,7 +3249,21 @@ export const KitConfigSchema = z.object({
     hero: z.string().max(120).optional(),
     lead: z.string().max(300).optional(),
     notFound: z.string().max(120).optional(),
-    suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200) })).max(6).default([]),
+    // D-100: strings added by the v1.1 redesign (REDESIGN §7) and the prompts
+    documentTitle: z.string().max(80).optional(),
+    shortTitle: z.string().max(40).optional(),               // rail subtitle
+    headerScope: z.string().max(120).optional(),
+    scope: z.string().max(300).optional(),
+    placeholder: z.string().max(120).optional(),
+    nextPlaceholder: z.string().max(120).optional(),
+    notFoundBody: z.string().max(200).optional(),
+    searched: z.string().max(60).optional(),
+    viewerLink: z.string().max(40).optional(),
+    sourceDomain: z.string().max(80).optional(),
+    license: z.object({ name: z.string().min(1).max(80), url: z.url() }).optional(),
+    promptSubject: z.string().min(1).max(60).optional(),
+    rerankSubject: z.string().min(1).max(60).optional(),
+    suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200), topic: z.string().min(1).max(24).optional() })).max(6).default([]),
   }).prefault({}),
   overrides: z.object({                                       // section 29.2
     chunking: z.object({ minTokens: z.number().int(), targetTokens: z.number().int(), maxTokens: z.number().int(), overlapTokens: z.number().int() }).partial().default({}),
@@ -3332,7 +3346,22 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 | `notFound` | `I couldn't find this in {corpus.title}.` |
 | Not-found body | `Sourced only answers from the {documentCount} documents it has indexed. These passages came closest:` |
 | Link label | `corpus.linkLabel` |
-| Footer line 2 | `corpus.attribution`, omitted when unset |
+| Footer line 2 | `corpus.attribution`, omitted when unset; followed by a link to `copy.license.url` labelled `copy.license.name` when `license` is set |
+| `documentTitle` (page `<title>` of `/`) | `Sourced: answers from {corpus.title}` |
+| `shortTitle` (rail subtitle) | `corpus.title` |
+| `headerScope` | `Answers only from {corpus.description}` |
+| `scope` (welcome scope line) | `Answers come only from {corpus.description}. If the answer is not there, Sourced says so.` |
+| `placeholder` | `Ask a question about {corpus.title}` |
+| `nextPlaceholder` | `Ask another question about {corpus.title}` |
+| `notFoundBody` | the not-found body above |
+| `searched` | `Searched {documentCount} documents` |
+| `viewerLink` | `Open the source` |
+| `sourceDomain` | omitted (the line that shows it is not rendered) |
+| `promptSubject` (TRD §13.1: "answers questions about {promptSubject}", "excerpts from the {promptSubject} documentation") | `corpus.title` |
+| `rerankSubject` (TRD §13.2: "a question about {rerankSubject}") | `promptSubject` |
+| Suggested topic label | omitted when `topic` is unset |
+
+The example configuration sets every one of these to the string the app shows in v1.1, so the rendered page and both rendered prompts are byte-identical and `PROMPT_VERSION` does not change. Page titles of `/eval` and `/how-it-works` do not name the corpus and stay constants.
 
 `{documentCount}` comes from `corpus_meta.documents_total`. The example configuration sets values that reproduce PRD §9 byte for byte; E2E-01 to E2E-25 keep asserting the v1 strings against the example. The prompt's not-found sentence (TRD §13.1) is `getCopy().notFound`; changing it bumps `PROMPT_VERSION` like any prompt change.
 
