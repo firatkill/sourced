@@ -19,7 +19,10 @@ export function NotFound({
       {passages.map((passage) =>
         passage.officialUrl === null ? (
           <p key={passage.label} className="rounded-md border border-[var(--rule)] p-4">
-            {passage.filePath} › {passage.headingPath.join(' › ')}
+            {passage.filePath}
+            {passage.pageFrom !== undefined
+              ? `, page ${String(passage.pageFrom)}`
+              : ` › ${passage.headingPath.join(' › ')}`}
           </p>
         ) : (
           <a

@@ -39,7 +39,7 @@ export function formatCopy(citations: Citations, passages: Passage[]): string {
   return `${answer}\n\nSources:\n${sources
     .map(
       (passage) =>
-        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl ?? passage.filePath}`,
+        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl ?? `${passage.filePath}${passage.pageFrom !== undefined ? `, page ${String(passage.pageFrom)}` : ''}`}`,
     )
     .join('\n')}`;
 }

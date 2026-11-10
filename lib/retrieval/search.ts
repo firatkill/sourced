@@ -26,6 +26,8 @@ type SearchRow = {
   document_title: string;
   document_url: string;
   source_kind: 'web' | 'file' | null;
+  page_from: number | null;
+  page_to: number | null;
   slug: string;
 };
 
@@ -85,6 +87,8 @@ SELECT fu.id::text                 AS chunk_id,
        c.anchor,
        c.content,
        c.token_count,
+       c.page_from,
+       c.page_to,
        d.title                     AS document_title,
        d.url                       AS document_url,
        d.slug,
@@ -119,6 +123,8 @@ LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
       anchor: row.anchor,
       content: row.content,
       tokenCount: row.token_count,
+      ...(row.page_from != null ? { pageFrom: row.page_from } : {}),
+      ...(row.page_to != null ? { pageTo: row.page_to } : {}),
       documentTitle: row.document_title,
       documentUrl: row.document_url,
       sourceKind: row.source_kind ?? 'web',

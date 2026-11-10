@@ -85,7 +85,10 @@ export function SourceViewer({
         </h2>
         {passage.officialUrl === null ? (
           <p className="text-sm text-[var(--ink-3)]">
-            {passage.filePath} › {passage.headingPath.join(' › ')}
+            {passage.filePath}
+            {passage.pageFrom !== undefined
+              ? `, page ${String(passage.pageFrom)}`
+              : ` › ${passage.headingPath.join(' › ')}`}
           </p>
         ) : (
           <a

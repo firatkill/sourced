@@ -9,8 +9,10 @@ export type Chunk = {
   anchor: string;
   content: string;
   tokenCount: number;
+  pageFrom?: number;
+  pageTo?: number;
 };
-type Unit = { text: string; literal: boolean };
+type Unit = { text: string; literal: boolean; pages?: number[] };
 export const sentences = (text: string) => text.split(/(?<=[.!?])\s+(?=[A-Z0-9("'])/);
 const join = (units: Unit[]) => units.map((unit) => unit.text).join('\n\n');
 
@@ -57,7 +59,7 @@ function splitTokens(text: string): string[] {
   return result;
 }
 
-function unitsFor(block: Block): Unit[] {
+function textUnitsFor(block: Block): Unit[] {
   const text = render(block);
   const literal = block.kind === 'code' || block.kind === 'table';
   if (countTokens(text) <= CHUNKING.MAX_TOKENS) return text ? [{ text, literal }] : [];
@@ -78,23 +80,55 @@ function unitsFor(block: Block): Unit[] {
   return units;
 }
 
-function tailOverlap(current: Unit[]): Unit[] {
-  if (current.at(-1)?.literal) return [];
-  let overlap = '';
-  for (const sentence of sentences(join(current)).reverse()) {
-    const candidate = overlap ? `${sentence} ${overlap}` : sentence;
-    if (countTokens(candidate) > CHUNKING.OVERLAP_TOKENS) break;
-    overlap = candidate;
-  }
-  return overlap ? [{ text: overlap, literal: false }] : [];
+function unitsFor(block: Block): Unit[] {
+  return textUnitsFor(block).map((unit) => ({
+    ...unit,
+    ...(block.pages ? { pages: block.pages } : {}),
+  }));
 }
 
-function splitSection(blocks: Block[]): string[] {
-  const pieces: string[] = [];
+function tailOverlap(current: Unit[]): Unit[] {
+  if (current.at(-1)?.literal) return [];
+  const full = join(current);
+  let cursor = 0;
+  const parts = sentences(full).map((text) => {
+    const start = full.indexOf(text, cursor);
+    cursor = start + text.length;
+    return { text, start };
+  });
+  let overlap = '';
+  let start = full.length;
+  for (const sentence of parts.reverse()) {
+    const candidate = overlap ? `${sentence.text} ${overlap}` : sentence.text;
+    if (countTokens(candidate) > CHUNKING.OVERLAP_TOKENS) break;
+    overlap = candidate;
+    start = sentence.start;
+  }
+  cursor = 0;
+  const pages = current.flatMap((unit) => {
+    const end = cursor + unit.text.length;
+    cursor = end + 2;
+    return end > start ? (unit.pages ?? []) : [];
+  });
+  return overlap ? [{ text: overlap, literal: false, ...(pages.length ? { pages } : {}) }] : [];
+}
+
+function pageRange(pages: number[]): { pageFrom?: number; pageTo?: number } {
+  return pages.length ? { pageFrom: Math.min(...pages), pageTo: Math.max(...pages) } : {};
+}
+const pageAnchor = (from: number, to: number) =>
+  from === to ? `p${String(from)}` : `p${String(from)}-${String(to)}`;
+
+function splitSection(blocks: Block[]): { content: string; pageFrom?: number; pageTo?: number }[] {
+  const pieces: { content: string; pageFrom?: number; pageTo?: number }[] = [];
   let current: Unit[] = [];
   let hasNewText = false;
   const emit = () => {
-    if (hasNewText) pieces.push(join(current));
+    if (hasNewText)
+      pieces.push({
+        content: join(current),
+        ...pageRange(current.flatMap((unit) => unit.pages ?? [])),
+      });
   };
   for (const unit of blocks.flatMap(unitsFor)) {
     if (countTokens(join([...current, unit])) > CHUNKING.MAX_TOKENS) {
@@ -118,11 +152,12 @@ function splitSection(blocks: Block[]): string[] {
 export function chunkDocument(doc: ParsedDocument, slug: string): Chunk[] {
   const chunks: Chunk[] = [];
   const visit = (section: Section, headingPath: string[]) => {
-    for (const content of splitSection(section.blocks))
+    for (const { content, ...range } of splitSection(section.blocks))
       chunks.push({
         ordinal: chunks.length,
         headingPath,
-        anchor: `${slug}#${section.id}`,
+        anchor: `${slug}#${range.pageFrom !== undefined && range.pageTo !== undefined ? pageAnchor(range.pageFrom, range.pageTo) : section.id}`,
+        ...range,
         content,
         tokenCount: countTokens(content),
       });
@@ -136,6 +171,16 @@ export function chunkDocument(doc: ParsedDocument, slug: string): Chunk[] {
     const content = `${chunk.content}\n\n${next.content}`;
     const tokenCount = countTokens(content);
     if (chunk.tokenCount < CHUNKING.TINY_SECTION_TOKENS && tokenCount <= CHUNKING.MAX_TOKENS) {
+      if (
+        chunk.pageFrom !== undefined &&
+        next.pageFrom !== undefined &&
+        next.pageTo !== undefined &&
+        chunk.pageTo !== undefined
+      ) {
+        next.pageFrom = Math.min(chunk.pageFrom, next.pageFrom);
+        next.pageTo = Math.max(chunk.pageTo, next.pageTo);
+        next.anchor = `${slug}#${pageAnchor(next.pageFrom, next.pageTo)}`;
+      }
       next.content = content;
       next.tokenCount = tokenCount;
       chunks.splice(index, 1);

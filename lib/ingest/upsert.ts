@@ -68,7 +68,7 @@ async function upsertDocument(
     const inserted = fresh.length
       ? await tx<{ inserted: boolean }[]>`
       INSERT INTO chunks (document_id, ordinal, heading_path, anchor, content, token_count,
-                          content_hash, embedding_model, embedding)
+                          content_hash, embedding_model, embedding, page_from, page_to)
       SELECT t.document_id,
              t.ordinal,
              ARRAY(SELECT jsonb_array_elements_text(t.heading_path_json::jsonb)),
@@ -77,7 +77,7 @@ async function upsertDocument(
              t.token_count,
              t.content_hash,
              t.embedding_model,
-             t.embedding_text::vector
+             t.embedding_text::vector, t.page_from, t.page_to
       FROM unnest(
         ${tx.array(
           fresh.map(() => id),
@@ -114,17 +114,28 @@ async function upsertDocument(
             return JSON.stringify(vector);
           }),
           25,
-        )}::text[]
+        )}::text[], ${tx.array(
+          fresh.map((chunk) => chunk.pageFrom ?? null),
+          23,
+        )}::int[],
+        ${tx.array(
+          fresh.map((chunk) => chunk.pageTo ?? null),
+          23,
+        )}::int[]
       ) AS t(document_id, ordinal, heading_path_json, anchor, content,
-             token_count, content_hash, embedding_model, embedding_text)
+             token_count, content_hash, embedding_model, embedding_text, page_from, page_to)
       ON CONFLICT (document_id, content_hash) DO UPDATE
         SET ordinal      = EXCLUDED.ordinal,
             heading_path = EXCLUDED.heading_path,
             anchor       = EXCLUDED.anchor,
+            page_from    = EXCLUDED.page_from,
+            page_to      = EXCLUDED.page_to,
             updated_at   = now()
         WHERE chunks.ordinal      IS DISTINCT FROM EXCLUDED.ordinal
            OR chunks.heading_path IS DISTINCT FROM EXCLUDED.heading_path
            OR chunks.anchor       IS DISTINCT FROM EXCLUDED.anchor
+           OR chunks.page_from IS DISTINCT FROM EXCLUDED.page_from
+           OR chunks.page_to IS DISTINCT FROM EXCLUDED.page_to
       RETURNING (xmax = 0) AS inserted`
       : [];
     const updated = existing.length
@@ -133,6 +144,8 @@ async function upsertDocument(
       SET ordinal      = u.ordinal,
           heading_path = ARRAY(SELECT jsonb_array_elements_text(u.heading_path_json::jsonb)),
           anchor       = u.anchor,
+          page_from    = u.page_from,
+          page_to      = u.page_to,
           updated_at   = now()
       FROM unnest(${tx.array(
         existing.map((chunk) => chunk.contentHash),
@@ -149,12 +162,19 @@ async function upsertDocument(
         ${tx.array(
           existing.map((chunk) => chunk.anchor),
           25,
-        )}::text[])
-             AS u(content_hash, ordinal, heading_path_json, anchor)
+        )}::text[], ${tx.array(
+          existing.map((chunk) => chunk.pageFrom ?? null),
+          23,
+        )}::int[],
+        ${tx.array(
+          existing.map((chunk) => chunk.pageTo ?? null),
+          23,
+        )}::int[])
+             AS u(content_hash, ordinal, heading_path_json, anchor, page_from, page_to)
       WHERE c.document_id = ${id} AND c.content_hash = u.content_hash
-        AND (c.ordinal, c.heading_path, c.anchor)
+        AND (c.ordinal, c.heading_path, c.anchor, c.page_from, c.page_to)
             IS DISTINCT FROM
-            (u.ordinal, ARRAY(SELECT jsonb_array_elements_text(u.heading_path_json::jsonb)), u.anchor)
+            (u.ordinal, ARRAY(SELECT jsonb_array_elements_text(u.heading_path_json::jsonb)), u.anchor, u.page_from, u.page_to)
       RETURNING c.id`
       : [];
     return {

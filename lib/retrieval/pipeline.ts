@@ -29,7 +29,10 @@ export async function retrieve(
   const passages = result.reranked
     .slice(0, getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
     .map((chunk, index): Passage => {
-      const fragment = chunk.anchor.split('#')[1];
+      const fragment =
+        chunk.pageFrom !== undefined
+          ? `page=${String(chunk.pageFrom)}`
+          : chunk.anchor.split('#')[1];
       return {
         ...chunk,
         label: `P${String(index + 1)}` as Passage['label'],

@@ -3,12 +3,13 @@ import { AppError } from '@/lib/errors';
 import type { ManifestPage } from './manifest';
 import { parsePostgresDocbook } from './presets/postgres-docbook';
 
-export type Block =
+export type Block = (
   | { kind: 'paragraph'; text: string }
   | { kind: 'list'; items: string[]; ordered: boolean }
   | { kind: 'code'; text: string; lang?: string }
   | { kind: 'table'; rows: string[] }
-  | { kind: 'note'; label: string; text: string };
+  | { kind: 'note'; label: string; text: string }
+) & { pages?: number[] };
 export type Section = {
   id: string;
   level: number;

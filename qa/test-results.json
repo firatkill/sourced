@@ -4574,6 +4574,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-200",
+      "ac_reference": "T-56; FR-70; NFR-25; A-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "PDF text, headings and pages",
+      "description": "UT-40.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-200.",
+      "expected_result": "Text per page, headings by font size, chunks record page ranges; a scanned PDF is reported needs_ocr and skipped; coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-40 parse-pdf.test.ts on generated fixtures (tests/fixtures/pdf/generate.ts): headings by font size, D-107 title order and levels, one section per page without headings, page ranges on chunks, scanned PDF reported needs_ocr and skipped (pdf-passages integration); web url#page and file path, page N citations; A-21 on Node 22 (unpdf 1.9.1); 100% line coverage"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

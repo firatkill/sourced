@@ -21,6 +21,7 @@ import {
 import { createFetchSession } from './fetch';
 import { parseHtml, type ParsedDocument } from './parse-html';
 import { parseMarkdown } from './parse-markdown';
+import { parsePdf } from './parse-pdf';
 import { chunkDocument } from './chunk';
 import type { IngestDocument } from './upsert';
 
@@ -117,24 +118,37 @@ export async function loadCorpus(options: {
       const slug = locationSlug(ref.location);
       let document: ParsedDocument;
       try {
-        if (!options.parse && !['text/html', 'text/markdown', 'text/mdx'].includes(raw.mimeType))
+        const isPdf = raw.mimeType === 'application/pdf' || /\.pdf$/i.test(slug);
+        if (
+          !options.parse &&
+          !isPdf &&
+          !['text/html', 'text/markdown', 'text/mdx'].includes(raw.mimeType)
+        )
           throw new AppError(
             'UNSUPPORTED_MEDIA_TYPE',
             'This source format requires its M6 parser.',
           );
-        document = options.parse
-          ? options.parse(raw, source)
-          : raw.mimeType === 'text/markdown' || raw.mimeType === 'text/mdx'
-            ? parseMarkdown(
-                Buffer.from(raw.bytes).toString('utf8'),
-                slug,
-                raw.mimeType === 'text/mdx',
-              )
-            : parseHtml(Buffer.from(raw.bytes).toString('utf8'), {
-                slug,
-                section: source.group ?? source.id,
-                html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
-              });
+        if (!options.parse && isPdf) {
+          const parsed = await parsePdf(raw.bytes, slug);
+          if (parsed.status === 'needs_ocr') {
+            context.onEvent({ type: 'skipped', key: ref.key, reason: 'needs_ocr' });
+            continue;
+          }
+          document = parsed.document;
+        } else
+          document = options.parse
+            ? options.parse(raw, source)
+            : raw.mimeType === 'text/markdown' || raw.mimeType === 'text/mdx'
+              ? parseMarkdown(
+                  Buffer.from(raw.bytes).toString('utf8'),
+                  slug,
+                  raw.mimeType === 'text/mdx',
+                )
+              : parseHtml(Buffer.from(raw.bytes).toString('utf8'), {
+                  slug,
+                  section: source.group ?? source.id,
+                  html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
+                });
       } catch (error) {
         context.onEvent({
           type: 'failed',

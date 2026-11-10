@@ -42,3 +42,28 @@ test('T-53 / FR-65: related file passages display path and heading without a lin
   expect(screen.getByText(`manual/olcum.html › ${file.headingPath.join(' › ')}`)).toBeTruthy();
   expect(screen.queryByRole('link')).toBeNull();
 });
+
+test('TC-200 / FR-67 / D-102: PDF viewer, related reading and copied citations show path and page without links', () => {
+  const pdf = PassageDto.parse({ ...file, filePath: 'manual/guide.pdf', pageFrom: 2, pageTo: 4 });
+  vi.stubGlobal('matchMedia', () => ({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+  const viewer = render(
+    <SourceViewer
+      passages={[pdf]}
+      citations={citations}
+      label={pdf.label}
+      onSelect={vi.fn()}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(screen.getByText('manual/guide.pdf, page 2')).toBeTruthy();
+  expect(screen.queryByRole('link')).toBeNull();
+  viewer.unmount();
+  render(<NotFound passages={[pdf]} onAnother={vi.fn()} />);
+  expect(screen.getByText('manual/guide.pdf, page 2')).toBeTruthy();
+  expect(screen.queryByRole('link')).toBeNull();
+  expect(formatCopy(citations, [pdf])).toContain('manual/guide.pdf, page 2');
+});
