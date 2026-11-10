@@ -1,8 +1,9 @@
-// TC-192 / T-52: temporary M5 conversion preserves original fixture structures.
+// TC-192 / T-55: production folder and Markdown/HTML parsers preserve fixture structures.
 import { execFileSync } from 'node:child_process';
 import { fixtureCopy } from '../fixtures/kit-tr/copy';
 import { expect, test } from 'vitest';
-import { convertFixture, loadFixtureDocuments } from '../fixtures/kit-tr/convert';
+import { parseMarkdown } from '@/lib/ingest/parse-markdown';
+import { loadFixtureDocuments } from '../fixtures/kit-tr/database';
 import { fixtureDatabaseUrl } from '../fixtures/kit-tr/database';
 
 test('TC-192: original Markdown and HTML retain headings, code, tables and provenance', async () => {
@@ -22,15 +23,15 @@ test('TC-192: original Markdown and HTML retain headings, code, tables and prove
   }
   const content = documents.flatMap((doc) => doc.chunks.map((chunk) => chunk.content)).join('\n');
   expect(content).toContain('cep-bahcesi ekle --ad "Mavi saksı" --konum balkon');
-  expect(content.replace(/\s+/g, ' ')).toContain('| Kumlu | Pazartesi | Nemi ölç |');
+  expect(content.replace(/\s+/g, ' ')).toContain('Kumlu | Pazartesi | Nemi ölç');
   expect(content).toContain('Saksılarınızın');
-  const parsed = convertFixture(
+  const parsed = parseMarkdown(
     '# Başlık\n\n## Alt başlık\n\n```text\nkomut\n```\n\n| A | B |\n| --- | --- |\n| bir | iki |',
-    '.md',
+    'fixture.md',
   );
-  expect(parsed.root.children[0]?.blocks).toEqual([
-    { kind: 'code', text: 'komut' },
-    { kind: 'table', rows: ['| A | B |', '| bir | iki |'] },
+  expect(parsed.root.children[0]?.children[0]?.blocks).toEqual([
+    { kind: 'code', text: 'komut', lang: 'text' },
+    { kind: 'table', rows: ['A | B', 'bir | iki'] },
   ]);
 });
 

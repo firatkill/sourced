@@ -4553,6 +4553,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-199",
+      "ac_reference": "T-55; FR-69; NFR-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Markdown and MDX",
+      "description": "UT-39.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-199.",
+      "expected_result": "Title from front matter or first heading; sections from headings; code fences kept with language; MDX imports and JSX removed with child text kept; coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-39 parse-markdown.test.ts: front matter title per D-106 (plain, single, double quoted; block scalar and TOML fall back), first h1, file name, nested and duplicate heading slugs, code fences with lang, GFM tables and task lists, MDX imports/exports/JSX/expressions removed with child text kept; 100% line coverage; kit-tr now ingests through the folder driver and real parsers (E2E-26 passed)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

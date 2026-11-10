@@ -9,7 +9,16 @@ import { createMockProvider } from '../../../lib/llm/mock';
 import { ingestCorpus } from '../../../lib/ingest/upsert';
 import { requireLocalDatabase } from '../../helpers/local-database';
 import fixtureConfig from './sourced.config';
-import { loadFixtureDocuments } from './convert';
+import { loadCorpus } from '../../../lib/ingest/load';
+
+export function loadFixtureDocuments() {
+  return loadCorpus({
+    config: KitConfigSchema.parse(fixtureConfig),
+    offline: true,
+    refresh: false,
+    includeFixtures: false,
+  });
+}
 
 export function fixtureDatabaseUrl(base: string | undefined): string {
   const url = new URL(requireLocalDatabase(base));

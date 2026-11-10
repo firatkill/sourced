@@ -1,0 +1,25 @@
+---
+title: Component guide
+---
+
+import Widget from './hidden-module.js';
+
+export const secret = 'hidden export';
+
+# Components
+
+<Panel tone="hidden attribute">
+
+Child paragraph with **strong words**.
+
+## Nested heading
+
+A nested paragraph.
+
+</Panel>
+
+Text with <Badge title="hidden attribute">visible badge</Badge> and {secret} done.
+
+{(() => { throw new Error('must never execute') })()}
+
+<Empty />

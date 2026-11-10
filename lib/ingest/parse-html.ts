@@ -6,7 +6,7 @@ import { parsePostgresDocbook } from './presets/postgres-docbook';
 export type Block =
   | { kind: 'paragraph'; text: string }
   | { kind: 'list'; items: string[]; ordered: boolean }
-  | { kind: 'code'; text: string }
+  | { kind: 'code'; text: string; lang?: string }
   | { kind: 'table'; rows: string[] }
   | { kind: 'note'; label: string; text: string };
 export type Section = {
