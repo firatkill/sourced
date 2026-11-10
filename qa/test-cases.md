@@ -1896,3 +1896,230 @@ Source: docs/REDESIGN.md (D-91) and the "Sourced redesign" canvas. Designed from
   1. Run the listed spec or compare with the canvas.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Desktop chat with source viewer, welcome, phone sheet, states, /eval and /how-it-works match the canvas in light and dark themes.
+
+## M5 Configuration seams (v2)
+
+Source: PRD FR-59–FR-64, FR-67, FR-72, FR-74, §12 (M5), §16; TRD §28–§31, §23 (UT-32, UT-33, UT-49, IT-12, IT-13, IT-15, IT-16, E2E-26); implementation plan T-46–T-52; decisions D-92–D-95. Designed from the specs before the code.
+
+| TC ID  | AC Reference             | TRD test ID / source | Title                                                         | Priority | Automatable | Expected result                                                                                                                                                                                                             |
+| ------ | ------------------------ | -------------------- | ------------------------------------------------------------- | -------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-174 | T-46; FR-61; FR-72; D-92 | TRD §30.1; IT-15     | Migration 0003_kit applies on empty and v1 databases          | Critical | yes         | drizzle/0003_kit.sql matches TRD §30.1; pnpm db:migrate succeeds on an empty database and on a database holding the v1 example corpus; corpus_meta, ingest_items and the new columns exist; query_log.source accepts 'cli'. |
+| TC-175 | T-46; FR-67; D-92        | IT-15                | Same chunk text in two documents is stored twice              | Critical | yes         | Ingesting two documents that share one chunk text stores two chunk rows, one per document, and both are returned by search; the conflict target is (document_id, content_hash).                                             |
+| TC-176 | T-46; FR-37; NFR-16      | T-46 acceptance      | Re-ingest after the migration is a no-op                      | High     | yes         | Re-running pnpm ingest --offline on the example after 0003_kit reports 0 inserted, 0 updated, 0 deleted.                                                                                                                    |
+| TC-177 | T-47; FR-59              | UT-32                | Kit configuration schema and error messages                   | Critical | yes         | Every rule in TRD §29.1–29.3 is enforced; an invalid sourced.config.ts stops with CONFIG_INVALID naming the field and the fix; secrets are rejected in the file.                                                            |
+| TC-178 | T-47; FR-61              | IT-12                | Embedding column follows configured dimensions                | Critical | yes         | ensureCorpusSchema creates vector(768) and halfvec(3072) columns with HNSW indexes, is a no-op on the same hash and raises CORPUS_MISMATCH when the model or dimensions change, unless rebuilt.                             |
+| TC-179 | T-47; FR-62              | IT-13                | Full-text language from configuration                         | High     | yes         | With a Turkish regconfig the keyword search finds hits that english misses; unsupported languages fall back to simple.                                                                                                      |
+| TC-180 | T-47; FR-60              | T-47 acceptance      | Providers resolved per role; v1 example unchanged             | High     | yes         | getProvider no longer exists; getProviders resolves unset roles to chat; the example with a sourced.config.ts mirroring v1 constants passes E2E-01–E2E-25.                                                                  |
+| TC-181 | T-48; FR-63              | UT-33                | Copy rendered from configuration                              | Critical | yes         | getCopy applies defaults and overrides; the example configuration reproduces the PRD §9 and REDESIGN §7 strings exactly.                                                                                                    |
+| TC-182 | T-48; FR-63; NFR-11      | T-48 step 2          | Example system prompt byte-identical to v1                    | Critical | yes         | The rendered example system prompt equals the v1 prompt byte for byte, so PROMPT_VERSION is unchanged.                                                                                                                      |
+| TC-183 | T-48; FR-74              | T-48 step 4          | No corpus literals outside allowed paths                      | High     | yes         | scripts/check-corpus-literals.ts fails on PostgreSQL, postgresql.org or 35 pages outside sourced.config.ts, corpus/, eval/, docs/, tests/ and qa/, and passes on the tree; it runs in the ci.yml static job.                |
+| TC-184 | T-48; FR-17              | T-48 step 3          | Citation markers up to P9                                     | High     | yes         | Markers [P1]–[P9] parse; finalPassages above 9 is rejected by config validation.                                                                                                                                            |
+| TC-185 | T-49; FR-60              | UT-49                | Gemini, Anthropic and Ollama providers with mocked transports | High     | yes         | Each provider maps errors like v1, passes options, uses maxRetries 0; a chat-only provider without an embedding provider is rejected with the list of embedding providers; no test makes a network call.                    |
+| TC-186 | T-49; FR-60; A-19; D-94  | T-49 acceptance      | Manual live call per provider                                 | Medium   | no          | One live call each to Gemini, Anthropic and a local Ollama succeeds.                                                                                                                                                        |
+| TC-187 | T-50; FR-74; NFR-16      | IT-16                | Example corpus in the kit layout with identical chunks        | Critical | yes         | After the move to corpus/postgres-17/ and the postgres-docbook preset, ingestion yields the same chunk hashes and counts as v1.                                                                                             |
+| TC-188 | T-50; FR-46              | T-50 acceptance      | /eval reads results from the new path                         | High     | yes         | /eval renders the committed v1 results from eval/postgres-17/results/.                                                                                                                                                      |
+| TC-189 | T-50; FR-41; D-94        | T-50 acceptance      | Example eval within maxRegression                             | Critical | no          | pnpm eval on the example (v1 chat model, judge in the free allowance) stays within maxRegression of the v1.0.0 run; cost recorded against the D-94 budget.                                                                  |
+| TC-190 | T-51; FR-64              | T-51 acceptance      | Deployment profiles gate quotas, demo mode and cache          | Critical | yes         | public-demo keeps FR-26–FR-32; local shows no quota copy and no cache label and skips rate limits; private refuses to start without SOURCED_ACCESS_TOKEN.                                                                   |
+| TC-191 | T-51; FR-64              | E2E-01–E2E-25        | Example unchanged in public-demo                              | High     | yes         | E2E-01–E2E-25 pass with the example's public-demo profile.                                                                                                                                                                  |
+| TC-192 | T-52; FR-63; FR-62       | E2E-26               | Second fixture corpus end to end in mock mode                 | Critical | yes         | The Turkish folder fixture with its own sourced.config.ts ingests in mock mode and the ask page renders its configured copy with cited answers.                                                                             |
+| TC-193 | T-52; PRD §12            | M5 exit              | M5 exit criteria                                              | High     | no          | Example behaves as v1.0.0 within the regression delta; the second fixture corpus runs end to end; milestone report written.                                                                                                 |
+
+### TC-174: Migration 0003_kit applies on empty and v1 databases
+
+- Milestone: M5 Configuration seams
+- Requirement: T-46; FR-61; FR-72; D-92; TRD §30.1; IT-15.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Apply migrations to an empty test database and to one seeded with the v1 corpus; inspect the catalog.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: drizzle/0003_kit.sql matches TRD §30.1; pnpm db:migrate succeeds on an empty database and on a database holding the v1 example corpus; corpus_meta, ingest_items and the new columns exist; query_log.source accepts 'cli'.
+
+### TC-175: Same chunk text in two documents is stored twice
+
+- Milestone: M5 Configuration seams
+- Requirement: T-46; FR-67; D-92; IT-15.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-15.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Ingesting two documents that share one chunk text stores two chunk rows, one per document, and both are returned by search; the conflict target is (document_id, content_hash).
+
+### TC-176: Re-ingest after the migration is a no-op
+
+- Milestone: M5 Configuration seams
+- Requirement: T-46; FR-37; NFR-16; T-46 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Ingest twice on the migrated local database.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Re-running pnpm ingest --offline on the example after 0003_kit reports 0 inserted, 0 updated, 0 deleted.
+
+### TC-177: Kit configuration schema and error messages
+
+- Milestone: M5 Configuration seams
+- Requirement: T-47; FR-59; UT-32.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-32.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every rule in TRD §29.1–29.3 is enforced; an invalid sourced.config.ts stops with CONFIG_INVALID naming the field and the fix; secrets are rejected in the file.
+
+### TC-178: Embedding column follows configured dimensions
+
+- Milestone: M5 Configuration seams
+- Requirement: T-47; FR-61; IT-12.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-12.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: ensureCorpusSchema creates vector(768) and halfvec(3072) columns with HNSW indexes, is a no-op on the same hash and raises CORPUS_MISMATCH when the model or dimensions change, unless rebuilt.
+
+### TC-179: Full-text language from configuration
+
+- Milestone: M5 Configuration seams
+- Requirement: T-47; FR-62; IT-13.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-13.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: With a Turkish regconfig the keyword search finds hits that english misses; unsupported languages fall back to simple.
+
+### TC-180: Providers resolved per role; v1 example unchanged
+
+- Milestone: M5 Configuration seams
+- Requirement: T-47; FR-60; T-47 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. grep for getProvider; run the unit tests and the E2E suite.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: getProvider no longer exists; getProviders resolves unset roles to chat; the example with a sourced.config.ts mirroring v1 constants passes E2E-01–E2E-25.
+
+### TC-181: Copy rendered from configuration
+
+- Milestone: M5 Configuration seams
+- Requirement: T-48; FR-63; UT-33.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-33.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: getCopy applies defaults and overrides; the example configuration reproduces the PRD §9 and REDESIGN §7 strings exactly.
+
+### TC-182: Example system prompt byte-identical to v1
+
+- Milestone: M5 Configuration seams
+- Requirement: T-48; FR-63; NFR-11; T-48 step 2.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Render the prompt from the example config and diff with the v1 constant.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The rendered example system prompt equals the v1 prompt byte for byte, so PROMPT_VERSION is unchanged.
+
+### TC-183: No corpus literals outside allowed paths
+
+- Milestone: M5 Configuration seams
+- Requirement: T-48; FR-74; T-48 step 4.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the script on the tree and on a temporary violating file.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: scripts/check-corpus-literals.ts fails on PostgreSQL, postgresql.org or 35 pages outside sourced.config.ts, corpus/, eval/, docs/, tests/ and qa/, and passes on the tree; it runs in the ci.yml static job.
+
+### TC-184: Citation markers up to P9
+
+- Milestone: M5 Configuration seams
+- Requirement: T-48; FR-17; T-48 step 3.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Unit tests on the citation parser and config schema.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Markers [P1]–[P9] parse; finalPassages above 9 is rejected by config validation.
+
+### TC-185: Gemini, Anthropic and Ollama providers with mocked transports
+
+- Milestone: M5 Configuration seams
+- Requirement: T-49; FR-60; UT-49.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-49.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each provider maps errors like v1, passes options, uses maxRetries 0; a chat-only provider without an embedding provider is rejected with the list of embedding providers; no test makes a network call.
+
+### TC-186: Manual live call per provider
+
+- Milestone: M5 Configuration seams
+- Requirement: T-49; FR-60; A-19; D-94; T-49 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Owner action: the owner has no keys and no Ollama (D-94); listed in PROGRESS open questions.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: One live call each to Gemini, Anthropic and a local Ollama succeeds.
+
+### TC-187: Example corpus in the kit layout with identical chunks
+
+- Milestone: M5 Configuration seams
+- Requirement: T-50; FR-74; NFR-16; IT-16.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-16.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: After the move to corpus/postgres-17/ and the postgres-docbook preset, ingestion yields the same chunk hashes and counts as v1.
+
+### TC-188: /eval reads results from the new path
+
+- Milestone: M5 Configuration seams
+- Requirement: T-50; FR-46; T-50 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. E2E eval-page spec against the moved files.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: /eval renders the committed v1 results from eval/postgres-17/results/.
+
+### TC-189: Example eval within maxRegression
+
+- Milestone: M5 Configuration seams
+- Requirement: T-50; FR-41; D-94; T-50 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the eval through eval.yml on the v2 draft PR.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: pnpm eval on the example (v1 chat model, judge in the free allowance) stays within maxRegression of the v1.0.0 run; cost recorded against the D-94 budget.
+
+### TC-190: Deployment profiles gate quotas, demo mode and cache
+
+- Milestone: M5 Configuration seams
+- Requirement: T-51; FR-64; T-51 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Unit tests per profile; a local-profile E2E run.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: public-demo keeps FR-26–FR-32; local shows no quota copy and no cache label and skips rate limits; private refuses to start without SOURCED_ACCESS_TOKEN.
+
+### TC-191: Example unchanged in public-demo
+
+- Milestone: M5 Configuration seams
+- Requirement: T-51; FR-64; E2E-01–E2E-25.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the full E2E suite.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: E2E-01–E2E-25 pass with the example's public-demo profile.
+
+### TC-192: Second fixture corpus end to end in mock mode
+
+- Milestone: M5 Configuration seams
+- Requirement: T-52; FR-63; FR-62; E2E-26.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run E2E-26.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The Turkish folder fixture with its own sourced.config.ts ingests in mock mode and the ask page renders its configured copy with cited answers.
+
+### TC-193: M5 exit criteria
+
+- Milestone: M5 Configuration seams
+- Requirement: T-52; PRD §12; M5 exit.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Review TC-174–TC-192 results and write qa/m5-report.md.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Example behaves as v1.0.0 within the regression delta; the second fixture corpus runs end to end; milestone report written.
