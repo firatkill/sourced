@@ -111,3 +111,35 @@ it.each(['components/security-probe.tsx', 'hooks/security-probe.ts'])(
     expect(results[0]?.messages).toEqual([]);
   },
 );
+
+// T-58 regression: copied application builds deliberately omit scripts/.
+it.each([
+  'lib/cli/probe.ts',
+  'lib/eval/probe.ts',
+  'lib/retrieval/probe.ts',
+  'lib/generation/probe.ts',
+  'lib/citations/probe.ts',
+  'app/page.tsx',
+  'app/api/probe/route.ts',
+  'components/probe.tsx',
+  'hooks/probe.ts',
+])('T-58: %s cannot depend on scripts through any import entry point', async (filePath) => {
+  for (const specifier of ['@/scripts/eval', '../../scripts/eval']) {
+    for (const source of [`import '${specifier}';`, `export * from '${specifier}';`]) {
+      const [result] = await eslint.lintText(source, { filePath });
+      expect(result?.messages).toEqual([
+        expect.objectContaining({ ruleId: 'no-restricted-imports', severity: 2 }),
+      ]);
+    }
+    for (const source of [
+      `void import('${specifier}');`,
+      `require('${specifier}');`,
+      `import run = require('${specifier}');`,
+    ]) {
+      const [result] = await eslint.lintText(source, { filePath });
+      expect(result?.messages).toContainEqual(
+        expect.objectContaining({ ruleId: 'no-restricted-syntax', severity: 2 }),
+      );
+    }
+  }
+});

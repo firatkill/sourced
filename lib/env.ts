@@ -184,3 +184,18 @@ export function getEnv(): Env {
 export function resetEnvForTests(): void {
   cached = undefined;
 }
+
+/** CLI output boundary only: usable even when runtime environment validation fails. */
+export function getCliSecrets(): string[] {
+  return Object.entries(process.env)
+    .filter(([name]) => /KEY|TOKEN|PASSWORD|SECRET|SALT|DATABASE_URL/.test(name))
+    .flatMap(([, value]) => {
+      if (!value) return [];
+      try {
+        const url = new URL(value);
+        return [value, decodeURIComponent(url.password)].filter(Boolean);
+      } catch {
+        return [value];
+      }
+    });
+}

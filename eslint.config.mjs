@@ -3,6 +3,12 @@ import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
 import tseslint from 'typescript-eslint';
 
+const scriptImport = {
+  regex: '(^|/)scripts(/|$)',
+  message: 'Scripts are entry points. Import reusable code from lib/ instead.',
+};
+const scriptSpecifier = '[value=/(^|\\u002F)scripts(\\u002F|$)/]';
+
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -30,12 +36,28 @@ export default defineConfig([
     },
   },
   {
+    files: ['{lib,app,components,hooks}/**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [scriptImport] }],
+      // Core no-restricted-imports covers static imports/re-exports, not import().
+      'no-restricted-syntax': [
+        'error',
+        ...[
+          `ImportExpression > Literal.source${scriptSpecifier}`,
+          `CallExpression[callee.name='require'] > Literal.arguments${scriptSpecifier}`,
+          `TSExternalModuleReference > Literal.expression${scriptSpecifier}`,
+        ].map((selector) => ({ selector, message: scriptImport.message })),
+      ],
+    },
+  },
+  {
     files: ['components/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
+            scriptImport,
             {
               regex:
                 '^(@/|(?:\\.\\.?/)+)lib/(?:env(?:\\.ts)?|logger(?:\\.ts)?|(?:db|llm|ratelimit|cache|querylog|ingest|generation)(?:/.*)?)$',
@@ -50,13 +72,15 @@ export default defineConfig([
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [{ regex: '^(@/|(?:\\.\\.?/)+)(?:components|hooks)(?:/.*)?$' }] },
+        { patterns: [scriptImport, { regex: '^(@/|(?:\\.\\.?/)+)(?:components|hooks)(?:/.*)?$' }] },
       ],
     },
   },
   {
     files: ['lib/{retrieval,generation,citations}/**/*.{ts,tsx}'],
-    rules: { 'no-restricted-imports': ['error', { patterns: ['next/*'] }] },
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [scriptImport, { group: ['next/*'] }] }],
+    },
   },
   {
     files: ['middleware.ts'],

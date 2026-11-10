@@ -2255,7 +2255,7 @@ export const ERROR_CODES = [
   'VALIDATION_FAILED', 'ORIGIN_FORBIDDEN', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE',
   'RATE_LIMITED_IP', 'RATE_LIMITED_GLOBAL', 'DEMO_READONLY', 'DEMO_OFF',
   'PROVIDER_ERROR', 'PROVIDER_TIMEOUT', 'RETRIEVAL_ERROR', 'INTERNAL_ERROR',
-  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY',
+  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export class AppError extends Error {
@@ -2267,6 +2267,7 @@ export class AppError extends Error {
 
 | Failure | Detected in | Code | HTTP / event | Retryable | Quota | User copy (PRD 9.3) | Log level |
 |---|---|---|---|---|---|---|---|
+| CLI confirmation required | CLI | `NEEDS_CONFIRMATION` | exit 2 | no | not used | Confirm interactively or pass `--yes`; app server error fallback | info |
 | Invalid kit configuration | CLI / startup | `CONFIG_INVALID` | exit 1 / 500 | no | not used | Server error; CLI field path and fix | error |
 | Corpus model or language mismatch | search / eval | `CORPUS_MISMATCH` | exit 2 / `RETRIEVAL_ERROR` event | no | refunded | Server error; CLI re-ingest instruction (§30.3) | error |
 | Empty corpus | search / ask / dev | `CORPUS_EMPTY` | exit 2 / not-found state | no | — | Not found; CLI ingest instruction (§30.3) | info |
@@ -3623,6 +3624,8 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 `query_log.source` check constraint gains `'cli'` (migration `0003_kit.sql`). v1 script names remain as aliases: `pnpm ingest` → `sourced ingest`, `pnpm eval` → `sourced eval`, `pnpm eval:validate` → `sourced eval --validate-only`, `pnpm cache:suggested` unchanged.
 
 Ingest report (D-109), the `result` of `ingest` with and without `--dry-run`: `{ mode: 'run' | 'dry-run', runId: string | null, corpusVersion: string | null, sources: Array<{ id, revision?: string, documents: { discovered, done, skipped, failed }, chunks: { new, changed, unchanged, deleted }, embeddingTokens, estimatedCostUsd: number | null, boilerplateRemoved, skipped: Array<{ key, reason }>, warnings: number }>, totals: same counters summed, plus estimatedCostUsd (null when any source's price is unknown) }`. A dry run has `runId: null` and `corpusVersion: null` and writes nothing. The human-readable output summarizes the same object; the v1 report lines stay for `pnpm ingest`.
+
+T-58 reserves later-task commands with their flags and result schemas: `doctor`, `init`, `add`, `sources list`, `sources remove`, `inspect`, `ask`, `eval:generate`, `eval:review`, `dev`, `down`, and `deploy:check`. Until their tasks land, they return `INTERNAL_ERROR`, a “not implemented yet” message, and exit 1. Destructive commands still require confirmation first (§34.3). Ingest `--restart` waits for T-59; eval `--compare` waits for T-67. `eval --validate-only` omits `result` and communicates validation through `ok`, the exit code, and progress output.
 
 ### 34.2 JSON envelope (normative, `lib/cli/envelope.ts`)
 

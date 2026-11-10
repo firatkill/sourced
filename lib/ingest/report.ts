@@ -1,4 +1,5 @@
 export type IngestReport = {
+  runId?: string;
   corpusVersion: string;
   sources?: { id: string; revision?: string }[];
   warnings: number;

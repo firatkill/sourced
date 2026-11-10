@@ -2,6 +2,12 @@ import 'server-only';
 import pino, { type DestinationStream, type Logger } from 'pino';
 import { getEnv } from '@/lib/env';
 
+let cliDestination: DestinationStream | undefined;
+/** The CLI sends all library logs through its redacted stderr boundary. */
+export function setCliLogDestination(destination: DestinationStream): void {
+  cliDestination = destination;
+}
+
 export function createLogger(destination?: DestinationStream): Logger {
   const env = getEnv();
   return pino(
@@ -24,7 +30,7 @@ export function createLogger(destination?: DestinationStream): Logger {
         '*.modelOutput',
       ],
     },
-    destination,
+    destination ?? cliDestination,
   );
 }
 let logger: Logger | undefined;

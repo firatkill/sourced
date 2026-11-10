@@ -24,19 +24,21 @@
     "db:migrate": "cross-env NODE_OPTIONS=--conditions=react-server drizzle-kit migrate",
     "db:reset": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/db-reset.ts",
     "db:seed": "pnpm config:snapshot && cross-env LLM_MODE=mock tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed.ts",
-    "ingest": "pnpm config:snapshot && tsx --conditions=react-server --env-file-if-exists=.env.local scripts/ingest.ts",
-    "corpus:fetch": "pnpm config:snapshot && tsx --conditions=react-server --env-file-if-exists=.env.local scripts/ingest.ts --fetch-only",
+    "ingest": "pnpm sourced ingest",
+    "corpus:fetch": "pnpm sourced ingest --fetch-only",
     "cache:suggested": "pnpm config:snapshot && tsx --conditions=react-server --env-file-if-exists=.env.local scripts/cache-suggested.ts",
-    "eval": "pnpm config:snapshot && tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval.ts",
-    "eval:validate": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval-validate.ts",
+    "eval": "pnpm sourced eval",
+    "eval:validate": "pnpm sourced eval --validate-only",
     "check:corpus-literals": "tsx scripts/check-corpus-literals.ts",
-    "config:snapshot": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/config-snapshot.ts"
+    "config:snapshot": "pnpm sourced config:snapshot",
+    "sourced": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/sourced.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.85",
     "@ai-sdk/google": "4.0.102",
     "@ai-sdk/openai": "4.0.99",
     "@ai-sdk/openai-compatible": "3.0.75",
+    "@inquirer/prompts": "8.7.5",
     "@mozilla/readability": "0.6.0",
     "ai": "7.0.148",
     "cheerio": "1.2.0",
@@ -64,7 +66,8 @@
     "server-only": "0.0.1",
     "unified": "11.0.5",
     "unpdf": "1.9.1",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "tsx": "4.23.15"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
@@ -86,7 +89,6 @@
     "prettier-plugin-tailwindcss": "0.8.1",
     "shadcn": "4.22.1",
     "tailwindcss": "4.3.3",
-    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.0",
     "vitest": "5.0.5"

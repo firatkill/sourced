@@ -8,7 +8,7 @@ import { getKitConfig } from '@/lib/kit/runtime-config';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import { createFolderDriver } from '@/lib/sources/folder';
 import { createGitDriver } from '@/lib/sources/git';
-import { createUrlsDriver, createRawCache } from '@/lib/sources/urls';
+import { createUrlsDriver, createRawCache, cacheFs } from '@/lib/sources/urls';
 import { createSitemapDriver } from '@/lib/sources/sitemap';
 import { createCrawlDriver } from '@/lib/sources/crawl';
 import {
@@ -39,12 +39,14 @@ export type LoadedCorpus = (IngestDocument & { document: ParsedDocument })[] & {
   sources: { id: string; revision?: string }[];
   failedKeys: string[];
   warnings: number;
+  warningsBySource?: Record<string, number>;
 };
 export async function loadCorpus(options: {
   offline: boolean;
   refresh: boolean;
   includeFixtures: boolean;
   fetchOnly?: boolean;
+  readOnly?: boolean;
   onStatus?: (slug: string, status: 'fetched' | 'unchanged' | 'failed') => void;
   onEvent?: (event: SourceEvent) => void;
   config?: KitConfig;
@@ -63,6 +65,7 @@ export async function loadCorpus(options: {
     sources: [] as LoadedCorpus['sources'],
     failedKeys: [] as string[],
     warnings: 0,
+    warningsBySource: {},
   });
   const ctx: SourceContext = {
     repoRoot: process.cwd(),
@@ -84,7 +87,10 @@ export async function loadCorpus(options: {
         options.onStatus?.(event.key, event.type === 'cached' ? 'unchanged' : event.type);
     },
   };
-  const cache = createRawCache(createFetchSession(ctx));
+  const cache = createRawCache(
+    createFetchSession(ctx),
+    options.readOnly ? { read: cacheFs.read, write: async () => {} } : cacheFs,
+  );
   const drivers = {
     folder: createFolderDriver(),
     git: createGitDriver(),
@@ -140,6 +146,9 @@ export async function loadCorpus(options: {
           const parsed = await parseDocx(raw.bytes, slug);
           document = parsed.document;
           documents.warnings += parsed.warnings;
+          if (documents.warningsBySource)
+            documents.warningsBySource[source.id] =
+              (documents.warningsBySource[source.id] ?? 0) + parsed.warnings;
         } else if (!options.parse && isPdf) {
           const parsed = await parsePdf(raw.bytes, slug);
           if (parsed.status === 'needs_ocr') {

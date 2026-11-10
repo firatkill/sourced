@@ -151,16 +151,10 @@ test('UT-33: finalPassages supports 1–9 and rejects 10', () => {
 });
 
 test('UT-33: entrypoints regenerate copy before loading its consumers', () => {
-  for (const name of [
-    'dev',
-    'build',
-    'lint',
-    'typecheck',
-    'db:seed',
-    'ingest',
-    'corpus:fetch',
-    'cache:suggested',
-    'eval',
-  ] as const)
+  for (const name of ['dev', 'build', 'lint', 'typecheck', 'db:seed', 'cache:suggested'] as const)
     expect(packageJson.scripts[name], name).toMatch(/^pnpm config:snapshot && /);
+  // T-58: these entrypoints now regenerate the snapshot inside the CLI handler.
+  expect(packageJson.scripts.ingest).toBe('pnpm sourced ingest');
+  expect(packageJson.scripts['corpus:fetch']).toBe('pnpm sourced ingest --fetch-only');
+  expect(packageJson.scripts.eval).toBe('pnpm sourced eval');
 });

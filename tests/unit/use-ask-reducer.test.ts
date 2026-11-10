@@ -539,7 +539,7 @@ describe('useAsk orchestration — FR-03/04/10/11, D-77', () => {
   });
 });
 
-it.each(['CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'] as const)(
+it.each(['CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION'] as const)(
   'T-47 / TRD §30.3: client maps %s safely',
   (code) => {
     const state = askReducer(submitting, {

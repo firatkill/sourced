@@ -4616,6 +4616,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-202",
+      "ac_reference": "T-58; FR-76; FR-77; NFR-22",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "CLI envelope, exit codes, no secrets",
+      "description": "UT-45.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-202.",
+      "expected_result": "Every command supports --json with a versioned schema and nothing else on stdout; exit codes 0/1/2; no output ever contains a secret or full key.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-45 cli.test.ts: every registered command with --json emits one envelope with schemaVersion on stdout, logs on stderr, exit codes 0/1/2, no key substring in any output (fake env with keys, snapshots); reporter=silent keeps pnpm banners off stdout (D-111)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-203",
+      "ac_reference": "T-58; FR-76",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "v1 script aliases still work",
+      "description": "T-58 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-203.",
+      "expected_result": "pnpm ingest, pnpm eval and the other v1 scripts run through the CLI with unchanged behaviour.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm ingest, pnpm eval (mock, --no-write --limit 1), pnpm eval:validate (40 entries), pnpm corpus:fetch --offline and pnpm db:seed run through the CLI with unchanged behaviour; sourced ingest --dry-run --json reports the D-109 shape"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

@@ -45,7 +45,10 @@ export const SnapshotSchema = z.object({
 });
 
 /** Executed through tsx by CLI scripts, never imported as a TS config by Next. */
-export async function loadConfig(root = process.cwd()): Promise<KitConfig> {
+export async function loadConfig(
+  root = process.cwd(),
+  options: { writeSnapshot?: boolean } = {},
+): Promise<KitConfig> {
   let loaded: unknown;
   try {
     loaded = await import(
@@ -59,6 +62,7 @@ export async function loadConfig(root = process.cwd()): Promise<KitConfig> {
     );
   }
   const config = parseKitConfig(z.object({ default: z.unknown() }).parse(loaded).default);
+  if (options.writeSnapshot === false) return config;
   const directory = path.join(root, '.sourced');
   await mkdir(directory, { recursive: true });
   const snapshot = {

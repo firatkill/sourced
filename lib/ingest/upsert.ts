@@ -241,6 +241,7 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
       vectors.set(chunk.contentHash, vector);
     }
     const report: IngestReport = {
+      runId,
       corpusVersion: sha256Hex(
         [
           ...hashes,

@@ -151,7 +151,11 @@ export function askReducer(state: AskState, action: AskAction): AskState {
       const { status, body } = action;
       if (body.code === 'CORPUS_EMPTY')
         return change({ kind: 'notFound', question: state.question, meta: null, done: null });
-      if (body.code === 'CONFIG_INVALID' || body.code === 'CORPUS_MISMATCH')
+      if (
+        body.code === 'CONFIG_INVALID' ||
+        body.code === 'CORPUS_MISMATCH' ||
+        body.code === 'NEEDS_CONFIRMATION'
+      )
         return change({ kind: 'serverError', question: state.question, requestId: body.requestId });
       if (
         status === 429 &&

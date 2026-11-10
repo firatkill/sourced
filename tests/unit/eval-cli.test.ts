@@ -35,7 +35,7 @@ vi.mock('@/lib/db/client', () => ({
     return entries.flatMap((entry) => entry.expected_anchors.map((anchor) => ({ anchor })));
   },
 }));
-vi.mock('../../scripts/eval-validate', () => ({
+vi.mock('@/lib/eval/validate', () => ({
   readGoldenCorpus: (): Promise<GoldenCorpus> => Promise.resolve({ headings: [], identifiers: [] }),
 }));
 vi.mock('@/lib/eval/golden', async (importOriginal) => ({

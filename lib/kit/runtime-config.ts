@@ -73,3 +73,8 @@ export function getKitConfig(applyMock = true): KitConfig {
 export function resetKitConfigForTests(): void {
   cached = undefined;
 }
+
+/** CLI can use validated configuration without writing a snapshot during a dry run. */
+export function setCliKitConfig(config: KitConfig): void {
+  cached = structuredClone(config);
+}
