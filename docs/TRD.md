@@ -3481,7 +3481,7 @@ Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR`
 
 ### 31.4 Pricing and cost
 
-Cost estimates (TRD §21) read prices from `pricing["<provider>:<model>"]`, with the `PRICE_*` variables overriding for the demo (section 29.4). A role without a price yields `costUsdEstimate: null`, shown as "unknown" in the CLI and in "How this was answered". The eval budget guard (TRD §17.7) and the ingest confirmation (section 33.6) treat an unknown price as follows: Ollama counts as 0; any other unknown price requires `--yes` with the message "Price unknown for <provider>:<model>; add it to pricing in sourced.config.ts to get an estimate."
+Cost estimates (TRD §21) read prices from `pricing["<provider>:<model>"]`, with the `PRICE_*` variables overriding for the demo (section 29.4). A role without a price yields `costUsdEstimate: null`, shown as "unknown" in the CLI and in "How this was answered". The eval budget guard (TRD §17.7) and the ingest confirmation treat an unknown price as follows (D-112: for ingest, section 33.8 governs the threshold and allows interactive confirmation; the rule below applies to the eval budget guard and to non-interactive ingest): Ollama counts as 0; any other unknown price requires `--yes` with the message "Price unknown for <provider>:<model>; add it to pricing in sourced.config.ts to get an estimate."
 
 ## 32. Sources
 
