@@ -3877,7 +3877,7 @@ CT-01 to CT-14: one per command in section 34.1, running the real CLI as a child
 
 ### 39.5 Docker smoke test (CI job `docker`, from T-62)
 
-Build the image, `docker compose up -d db`, run `./sourced init --example --profile local --json` with mock providers, `./sourced ingest --offline --yes --json`, `./sourced dev`, `curl /api/health`, `./sourced ask "When should I use a partial index?" --json` and assert `ok: true`, then `./sourced down`. No network except image pulls and the npm registry during build.
+Build the image, `docker compose up -d db`, run `./sourced init --example --profile local --yes --json` with mock providers, `./sourced ingest --offline --yes --json`, `./sourced dev`, `curl /api/health`, `./sourced ask "When should I use a partial index?" --json` and assert `ok: true`, then `./sourced down`. No network except image pulls and the npm registry during build.
 
 ### 39.6 Manual release checks
 
