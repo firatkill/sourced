@@ -4763,6 +4763,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-208",
+      "ac_reference": "T-59; T-61; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Removing one source",
+      "description": "IT-18.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-208.",
+      "expected_result": "sources remove deletes only that source's documents and chunks.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-18: sources remove deletes only that source's documents and chunks, keeps the others, and may remove the last source (D-114)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-211",
+      "ac_reference": "T-61; FR-78; FR-79; FR-80; FR-81",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "CLI commands contract",
+      "description": "CT-01 to CT-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-211.",
+      "expected_result": "Each section 34.1 command runs as a child process with --json against the integration database in mock mode; stdout matches its schema; exit codes match for success and each documented failure.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "CT drafts for doctor, init, add, sources, ask, dev, deploy:check: real CLI as a child process with --json in mock mode, stdout matches each schema, exit codes for success and documented failures including CHECKS_FAILED (D-115); finalized in T-63"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-212",
+      "ac_reference": "T-61; FR-80",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "ask --trace matches the app",
+      "description": "T-61 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-212.",
+      "expected_result": "sourced ask --trace prints the answer, citations with verification and the retrieval trace equal to the FR-08 data the app shows for the same question in mock mode.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "ask --trace in mock mode matches the /api/ask events for the same question (answer, citations with verification, passage ranks, retrieval metadata, usage, cost); query_log source cli"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-213",
+      "ac_reference": "T-61; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "add detects sitemaps",
+      "description": "T-61 step.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-213.",
+      "expected_result": "For a bare site URL, add finds /sitemap.xml or a robots.txt Sitemap line and proposes a sitemap source, else a crawl source.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "add on a bare site URL proposes sitemap from /sitemap.xml or robots.txt Sitemap lines, else crawl (injected fetch)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

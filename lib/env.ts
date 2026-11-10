@@ -200,3 +200,29 @@ export function getCliSecrets(): string[] {
       }
     });
 }
+
+/** Diagnostic/bootstrap boundary: inspect names even before runtime settings are complete. */
+export function getCliEnvironment() {
+  return z
+    .object({
+      DATABASE_URL: optionalText,
+      MIGRATION_DATABASE_URL: optionalText,
+      OPENAI_API_KEY: optionalText,
+      GOOGLE_GENERATIVE_AI_API_KEY: optionalText,
+      ANTHROPIC_API_KEY: optionalText,
+      SOURCED_ACCESS_TOKEN: optionalText,
+      QUESTION_HASH_SALT: optionalText,
+      IP_HASH_SALT: optionalText,
+      NEXT_PUBLIC_SITE_URL: optionalText,
+      RATE_LIMIT_IP_DAILY: optionalText,
+      RATE_LIMIT_GLOBAL_DAILY: optionalText,
+      DEMO_MODE: optionalText,
+      CHAT_MODEL: optionalText,
+      PRICE_CHAT_INPUT_PER_MTOK: optionalText,
+      PRICE_CHAT_OUTPUT_PER_MTOK: optionalText,
+      PRICE_EMBED_PER_MTOK: optionalText,
+      LLM_MODE: z.enum(['live', 'mock']).default('live'),
+      OLLAMA_BASE_URL: optionalText,
+    })
+    .parse(process.env);
+}

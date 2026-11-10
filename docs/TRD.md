@@ -2256,7 +2256,7 @@ export const ERROR_CODES = [
   'VALIDATION_FAILED', 'ORIGIN_FORBIDDEN', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE',
   'RATE_LIMITED_IP', 'RATE_LIMITED_GLOBAL', 'DEMO_READONLY', 'DEMO_OFF',
   'PROVIDER_ERROR', 'PROVIDER_TIMEOUT', 'RETRIEVAL_ERROR', 'INTERNAL_ERROR',
-  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION',
+  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION', 'CHECKS_FAILED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export class AppError extends Error {
@@ -2269,6 +2269,7 @@ export class AppError extends Error {
 | Failure | Detected in | Code | HTTP / event | Retryable | Quota | User copy (PRD 9.3) | Log level |
 |---|---|---|---|---|---|---|---|
 | CLI confirmation required | CLI | `NEEDS_CONFIRMATION` | exit 2 | no | not used | Confirm interactively or pass `--yes`; app server error fallback | info |
+| Diagnostic checks failed | CLI (`doctor`, `deploy:check`) | `CHECKS_FAILED` | exit 2 (CLI-only) | no | not used | List each failed check id and its fix; app server error fallback | info |
 | Invalid kit configuration | CLI / startup | `CONFIG_INVALID` | exit 1 / 500 | no | not used | Server error; CLI field path and fix | error |
 | Corpus model or language mismatch | search / eval | `CORPUS_MISMATCH` | exit 2 / `RETRIEVAL_ERROR` event | no | refunded | Server error; CLI re-ingest instruction (§30.3) | error |
 | Empty corpus | search / ask / dev | `CORPUS_EMPTY` | exit 2 / not-found state | no | — | Not found; CLI ingest instruction (§30.3) | info |
@@ -3457,6 +3458,7 @@ Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
 | `SOURCE_FAILED` | ingest | per-document item `failed`; run continues | Listed in the report with the reason |
 | `ACCESS_DENIED` | `/api/ask`, pages | 401 JSON / token prompt | PRD-level copy added in T-74: H2 "This chatbot is private", body "Enter the access token you were given.", button "Continue", error "That token is not valid." |
 | `NEEDS_CONFIRMATION` | CLI | exit 2 | The estimate and the flag to pass (`--yes`) |
+| `CHECKS_FAILED` | CLI (`doctor`, `deploy:check`) | exit 2 (CLI-only) | Each failed check id and its fix (D-115); app server error fallback. |
 
 ## 31. Providers
 
@@ -3608,7 +3610,7 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 | Command | Flags | Writes | Result object (`result` in section 34.2) |
 |---|---|---|---|
 | `doctor` | `--no-network` | nothing | `{ checks: { id, ok, detail, fix? }[] }` |
-| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example` | `sourced.config.ts`, `.env.local` (names only), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
+| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example --source <url-or-path>` | `sourced.config.ts`, `.env.local` (empty provider keys; generated private token per D-113), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
 | `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
 | `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
 | `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
@@ -3645,7 +3647,7 @@ export const CliEnvelope = z.object({
 });
 ```
 
-With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
+With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
 
 ### 34.3 Interaction rules
 

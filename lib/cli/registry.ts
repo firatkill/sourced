@@ -7,7 +7,16 @@ export const commands: Record<
   doctor: { boolean: ['no-network'] },
   init: {
     boolean: ['example'],
-    string: ['corpus-name', 'title', 'description', 'language', 'chat', 'embed', 'profile'],
+    string: [
+      'corpus-name',
+      'title',
+      'description',
+      'language',
+      'chat',
+      'embed',
+      'profile',
+      'source',
+    ],
   },
   add: {
     positional: 1,

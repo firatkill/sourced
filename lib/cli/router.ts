@@ -6,6 +6,7 @@ import { CliEnvelope, type ExitCode } from './envelope';
 import { commands, helpText } from './registry';
 import { commandSchemas, type Command } from './schemas/commands';
 import { confirmAction } from './prompts';
+import { NO_SOURCES } from './commands/config-files';
 
 export type Invocation = {
   command: Command;
@@ -18,7 +19,11 @@ export type CommandContext = {
   isTTY: boolean;
   prompt?: (message: string) => Promise<boolean>;
 };
-export type CommandResult = { result?: unknown; exitCode?: ExitCode };
+export type CommandResult = {
+  result?: unknown;
+  exitCode?: ExitCode;
+  warnings?: { code: string; message: string }[];
+};
 export type Handler = (input: Invocation, context: CommandContext) => Promise<CommandResult>;
 export function parseInvocation(args: string[]): Invocation {
   const globals: string[] = [];
@@ -115,21 +120,36 @@ export async function dispatch(
     }
     const outcome = await handler(input, context);
     const result = commandSchemas[input.command].parse(outcome.result);
-    const exitCode = outcome.exitCode ?? 0;
+    const failedChecks =
+      command === 'doctor' || command === 'deploy:check'
+        ? commandSchemas.doctor.parse(result).checks.filter((check) => !check.ok)
+        : [];
+    const failedCheck = failedChecks[0];
+    const exitCode = failedCheck ? 2 : (outcome.exitCode ?? 0);
     const envelope =
       exitCode === 0
         ? CliEnvelope.parse({ schemaVersion: 1, command, ok: true, result })
         : {
             ...failure(
               command,
-              exitCode === 2 ? 'NEEDS_CONFIRMATION' : 'INTERNAL_ERROR',
-              exitCode === 2
-                ? 'The command needs configuration or confirmation before it can continue.'
-                : 'The command did not meet its required checks.',
-              command === 'eval' ? 'pnpm sourced eval --validate-only' : 'pnpm sourced --help',
+              failedCheck
+                ? 'CHECKS_FAILED'
+                : exitCode === 2
+                  ? 'NEEDS_CONFIRMATION'
+                  : 'INTERNAL_ERROR',
+              failedCheck
+                ? failedChecks
+                    .map((check) => `${check.id}: ${check.fix ?? check.detail}`)
+                    .join('\n')
+                : exitCode === 2
+                  ? 'The command needs configuration or confirmation before it can continue.'
+                  : 'The command did not meet its required checks.',
+              failedCheck?.fix ??
+                (command === 'eval' ? 'pnpm sourced eval --validate-only' : 'pnpm sourced --help'),
             ),
             ...(result === undefined ? {} : { result }),
           };
+    envelope.warnings = outcome.warnings ?? [];
     return { envelope, exitCode };
   } catch (error) {
     if (
@@ -156,11 +176,16 @@ export async function dispatch(
         exitCode: 2,
       };
     if (error instanceof AppError) {
-      const action = ['NEEDS_CONFIRMATION', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'].includes(error.code);
+      const action = [
+        'NEEDS_CONFIRMATION',
+        'CHECKS_FAILED',
+        'CORPUS_MISMATCH',
+        'CORPUS_EMPTY',
+      ].includes(error.code);
       const messages = {
         NEEDS_CONFIRMATION: error.message,
         CORPUS_MISMATCH: 'The corpus was indexed with a different embedding model or language.',
-        CORPUS_EMPTY: 'Nothing is indexed yet.',
+        CORPUS_EMPTY: error.message === NO_SOURCES ? NO_SOURCES : 'Nothing is indexed yet.',
       };
       const message =
         error.code in messages
@@ -169,15 +194,19 @@ export async function dispatch(
             ? 'The configuration is invalid. Check sourced.config.ts.'
             : error.message;
       const fix =
-        error.code === 'NEEDS_CONFIRMATION'
-          ? command === 'ingest'
-            ? 'pnpm sourced ingest --yes'
-            : 'pnpm sourced sources remove <id> --yes'
-          : error.code === 'CORPUS_MISMATCH'
-            ? 'pnpm sourced ingest --rebuild'
-            : error.code === 'CORPUS_EMPTY'
-              ? 'pnpm sourced ingest'
-              : 'pnpm sourced --help';
+        error.message === NO_SOURCES
+          ? 'sourced add <url or path>'
+          : error.code === 'NEEDS_CONFIRMATION'
+            ? command === 'init'
+              ? 'pnpm sourced init --help'
+              : command === 'ingest'
+                ? 'pnpm sourced ingest --yes'
+                : 'pnpm sourced sources remove <id> --yes'
+            : error.code === 'CORPUS_MISMATCH'
+              ? 'pnpm sourced ingest --rebuild'
+              : error.code === 'CORPUS_EMPTY'
+                ? 'pnpm sourced ingest'
+                : 'pnpm sourced --help';
       return { envelope: failure(command, error.code, message, fix), exitCode: action ? 2 : 1 };
     }
     const missingEnv =
@@ -199,6 +228,21 @@ export async function dispatch(
 }
 async function runCommand(input: Invocation, context: CommandContext): Promise<CommandResult> {
   switch (input.command) {
+    case 'doctor':
+    case 'deploy:check':
+      return (await import('./commands/doctor')).runDoctor(input);
+    case 'init':
+      return { result: await (await import('./commands/init')).runInit(input, context) };
+    case 'add':
+      return { result: await (await import('./commands/add')).runAdd(input, context) };
+    case 'sources list':
+    case 'sources remove':
+      return { result: await (await import('./commands/sources')).runSources(input) };
+    case 'ask':
+      return { result: await (await import('./commands/ask')).runAsk(input) };
+    case 'dev':
+      return { result: await (await import('./commands/dev')).runDev(input, context) };
+
     case 'config:snapshot': {
       const { loadConfig, configHash } = await import('@/lib/kit/load-config');
       return { result: { configHash: configHash(await loadConfig()) } };

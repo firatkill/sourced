@@ -52,7 +52,8 @@ export async function loadConfig(
   let loaded: unknown;
   try {
     loaded = await import(
-      /* webpackIgnore: true */ pathToFileURL(path.join(root, 'sourced.config.ts')).href
+      /* webpackIgnore: true */ pathToFileURL(path.join(root, 'sourced.config.ts')).href +
+        `?load=${crypto.randomUUID()}`
     );
   } catch (cause) {
     throw new AppError(
@@ -63,6 +64,12 @@ export async function loadConfig(
   }
   const config = parseKitConfig(z.object({ default: z.unknown() }).parse(loaded).default);
   if (options.writeSnapshot === false) return config;
+  await writeConfigSnapshot(config, root);
+  return config;
+}
+
+/** Persist an already validated config, including local-profile dev overrides. */
+export async function writeConfigSnapshot(config: KitConfig, root = process.cwd()): Promise<void> {
   const directory = path.join(root, '.sourced');
   await mkdir(directory, { recursive: true });
   const snapshot = {
@@ -88,5 +95,4 @@ export async function loadConfig(
   await writeFile(path.join(directory, 'mounts'), mounts.join('\n'));
   if (ftsConfig(config.corpus.language) === 'simple')
     process.stderr.write(`corpus.language: ${config.corpus.language} uses simple text search.\n`);
-  return config;
 }

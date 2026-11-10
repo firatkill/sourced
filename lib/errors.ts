@@ -17,6 +17,7 @@ export const ERROR_CODES = [
   'CORPUS_MISMATCH',
   'CORPUS_EMPTY',
   'NEEDS_CONFIRMATION',
+  'CHECKS_FAILED',
 ] as const;
 export const PROVIDER_ERROR_MESSAGE = 'The language model did not respond.';
 export const PROVIDER_TIMEOUT_MESSAGE = 'The language model took too long to respond.';

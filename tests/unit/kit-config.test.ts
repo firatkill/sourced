@@ -32,7 +32,7 @@ test('UT-32: nested defaults are applied (D-97)', () => {
 });
 test.each([
   ['schemaVersion', { schemaVersion: 2 }],
-  ['sources', { sources: [] }],
+  ['sources', { sources: 'invalid' }],
   ['sources.1.id', { sources: [...minimal().sources, ...minimal().sources] }],
   ['overrides.chunking', { overrides: { chunking: { minTokens: 199 } } }],
   ['overrides.chunking', { overrides: { chunking: { targetTokens: 800 } } }],
@@ -203,4 +203,10 @@ test.each([
   { id: 'git', type: 'git', path: '../repository' },
 ])('UT-32: source schema accepts $type with defaults', (source) => {
   expect(parseKitConfig({ ...minimal(), sources: [source] }).sources[0]?.type).toBe(source.type);
+});
+
+test('UT-32 / D-114: omitted and empty sources are valid before add', () => {
+  const config = { ...minimal(), sources: undefined };
+  expect(parseKitConfig(config).sources).toEqual([]);
+  expect(parseKitConfig({ ...config, sources: [] }).sources).toEqual([]);
 });

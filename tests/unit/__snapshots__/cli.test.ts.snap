@@ -4,16 +4,28 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > add ./doc
 {
   "envelope": {
     "command": "add",
-    "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "add is not implemented yet. This command is reserved for a later implementation task.",
+    "ok": true,
+    "result": {
+      "detected": {
+        "type": "folder",
+      },
+      "source": {
+        "commitRaw": false,
+        "exclude": [],
+        "html": {
+          "preset": "generic",
+          "removeSelectors": [],
+        },
+        "id": "docs",
+        "include": [],
+        "path": "./docs",
+        "type": "folder",
+      },
     },
-    "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 0,
 }
 `;
 
@@ -22,15 +34,15 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > ask What 
   "envelope": {
     "command": "ask",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "ask is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "CONFIG_INVALID",
+      "fix": "Edit .env.local using the variable names in .env.example, then retry.",
+      "message": "Required environment settings are missing or invalid.",
     },
     "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -54,15 +66,63 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > deploy:ch
   "envelope": {
     "command": "deploy:check",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "deploy:check is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "CHECKS_FAILED",
+      "fix": "Set these variable names in the deployment environment.",
+      "message": "missing-variables: Set these variable names in the deployment environment.
+variables: Fill the required variable names in .env.local or the deployment environment.
+database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
+fts: Choose an installed full-text language or use simple.
+corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
     },
     "ok": false,
+    "result": {
+      "checks": [
+        {
+          "detail": "Configuration valid; snapshot current.",
+          "id": "config",
+          "ok": true,
+        },
+        {
+          "detail": "local",
+          "id": "profile",
+          "ok": true,
+        },
+        {
+          "detail": "DATABASE_URL",
+          "fix": "Set these variable names in the deployment environment.",
+          "id": "missing-variables",
+          "ok": false,
+        },
+        {
+          "detail": "variables check failed.",
+          "fix": "Fill the required variable names in .env.local or the deployment environment.",
+          "id": "variables",
+          "ok": false,
+        },
+        {
+          "detail": "database check failed.",
+          "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+          "id": "database",
+          "ok": false,
+        },
+        {
+          "detail": "fts check failed.",
+          "fix": "Choose an installed full-text language or use simple.",
+          "id": "fts",
+          "ok": false,
+        },
+        {
+          "detail": "corpus check failed.",
+          "fix": "Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+          "id": "corpus",
+          "ok": false,
+        },
+      ],
+    },
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -71,15 +131,15 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > dev --por
   "envelope": {
     "command": "dev",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "dev is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "CONFIG_INVALID",
+      "fix": "Edit .env.local using the variable names in .env.example, then retry.",
+      "message": "Required environment settings are missing or invalid.",
     },
     "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -88,15 +148,83 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > doctor --
   "envelope": {
     "command": "doctor",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "doctor is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "CHECKS_FAILED",
+      "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
+      "message": "config: Edit [REDACTED].config.ts and run pnpm [REDACTED] config:snapshot.
+ports: Free port 3000 and the database port, or use the project containers.
+database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
+fts: Choose an installed full-text language or use simple.
+corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
     },
     "ok": false,
+    "result": {
+      "checks": [
+        {
+          "detail": "config check failed.",
+          "fix": "Edit [REDACTED].config.ts and run pnpm [REDACTED] config:snapshot.",
+          "id": "config",
+          "ok": false,
+        },
+        {
+          "detail": "Node <version>; pnpm <version>.",
+          "id": "node",
+          "ok": true,
+        },
+        {
+          "detail": "ports check failed.",
+          "fix": "Free port 3000 and the database port, or use the project containers.",
+          "id": "ports",
+          "ok": false,
+        },
+        {
+          "detail": "At least 2 GB free on the repository volume.",
+          "id": "disk",
+          "ok": true,
+        },
+        {
+          "detail": "database check failed.",
+          "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+          "id": "database",
+          "ok": false,
+        },
+        {
+          "detail": "fts check failed.",
+          "fix": "Choose an installed full-text language or use simple.",
+          "id": "fts",
+          "ok": false,
+        },
+        {
+          "detail": "corpus check failed.",
+          "fix": "Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+          "id": "corpus",
+          "ok": false,
+        },
+        {
+          "detail": "Mock mode; no provider network requests.",
+          "id": "keys",
+          "ok": true,
+        },
+        {
+          "detail": "Skipped (--no-network).",
+          "id": "dimensions",
+          "ok": true,
+        },
+        {
+          "detail": "Corpus and eval directories writable.",
+          "id": "writable",
+          "ok": true,
+        },
+      ],
+    },
     "schemaVersion": 1,
-    "warnings": [],
+    "warnings": [
+      {
+        "code": "NETWORK_SKIPPED",
+        "message": "Provider authentication and embedding dimensions skipped (--no-network).",
+      },
+    ],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -190,15 +318,15 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --ex
   "envelope": {
     "command": "init",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "init is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "NEEDS_CONFIRMATION",
+      "fix": "pnpm sourced init --help",
+      "message": "Confirmation is required. Run again with --yes.",
     },
     "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -223,16 +351,246 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > sources l
 {
   "envelope": {
     "command": "sources list",
-    "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "sources list is not implemented yet. This command is reserved for a later implementation task.",
+    "ok": true,
+    "result": {
+      "sources": [
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "indexes",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-indexes",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/indexes-intro.html",
+            "https://www.postgresql.org/docs/17/indexes-types.html",
+            "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+            "https://www.postgresql.org/docs/17/indexes-ordering.html",
+            "https://www.postgresql.org/docs/17/indexes-bitmap-scans.html",
+            "https://www.postgresql.org/docs/17/indexes-unique.html",
+            "https://www.postgresql.org/docs/17/indexes-expressional.html",
+            "https://www.postgresql.org/docs/17/indexes-partial.html",
+            "https://www.postgresql.org/docs/17/indexes-index-only-scans.html",
+            "https://www.postgresql.org/docs/17/indexes-examine.html",
+            "https://www.postgresql.org/docs/17/sql-createindex.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "concurrency",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-concurrency",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/mvcc-intro.html",
+            "https://www.postgresql.org/docs/17/transaction-iso.html",
+            "https://www.postgresql.org/docs/17/explicit-locking.html",
+            "https://www.postgresql.org/docs/17/applevel-consistency.html",
+            "https://www.postgresql.org/docs/17/mvcc-caveats.html",
+            "https://www.postgresql.org/docs/17/locking-indexes.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "performance",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-performance",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/using-explain.html",
+            "https://www.postgresql.org/docs/17/planner-stats.html",
+            "https://www.postgresql.org/docs/17/explicit-joins.html",
+            "https://www.postgresql.org/docs/17/populate.html",
+            "https://www.postgresql.org/docs/17/non-durability.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "json",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-json",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/datatype-json.html",
+            "https://www.postgresql.org/docs/17/functions-json.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "full-text-search",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-full-text-search",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/textsearch-intro.html",
+            "https://www.postgresql.org/docs/17/textsearch-tables.html",
+            "https://www.postgresql.org/docs/17/textsearch-controls.html",
+            "https://www.postgresql.org/docs/17/textsearch-indexes.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "row-level-security",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-row-level-security",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/ddl-rowsecurity.html",
+            "https://www.postgresql.org/docs/17/sql-createpolicy.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "maintenance",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-maintenance",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/routine-vacuuming.html",
+            "https://www.postgresql.org/docs/17/routine-reindex.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "backup",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-backup",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/backup.html",
+            "https://www.postgresql.org/docs/17/backup-dump.html",
+            "https://www.postgresql.org/docs/17/backup-file.html",
+          ],
+        },
+        {
+          "commitRaw": false,
+          "exclude": [],
+          "html": {
+            "preset": "generic",
+            "removeSelectors": [],
+          },
+          "id": "docs",
+          "include": [],
+          "path": "./docs",
+          "type": "folder",
+        },
+      ],
     },
-    "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 0,
 }
 `;
 
@@ -241,9 +599,9 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > sources r
   "envelope": {
     "command": "sources remove",
     "error": {
-      "code": "INTERNAL_ERROR",
+      "code": "VALIDATION_FAILED",
       "fix": "pnpm sourced --help",
-      "message": "sources remove is not implemented yet. This command is reserved for a later implementation task.",
+      "message": "Unknown source. Run pnpm [REDACTED] sources list.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -1974,6 +2332,7 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned 1
             "CORPUS_MISMATCH",
             "CORPUS_EMPTY",
             "NEEDS_CONFIRMATION",
+            "CHECKS_FAILED",
           ],
           "type": "string",
         },

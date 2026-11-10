@@ -86,12 +86,15 @@ describe('TC-202 / UT-45 / FR-77: real CLI output contains no secrets', () => {
     if (json) {
       expect(child.stdout.trim().split('\n')).toHaveLength(1);
       const envelope = CliEnvelope.parse(JSON.parse(child.stdout));
-      if (envelope.ok) commandSchemas['config:snapshot'].parse(envelope.result);
+      if (envelope.ok) commandSchemas[parseInvocation([...args]).command].parse(envelope.result);
       expect([0, 1, 2]).toContain(child.status);
-      expect({
-        exit: child.status,
-        envelope: JSON.parse(child.stdout.replace(/[a-f0-9]{64}/g, '<configHash>')) as unknown,
-      }).toMatchSnapshot();
+      expect(envelope.ok).toBe(child.status === 0);
+      const normalized = JSON.parse(
+        child.stdout
+          .replace(/[a-f0-9]{64}/g, '<configHash>')
+          .replace(/Node [^;]+; pnpm [^.]+\.[^.]+\.[^.]+\./g, 'Node <version>; pnpm <version>.'),
+      ) as unknown;
+      expect({ exit: child.status, envelope: normalized }).toMatchSnapshot();
       for (const line of child.stderr.trim().split('\n').filter(Boolean))
         expect(JSON.parse(line)).toHaveProperty('event');
     } else if (child.status !== 0)
@@ -138,7 +141,12 @@ test('UT-45: exit codes, destructive confirmation and safe failures', async () =
     expect((await dispatch([...args, '--json'], context, handler)).exitCode).toBe(2);
     expect(handler).not.toHaveBeenCalled();
   }
-  for (const code of ['NEEDS_CONFIRMATION', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'] as const)
+  for (const code of [
+    'NEEDS_CONFIRMATION',
+    'CHECKS_FAILED',
+    'CORPUS_MISMATCH',
+    'CORPUS_EMPTY',
+  ] as const)
     expect(
       (await dispatch(['doctor'], context, () => Promise.reject(new AppError(code, secret))))
         .exitCode,
@@ -228,3 +236,29 @@ test('D-109: dry-run shape and totals preserve unknown prices and zero future co
     }).runId,
   ).toBeNull();
 });
+
+test.each(['doctor', 'deploy:check'])(
+  'D-115 / UT-45: %s lists every failed check and fix, with CHECKS_FAILED exit 2',
+  async (command) => {
+    const checks = [
+      { id: 'config', ok: true, detail: 'Configuration valid.' },
+      { id: 'ports', ok: false, detail: 'Occupied.', fix: 'Free port 3000.' },
+      { id: 'keys', ok: false, detail: 'Missing key.', fix: 'Set OPENAI_API_KEY in .env.local.' },
+    ];
+    const output = await dispatch([command, '--json'], { isTTY: false, progress: vi.fn() }, () =>
+      Promise.resolve({ result: { checks }, exitCode: 2 }),
+    );
+    expect(output.exitCode).toBe(2);
+    expect(output.envelope.error).toEqual({
+      code: 'CHECKS_FAILED',
+      message: 'ports: Free port 3000.\nkeys: Set OPENAI_API_KEY in .env.local.',
+      fix: 'Free port 3000.',
+    });
+    expect(output.envelope.result).toEqual({ checks });
+    const passed = await dispatch([command, '--json'], { isTTY: false, progress: vi.fn() }, () =>
+      Promise.resolve({ result: { checks: [checks[0]] } }),
+    );
+    expect(passed.exitCode).toBe(0);
+    expect(passed.envelope.error).toBeUndefined();
+  },
+);

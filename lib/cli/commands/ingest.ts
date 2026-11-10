@@ -1,3 +1,4 @@
+import { requireSources } from './config-files';
 import postgres from 'postgres';
 import { AppError } from '@/lib/errors';
 import { configHash, loadConfig } from '@/lib/kit/load-config';
@@ -51,6 +52,7 @@ export async function confirmIngest(
 export async function runIngest(input: Invocation, context: CommandContext) {
   const dryRun = input.values['dry-run'] === true;
   setCliKitConfig(await loadConfig(process.cwd(), { writeSnapshot: !dryRun }));
+  requireSources(getKitConfig());
   const env = getEnv();
   const config = structuredClone(getKitConfig());
   assertIngestAllowed(env.VERCEL);

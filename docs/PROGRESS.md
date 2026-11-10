@@ -77,9 +77,9 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-57 | M6 Sources and CLI | `.docx` parser | done | f12b559 |
 | T-58 | M6 Sources and CLI | CLI framework | done | 0e313ff |
 | T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | done | 01e5aae |
-| T-60 | M6 Sources and CLI | Contextual embedding input | doing | |
-| T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | todo | |
-| T-62 | M6 Sources and CLI | Docker path | todo | |
+| T-60 | M6 Sources and CLI | Contextual embedding input | doing (code bc2cf32; live comparison pending) | |
+| T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | done | HEAD |
+| T-62 | M6 Sources and CLI | Docker path | doing | |
 | T-63 | M6 Sources and CLI | Contract tests and scale check | todo | |
 | T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | todo | |
 | T-65 | M7 Quality on any corpus | `inspect` | todo | |

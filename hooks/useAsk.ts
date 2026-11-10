@@ -154,7 +154,8 @@ export function askReducer(state: AskState, action: AskAction): AskState {
       if (
         body.code === 'CONFIG_INVALID' ||
         body.code === 'CORPUS_MISMATCH' ||
-        body.code === 'NEEDS_CONFIRMATION'
+        body.code === 'NEEDS_CONFIRMATION' ||
+        body.code === 'CHECKS_FAILED'
       )
         return change({ kind: 'serverError', question: state.question, requestId: body.requestId });
       if (
