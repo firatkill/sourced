@@ -1,6 +1,7 @@
 import type postgres from 'postgres';
 import type { LoadedCorpus } from '@/lib/ingest/load';
-import { chunkContentHash } from '@/lib/ingest/chunk';
+import { prepareChunkEmbedding } from '@/lib/ingest/upsert';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { countTokens } from '@/lib/ingest/tokenizer';
 import type { SourceEvent } from '@/lib/sources/types';
 import { emptyCounters, type IngestSource } from '../schemas/ingest';
@@ -13,6 +14,7 @@ export async function planIngest(
   model: string,
   price: number | undefined,
   rebuild = false,
+  contextualEmbedding = getKitConfig().overrides.contextualEmbedding,
 ): Promise<IngestSource[]> {
   const previous = await sql<
     {
@@ -20,6 +22,7 @@ export async function planIngest(
       source_id: string | null;
       url: string;
       content_hash: string;
+      content: string;
       embedding_model: string;
       ordinal: number;
       heading_path: string[];
@@ -28,7 +31,7 @@ export async function planIngest(
       page_to: number | null;
     }[]
   >`
-    SELECT d.slug,d.source_id,d.url,c.content_hash,c.embedding_model,c.ordinal,c.heading_path,c.anchor,c.page_from,c.page_to
+    SELECT d.slug,d.source_id,d.url,c.content_hash,c.content,c.embedding_model,c.ordinal,c.heading_path,c.anchor,c.page_from,c.page_to
     FROM chunks c JOIN documents d ON d.id=c.document_id`;
   const sources = loaded.sources.map((source) => ({ ...emptyCounters(), ...source }));
   const fallback = sources[0]?.id ?? 'fixtures';
@@ -41,29 +44,46 @@ export async function planIngest(
     return source;
   };
   const current = new Map(loaded.map((doc) => [doc.slug, doc]));
+  const retained = new Set<(typeof previous)[number]>();
   for (const doc of loaded) {
     const source = get(doc.sourceId ?? fallback);
     source.documents.done++;
     for (const chunk of doc.chunks) {
-      const hash = chunkContentHash(doc.locationSlug ?? doc.slug, chunk);
+      const { contentHash: hash, embeddingInput } = prepareChunkEmbedding(
+        doc,
+        chunk,
+        contextualEmbedding,
+      );
       const prior = previous.find(
         (p) =>
           !rebuild && p.slug === doc.slug && p.content_hash === hash && p.embedding_model === model,
       );
       if (!prior) {
-        source.chunks.new++;
-        source.embeddingTokens += countTokens(
-          `${chunk.headingPath.join(' › ')}\n\n${chunk.content}`,
+        const replaced = previous.find(
+          (p) =>
+            !rebuild &&
+            p.slug === doc.slug &&
+            p.anchor === chunk.anchor &&
+            p.content === chunk.content &&
+            !retained.has(p),
         );
-      } else if (
-        prior.ordinal !== chunk.ordinal ||
-        prior.anchor !== chunk.anchor ||
-        JSON.stringify(prior.heading_path) !== JSON.stringify(chunk.headingPath) ||
-        prior.page_from !== (chunk.pageFrom ?? null) ||
-        prior.page_to !== (chunk.pageTo ?? null)
-      )
-        source.chunks.changed++;
-      else source.chunks.unchanged++;
+        if (replaced) {
+          source.chunks.changed++;
+          retained.add(replaced);
+        } else source.chunks.new++;
+        source.embeddingTokens += countTokens(embeddingInput);
+      } else {
+        retained.add(prior);
+        if (
+          prior.ordinal !== chunk.ordinal ||
+          prior.anchor !== chunk.anchor ||
+          JSON.stringify(prior.heading_path) !== JSON.stringify(chunk.headingPath) ||
+          prior.page_from !== (chunk.pageFrom ?? null) ||
+          prior.page_to !== (chunk.pageTo ?? null)
+        )
+          source.chunks.changed++;
+        else source.chunks.unchanged++;
+      }
     }
   }
   for (const prior of previous) {
@@ -72,16 +92,7 @@ export async function planIngest(
     const id = prior.source_id ?? legacy?.sourceId ?? fallback;
     if (!sources.some((s) => s.id === id)) continue;
     if (!doc && loaded.discoveredKeys.includes(prior.slug)) continue;
-    if (
-      rebuild ||
-      !doc ||
-      !doc.chunks.some(
-        (c) =>
-          chunkContentHash(doc.locationSlug ?? doc.slug, c) === prior.content_hash &&
-          prior.embedding_model === model,
-      )
-    )
-      get(id).chunks.deleted++;
+    if (!retained.has(prior)) get(id).chunks.deleted++;
   }
   for (const source of sources) {
     const sourceEvents = events.filter((e) => e.key.startsWith(`${source.id}:`));

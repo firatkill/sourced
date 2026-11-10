@@ -4742,6 +4742,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-209",
+      "ac_reference": "T-60; FR-75",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Contextual embedding input",
+      "description": "UT-43.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-209.",
+      "expected_result": "Embedding input starts with title and heading path; display and quote check use the chunk text only; the hash version changes so affected chunks re-embed.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-43 contextual-embedding.test.ts: input '{title}\\n{heading path}\\n\\n{content}' with embed_text_version 1 and the versioned hash; switching the flag re-embeds every chunk once, the same flag twice re-embeds none (mixed-folder integration); displayed passage and quote check use the content only; flag off keeps v1 hashes (IT-16)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

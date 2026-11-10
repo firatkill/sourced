@@ -245,3 +245,13 @@ export function chunkDocument(doc: ParsedDocument, slug: string): Chunk[] {
 export function chunkContentHash(slug: string, chunk: Pick<Chunk, 'anchor' | 'content'>): string {
   return sha256Hex(`${slug}\n${chunk.anchor}\n${chunk.content}`);
 }
+
+/** Preserve the v1 heading-prefixed input when contextual embedding is disabled. */
+export function chunkEmbeddingInput(
+  title: string,
+  chunk: Pick<Chunk, 'headingPath' | 'content'>,
+  contextualEmbedding: boolean,
+): string {
+  const input = `${chunk.headingPath.join(' › ')}\n\n${chunk.content}`;
+  return contextualEmbedding ? `${title}\n${input}` : input;
+}

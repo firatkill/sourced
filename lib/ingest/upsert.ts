@@ -4,7 +4,8 @@ import { startRun, prepareItems, IngestInterrupted } from './checkpoint';
 import { AppError } from '@/lib/errors';
 import { sha256Hex } from '@/lib/hash';
 import type { LlmProvider } from '@/lib/llm/types';
-import { chunkContentHash, type Chunk } from './chunk';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { chunkEmbeddingInput, chunkContentHash, type Chunk } from './chunk';
 import { embedBatches } from './embed-batch';
 import type { IngestReport } from './report';
 
@@ -22,7 +23,19 @@ export type IngestDocument = {
   isFixture: boolean;
   chunks: Chunk[];
 };
-type PreparedChunk = Chunk & { contentHash: string };
+export function prepareChunkEmbedding(
+  document: Pick<IngestDocument, 'title' | 'slug' | 'locationSlug'>,
+  chunk: Chunk,
+  contextualEmbedding: boolean,
+) {
+  const embeddingInput = chunkEmbeddingInput(document.title, chunk, contextualEmbedding);
+  const embedTextVersion = contextualEmbedding ? 1 : 0;
+  const contentHash = contextualEmbedding
+    ? sha256Hex(`${String(embedTextVersion)}\0${embeddingInput}`)
+    : chunkContentHash(document.locationSlug ?? document.slug, chunk);
+  return { embeddingInput, embedTextVersion, contentHash };
+}
+type PreparedChunk = Chunk & ReturnType<typeof prepareChunkEmbedding>;
 type PreparedDocument = Omit<IngestDocument, 'chunks'> & { chunks: PreparedChunk[] };
 
 type IngestOptions = {
@@ -33,6 +46,7 @@ type IngestOptions = {
   includeFixtures: boolean;
   pricePerMillion: number;
   now?: () => number;
+  contextualEmbedding?: boolean;
   configHash?: string;
   restart?: boolean;
   signal?: AbortSignal;
@@ -52,7 +66,7 @@ async function upsertDocument(
   return sql.begin(async (tx) => {
     const missing = document.chunks.filter((chunk) => !known.has(chunk.contentHash));
     const embedded = await embedBatches(
-      missing.map((chunk) => `${chunk.headingPath.join(' › ')}\n\n${chunk.content}`),
+      missing.map((chunk) => chunk.embeddingInput),
       { provider, concurrency: 1 },
     );
     const vectors = new Map<string, number[]>();
@@ -88,7 +102,7 @@ async function upsertDocument(
     const inserted = fresh.length
       ? await tx<{ inserted: boolean }[]>`
       INSERT INTO chunks (document_id, ordinal, heading_path, anchor, content, token_count,
-                          content_hash, embedding_model, embedding, page_from, page_to)
+                          content_hash, embedding_model, embedding, page_from, page_to, embed_text_version)
       SELECT t.document_id,
              t.ordinal,
              ARRAY(SELECT jsonb_array_elements_text(t.heading_path_json::jsonb)),
@@ -97,7 +111,7 @@ async function upsertDocument(
              t.token_count,
              t.content_hash,
              t.embedding_model,
-             t.embedding_text::vector, t.page_from, t.page_to
+             t.embedding_text::vector, t.page_from, t.page_to, t.embed_text_version
       FROM unnest(
         ${tx.array(
           fresh.map(() => id),
@@ -141,9 +155,12 @@ async function upsertDocument(
         ${tx.array(
           fresh.map((chunk) => chunk.pageTo ?? null),
           23,
-        )}::int[]
+        )}::int[], ${tx.array(
+          fresh.map((chunk) => chunk.embedTextVersion),
+          21,
+        )}::smallint[]
       ) AS t(document_id, ordinal, heading_path_json, anchor, content,
-             token_count, content_hash, embedding_model, embedding_text, page_from, page_to)
+             token_count, content_hash, embedding_model, embedding_text, page_from, page_to, embed_text_version)
       ON CONFLICT (document_id, content_hash) DO UPDATE
         SET ordinal      = EXCLUDED.ordinal,
             heading_path = EXCLUDED.heading_path,
@@ -213,6 +230,8 @@ async function upsertDocument(
 
 export async function ingestCorpus(options: IngestOptions): Promise<IngestReport> {
   const { sql, embeddingModel, includeFixtures } = options;
+  const contextualEmbedding =
+    options.contextualEmbedding ?? getKitConfig().overrides.contextualEmbedding;
   const now = options.now ?? Date.now;
   const started = now();
   const runId = await startRun(sql, options);
@@ -232,7 +251,7 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
         ...doc,
         chunks: doc.chunks.map((chunk) => ({
           ...chunk,
-          contentHash: chunkContentHash(doc.locationSlug ?? doc.slug, chunk),
+          ...prepareChunkEmbedding(doc, chunk, contextualEmbedding),
         })),
       }));
     const chunks = documents.flatMap((doc) => doc.chunks);

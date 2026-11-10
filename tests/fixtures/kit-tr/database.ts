@@ -59,6 +59,7 @@ export async function setupFixtureDatabase(base: string | undefined) {
       loadDocuments: loadFixtureDocuments,
       provider: createMockProvider(config.models.embed.dimensions),
       embeddingModel: config.models.embed.model,
+      contextualEmbedding: config.overrides.contextualEmbedding,
       includeFixtures: false,
       pricePerMillion: 0,
     });
