@@ -3209,7 +3209,7 @@ const SourceBase = z.object({
     preset: z.enum(['generic', 'postgres-docbook']).default('generic'),
     contentSelector: z.string().optional(),
     removeSelectors: z.array(z.string()).default([]),
-  }).default({}),
+  }).prefault({}),
 });
 
 export const SourceSchema = z.discriminatedUnion('type', [
@@ -3246,12 +3246,12 @@ export const KitConfigSchema = z.object({
     lead: z.string().max(300).optional(),
     notFound: z.string().max(120).optional(),
     suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200) })).max(6).default([]),
-  }).default({}),
+  }).prefault({}),
   overrides: z.object({                                       // section 29.2
     chunking: z.object({ minTokens: z.number().int(), targetTokens: z.number().int(), maxTokens: z.number().int(), overlapTokens: z.number().int() }).partial().default({}),
     retrieval: z.object({ vectorCandidates: z.number().int(), ftsCandidates: z.number().int(), rerankCandidates: z.number().int(), finalPassages: z.number().int().min(1).max(9) }).partial().default({}),
     contextualEmbedding: z.boolean().default(true),
-  }).default({}),
+  }).prefault({}),
 }).superRefine(validateKitConfig);                          // cross-field rules, section 29.3
 
 export type KitConfig = z.infer<typeof KitConfigSchema>;
