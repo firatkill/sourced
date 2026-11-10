@@ -126,7 +126,7 @@ export async function loadCorpus(options: {
           : parseHtml(Buffer.from(raw.bytes).toString('utf8'), {
               slug,
               section: source.group ?? source.id,
-              html: { ...source.html, contentSelector: source.html.contentSelector ?? 'body' },
+              html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
             });
       } catch (error) {
         context.onEvent({
@@ -134,6 +134,11 @@ export async function loadCorpus(options: {
           key: ref.key,
           code: error instanceof AppError ? error.code : 'INTERNAL_ERROR',
         });
+        continue;
+      }
+      const chunks = chunkDocument(document, slug);
+      if (!chunks.length) {
+        context.onEvent({ type: 'skipped', key: ref.key, reason: 'empty' });
         continue;
       }
       documents.push({
@@ -148,7 +153,7 @@ export async function loadCorpus(options: {
         section: source.group ?? source.id,
         contentHash: raw.contentHash,
         isFixture: false,
-        chunks: chunkDocument(document, slug),
+        chunks,
         document,
       });
     }

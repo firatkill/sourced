@@ -36,6 +36,9 @@ try {
       refresh: values.refresh ?? false,
       includeFixtures,
       fetchOnly: values['fetch-only'] ?? false,
+      onEvent: (event) => {
+        if (event.type === 'skipped') console.log(`${event.reason} ${event.key}`);
+      },
       onStatus: (slug, status) => {
         console.log(`${status} ${slug}`);
       },

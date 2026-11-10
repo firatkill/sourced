@@ -3415,12 +3415,16 @@
       "description": "TRD §15.3; D-26.",
       "steps_to_reproduce": "See qa/test-cases.md TC-145.",
       "expected_result": "Loading /, /eval and /how-it-works in both themes logs no console error or React hydration warning (including the theme-script nonce).",
-      "status": "resolved",
-      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "status": "open",
+      "environment": "local",
       "attempts": [
         {
           "result": "pass",
           "note": "theme.spec.ts TC-145 passes for 2 schemes x 3 stored themes x 3 pages; nonce hydration warning fixed with suppressHydrationWarning on the theme script only."
+        },
+        {
+          "result": "fail",
+          "note": "Intermittent: React #418 hydration mismatch and an occasional wrong color-scheme read; about 7 failures in 80 repeats of theme.spec.ts alone on v2/kit (2026-11-10); also seen once on production. Predates v2 (v1.1 redesign). Fix proposed as a separate session on main (hydration-418)."
         }
       ],
       "regression_of": null,
@@ -4522,6 +4526,27 @@
         {
           "result": "pass",
           "note": "IT-16 example-corpus.test.ts: 201 chunk hashes and counts identical to v1 after the sha1 raw-cache migration; stored slugs are D-101 document keys; repeat ingest 0 changes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-198",
+      "ac_reference": "T-54; FR-68; NFR-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Generic HTML on five unrelated sites",
+      "description": "UT-38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-198.",
+      "expected_result": "Main content is detected and navigation, headers, footers and sidebars are dropped; sections come from h1-h6; expectations written from the saved pages; a page without text is reported, not ingested; line coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-38 parse-html-generic.test.ts on five saved sites (Python, Kubernetes, MDN, Rust Book, Django; licences in tests/fixtures/sites/LICENSES.md); expectations written from the pages; empty page reported and not stored; 100% line coverage; IT-16 unchanged"
         }
       ],
       "regression_of": null,

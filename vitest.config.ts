@@ -31,6 +31,7 @@ export default defineConfig({
       thresholds: {
         autoUpdate: false,
         lines: 80,
+        'lib/ingest/parse-html-generic.ts': { lines: 90 },
         'lib/ingest/chunk.ts': { lines: 90 },
         'lib/retrieval/rrf.ts': { lines: 90 },
         'lib/generation/stream-splitter.ts': { lines: 90 },

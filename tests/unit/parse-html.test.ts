@@ -69,11 +69,11 @@ test('TC-037: UT-02 D-57 unclassed reference headings and body fallback', () => 
   expect(doc.root.children[0]?.heading).toBe('Parameters');
 });
 
-test('T-50: parseHtml dispatches by html.preset; generic parsing is deferred to T-54', () => {
-  expect(() =>
+test('T-54 / FR-68: parseHtml dispatches generic HTML', () => {
+  expect(
     parseHtml('<p>content</p>', {
       ...page,
-      html: { ...page.html, preset: 'generic' },
-    }),
-  ).toThrow('Generic HTML parsing is not available yet.');
+      html: { ...page.html, preset: 'generic', contentSelector: '' },
+    }).root.blocks,
+  ).toEqual([{ kind: 'paragraph', text: 'content' }]);
 });

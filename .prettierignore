@@ -15,3 +15,6 @@ eval/postgres-17/results/
 .github/workflows/keepalive.yml
 
 .sourced/
+
+# Saved HTTP fixtures must remain byte-identical.
+tests/fixtures/sites/*.html
