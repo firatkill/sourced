@@ -66,7 +66,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | ce93307 |
 | T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | done | 1bf698f |
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | done | 8b05a91 |
-| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | HEAD |
+| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | 762a8a3 |
 | T-50 | M5 Configuration seams | Example corpus in the kit layout | doing | |
 | T-51 | M5 Configuration seams | Deployment profiles | todo | |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | todo | |
