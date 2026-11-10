@@ -264,7 +264,9 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
       embed: env.PRICE_EMBED_PER_MTOK,
     };
     validatePrices(env.LLM_MODE, prices);
-    const parsed = parseGolden(await readFile('eval/golden.jsonl', 'utf8'));
+    const parsed = parseGolden(
+      await readFile(`eval/${getKitConfig().corpus.name}/golden.jsonl`, 'utf8'),
+    );
     const errors = [...parsed.errors, ...validateGolden(parsed.entries, await readGoldenCorpus())];
     if (errors.length) throw new EvalAbort(2, 'Invalid golden set; run pnpm eval:validate');
     const thresholds = EvalThresholds.parse(

@@ -31,7 +31,7 @@ vi.mock('@/lib/db/client', () => ({
     if (query.includes('FROM ingest_runs'))
       return state.ingest ? [{ corpus_version: 'test', cost_usd_estimate: '0.01' }] : [];
     if (query.includes('embedding_model')) return state.mismatch ? [{ exists: 1 }] : [];
-    const { entries } = parseGolden(await readFile('eval/golden.jsonl', 'utf8'));
+    const { entries } = parseGolden(await readFile('eval/postgres-17/golden.jsonl', 'utf8'));
     return entries.flatMap((entry) => entry.expected_anchors.map((anchor) => ({ anchor })));
   },
 }));
@@ -167,21 +167,29 @@ test('TC-127: automatic baseline uses committed contents and greatest runId, exc
   const newest = baselineResult('2026-11-09T10:00:00Z');
   vi.mocked(execFileSync).mockImplementation((_cmd, args) => {
     if (args?.[0] === 'ls-tree')
-      return 'eval/results/2026-11-09-2.json\neval/results/2026-11-09-10.json\neval/results/output.json\neval/results/report.md\n';
-    return JSON.stringify(args?.[1] === 'HEAD:eval/results/2026-11-09-10.json' ? newest : older);
+      return 'eval/postgres-17/results/2026-11-09-2.json\neval/postgres-17/results/2026-11-09-10.json\neval/postgres-17/results/output.json\neval/postgres-17/results/report.md\n';
+    return JSON.stringify(
+      args?.[1] === 'HEAD:eval/postgres-17/results/2026-11-09-10.json' ? newest : older,
+    );
   });
-  expect(await loadBaseline(undefined, 'eval/results', './eval/results/output.json')).toEqual({
-    file: 'eval/results/2026-11-09-10.json',
+  expect(
+    await loadBaseline(
+      undefined,
+      'eval/postgres-17/results',
+      './eval/postgres-17/results/output.json',
+    ),
+  ).toEqual({
+    file: 'eval/postgres-17/results/2026-11-09-10.json',
     result: newest,
   });
   expect(execFileSync).toHaveBeenCalledWith(
     'git',
-    ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/results'],
+    ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/postgres-17/results'],
     { encoding: 'utf8' },
   );
   expect(execFileSync).not.toHaveBeenCalledWith(
     'git',
-    ['show', 'HEAD:eval/results/output.json'],
+    ['show', 'HEAD:eval/postgres-17/results/output.json'],
     expect.anything(),
   );
 });
@@ -192,17 +200,19 @@ test('TC-127: explicit --baseline takes precedence and validates the results sch
   vi.spyOn(fs, 'readFile')
     .mockResolvedValueOnce(JSON.stringify(result))
     .mockResolvedValueOnce('{}');
-  expect(await loadBaseline('chosen.json', 'eval/results', 'output.json')).toEqual({
+  expect(await loadBaseline('chosen.json', 'eval/postgres-17/results', 'output.json')).toEqual({
     file: 'chosen.json',
     result,
   });
   expect(execFileSync).not.toHaveBeenCalled();
-  await expect(loadBaseline('invalid.json', 'eval/results', 'output.json')).rejects.toThrow();
+  await expect(
+    loadBaseline('invalid.json', 'eval/postgres-17/results', 'output.json'),
+  ).rejects.toThrow();
 });
 
 test('TC-127: no committed baseline skips regression and reports No baseline; failures exit 1', async () => {
   logs();
-  expect(await loadBaseline(undefined, 'eval/results', 'output.json')).toBeNull();
+  expect(await loadBaseline(undefined, 'eval/postgres-17/results', 'output.json')).toBeNull();
   expect(await runEval(['--limit', '1', '--no-write'])).toBe(1);
   expect(console.log).toHaveBeenCalledWith('No baseline');
   expect(console.log).toHaveBeenCalledWith(

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
     '/*': ['./.sourced/config.json'],
-    '/eval': ['./eval/results/**/*.json'],
+    '/eval': ['./eval/postgres-17/results/**/*.json'],
   },
   outputFileTracingRoot: import.meta.dirname,
   webpack(config: BuildConfig, { isServer, nextRuntime, webpack }) {

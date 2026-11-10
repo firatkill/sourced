@@ -59,3 +59,12 @@ test('TC-131 / TC-132: empty, absent and all-invalid directories produce no runs
   await rm(path, { recursive: true });
   expect(await loadResults()).toEqual([]);
 });
+
+test('T-50: default /eval loader reads the committed v1 results from the example directory', async () => {
+  vi.stubEnv('EVAL_RESULTS_DIR', undefined);
+  resetEnvForTests();
+  const runs = await loadResults();
+  expect(runs.length).toBeGreaterThan(0);
+  expect(runs.at(-1)).toMatchObject({ date: '2026-11-09', sourceFile: '2026-11-09.json' });
+  expect(runs.at(-1)?.questions).toHaveLength(40);
+});

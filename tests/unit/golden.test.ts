@@ -15,7 +15,7 @@ let text: string;
 let entries: GoldenEntry[];
 let corpus: GoldenCorpus;
 beforeAll(async () => {
-  text = await readFile('eval/golden.jsonl', 'utf8');
+  text = await readFile('eval/postgres-17/golden.jsonl', 'utf8');
   entries = parseGolden(text).entries;
   corpus = await readGoldenCorpus();
 });

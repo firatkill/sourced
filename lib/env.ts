@@ -71,7 +71,7 @@ const schema = z.object({
   ALLOWED_ORIGINS: z.string().default(''),
   INGEST_INCLUDE_FIXTURES: flag('false'),
   EVAL_MAX_COST_USD: z.coerce.number().positive().default(1),
-  EVAL_RESULTS_DIR: z.string().default('eval/results'),
+  EVAL_RESULTS_DIR: z.string().default('eval/postgres-17/results'),
   MOCK_STREAM_DELAY_MS: z.coerce.number().int().nonnegative().default(10),
   VERCEL_ENV: optionalText,
   VERCEL_URL: optionalText,

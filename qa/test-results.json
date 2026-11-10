@@ -4297,6 +4297,48 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-187",
+      "ac_reference": "T-50; FR-74; NFR-16",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example corpus in the kit layout with identical chunks",
+      "description": "IT-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-187.",
+      "expected_result": "After the move to corpus/postgres-17/ and the postgres-docbook preset, ingestion yields the same chunk hashes and counts as v1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-16 example-corpus.test.ts: chunk hashes and counts identical to the captured v1 baseline (35 documents, 201 chunks); ingest --offline 0 inserted/updated/deleted"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-188",
+      "ac_reference": "T-50; FR-46",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "/eval reads results from the new path",
+      "description": "T-50 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-188.",
+      "expected_result": "/eval renders the committed v1 results from eval/postgres-17/results/.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "/eval renders committed v1 results from eval/postgres-17/results; E2E eval-page spec passed (116 E2E)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

@@ -21,14 +21,14 @@ Sourced is one Next.js App Router application deployed to Vercel, with one Postg
 ```mermaid
 flowchart TB
   subgraph Offline["Offline (developer machine or GitHub Actions)"]
-    MAN["corpus/manifest.json<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
-    FET --> RAW[("corpus/raw/*.html<br/>committed")]
+    MAN["sourced.config.ts<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
+    FET --> RAW[("corpus/postgres-17/raw/pg17-*/*.html<br/>committed")]
     RAW --> PAR["parse HTML<br/>headings + anchors"]
     PAR --> CHK["chunk<br/>cl100k, 500-800 tokens, 80 overlap"]
     CHK --> EMB["embed in batches of 100<br/>retry + backoff"]
     EMB --> UPS["upsert by content_hash<br/>delete stale"]
-    GOLD["eval/golden.jsonl"] --> EVAL["pnpm eval"]
-    EVAL --> RES[("eval/results/*.json + .md<br/>committed")]
+    GOLD["eval/postgres-17/golden.jsonl"] --> EVAL["pnpm eval"]
+    EVAL --> RES[("eval/postgres-17/results/*.json + .md<br/>committed")]
   end
 
   UPS --> DB[("PostgreSQL 17 + pgvector<br/>documents, chunks, ingest_runs,<br/>answer_cache, rate_limits, query_log")]
@@ -122,12 +122,11 @@ sourced/
 ├── README.md                      Public README (section 27)
 ├── LICENSE                        MIT, "Copyright (c) <year> Fırat Kıl"
 ├── CHANGELOG.md                   Keep a Changelog format; v1.0.0 entry at release (T-45)
-├── NOTICE                         States corpus/raw contains unmodified PostgreSQL 17 docs pages
 ├── .env.example                   Every env var from section 5 with safe example values
 ├── .gitignore                     node_modules, .next, .env*, !.env.example, coverage, playwright-report, test-results, eval/.cache
 ├── .nvmrc                         "22"
 ├── .prettierrc.json               { "semi": true, "singleQuote": true, "trailingComma": "all", "printWidth": 100, "plugins": ["prettier-plugin-tailwindcss"] }
-├── .prettierignore                corpus/raw, drizzle/meta, pnpm-lock.yaml, eval/results/*.md, docs/*.md, AGENTS.md (spec files stay byte-stable)
+├── .prettierignore                corpus/postgres-17/raw, drizzle/meta, pnpm-lock.yaml, eval/postgres-17/results/*.md, docs/*.md, AGENTS.md (spec files stay byte-stable)
 ├── package.json                   Scripts in section 3.1; exact versions
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  strict options in section 2; paths "@/*": ["./*"]
@@ -264,7 +263,7 @@ sourced/
 │       ├── thresholds.ts          Floors, ceilings, regression checks (section 17.5)
 │       ├── markdown.ts            Results Markdown writer
 │       ├── results-schema.ts      Zod schema for results JSON (section 17.6)
-│       └── load-results.ts        server-only; reads eval/results for /eval
+│       └── load-results.ts        server-only; reads eval/postgres-17/results for /eval
 ├── scripts/
 │   ├── ingest.ts                  pnpm ingest (flags in section 10.7)
 │   ├── seed.ts                    pnpm db:seed (mock ingest + mock cache)
@@ -274,15 +273,18 @@ sourced/
 │   └── eval-validate.ts           pnpm eval:validate
 ├── drizzle/                       Generated + hand-edited SQL migrations and meta
 ├── corpus/
-│   ├── manifest.json              Section 10.1
-│   ├── LICENSE-POSTGRESQL.txt     Verbatim PostgreSQL License
-│   ├── raw/                       <slug>.html, committed (D-05)
+│   ├── postgres-17/
+│   │   ├── LICENSE-POSTGRESQL.txt Verbatim PostgreSQL License
+│   │   ├── NOTICE                 Original attribution notice
+│   │   ├── metadata.json          Legacy document version and test-fixture descriptors
+│   │   └── raw/pg17-<section>/    <slug>.html, committed (D-05, T-50)
 │   └── fixtures/
 │       └── injected-notice.html   Prompt-injection fixture (section 10.9)
 ├── eval/
-│   ├── golden.jsonl               40 entries (section 17.2)
-│   ├── thresholds.json            Section 17.5
-│   └── results/                   <YYYY-MM-DD>.json and .md, committed
+│   ├── thresholds.json            Default floors (section 17.5)
+│   └── postgres-17/
+│       ├── golden.jsonl           40 entries (section 17.2)
+│       └── results/               <YYYY-MM-DD>.json and .md, committed
 ├── tests/
 │   ├── setup/
 │   │   ├── integration-global-setup.ts   Migrate TEST_DATABASE_URL once (refuses non-local hosts)
@@ -490,7 +492,7 @@ export const JUDGE = {
 | `ALLOWED_ORIGINS` | No | `https://sourced-git-main-firatkill.vercel.app` | Comma-separated extra origins for the origin check (preview URLs). `VERCEL_URL`, `VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are added automatically (as `https://<value>`) when set. |
 | `INGEST_INCLUDE_FIXTURES` | No | `false` | `true` ingests `corpus/fixtures/*` (tests and eval only, FR-39). |
 | `EVAL_MAX_COST_USD` | Eval | `1.00` | Budget guard (FR-44). |
-| `EVAL_RESULTS_DIR` | No | `eval/results` | Directory read by `/eval`. E2E sets `tests/fixtures/eval-results`. |
+| `EVAL_RESULTS_DIR` | No | `eval/postgres-17/results` | Directory read by `/eval`. E2E sets `tests/fixtures/eval-results`. |
 | `MOCK_STREAM_DELAY_MS` | No | `10` | Delay between mock tokens. |
 | `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL` | Set by Vercel | — | Read only. `VERCEL` (any value) makes `pnpm ingest` refuse to run (section 10.7). |
 | `NODE_ENV` | Set by Next.js / Vitest | — | Read only. `development` enables `'unsafe-eval'` in the CSP; anything other than `production` enables SSE event validation in `send()` (section 12.3). |
@@ -849,7 +851,7 @@ export const RerankOutput = z.object({
 
 ### 10.1 Corpus manifest (normative)
 
-`corpus/manifest.json`:
+Historical v1 `corpus/manifest.json` (T-50 moves the source list into `sourced.config.ts`; remaining version and fixture descriptors live in `corpus/postgres-17/metadata.json`):
 
 ```json
 {
@@ -909,7 +911,7 @@ export const RerankOutput = z.object({
 
 ### 10.2 Fetching
 
-Raw HTML is committed (D-05): `corpus/raw/<slug>.html`, byte-for-byte as served. `pnpm ingest` reads from cache by default; it fetches only with `--fetch-only` or `--refresh`, or when a page is missing and `--offline` is not set.
+Raw HTML is committed (D-05): `corpus/postgres-17/raw/pg17-<section>/<slug>.html`, byte-for-byte as served. `pnpm ingest` reads from cache by default; it fetches only with `--fetch-only` or `--refresh`, or when a page is missing and `--offline` is not set.
 
 Fetcher rules (`lib/ingest/fetch.ts`):
 
@@ -917,7 +919,7 @@ Fetcher rules (`lib/ingest/fetch.ts`):
 2. Requests are strictly sequential, at least `FETCH.MIN_INTERVAL_MS` (2,000 ms) apart measured start to start. If robots.txt declares `Crawl-delay`, use the larger of the two.
 3. Headers: `User-Agent: SourcedIngest/1.0 (+https://github.com/firatkill/sourced)`, `Accept: text/html`.
 4. Timeout `FETCH.TIMEOUT_MS`; up to `FETCH.MAX_RETRIES` retries on 429 / 5xx / network error with delays 5 s, 15 s, 45 s (or `Retry-After` if larger). Any other non-2xx aborts.
-5. Write the body to `corpus/raw/<slug>.html` only when its sha256 differs from the existing file. Print `fetched`, `unchanged` or `failed` per page.
+5. Write the body to `corpus/postgres-17/raw/pg17-<section>/<slug>.html` only when its sha256 differs from the existing file. Print `fetched`, `unchanged` or `failed` per page.
 6. `--offline` forbids all network access to postgresql.org; a missing raw file is a fatal error. CI and eval always use `--offline`.
 
 ### 10.3 HTML parsing
@@ -1969,7 +1971,7 @@ Status line text is derived, not stored: `submitting` → "Searching the docs…
 
 Server component reads results through `lib/eval/load-results.ts`: list `EVAL_RESULTS_DIR/*.json` (resolved against `process.cwd()`), parse each with `EvalResult` schema (section 17.6), skip invalid files with a server log warning, sort by `runId` ascending; the last is the latest run and "previous" for deltas is the one before it. The page passes the parsed runs to `components/eval/EvalView.tsx`, a synchronous component that renders the empty state when the array is empty (UT-31 renders `<EvalView runs={[]} />`; async server components cannot be rendered by React Testing Library).
 
-Cell formats: "Recall@5" and "RR" to 2 decimals, "—" for non-answerable rows; "Faithfulness" as `0`, `0.5`, `1` or "—"; "Citations" as `{valid} / {valid + invalid}`; "Latency" as seconds with 1 decimal plus " s"; metric card values to 2 decimals except latency (`{p50} s / {p95} s`, 1 decimal) and cost (`$` + 4 decimals); deltas signed to 2 decimals with a true minus sign (−). `next.config.ts` sets `outputFileTracingIncludes: { '/eval': ['./eval/results/**/*.json'] }` so the files are bundled into the Vercel function. `TrendChart` is a 160 × 40 inline SVG polyline with an accessible `<title>` listing the values; no chart library. Table filter state is client-side.
+Cell formats: "Recall@5" and "RR" to 2 decimals, "—" for non-answerable rows; "Faithfulness" as `0`, `0.5`, `1` or "—"; "Citations" as `{valid} / {valid + invalid}`; "Latency" as seconds with 1 decimal plus " s"; metric card values to 2 decimals except latency (`{p50} s / {p95} s`, 1 decimal) and cost (`$` + 4 decimals); deltas signed to 2 decimals with a true minus sign (−). `next.config.ts` sets `outputFileTracingIncludes: { '/eval': ['./eval/postgres-17/results/**/*.json'] }` so the files are bundled into the Vercel function. `TrendChart` is a 160 × 40 inline SVG polyline with an accessible `<title>` listing the values; no chart library. Table filter state is client-side.
 
 ### 15.8 `/how-it-works` page
 
@@ -2078,18 +2080,18 @@ Env changes on Vercel apply to new deployments only; the runbook (section 26.6) 
 
 `pnpm eval [--limit N] [--only q001,q002] [--baseline path] [--no-write] [--ci]`
 
-1. Load and validate `eval/golden.jsonl` (section 17.2), `eval/thresholds.json`, env (requires `LLM_MODE=live`, `JUDGE_MODEL`, prices). `LLM_MODE=mock` is accepted only together with `--no-write`, as a pipeline smoke test; the budget guard is skipped in mock mode.
+1. Load and validate `eval/postgres-17/golden.jsonl` (section 17.2), `eval/thresholds.json`, env (requires `LLM_MODE=live`, `JUDGE_MODEL`, prices). `LLM_MODE=mock` is accepted only together with `--no-write`, as a pipeline smoke test; the budget guard is skipped in mock mode.
 2. Check the database has a succeeded ingest with fixtures included (`SELECT 1 FROM documents WHERE is_fixture LIMIT 1` returns a row) and that every chunk's `embedding_model` equals the current mode's embedding model (section 10.6); otherwise exit 2 with "Run pnpm ingest --include-fixtures first" (or "Re-run pnpm ingest --offline --include-fixtures in the current LLM_MODE" for a model mismatch).
 3. Budget projection (section 17.7). Abort if over.
 4. For each question, sequentially: call `answerQuestion` with a collector and a fresh request id (no rate limiting, no cache). Record candidates (RRF order), reranked list, passages, verification result, usage, timings.
 5. For answerable questions with a non-not-found answer: call the judge.
 6. Compute metrics (section 17.4), compare with thresholds and baseline (section 17.5).
-7. Write `eval/results/<YYYY-MM-DD>.json` and `.md` (suffix `-2`, `-3` if the file exists) unless `--no-write`. With `--ci`, also write the Markdown to `$GITHUB_STEP_SUMMARY` when set.
+7. Write `eval/postgres-17/results/<YYYY-MM-DD>.json` and `.md` (suffix `-2`, `-3` if the file exists) unless `--no-write`. With `--ci`, also write the Markdown to `$GITHUB_STEP_SUMMARY` when set.
 8. Exit 0 if all checks pass, 1 if any fails, 2 on configuration error, 3 on budget abort.
 
 ### 17.2 Golden set
 
-File: `eval/golden.jsonl`, one JSON object per line, UTF-8, LF line endings. Schema **(normative, `lib/eval/golden.ts`)**:
+File: `eval/postgres-17/golden.jsonl`, one JSON object per line, UTF-8, LF line endings. Schema **(normative, `lib/eval/golden.ts`)**:
 
 ```ts
 export const GoldenEntry = z.object({
@@ -2833,11 +2835,15 @@ on:
       - 'lib/ingest/parse-html.ts'
       - 'lib/ingest/chunk.ts'
       - 'lib/config.ts'
-      - 'corpus/manifest.json'
-      - 'corpus/raw/**'
+      - 'sourced.config.ts'
+      - 'lib/ingest/presets/**'
+      - 'lib/ingest/manifest.ts'
+      - 'lib/ingest/load.ts'
+      - 'corpus/postgres-17/metadata.json'
+      - 'corpus/postgres-17/raw/**'
       - 'eval/**'
       # Committing results must not trigger another paid run.
-      - '!eval/results/**'
+      - '!eval/postgres-17/results/**'
 
 concurrency:
   group: eval-${{ github.ref }}
@@ -2913,7 +2919,7 @@ jobs:
           git fetch --no-tags --depth=1 origin "$BASE_REF"
           DIR="$RUNNER_TEMP/base-results"
           mkdir -p "$DIR"
-          for f in $(git ls-tree --name-only "origin/$BASE_REF" eval/results/ | grep -E '\.json$' || true); do
+          for f in $(git ls-tree -r --name-only "origin/$BASE_REF" -- eval/postgres-17/results/ eval/results/ | grep -E '\.json$' || true); do
             git show "origin/$BASE_REF:$f" > "$DIR/$(basename "$f")"
           done
           # Pick the run with the greatest runId (file names like 2026-11-02-2.json do not sort correctly as text).
@@ -2937,11 +2943,11 @@ jobs:
         if: always()
         with:
           name: eval-results
-          path: eval/results/
+          path: eval/postgres-17/results/
           retention-days: 30
 ```
 
-Results produced in CI are uploaded as an artifact, not committed. The owner commits results by running `pnpm eval` locally against a local database ingested with `pnpm ingest --include-fixtures` (or by downloading the artifact into `eval/results/` and committing it in the PR).
+Results produced in CI are uploaded as an artifact, not committed. The owner commits results by running `pnpm eval` locally against a local database ingested with `pnpm ingest --include-fixtures` (or by downloading the artifact into `eval/postgres-17/results/` and committing it in the PR).
 
 Repository setup for this workflow (T-37): create environment `eval` with secret `OPENAI_API_KEY` (a key from a separate OpenAI project "sourced-eval" with its own budget), and environment variables `CHAT_MODEL`, `JUDGE_MODEL`, `PRICE_*`.
 
@@ -3082,16 +3088,16 @@ The README must contain, in this order:
 2. Links: live demo, `/eval`, `/how-it-works`, docs folder.
 3. Demo GIF (`docs/assets/demo.gif`, ≤ 4 MB, ≤ 20 s, 1200 px wide): click a suggested question → answer streams → click a citation chip → highlighted quote → expand "How this was answered". Recorded in light theme on the production site.
 4. "How it works" in 6 bullets plus the Mermaid architecture diagram (GitHub renders Mermaid).
-5. "Evaluation" with the metrics table from the latest `eval/results/*.md` (value, floor), date and models; link to the full file.
+5. "Evaluation" with the metrics table from the latest `eval/postgres-17/results/*.md` (value, floor), date and models; link to the full file.
 6. "Run locally without an API key" (≤ 6 commands): `pnpm install`, `cp .env.example .env.local`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev:mock`.
 7. "Run with OpenAI": set key and model, `pnpm ingest`, `pnpm cache:suggested`, `pnpm dev`.
-8. "Swap the corpus": edit `corpus/manifest.json` (base URL, selectors, pages), check license and robots, `pnpm corpus:fetch`, `pnpm ingest`, rewrite `eval/golden.jsonl`, update suggested questions in `lib/suggested.ts` and copy in the PRD.
+8. "Swap the corpus": edit `corpus/manifest.json` (base URL, selectors, pages), check license and robots, `pnpm corpus:fetch`, `pnpm ingest`, rewrite `eval/postgres-17/golden.jsonl`, update suggested questions in `lib/suggested.ts` and copy in the PRD.
 9. "Swap the provider": implement `LlmProvider` in `lib/llm/<name>.ts`, register it in `lib/llm/index.ts`, set `LLM_PROVIDER`; note the embedding dimension must stay 1536 or a migration must change `vector(1536)`.
 10. "Cost": the table from section 21.2 with the computed worst-case figure.
 11. "Tests and CI": commands and what each workflow does.
 12. "Privacy" summary.
 13. "Limits" (same points as `/how-it-works`).
-14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/LICENSE-POSTGRESQL.txt`.
+14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/postgres-17/LICENSE-POSTGRESQL.txt`.
 15. Author line with links to firatkil.com and GitHub.
 
 Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.

@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
 import { FETCH } from '@/lib/config';
 import { AppError } from '@/lib/errors';
@@ -31,12 +31,16 @@ export async function fetchRawPages(
   manifest: Manifest,
   options: FetchOptions = {},
 ): Promise<FetchResult[]> {
-  const rawDir = options.rawDir ?? 'corpus/raw';
+  const cachePath = (page: Manifest['pages'][number]) => {
+    if (options.rawDir) return join(options.rawDir, page.slug);
+    if (page.path) return page.path;
+    throw new AppError('VALIDATION_FAILED', 'Missing raw cache path.');
+  };
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
   const sleep = options.sleep ?? ((ms: number) => setTimeout(ms));
   const existing = await Promise.all(
-    manifest.pages.map(async (page) => ({ page, bytes: await cached(join(rawDir, page.slug)) })),
+    manifest.pages.map(async (page) => ({ page, bytes: await cached(cachePath(page)) })),
   );
   if (options.offline && existing.some((entry) => !entry.bytes))
     throw new AppError('INTERNAL_ERROR', 'Missing raw corpus page in offline mode.');
@@ -55,7 +59,7 @@ export async function fetchRawPages(
   if (robots) {
     interval = robots.intervalMs;
     for (const { page } of existing)
-      robots.assertAllowed(new URL(page.slug, manifest.baseUrl).href);
+      robots.assertAllowed(page.url ?? new URL(page.slug, manifest.baseUrl).href);
   }
   const results: FetchResult[] = [];
   for (const { page, bytes } of existing) {
@@ -67,7 +71,7 @@ export async function fetchRawPages(
           let response: Response | undefined;
           let cause: unknown;
           try {
-            response = await request(new URL(page.slug, manifest.baseUrl).href);
+            response = await request(page.url ?? new URL(page.slug, manifest.baseUrl).href);
             if (response.ok) {
               body = Buffer.from(await response.arrayBuffer());
               break;
@@ -93,8 +97,8 @@ export async function fetchRawPages(
         }
         if (!body) throw new AppError('INTERNAL_ERROR', `Corpus fetch failed: ${page.slug}`);
         if (!bytes || sha256Hex(bytes) !== sha256Hex(body)) {
-          await mkdir(rawDir, { recursive: true });
-          await writeFile(join(rawDir, page.slug), body);
+          await mkdir(dirname(cachePath(page)), { recursive: true });
+          await writeFile(cachePath(page), body);
           status = 'fetched';
         }
       }

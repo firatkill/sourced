@@ -1,7 +1,7 @@
-corpus/raw
+corpus/postgres-17/raw
 drizzle/meta
 pnpm-lock.yaml
-eval/results/*.md
+eval/postgres-17/results/*.md
 docs/*.md
 AGENTS.md
 .next
@@ -10,7 +10,7 @@ coverage
 playwright-report
 test-results
 next-env.d.ts
-eval/results/
+eval/postgres-17/results/
 # Normative, byte-identical to TRD 25.4
 .github/workflows/keepalive.yml
 

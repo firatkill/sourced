@@ -16,3 +16,7 @@ next-env.d.ts
 .codex-prompts/
 
 .sourced/
+
+# Raw responses are local unless an example explicitly commits them.
+corpus/*/raw/*
+!corpus/postgres-17/raw/pg17-*/

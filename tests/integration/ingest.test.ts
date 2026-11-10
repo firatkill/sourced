@@ -116,8 +116,11 @@ test('TC-045: IT-04 ingests the three prescribed HTML fixtures with section prov
     const parsed = parseHtml(raw, {
       slug,
       section: 'test',
-      contentSelector: manifest.contentSelector,
-      removeSelectors: manifest.removeSelectors,
+      html: {
+        preset: 'postgres-docbook' as const,
+        contentSelector: manifest.contentSelector,
+        removeSelectors: manifest.removeSelectors,
+      },
     });
     documents.push({
       slug,

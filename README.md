@@ -22,14 +22,14 @@ A small, production-quality RAG app and starter kit: every claim in the answer c
 ```mermaid
 flowchart TB
   subgraph Offline["Offline (developer machine or GitHub Actions)"]
-    MAN["corpus/manifest.json<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
-    FET --> RAW[("corpus/raw/*.html<br/>committed")]
+    MAN["sourced.config.ts<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
+    FET --> RAW[("corpus/postgres-17/raw/pg17-*/*.html<br/>committed")]
     RAW --> PAR["parse HTML<br/>headings + anchors"]
     PAR --> CHK["chunk<br/>cl100k, 500-800 tokens, 80 overlap"]
     CHK --> EMB["embed in batches of 100<br/>retry + backoff"]
     EMB --> UPS["upsert by content_hash<br/>delete stale"]
-    GOLD["eval/golden.jsonl"] --> EVAL["pnpm eval"]
-    EVAL --> RES[("eval/results/*.json + .md<br/>committed")]
+    GOLD["eval/postgres-17/golden.jsonl"] --> EVAL["pnpm eval"]
+    EVAL --> RES[("eval/postgres-17/results/*.json + .md<br/>committed")]
   end
 
   UPS --> DB[("PostgreSQL 17 + pgvector<br/>documents, chunks, ingest_runs,<br/>answer_cache, rate_limits, query_log")]
@@ -62,7 +62,7 @@ flowchart TB
 
 ## Evaluation
 
-[Run dated 2026-11-09](eval/results/2026-11-09.md): chat `gpt-6-luna`, judge `gpt-5.4`, embeddings `text-embedding-3-small`. No baseline.
+[Run dated 2026-11-09](eval/postgres-17/results/2026-11-09.md): chat `gpt-6-luna`, judge `gpt-5.4`, embeddings `text-embedding-3-small`. No baseline.
 
 <!-- prettier-ignore -->
 | Metric | Value | Floor or ceiling | Baseline | Delta | Status |
@@ -112,9 +112,9 @@ These ingestion and cache commands make paid API calls. For readable local JSON 
 
 ## Swap the corpus
 
-Edit `corpus/manifest.json`: `baseUrl`, `contentSelector`, `removeSelectors` and `pages`. Check the source license and robots.txt, then run `pnpm corpus:fetch` and `pnpm ingest`. Rewrite `eval/golden.jsonl`, update the suggested questions in `lib/suggested.ts` and update the corpus copy in `docs/PRD.md`. Rebuild the suggested cache with `pnpm cache:suggested` and run evaluation.
+Edit `sourced.config.ts`: `sources` (one URL list and group per section, with `html.contentSelector` and `html.removeSelectors`). Check the source license and robots.txt, then run `pnpm corpus:fetch` and `pnpm ingest`. Rewrite `eval/postgres-17/golden.jsonl`, update the suggested questions and corpus copy in `sourced.config.ts`. Rebuild the suggested cache with `pnpm cache:suggested` and run evaluation.
 
-The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Live ingestion with `text-embedding-3-small` was verified on 2026-11-09: 98,555 tokens embedded; an unchanged second run used zero embedding inputs. Raw pages and attribution are in `corpus/`.
+The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Live ingestion with `text-embedding-3-small` was verified on 2026-11-09: 98,555 tokens embedded; an unchanged second run used zero embedding inputs. Raw pages and attribution are in `corpus/postgres-17/`.
 
 ## Swap the provider
 
@@ -197,6 +197,6 @@ Models and prices are pinned in env, as recorded in D-82 and `.env.example`. Cha
 
 MIT for code. Copyright (c) 2026 Fırat Kıl.
 
-PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the [PostgreSQL License](corpus/LICENSE-POSTGRESQL.txt). See [NOTICE](NOTICE) for corpus attribution.
+PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the [PostgreSQL License](corpus/postgres-17/LICENSE-POSTGRESQL.txt). See [NOTICE](corpus/postgres-17/NOTICE) for corpus attribution.
 
 Built by Fırat Kıl · [firatkil.com](https://firatkil.com) · [GitHub](https://github.com/firatkill)

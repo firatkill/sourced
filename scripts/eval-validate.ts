@@ -1,3 +1,6 @@
+import { loadConfig } from '@/lib/kit/load-config';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { AppError } from '@/lib/errors';
 import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
@@ -23,16 +26,17 @@ export async function readGoldenCorpus(): Promise<GoldenCorpus> {
     headings.push(section.heading);
     for (const child of section.children) collect(child);
   };
-  for (const page of [
-    ...manifest.pages.map((page) => ({ ...page, path: `corpus/raw/${page.slug}` })),
-    ...manifest.fixtures,
-  ]) {
+  for (const page of [...manifest.pages, ...manifest.fixtures]) {
+    if (!page.path) throw new AppError('VALIDATION_FAILED', 'Missing raw cache path.');
     const html = await readFile(page.path, 'utf8');
     collect(
       parseHtml(html, {
         ...page,
-        contentSelector: manifest.contentSelector,
-        removeSelectors: manifest.removeSelectors,
+        html: {
+          preset: 'postgres-docbook' as const,
+          contentSelector: manifest.contentSelector,
+          removeSelectors: manifest.removeSelectors,
+        },
       }).root,
     );
     const $ = load(html);
@@ -93,9 +97,10 @@ export async function runGoldenValidation(options: {
 }
 
 async function main(): Promise<number> {
+  await loadConfig();
   const { values } = parseArgs({
     options: {
-      file: { type: 'string', default: 'eval/golden.jsonl' },
+      file: { type: 'string', default: `eval/${getKitConfig().corpus.name}/golden.jsonl` },
       subset: { type: 'boolean', default: false },
     },
   });

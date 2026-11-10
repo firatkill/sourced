@@ -53,13 +53,15 @@ describe('R1 SQL tokenizer — REDESIGN §5.2', () => {
     expect(tokenizeSql('')).toEqual([]);
   });
 
-  const files = readdirSync('corpus/raw').filter((name) => name.endsWith('.html'));
+  const files = readdirSync('corpus/postgres-17/raw', { recursive: true, encoding: 'utf8' }).filter(
+    (name) => name.endsWith('.html'),
+  );
   test('corpus fixture is present', () => {
     expect(files.length).toBeGreaterThan(0);
   });
   for (const file of files) {
     test(`every decoded programlisting round-trips: ${file}`, () => {
-      const $ = load(readFileSync(`corpus/raw/${file}`, 'utf8'));
+      const $ = load(readFileSync(`corpus/postgres-17/raw/${file}`, 'utf8'));
       $('pre.programlisting').each((_, block) => {
         const source = $(block).text(); // HTML parser decodes named and numeric entities.
         const tokens = tokenizeSql(source);

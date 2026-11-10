@@ -31,8 +31,11 @@ beforeAll(async () => {
       const parsed = parseHtml(raw, {
         slug,
         section: 'test',
-        contentSelector: manifest.contentSelector,
-        removeSelectors: manifest.removeSelectors,
+        html: {
+          preset: 'postgres-docbook' as const,
+          contentSelector: manifest.contentSelector,
+          removeSelectors: manifest.removeSelectors,
+        },
       });
       return {
         slug,
@@ -54,8 +57,8 @@ beforeAll(async () => {
     includeFixtures: true,
     pricePerMillion: 0,
   });
-  subset = parseGolden(await readFile('eval/golden.jsonl', 'utf8')).entries.filter((e) =>
-    ['q002', 'q004'].includes(e.id),
+  subset = parseGolden(await readFile('eval/postgres-17/golden.jsonl', 'utf8')).entries.filter(
+    (e) => ['q002', 'q004'].includes(e.id),
   );
 });
 

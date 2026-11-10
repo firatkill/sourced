@@ -180,7 +180,7 @@ Priority: **Must** (required for v1.0.0), **Should** (expected in v1.0.0; may sl
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-33 | The corpus is defined by `corpus/manifest.json` (35 pinned URLs, TRD section 10.1). The fetcher obeys `robots.txt`, sends one request every 2 seconds, sets an identifying User-Agent and caches raw HTML in `corpus/raw/` (committed). *(amended v2)* This is the example corpus. A developer's corpus is defined by the sources in `sourced.config.ts` (FR-65); the same fetch rules apply to every web source (FR-66). | Must |
+| FR-33 | The corpus is defined by `corpus/manifest.json` (35 pinned URLs, TRD section 10.1). The fetcher obeys `robots.txt`, sends one request every 2 seconds, sets an identifying User-Agent and caches raw HTML in `corpus/postgres-17/raw/` (committed). *(amended v2)* This is the example corpus. A developer's corpus is defined by the sources in `sourced.config.ts` (FR-65); the same fetch rules apply to every web source (FR-66). | Must |
 | FR-34 | The HTML parser extracts clean text and keeps the heading hierarchy and section anchors. | Must |
 | FR-35 | Chunking is structure-aware: split by section, then pack to 500–800 tokens (cl100k_base) with about 80 tokens of overlap. | Must |
 | FR-36 | Embeddings are created in batches of 100 with retry and exponential backoff. | Must |
@@ -192,9 +192,9 @@ Priority: **Must** (required for v1.0.0), **Should** (expected in v1.0.0; may sl
 
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-40 | A golden set of 40 questions lives in `eval/golden.jsonl`: 32 answerable, 5 unanswerable, 3 prompt-injection. *(amended v2)* This is the example corpus's golden set. A developer's set is built with FR-83 and lives next to their corpus configuration. | Must |
+| FR-40 | A golden set of 40 questions lives in `eval/postgres-17/golden.jsonl`: 32 answerable, 5 unanswerable, 3 prompt-injection. *(amended v2)* This is the example corpus's golden set. A developer's set is built with FR-83 and lives next to their corpus configuration. | Must |
 | FR-41 | `pnpm eval` computes recall@5, recall@10, MRR, citation validity rate, faithfulness (LLM judge, 0 / 0.5 / 1), correct refusal rate, injection resistance rate, latency p50 and p95, and cost. | Must |
-| FR-42 | Results are written to `eval/results/<YYYY-MM-DD>.json` and `.md` and committed. The site renders them without a database. | Must |
+| FR-42 | Results are written to `eval/postgres-17/results/<YYYY-MM-DD>.json` and `.md` and committed. The site renders them without a database. | Must |
 | FR-43 | The run fails (exit code 1) when a metric is below its floor or regresses beyond the allowed delta against the baseline (TRD section 17.5). | Must |
 | FR-44 | A budget guard aborts the run when projected or accrued cost exceeds `EVAL_MAX_COST_USD`. | Must |
 | FR-45 | `/eval` shows metric cards, a per-question table and the trend across committed runs. | Must |
@@ -432,7 +432,7 @@ Document title: "Evaluation · Sourced"
   - A secondary row under the retrieval cards: "Without reranking: Recall@5 {x} · Recall@10 {y} · MRR {z}".
 - H2: "Trend" with one small line chart per metric across all committed runs. Caption: "Each point is one committed run."
 - H2: "Questions". Filter buttons: "All", "Failures only". Table columns: "ID", "Question", "Type", "Recall@5", "RR", "Faithfulness", "Citations", "Result", "Latency". Type values: "Answerable", "Unanswerable", "Injection". Result values: "Pass", "Fail". Row expands to show the answer, cited passages and judge notes.
-- Empty state: H2 "No evaluation runs yet". Body: "Run pnpm eval and commit the file it writes to eval/results."
+- Empty state: H2 "No evaluation runs yet". Body: "Run pnpm eval and commit the file it writes to eval/postgres-17/results."
 - Methodology section (H2 "How these numbers are computed"): one short paragraph per metric matching TRD section 17.4.
 
 ### 9.6 `/how-it-works`
@@ -452,7 +452,7 @@ Document title: "How it works · Sourced"
 
 ### 9.8 Attribution
 
-The PostgreSQL License requires the copyright notice and permission paragraphs to appear in copies. The repository ships `corpus/LICENSE-POSTGRESQL.txt` with the license text copied verbatim from https://www.postgresql.org/about/licence/ at implementation time, and `NOTICE` stating that `corpus/raw/` contains unmodified copies of PostgreSQL 17 documentation pages. The site footer line 2 (section 9.1) links "PostgreSQL License" to that page.
+The PostgreSQL License requires the copyright notice and permission paragraphs to appear in copies. The repository ships `corpus/postgres-17/LICENSE-POSTGRESQL.txt` with the license text copied verbatim from https://www.postgresql.org/about/licence/ at implementation time, and `corpus/postgres-17/NOTICE` stating that `corpus/postgres-17/raw/` contains unmodified copies of PostgreSQL 17 documentation pages. The site footer line 2 (section 9.1) links "PostgreSQL License" to that page.
 
 ## 10. Content safety and prompt injection
 
@@ -484,7 +484,7 @@ No prompt-only defence is complete. A model can still be manipulated into produc
 
 | Metric | Target at v1.0.0 | Source |
 |---|---|---|
-| Eval floors met on the release run | All pass | `eval/results/<date>.json` |
+| Eval floors met on the release run | All pass | `eval/postgres-17/results/<date>.json` |
 | Reviewer can run locally without an API key | ≤ 15 minutes from clone to `pnpm dev:mock` showing an answer | Manual test on a clean machine (release checklist) |
 | Live demo availability | Health check green on 5 manual checks across a week after launch | `/api/health` |
 | LLM spend in the first month | ≤ the OpenAI project budget (recommended $5) | OpenAI usage dashboard |

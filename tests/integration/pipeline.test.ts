@@ -20,8 +20,11 @@ beforeAll(async () => {
     const parsed = parseHtml(raw, {
       slug,
       section: 'test',
-      contentSelector: manifest.contentSelector,
-      removeSelectors: manifest.removeSelectors,
+      html: {
+        preset: 'postgres-docbook' as const,
+        contentSelector: manifest.contentSelector,
+        removeSelectors: manifest.removeSelectors,
+      },
     });
     documents.push({
       slug,

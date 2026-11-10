@@ -168,11 +168,11 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 
 - **Goal**: The pinned page list, verified to exist, plus attribution files and the fixture page.
 - **Implements**: FR-33 (manifest), FR-39, FR-50, D-04, D-05; A-12, A-14; PRD §9.8; TRD §10.1, §10.9
-- **Files**: `corpus/manifest.json`, `corpus/LICENSE-POSTGRESQL.txt`, `NOTICE`, `corpus/fixtures/injected-notice.html`, `lib/ingest/manifest.ts`, `tests/unit/manifest.test.ts` (UT-29).
+- **Files**: `corpus/manifest.json`, `corpus/postgres-17/LICENSE-POSTGRESQL.txt`, `corpus/postgres-17/NOTICE`, `corpus/fixtures/injected-notice.html`, `lib/ingest/manifest.ts`, `tests/unit/manifest.test.ts` (UT-29).
 - **Steps**:
   1. Write the manifest from TRD §10.1.
   2. For each page, request the URL once with a 2 s pause between requests (a throwaway script in the scratch area, not committed) and confirm HTTP 200 with the expected title. Replace any failing page per TRD §10.1 and record it.
-  3. Copy the PostgreSQL License text verbatim from https://www.postgresql.org/about/licence/ into `corpus/LICENSE-POSTGRESQL.txt`. Write `NOTICE`.
+  3. Copy the PostgreSQL License text verbatim from https://www.postgresql.org/about/licence/ into `corpus/postgres-17/LICENSE-POSTGRESQL.txt`. Write `corpus/postgres-17/NOTICE`.
   4. Write the fixture HTML per TRD §10.9, structured like a real page (`#docContent > div.sect1#INJECTED-NOTICE`).
   5. Manifest Zod schema and loader.
 - **Acceptance**: UT-29 passes; `node -e "const m=require('./corpus/manifest.json');console.log(m.pages.length)"` prints a number from 30 to 40.
@@ -182,16 +182,16 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 
 - **Goal**: Fetch and cache raw HTML politely; commit the raw files.
 - **Implements**: FR-33, D-05, NFR-16; A-13; TRD §10.2
-- **Files**: `lib/ingest/robots.ts`, `lib/ingest/fetch.ts`, `scripts/ingest.ts` (CLI skeleton with `--fetch-only`, `--refresh`, `--offline`), `tests/unit/fetch.test.ts` (UT-30), `corpus/raw/*.html`.
+- **Files**: `lib/ingest/robots.ts`, `lib/ingest/fetch.ts`, `scripts/ingest.ts` (CLI skeleton with `--fetch-only`, `--refresh`, `--offline`), `tests/unit/fetch.test.ts` (UT-30), `corpus/postgres-17/raw/pg17-*/*.html`.
 - **Steps**:
   1. Read https://www.postgresql.org/robots.txt (A-13). If `/docs/` is disallowed for generic agents, stop and raise it with the owner.
   2. Implement fetcher rules 1–6 of TRD §10.2 with an injectable `fetchImpl` and clock for tests.
   3. CLI flags; `--fetch-only` exits after fetching.
-  4. Run `pnpm corpus:fetch` once. Commit `corpus/raw/`.
+  4. Run `pnpm corpus:fetch` once. Commit `corpus/postgres-17/raw/`.
 - **Acceptance**:
   - UT-30 passes.
   - `pnpm corpus:fetch` prints `unchanged` for every page on a second run and takes ≥ 2 s × pages only when fetching (it skips cached pages without requests).
-  - `ls corpus/raw | wc -l` equals the manifest page count; `du -sh corpus/raw` ≤ 10 MB.
+  - `ls corpus/postgres-17/raw | wc -l` equals the manifest page count; `du -sh corpus/postgres-17/raw` ≤ 10 MB.
 - **Depends on**: T-09
 
 ### T-11 HTML parser
@@ -203,7 +203,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
   1. Open three raw files and confirm where section ids live; adjust selectors; record the finding as a comment.
   2. Implement rules 1–8 of TRD §10.3.
   3. Snapshot-free assertions: section ids, headings, block kinds and texts for the fixtures.
-- **Acceptance**: UT-02 passes; a one-off run over all `corpus/raw` files (`pnpm ingest --dry-run`, after T-12) reports zero pages with fallback to `body`.
+- **Acceptance**: UT-02 passes; a one-off run over all `corpus/postgres-17/raw` files (`pnpm ingest --dry-run`, after T-12) reports zero pages with fallback to `body`.
 - **Depends on**: T-10
 
 ### T-12 Tokenizer and structure-aware chunker
@@ -454,12 +454,12 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 
 - **Goal**: 40 questions following TRD §17.2; validator script.
 - **Implements**: FR-40; TRD §17.2
-- **Files**: `eval/golden.jsonl`, `lib/eval/golden.ts`, `scripts/eval-validate.ts`, `tests/unit/golden.test.ts` (UT-25), `tests/integration/eval-validate.test.ts` (IT-11).
+- **Files**: `eval/postgres-17/golden.jsonl`, `lib/eval/golden.ts`, `scripts/eval-validate.ts`, `tests/unit/golden.test.ts` (UT-25), `tests/integration/eval-validate.test.ts` (IT-11).
 - **Steps**:
   1. Add the 8 worked entries.
   2. Ingest with fixtures (`pnpm ingest --offline --include-fixtures`, live or mock). Run `pnpm eval:validate`; fix any example anchor that does not exist (open the raw HTML) and note it.
   3. Write q009–q040 following rules 1–8. For each answerable entry, find the anchors by reading the raw HTML, not by running the system.
-  4. For each unanswerable entry, `grep -il` the key terms in `corpus/raw` to confirm absence.
+  4. For each unanswerable entry, `grep -il` the key terms in `corpus/postgres-17/raw` to confirm absence.
 - **Acceptance**: UT-25, IT-11 pass; `pnpm eval:validate` exits 0 and prints the distribution table matching rule 2.
 - **Depends on**: T-14
 
@@ -472,7 +472,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
   1. Pin `JUDGE_MODEL` (A-02).
   2. Implement the flow of TRD §17.1; metrics of §17.4; output files of §17.6.
   3. First live run: `pnpm db:reset && pnpm ingest --offline --include-fixtures && pnpm eval`. Review 10 judge decisions by hand; note agreement in the PR.
-- **Acceptance**: UT-22, UT-26 pass; on a database ingested with `LLM_MODE=mock pnpm ingest --offline --include-fixtures`, `LLM_MODE=mock pnpm eval --limit 3 --no-write` (pipeline smoke test; mock is accepted only with `--no-write`) runs all three questions, prints the metrics table and exits 0 or 1 (floors are evaluated but a 3-question mock run is not expected to pass them; exit 2 or 3 is a failure); a live run writes `eval/results/<date>.json` that validates against `EvalResult`.
+- **Acceptance**: UT-22, UT-26 pass; on a database ingested with `LLM_MODE=mock pnpm ingest --offline --include-fixtures`, `LLM_MODE=mock pnpm eval --limit 3 --no-write` (pipeline smoke test; mock is accepted only with `--no-write`) runs all three questions, prints the metrics table and exits 0 or 1 (floors are evaluated but a 3-question mock run is not expected to pass them; exit 2 or 3 is a failure); a live run writes `eval/postgres-17/results/<date>.json` that validates against `EvalResult`.
 - **Depends on**: T-35, T-28
 
 ### T-37 Thresholds, regression check and eval workflow
@@ -565,7 +565,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 - **Steps**:
   1. Write every README section in TRD §27 order.
   2. Record the GIF on production (light theme, 1200 px wide, ≤ 20 s, ≤ 4 MB; use a screen recorder and convert with `ffmpeg` + `gifski` or similar locally).
-  3. Copy the metrics table from the latest `eval/results/*.md`.
+  3. Copy the metrics table from the latest `eval/postgres-17/results/*.md`.
   4. Fresh-clone test: on a clean directory, follow "Run locally without an API key" and time it (target ≤ 15 minutes, PRD §11).
 - **Acceptance**: All TRD §27 sections present (checklist in PR); the fresh-clone run works with only the README commands; GIF ≤ 4 MB (`ls -lh docs/assets/demo.gif`).
 - **Depends on**: T-43
@@ -642,7 +642,7 @@ v2 tasks start after v1.0.0 is tagged (PRD section 16). "TRD §n" in these tasks
 
 - **Goal**: The PostgreSQL example is an ordinary kit configuration.
 - **Implements**: FR-74, FR-33 (amended), FR-40 (amended); TRD §28.2, §29.4; NFR-16
-- **Files**: `sourced.config.ts`, move `corpus/manifest.json` content into it, `corpus/raw/` → `corpus/postgres-17/raw/pg17-*` (git mv), `corpus/LICENSE-POSTGRESQL.txt` and `NOTICE` → `corpus/postgres-17/`, `eval/golden.jsonl`, `eval/results/` → `eval/postgres-17/`, `lib/ingest/presets/postgres-docbook.ts` (v1 parser rules moved unchanged), `lib/ingest/parse-html.ts` (preset dispatch), `.github/workflows/eval.yml` path filters, `lib/env.ts` (`EVAL_RESULTS_DIR` default), IT-16.
+- **Files**: `package.json`, `pnpm-lock.yaml`, `.nvmrc`, `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `.prettierrc.json`, `.prettierignore`, `postcss.config.mjs`, `components.json`, `.gitignore`, `LICENSE`, `app/layout.tsx`, `app/page.tsx` (placeholder H1), `app/globals.css`, `.github/workflows/ci.yml` (jobs `lint`, `typecheck`, `build` only for now), `README.md` (one-paragraph stub).
 - **Steps**:
   1. Write the example configuration (TRD §29.4) with one `urls` source per v1 manifest section, each with its `group`.
   2. Move files with `git mv` so history follows.
@@ -1000,7 +1000,7 @@ Operations
 Docs and release
 - [ ] README complete per TRD §27; fresh-clone test done.
 - [ ] Demo GIF recorded on production.
-- [ ] Attribution: footer line, `corpus/LICENSE-POSTGRESQL.txt`, `NOTICE`.
+- [ ] Attribution: footer line, `corpus/postgres-17/LICENSE-POSTGRESQL.txt`, `corpus/postgres-17/NOTICE`.
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
 

@@ -67,8 +67,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | done | 1bf698f |
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | done | 8b05a91 |
 | T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | 762a8a3 |
-| T-50 | M5 Configuration seams | Example corpus in the kit layout | doing | |
-| T-51 | M5 Configuration seams | Deployment profiles | todo | |
+| T-50 | M5 Configuration seams | Example corpus in the kit layout | done | HEAD |
+| T-51 | M5 Configuration seams | Deployment profiles | doing | |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | todo | |
 | T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | todo | |
 | T-54 | M6 Sources and CLI | Generic HTML parser | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- T-50 note (reviewer): one integration run out of 13 failed once on 2026-11-10 and could not be reproduced (12 consecutive passes); the failing test name was not captured. If it recurs in CI, the log names it. `corpus/postgres-17/metadata.json` keeps the v1 manifest version and the fixture descriptor that the kit schema does not hold.
 
 - T-49 (TC-186, A-19, D-94): one live call each to Gemini, Anthropic and a local Ollama. When you have them, put `GOOGLE_GENERATIVE_AI_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` yourself and run `ollama serve`, then `ollama pull llama3.2` and `ollama pull nomic-embed-text`; the agent then runs the check script from the T-49 notes (`.codex-prompts/runs/32.last.md`) and records the result.
 

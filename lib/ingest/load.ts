@@ -23,8 +23,8 @@ export async function loadCorpus(options: {
   const pages = [
     ...manifest.pages.map((page) => ({
       ...page,
-      path: `corpus/raw/${page.slug}`,
-      url: new URL(page.slug, manifest.baseUrl).href,
+      path: page.path,
+      url: page.url ?? new URL(page.slug, manifest.baseUrl).href,
       isFixture: false,
     })),
     ...(options.includeFixtures
@@ -33,11 +33,15 @@ export async function loadCorpus(options: {
   ];
   const documents = [];
   for (const page of pages) {
+    if (!page.path) throw new AppError('VALIDATION_FAILED', 'Missing raw cache path.');
     const bytes = await readFile(page.path);
     const document = parseHtml(bytes.toString('utf8'), {
       ...page,
-      contentSelector: manifest.contentSelector,
-      removeSelectors: manifest.removeSelectors,
+      html: {
+        preset: page.html?.preset ?? 'postgres-docbook',
+        contentSelector: page.html?.contentSelector ?? manifest.contentSelector,
+        removeSelectors: page.html?.removeSelectors ?? manifest.removeSelectors,
+      },
     });
     documents.push({
       slug: page.slug,
