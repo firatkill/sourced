@@ -4360,6 +4360,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-190",
+      "ac_reference": "T-51; FR-64",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Deployment profiles gate quotas, demo mode and cache",
+      "description": "T-51 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-190.",
+      "expected_result": "public-demo keeps FR-26–FR-32; local shows no quota copy and no cache label and skips rate limits; private refuses to start without SOURCED_ACCESS_TOKEN.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "profile.test.ts and profile-ui.test.tsx per profile; E2E ask-local.spec.ts on port 3103 (local profile, DEMO_MODE off): no quota copy, no cache label, asking works; private requires SOURCED_ACCESS_TOKEN >= 24 chars at startup"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-191",
+      "ac_reference": "T-51; FR-64",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example unchanged in public-demo",
+      "description": "E2E-01–E2E-25.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-191.",
+      "expected_result": "E2E-01–E2E-25 pass with the example's public-demo profile.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E 117 passed with the example public-demo profile, including E2E-01 to E2E-25 unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

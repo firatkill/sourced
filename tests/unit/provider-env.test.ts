@@ -100,3 +100,30 @@ test('fresh clone: corrupt snapshots do not silently fall back', () => {
   vi.mocked(fs.readFileSync).mockReturnValue('invalid json');
   expect(() => getEnv()).toThrow();
 });
+
+// TC-190 / FR-64 / TRD §38: startup validation, access flow deferred to T-74.
+test.each(['', 'too-short', 'x'.repeat(23)])(
+  'TC-190: private rejects a missing or short access token',
+  (token) => {
+    configuration.profile = 'private';
+    vi.stubEnv('LLM_MODE', 'mock');
+    vi.stubEnv('SOURCED_ACCESS_TOKEN', token);
+    expect(() => getEnv()).toThrow('SOURCED_ACCESS_TOKEN');
+    configuration.profile = 'local';
+  },
+);
+test.each(['local', 'private', 'public-demo'])(
+  'TC-190: %s validates only its profile credentials',
+  (profile) => {
+    configuration.profile = profile;
+    vi.stubEnv('LLM_MODE', 'mock');
+    vi.stubEnv('IP_HASH_SALT', '');
+    vi.stubEnv(
+      'SOURCED_ACCESS_TOKEN',
+      profile === 'private' ? 'test-only-access-token-00000000' : '',
+    );
+    if (profile === 'public-demo') expect(() => getEnv()).toThrow('IP_HASH_SALT');
+    else expect(getEnv().LLM_MODE).toBe('mock');
+    configuration.profile = 'local';
+  },
+);

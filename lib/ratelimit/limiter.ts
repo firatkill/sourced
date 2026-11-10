@@ -2,6 +2,7 @@ import 'server-only';
 import { MAINTENANCE } from '@/lib/config';
 import { getSql } from '@/lib/db/client';
 import { getEnv } from '@/lib/env';
+import { isPublicDemo } from '@/lib/kit/profile';
 import { withRequest } from '@/lib/logger';
 import { utcDate, nextUtcMidnight } from '@/lib/time';
 
@@ -55,7 +56,8 @@ export async function refund(ipHash: string, day: string): Promise<void> {
 /** Invoked probabilistically in the ask route's after() callback (TRD §16.1). */
 export async function cleanup(requestId: string): Promise<void> {
   try {
-    await getSql()`DELETE FROM rate_limits WHERE window_start < (now() AT TIME ZONE 'UTC')::date - ${MAINTENANCE.RATE_LIMIT_RETENTION_DAYS}::int`;
+    if (isPublicDemo())
+      await getSql()`DELETE FROM rate_limits WHERE window_start < (now() AT TIME ZONE 'UTC')::date - ${MAINTENANCE.RATE_LIMIT_RETENTION_DAYS}::int`;
     await getSql()`DELETE FROM query_log WHERE created_at < now() - make_interval(days => ${MAINTENANCE.QUERY_LOG_RETENTION_DAYS}::int)`;
   } catch {
     withRequest(requestId).warn({ event: 'maintenance.failed' });

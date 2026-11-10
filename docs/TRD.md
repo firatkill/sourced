@@ -481,10 +481,11 @@ export const JUDGE = {
 | `PRICE_EMBED_PER_MTOK` | When live | `0` | USD per 1M tokens for `text-embedding-3-small`. |
 | `PRICE_JUDGE_INPUT_PER_MTOK` | Eval | `0` | USD per 1M input tokens for `JUDGE_MODEL`. |
 | `PRICE_JUDGE_OUTPUT_PER_MTOK` | Eval | `0` | USD per 1M output tokens for `JUDGE_MODEL`. |
+| `SOURCED_ACCESS_TOKEN` | Private profile only | — | At least 24 characters; validated at startup (T-51). Access flow in §38 (T-74). |
 | `DEMO_MODE` | No | `on` | `on`, `readonly` or `off` (FR-30). Default `on`. |
 | `RATE_LIMIT_IP_DAILY` | No | `10` | Per-visitor live questions per UTC day. |
 | `RATE_LIMIT_GLOBAL_DAILY` | No | `300` | All visitors, live questions per UTC day. |
-| `IP_HASH_SALT` | Yes | 64 hex chars | `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
+| `IP_HASH_SALT` | Public-demo only | 64 hex chars | `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
 | `QUESTION_HASH_SALT` | Yes | 64 hex chars | Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
 | `STORE_QUESTIONS` | No | `false` | `true` stores raw question text in `query_log.question_text` (FR-54). Never `true` in production without a privacy note change. |
 | `LOG_LEVEL` | No | `info` | pino level. |

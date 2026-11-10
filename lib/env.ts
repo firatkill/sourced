@@ -63,7 +63,8 @@ const schema = z.object({
   DEMO_MODE: z.enum(['on', 'readonly', 'off']).default('on'),
   RATE_LIMIT_IP_DAILY: positiveInt.default(10),
   RATE_LIMIT_GLOBAL_DAILY: positiveInt.default(300),
-  IP_HASH_SALT: z.string().min(32),
+  IP_HASH_SALT: z.string().default(''),
+  SOURCED_ACCESS_TOKEN: optionalText,
   QUESTION_HASH_SALT: z.string().min(32),
   STORE_QUESTIONS: flag('false'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
@@ -125,8 +126,20 @@ export function getEnv(): Env {
   if (cached) return cached;
   const result = schema
     .superRefine((env, ctx) => {
+      const config = providerConfig();
+      if ((!config || config.profile === 'public-demo') && env.IP_HASH_SALT.length < 32)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['IP_HASH_SALT'],
+          message: 'At least 32 characters required for public-demo',
+        });
+      if (config?.profile === 'private' && (env.SOURCED_ACCESS_TOKEN?.length ?? 0) < 24)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['SOURCED_ACCESS_TOKEN'],
+          message: 'At least 24 characters required for private',
+        });
       if (env.LLM_MODE === 'live') {
-        const config = providerConfig();
         const keys = new Set<string>(config ? [] : ['OPENAI_API_KEY']);
         for (const model of Object.values(config?.models ?? {})) {
           if (model.provider === 'openai') keys.add('OPENAI_API_KEY');

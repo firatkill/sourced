@@ -14,6 +14,7 @@ import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 
 type Props = {
+  publicDemo?: boolean;
   demoMode: 'on' | 'readonly' | 'off';
   limits: { ipDaily: number; globalDaily: number };
   suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
@@ -35,6 +36,7 @@ export function AskApp(props: Props) {
   );
 }
 function Conversation({
+  publicDemo = true,
   demoMode,
   limits,
   suggested,
@@ -115,7 +117,7 @@ function Conversation({
       inputRef={ask.inputRef}
       inFlight={ask.inFlight}
       disabled={effectiveMode !== 'on'}
-      dailyLimit={limits.ipDaily}
+      dailyLimit={publicDemo ? limits.ipDaily : null}
       error={ask.phase.kind === 'validationError' ? ask.phase.message : null}
       hasTurns={turns.length > 0}
     />

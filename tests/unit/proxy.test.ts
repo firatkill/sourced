@@ -45,3 +45,12 @@ it('TC-010: development eval allowance and deployed HTTPS upgrade follow env', (
   expect(csp).toContain("'unsafe-eval'");
   expect(csp).toContain('upgrade-insecure-requests');
 });
+
+it('TC-190: Edge security headers do not require public-demo credentials or a runtime snapshot', () => {
+  vi.stubEnv('LLM_MODE', 'live');
+  for (const name of ['IP_HASH_SALT', 'OPENAI_API_KEY', 'CHAT_MODEL', 'SOURCED_ACCESS_TOKEN'])
+    vi.stubEnv(name, '');
+  const response = middleware(new NextRequest('http://localhost:3000'));
+  expect(response.headers.get('content-security-policy')).toContain("'strict-dynamic'");
+  expect(response.headers.get('x-request-id')).toBeTruthy();
+});

@@ -8,6 +8,7 @@ import {
 import { normalize } from '@/lib/citations/normalize';
 import { EMBEDDING, MAINTENANCE, QUESTION } from '@/lib/config';
 import { getEnv } from '@/lib/env';
+import { isPublicDemo } from '@/lib/kit/profile';
 import {
   AppError,
   INTERNAL_ERROR_MESSAGE,
@@ -116,7 +117,8 @@ export async function POST(request: Request): Promise<Response> {
       return reject('VALIDATION_FAILED', 400, validationDetails(parsed.error, body));
     if (!allowedOrigin(request)) return reject('ORIGIN_FORBIDDEN', 403);
     const env = getEnv();
-    if (env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
+    const publicDemo = isPublicDemo();
+    if (publicDemo && env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
     const { question, suggestedId: suppliedSuggested } = parsed.data;
     const canonical = SUGGESTED.find((entry) => entry.id === suppliedSuggested);
     const suggestedId =
@@ -134,14 +136,14 @@ export async function POST(request: Request): Promise<Response> {
       embeddingModel: env.LLM_MODE === 'mock' ? EMBEDDING.MOCK_MODEL : EMBEDDING.MODEL,
       promptVersion: PROMPT_VERSION,
     };
-    const cached = suggestedId ? await lookupAnswerCache(suggestedId) : null;
-    if (!cached && env.DEMO_MODE === 'readonly') {
+    const cached = publicDemo && suggestedId ? await lookupAnswerCache(suggestedId) : null;
+    if (publicDemo && !cached && env.DEMO_MODE === 'readonly') {
       row = undefined;
       return reject('DEMO_READONLY', 503);
     }
     scheduleLog();
     const now = new Date();
-    const ipHash = cached ? null : hashVisitor(request.headers, now);
+    const ipHash = !publicDemo || cached ? null : hashVisitor(request.headers, now);
     const quota = ipHash === null ? null : await consume(ipHash, now);
     if (quota && !quota.ok) {
       const code = quota.scope === 'ip' ? 'RATE_LIMITED_IP' : 'RATE_LIMITED_GLOBAL';

@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getEnv } from '@/lib/env';
+import { getConfigEnv } from '@/lib/env';
 
 export function middleware(request: NextRequest) {
-  const env = getEnv();
+  const env = getConfigEnv();
   const requestId = crypto.randomUUID();
   const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
   const policy = [
