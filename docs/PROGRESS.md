@@ -1,6 +1,6 @@
 # Progress
 
-Updated: 2026-11-09.
+Updated: 2026-11-10.
 
 ## Repository setup
 
@@ -63,6 +63,37 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | done | 190dafa, HEAD |
 | T-44 | M4 Polish and deploy | README, demo GIF and diagrams | done | 560d5c4 |
 | T-45 | M4 Polish and deploy | Release v1.0.0 | done | ea39e59 (tag v1.0.0) |
+| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | doing | |
+| T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | todo | |
+| T-48 | M5 Configuration seams | Copy and prompts from configuration | todo | |
+| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | todo | |
+| T-50 | M5 Configuration seams | Example corpus in the kit layout | todo | |
+| T-51 | M5 Configuration seams | Deployment profiles | todo | |
+| T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | todo | |
+| T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | todo | |
+| T-54 | M6 Sources and CLI | Generic HTML parser | todo | |
+| T-55 | M6 Sources and CLI | Markdown and MDX parser | todo | |
+| T-56 | M6 Sources and CLI | PDF parser | todo | |
+| T-57 | M6 Sources and CLI | `.docx` parser | todo | |
+| T-58 | M6 Sources and CLI | CLI framework | todo | |
+| T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | todo | |
+| T-60 | M6 Sources and CLI | Contextual embedding input | todo | |
+| T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | todo | |
+| T-62 | M6 Sources and CLI | Docker path | todo | |
+| T-63 | M6 Sources and CLI | Contract tests and scale check | todo | |
+| T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | todo | |
+| T-65 | M7 Quality on any corpus | `inspect` | todo | |
+| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | todo | |
+| T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | todo | |
+| T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | todo | |
+| T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | todo | |
+| T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | todo | |
+| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | todo | |
+| T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | todo | |
+| T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | todo | |
+| T-74 | M8 Agent guidance and v2.0 | `private` profile access | todo | |
+| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | todo | |
+| T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
 
