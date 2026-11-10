@@ -60,6 +60,10 @@ export default defineConfig({
     server(3101, { DEMO_MODE: 'readonly' }),
     server(3102, { DEMO_MODE: 'off' }),
     {
+      ...server(3104, { DEMO_MODE: 'off' }),
+      command: 'pnpm exec tsx --conditions=react-server tests/fixtures/kit-tr/server.ts',
+    },
+    {
       ...server(3103, { DEMO_MODE: 'off' }),
       command: 'pnpm exec tsx --conditions=react-server tests/fixtures/local-profile-server.ts',
     },

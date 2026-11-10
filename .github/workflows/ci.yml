@@ -133,6 +133,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
       - run: pnpm db:seed
+      - run: pnpm exec tsx --conditions=react-server tests/fixtures/kit-tr/setup.ts
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e

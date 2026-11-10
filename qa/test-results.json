@@ -4402,6 +4402,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-192",
+      "ac_reference": "T-52; FR-63; FR-62",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Second fixture corpus end to end in mock mode",
+      "description": "E2E-26.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-192.",
+      "expected_result": "The Turkish folder fixture with its own sourced.config.ts ingests in mock mode and the ask page renders its configured copy with cited answers.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-26 ask-kit-tr.spec.ts on port 3104 (separate sourced_kit_tr database, turkish regconfig, local profile): Turkish title, hero, placeholder, scope and topic-labelled suggestions render from the fixture config; a mock answer cites a fixture passage; IT-13 kit-tr.test.ts passes on the fixture"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
