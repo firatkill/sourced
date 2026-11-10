@@ -4171,6 +4171,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-181",
+      "ac_reference": "T-48; FR-63",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Copy rendered from configuration",
+      "description": "UT-33.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-181.",
+      "expected_result": "getCopy applies defaults and overrides; the example configuration reproduces the PRD §9 and REDESIGN §7 strings exactly.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-33 kit-copy.test.ts: defaults, overrides, example reproduces the live v1.1 strings (tests/fixtures/v1-copy.ts)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-182",
+      "ac_reference": "T-48; FR-63; NFR-11",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example system prompt byte-identical to v1",
+      "description": "T-48 step 2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-182.",
+      "expected_result": "The rendered example system prompt equals the v1 prompt byte for byte, so PROMPT_VERSION is unchanged.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "prompt-version.test.ts: example answer and rerank prompts byte-identical to v1; TC-058 hashes unchanged; PROMPT_VERSION unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-183",
+      "ac_reference": "T-48; FR-74",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "No corpus literals outside allowed paths",
+      "description": "T-48 step 4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-183.",
+      "expected_result": "scripts/check-corpus-literals.ts fails on PostgreSQL, postgresql.org or 35 pages outside sourced.config.ts, corpus/, eval/, docs/, tests/ and qa/, and passes on the tree; it runs in the ci.yml static job.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "check:corpus-literals passes on the tree and exits 1 on a temporary violating file (corpus-literals.test.ts); runs in ci.yml lint job"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-184",
+      "ac_reference": "T-48; FR-17",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Citation markers up to P9",
+      "description": "T-48 step 3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-184.",
+      "expected_result": "Markers [P1]–[P9] parse; finalPassages above 9 is rejected by config validation.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "kit-citations.test.ts: P1-P9 through parse, verify, SSE and rendering; finalPassages 10 rejected"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

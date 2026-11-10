@@ -1,3 +1,4 @@
+import { CORPUS_COPY } from '@/lib/copy';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { GENERATION } from '@/lib/config';
@@ -110,7 +111,7 @@ test.each([
 
 test('TC-054: not-found script', async () => {
   expect((await run('mock:not-found')).text).toBe(
-    GENERATION.NOT_FOUND_SENTENCE + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
+    CORPUS_COPY.notFound + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
   );
 });
 test('TC-054: invalid-citation preserves two valid quotes and adds precisely P3 and P9', async () => {

@@ -80,7 +80,7 @@ afterEach(() => {
 const write = (overrides = version) =>
   writeAnswerCache({
     suggestedId: 'partial',
-    question: SUGGESTED[1].question,
+    question: SUGGESTED[1]!.question,
     version: overrides,
     payload,
   });
@@ -237,6 +237,6 @@ test('TC-076: seed command creates six validated mock cache rows without API cre
 
 test('TRD §16.3: script refuses to cache a question without a verified citation', async () => {
   await getSql()`TRUNCATE chunks`;
-  await expect(cacheSuggested()).rejects.toThrow(`Suggested answer failed: ${SUGGESTED[0].id}`);
+  await expect(cacheSuggested()).rejects.toThrow(`Suggested answer failed: ${SUGGESTED[0]!.id}`);
   expect(await getSql()`SELECT id FROM answer_cache`).toHaveLength(0);
 });

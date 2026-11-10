@@ -1,3 +1,4 @@
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { z } from 'zod';
 import { RETRIEVAL } from '@/lib/config';
 import { AppError } from '@/lib/errors';
@@ -40,7 +41,10 @@ export async function rerank(
 ): Promise<RerankResult> {
   signal.throwIfAborted();
   const usage = { inputTokens: 0, outputTokens: 0 };
-  if (candidates.length <= RETRIEVAL.FINAL_PASSAGES) {
+  if (
+    candidates.length <=
+    (getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
+  ) {
     return {
       reranked: candidates,
       rerankFallback: false,

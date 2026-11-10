@@ -1,29 +1,19 @@
+import snapshotCopy from '@/.sourced/copy.json';
+import type { CorpusCopy } from '@/lib/kit/copy';
+
+// Only rendered public copy crosses the client boundary; no server config or models.
+export const CORPUS_COPY: CorpusCopy = snapshotCopy;
+
 // Corpus-specific UI copy (PRD §9.2–9.3, FR-74).
 export const ASK_COPY = {
-  placeholder: 'e.g. How do I find slow queries with EXPLAIN ANALYZE?',
-  nextPlaceholder: 'Ask another question about PostgreSQL 17',
+  ...CORPUS_COPY,
   limit:
     '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
   suggestions: 'Start with one of these',
-  scope:
-    'Answers come only from 35 pages of the PostgreSQL 17 documentation. If the answer is not there, Sourced says so.',
   scopeLink: 'See how it is measured',
-  headerScope: 'Answers only from 35 pages of the PostgreSQL 17 docs',
-  railSubtitle: 'PostgreSQL 17 docs',
   sessionPrivacy:
     'Kept in this tab only. Reload or close it and the chat is gone; nothing is stored on the server.',
-  searched: 'Searched 35 pages',
-  docsDomain: 'postgresql.org/docs/17',
-  attribution:
-    'Answers are generated from the PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the',
-  viewerLink: 'Open on postgresql.org',
   viewerNote: 'Highlighted: the sentence the answer quotes.',
-  docsLink: 'Read in the PostgreSQL docs',
-  hero: 'Ask the PostgreSQL docs.',
-  lead: 'Get a direct answer with working SQL. Every sentence links to the passage it comes from, and every quote is checked before you see it.',
-  notFoundHeading: 'I couldn’t find this in the PostgreSQL docs.',
-  notFoundBody:
-    'Sourced only answers from the 35 pages it has indexed. These passages came closest:',
   relatedReading: 'Related reading',
   anotherQuestion: 'Ask another question',
   tryAgain: 'Try again',

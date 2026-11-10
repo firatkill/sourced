@@ -8,7 +8,7 @@ const doubles = vi.hoisted(() => ({
   env: { LLM_MODE: 'mock', OPENAI_API_KEY: 'test-only-not-a-key' },
 }));
 vi.mock('ai', () => ({ embedMany: doubles.embedMany }));
-vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env }));
+vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env, getConfigEnv: () => doubles.env }));
 
 test('TC-043: OpenAI adapter pins dimensions, disables SDK retries and maps usage', async () => {
   const vectors = [Array<number>(EMBEDDING.DIMENSIONS).fill(0)];

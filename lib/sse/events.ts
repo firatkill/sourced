@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const PassageDto = z.object({
-  label: z.string().regex(/^P[1-6]$/),
+  label: z.string().regex(/^P[1-9]$/),
   chunkId: z.string(),
   documentTitle: z.string(),
   headingPath: z.array(z.string()).min(1),
@@ -23,7 +23,7 @@ export const MetaEvent = z.object({
   cached: z.boolean(),
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- normative TRD §12.2 schema
   cachedAt: z.string().datetime().nullable(),
-  passages: z.array(PassageDto).max(6),
+  passages: z.array(PassageDto).max(9),
   retrieval: z.object({
     vectorCandidates: z.number().int(),
     ftsCandidates: z.number().int(),
@@ -48,7 +48,7 @@ export const CitationsEvent = z.object({
   notFound: z.boolean(),
   valid: z.array(
     z.object({
-      label: z.string().regex(/^P[1-6]$/),
+      label: z.string().regex(/^P[1-9]$/),
       quote: z.string(),
       quoteSpan: z.object({
         start: z.number().int().nonnegative(),

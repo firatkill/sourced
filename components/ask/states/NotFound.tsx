@@ -3,16 +3,18 @@ import type { SseEvent } from '@/lib/sse/events';
 import { ExternalLink } from 'lucide-react';
 
 export function NotFound({
+  body = ASK_COPY.notFoundBody,
   passages,
   onAnother,
 }: {
+  body?: string;
   passages: Extract<SseEvent, { event: 'meta' }>['data']['passages'];
   onAnother: () => void;
 }) {
   return (
     <div className="space-y-4">
       <h2>{ASK_COPY.notFoundHeading}</h2>
-      <p>{ASK_COPY.notFoundBody}</p>
+      <p>{body}</p>
       <h3>{ASK_COPY.relatedReading}</h3>
       {passages.map((passage) => (
         <a
@@ -25,7 +27,9 @@ export function NotFound({
         >
           <span>
             {passage.headingPath.at(-1) ?? passage.documentTitle}
-            <span className="block text-xs text-[var(--ink-3)]">{ASK_COPY.docsDomain}</span>
+            {ASK_COPY.docsDomain && (
+              <span className="block text-xs text-[var(--ink-3)]">{ASK_COPY.docsDomain}</span>
+            )}
           </span>
           <ExternalLink size={16} aria-hidden="true" />
         </a>

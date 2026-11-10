@@ -127,10 +127,17 @@ export function ChatRail({ turns, busy, onNew }: Props) {
           Built by Fırat Kıl · <a href="https://firatkil.com">firatkil.com</a> ·{' '}
           <a href="https://github.com/firatkill/sourced">Source on GitHub (MIT)</a>
         </p>
-        <p>
-          {ASK_COPY.attribution}{' '}
-          <a href="https://www.postgresql.org/about/licence/">PostgreSQL License</a>.
-        </p>
+        {(ASK_COPY.attribution || ASK_COPY.license) && (
+          <p>
+            {ASK_COPY.attribution}
+            {ASK_COPY.license && (
+              <>
+                {ASK_COPY.attribution ? ' ' : ''}
+                <a href={ASK_COPY.license.url}>{ASK_COPY.license.name}</a>.
+              </>
+            )}
+          </p>
+        )}
         <p>
           Privacy: questions are not stored.{' '}
           <a href="/how-it-works#privacy">Read how this works.</a>

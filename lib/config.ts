@@ -44,7 +44,6 @@ export const GENERATION = {
   QUOTE_MAX_WORDS: 40,
   QUOTE_FALLBACK_TIMEOUT_MS: 6_000,
   QUOTE_FALLBACK_MAX_OUTPUT_TOKENS: 400,
-  NOT_FOUND_SENTENCE: "I couldn't find this in the PostgreSQL docs.",
 } as const;
 
 export const QUESTION = {

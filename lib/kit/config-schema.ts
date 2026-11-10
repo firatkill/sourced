@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CHUNKING, RETRIEVAL } from '@/lib/config';
-import { getEnv } from '@/lib/env';
+import { getConfigEnv } from '@/lib/env';
 import { modelCapabilities } from '@/lib/llm/models';
 
 const RoleModel = z.object({
@@ -71,7 +71,7 @@ const BaseKitConfigSchema = z.object({
   schemaVersion: z.literal(1),
   corpus: z.object({
     name: z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/), // directory name under corpus/ and eval/
-    title: z.string().min(1).max(60), // "PostgreSQL 17 docs"
+    title: z.string().min(1).max(60),
     description: z.string().min(1).max(200),
     language: z.string().regex(/^[a-z]{2}$/), // ISO 639-1
     attribution: z.string().max(300).optional(),
@@ -92,9 +92,26 @@ const BaseKitConfigSchema = z.object({
       hero: z.string().max(120).optional(),
       lead: z.string().max(300).optional(),
       notFound: z.string().max(120).optional(),
+      documentTitle: z.string().max(80).optional(),
+      shortTitle: z.string().max(40).optional(),
+      headerScope: z.string().max(120).optional(),
+      scope: z.string().max(300).optional(),
+      placeholder: z.string().max(120).optional(),
+      nextPlaceholder: z.string().max(120).optional(),
+      notFoundBody: z.string().max(200).optional(),
+      searched: z.string().max(60).optional(),
+      viewerLink: z.string().max(40).optional(),
+      sourceDomain: z.string().max(80).optional(),
+      license: z.object({ name: z.string().min(1).max(80), url: z.url() }).optional(),
+      promptSubject: z.string().min(1).max(60).optional(),
+      rerankSubject: z.string().min(1).max(60).optional(),
       suggested: z
         .array(
-          z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200) }),
+          z.object({
+            id: z.string().regex(/^[a-z0-9-]{1,20}$/),
+            text: z.string().min(3).max(200),
+            topic: z.string().min(1).max(24).optional(),
+          }),
         )
         .max(6)
         .default([]),
@@ -187,7 +204,7 @@ export function validateKitConfig(
         issue(['pricing', key], `Add inputPerMTok and outputPerMTok pricing for ${role}.`);
     }
   }
-  const env = getEnv();
+  const env = getConfigEnv();
   if (env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production') {
     for (const [role, model] of Object.entries(config.models)) {
       if (model?.provider === 'mock')

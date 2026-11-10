@@ -1,3 +1,5 @@
+import { getCopy } from '@/lib/kit/copy';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import 'server-only';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { getEnv } from '@/lib/env';
@@ -32,7 +34,7 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
 function passagesFrom(prompt: string) {
   return Array.from(
-    prompt.matchAll(/<<<PASSAGE (P[1-6])\r?\n([\s\S]*?)\r?\nPASSAGE \1>>>/g),
+    prompt.matchAll(/<<<PASSAGE (P[1-9])\r?\n([\s\S]*?)\r?\nPASSAGE \1>>>/g),
     (match) => ({
       id: match[1] ?? '',
       content: (match[2] ?? '').replace(/^Source: [^\n]*\n/, '').trim(),
@@ -70,14 +72,14 @@ function scriptFor(prompt: string) {
   if (trigger === 'not-found') {
     return {
       trigger,
-      text: GENERATION.NOT_FOUND_SENTENCE + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
+      text: getCopy(getKitConfig()).notFound + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
     };
   }
   if (trigger === 'echo-injection') {
     return {
       trigger,
       text: passages
-        .slice(0, RETRIEVAL.FINAL_PASSAGES)
+        .slice(0, getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
         .map((p) => p.content)
         .join('\n'),
     };

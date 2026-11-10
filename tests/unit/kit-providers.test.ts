@@ -9,7 +9,7 @@ const doubles = vi.hoisted(() => ({
   streamText: vi.fn(),
   env: { LLM_MODE: 'live', OPENAI_API_KEY: 'test-only-not-a-key' },
 }));
-vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env }));
+vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env, getConfigEnv: () => doubles.env }));
 vi.mock('@/lib/kit/runtime-config', () => ({
   getKitConfig: () => KitConfigSchema.parse(doubles.config),
 }));

@@ -16,8 +16,8 @@ import { SourceViewer } from './SourceViewer';
 type Props = {
   demoMode: 'on' | 'readonly' | 'off';
   limits: { ipDaily: number; globalDaily: number };
-  suggested: readonly { id: SuggestedId; question: string; topic: string }[];
-  copy: { hero: string; lead: string };
+  suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
+  copy: { hero: string; lead: string; notFoundBody?: string; searched?: string };
 };
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
@@ -181,6 +181,10 @@ function Conversation({
                   <Turn
                     key={turn.id}
                     turn={turn}
+                    copy={{
+                      notFoundBody: copy.notFoundBody ?? ASK_COPY.notFoundBody,
+                      searched: copy.searched ?? ASK_COPY.searched,
+                    }}
                     limits={limits}
                     selected={viewer?.turn === turn.id ? viewer.label : null}
                     onSelect={(label) => {

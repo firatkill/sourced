@@ -1,3 +1,4 @@
+import { CORPUS_COPY } from '@/lib/copy';
 import { expect, test } from 'vitest';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { encode, decode } from '@/lib/ingest/tokenizer';
@@ -30,7 +31,7 @@ const delimiters = [
   '<<<ANSWER',
   'ANSWER>>>',
   '<<<CITATIONS>>>',
-  ...Array.from({ length: 6 }, (_, i) => [
+  ...Array.from({ length: 9 }, (_, i) => [
     `<<<PASSAGE P${String(i + 1)}`,
     `PASSAGE P${String(i + 1)}>>>`,
   ]).flat(),
@@ -161,22 +162,24 @@ test('TC-060 / FR-17: answer prompt requests the configured word limit and citat
   expect(ANSWER_SYSTEM_PROMPT).toContain(
     `Keep the answer under ${String(GENERATION.ANSWER_WORD_LIMIT)} words.`,
   );
-  expect(ANSWER_SYSTEM_PROMPT).toContain(GENERATION.NOT_FOUND_SENTENCE);
+  expect(ANSWER_SYSTEM_PROMPT).toContain(CORPUS_COPY.notFound);
   expect(ANSWER_SYSTEM_PROMPT).toContain(GENERATION.CITATIONS_DELIMITER);
   // The prompt requests 5–30 words; verification intentionally permits 4–40 (§14).
   expect(ANSWER_SYSTEM_PROMPT).toContain('must be 5 to 30 words long');
 });
 
-test('TC-060: quote output bounds match the normative §13.3 schema', () => {
+test('TC-060: quote output bounds match §13.3 with T-48 / §29.2 (nine passages)', () => {
   expect(QuotesOutput.safeParse({ citations: [] }).success).toBe(true);
   expect(QuotesOutput.safeParse({ citations: [{ id: 'P1', quote: '' }] }).success).toBe(true);
-  const citations = Array.from({ length: 6 }, (_, i) => ({
+  const citations = Array.from({ length: 9 }, (_, i) => ({
     id: `P${String(i + 1)}`,
     quote: 'x'.repeat(400),
   }));
   expect(QuotesOutput.safeParse({ citations }).success).toBe(true);
   expect(QuotesOutput.safeParse({ citations: [...citations, citations[0]] }).success).toBe(false);
-  expect(QuotesOutput.safeParse({ citations: [{ id: 'P7', quote: 'words' }] }).success).toBe(false);
+  expect(QuotesOutput.safeParse({ citations: [{ id: 'P10', quote: 'words' }] }).success).toBe(
+    false,
+  );
   expect(
     QuotesOutput.safeParse({ citations: [{ id: 'P1', quote: 'x'.repeat(401) }] }).success,
   ).toBe(false);

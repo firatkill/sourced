@@ -4,7 +4,7 @@ export type SqlToken = {
   text: string;
 };
 
-// SQL commands, clauses, EXPLAIN options and PostgreSQL types used by the corpus.
+// SQL commands, clauses, EXPLAIN options and database types used by the corpus.
 const keywords = new Set(
   `
   ALL ALTER ANALYZE AND ANY ARRAY AS ASC AT AUTHORIZATION BEGIN BETWEEN BIGINT

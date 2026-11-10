@@ -283,7 +283,7 @@ test.each([
 async function writeCache(stale = false) {
   await cache.writeAnswerCache({
     suggestedId: 'partial',
-    question: SUGGESTED[1].question,
+    question: SUGGESTED[1]!.question,
     version: {
       corpusVersion,
       promptVersion: stale ? 'old-version' : PROMPT_VERSION,
@@ -309,7 +309,7 @@ test.each(['on', 'readonly'])(
     const consume = vi.spyOn(limiter, 'consume');
     // A mismatched explicit id must fall back to canonical question matching.
     const events = await readResponse(
-      await POST(request({ question: SUGGESTED[1].question.toUpperCase(), suggestedId: 'iso' })),
+      await POST(request({ question: SUGGESTED[1]!.question.toUpperCase(), suggestedId: 'iso' })),
     );
     expect(events[0]).toMatchObject({ event: 'meta', data: { cached: true } });
     expect(events.at(-1)).toMatchObject({
@@ -340,7 +340,7 @@ test.each(['on', 'readonly'])('TC-084: stale cache in %s', async (mode) => {
   vi.stubEnv('DEMO_MODE', mode);
   resetEnvForTests();
   const events = await readResponse(
-    await POST(request({ question: SUGGESTED[1].question, suggestedId: 'partial' })),
+    await POST(request({ question: SUGGESTED[1]!.question, suggestedId: 'partial' })),
   );
   expect(events[0]).toMatchObject({ event: 'meta', data: { cached: mode === 'readonly' } });
   expect(await counts()).toEqual(mode === 'on' ? [1, 1] : []);
@@ -353,7 +353,7 @@ test.each(['off', 'readonly'])(
     resetEnvForTests();
     const response = await POST(
       request({
-        question: mode === 'off' ? SUGGESTED[1].question : question,
+        question: mode === 'off' ? SUGGESTED[1]!.question : question,
         suggestedId: 'partial',
       }),
     );
@@ -386,7 +386,7 @@ test.each(['IP', 'GLOBAL'])(
     expect((await rows()).map((r) => r.outcome)).toEqual(['answered', 'rate_limited']);
     await writeCache();
     expect(
-      (await readResponse(await POST(request({ question: SUGGESTED[1].question }))))[0],
+      (await readResponse(await POST(request({ question: SUGGESTED[1]!.question }))))[0],
     ).toMatchObject({ event: 'meta', data: { cached: true } });
     expect(await counts()).toEqual([1, 1]);
   },

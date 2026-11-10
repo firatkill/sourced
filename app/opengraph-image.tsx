@@ -1,6 +1,7 @@
+import { ASK_COPY } from '@/lib/copy';
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Sourced: answers that show their sources';
+export const alt = ASK_COPY.documentTitle;
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 

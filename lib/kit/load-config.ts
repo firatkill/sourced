@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { KitConfigSchema, type KitConfig } from './config-schema';
 import { AppError } from '@/lib/errors';
 import { ftsConfig } from './fts';
+import { getCopy } from './copy';
 
 export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -69,6 +70,9 @@ export async function loadConfig(root = process.cwd()): Promise<KitConfig> {
   const temporary = path.join(directory, `config.${crypto.randomUUID()}.tmp`);
   await writeFile(temporary, JSON.stringify(snapshot, null, 2) + '\n');
   await rename(temporary, path.join(directory, 'config.json'));
+  const copyTemporary = path.join(directory, `copy.${crypto.randomUUID()}.tmp`);
+  await writeFile(copyTemporary, JSON.stringify(getCopy(snapshot.config), null, 2) + '\n');
+  await rename(copyTemporary, path.join(directory, 'copy.json'));
   const mounts = config.sources
     .flatMap((source) =>
       source.type === 'folder' || source.type === 'git' ? [path.resolve(root, source.path)] : [],
@@ -79,8 +83,6 @@ export async function loadConfig(root = process.cwd()): Promise<KitConfig> {
     });
   await writeFile(path.join(directory, 'mounts'), mounts.join('\n'));
   if (ftsConfig(config.corpus.language) === 'simple')
-    process.stderr.write(
-      `corpus.language: ${config.corpus.language} uses PostgreSQL simple text search.\n`,
-    );
+    process.stderr.write(`corpus.language: ${config.corpus.language} uses simple text search.\n`);
   return config;
 }

@@ -3358,7 +3358,7 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 | `viewerLink` | `Open the source` |
 | `sourceDomain` | omitted (the line that shows it is not rendered) |
 | `promptSubject` (TRD §13.1: "answers questions about {promptSubject}", "excerpts from the {promptSubject} documentation") | `corpus.title` |
-| `rerankSubject` (TRD §13.2: "a question about {rerankSubject}") | `promptSubject` |
+| `rerankSubject` (TRD §13.2: "a question about {rerankSubject}"; also the eval judge prompt, TRD §17: "your own knowledge of {rerankSubject}") | `promptSubject` |
 | Suggested topic label | omitted when `topic` is unset |
 
 The example configuration sets every one of these to the string the app shows in v1.1, so the rendered page and both rendered prompts are byte-identical and `PROMPT_VERSION` does not change. Page titles of `/eval` and `/how-it-works` do not name the corpus and stay constants.

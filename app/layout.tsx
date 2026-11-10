@@ -1,3 +1,4 @@
+import { ASK_COPY } from '@/lib/copy';
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -25,7 +26,7 @@ const THEME_SCRIPT =
 export function generateMetadata(): Metadata {
   return {
     metadataBase: new URL(getEnv().NEXT_PUBLIC_SITE_URL),
-    title: 'Sourced: answers that show their sources',
+    title: ASK_COPY.documentTitle,
     icons: { icon: '/favicon.svg' },
   };
 }

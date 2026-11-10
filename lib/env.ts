@@ -48,6 +48,41 @@ const schema = z.object({
   GITHUB_STEP_SUMMARY: optionalText,
 });
 
+// Configuration loading needs deployment guards and optional overrides, not runtime
+// credentials. Keep this separate from getEnv(), whose full validation stays strict.
+const optionalPrice = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.coerce.number().nonnegative().optional(),
+);
+const configEnvSchema = schema
+  .pick({
+    NODE_ENV: true,
+    VERCEL_ENV: true,
+    LLM_MODE: true,
+    CHAT_MODEL: true,
+    JUDGE_MODEL: true,
+  })
+  .extend({
+    PRICE_CHAT_INPUT_PER_MTOK: optionalPrice,
+    PRICE_CHAT_OUTPUT_PER_MTOK: optionalPrice,
+    PRICE_JUDGE_INPUT_PER_MTOK: optionalPrice,
+    PRICE_JUDGE_OUTPUT_PER_MTOK: optionalPrice,
+    PRICE_EMBED_PER_MTOK: optionalPrice,
+  })
+  .superRefine((env, ctx) => {
+    if (env.LLM_MODE === 'mock' && env.VERCEL_ENV === 'production')
+      ctx.addIssue({ code: 'custom', path: ['LLM_MODE'], message: 'Mock forbidden in production' });
+  });
+
+export function getConfigEnv(): z.infer<typeof configEnvSchema> {
+  const result = configEnvSchema.safeParse(process.env);
+  if (!result.success)
+    throw new Error(
+      `Invalid environment variables: ${[...new Set(result.error.issues.map((issue) => issue.path.join('.')))].join(', ')}`,
+    );
+  return result.data;
+}
+
 type Env = z.infer<typeof schema>;
 let cached: Env | undefined;
 

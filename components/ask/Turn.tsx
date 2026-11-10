@@ -19,6 +19,7 @@ const AnswerActions = lazy(async () => ({
 export type ChatTurn = AskState & { id: number };
 export function Turn({
   turn,
+  copy = ASK_COPY,
   limits,
   selected,
   onSelect,
@@ -27,6 +28,7 @@ export function Turn({
   onStop,
 }: {
   turn: ChatTurn;
+  copy?: Pick<typeof ASK_COPY, 'notFoundBody' | 'searched'>;
   limits: { ipDaily: number; globalDaily: number };
   selected: string | null;
   onSelect: (label: string) => void;
@@ -52,7 +54,13 @@ export function Turn({
   function body() {
     switch (phase.kind) {
       case 'notFound':
-        return <NotFound passages={meta?.passages ?? []} onAnother={onAnother} />;
+        return (
+          <NotFound
+            body={copy.notFoundBody}
+            passages={meta?.passages ?? []}
+            onAnother={onAnother}
+          />
+        );
       case 'rateLimited':
         return (
           <RateLimited {...rateLimitCopy(phase.scope, phase.resetAt, limits)} scope={phase.scope} />
@@ -142,7 +150,7 @@ export function Turn({
             {meta && (
               <>
                 <span className="rounded-full border border-[var(--rule)] px-3 py-1">
-                  {ASK_COPY.searched}
+                  {copy.searched}
                 </span>
                 {text !== '' && (
                   <span className="rounded-full border border-[var(--rule)] px-3 py-1">

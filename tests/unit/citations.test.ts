@@ -1,3 +1,4 @@
+import { CORPUS_COPY } from '@/lib/copy';
 import { describe, expect, it, vi } from 'vitest';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { parseBlock, parseMarkers, removeMarkers } from '@/lib/citations/parse';
@@ -189,8 +190,8 @@ describe('TC-066 / UT-09: verification', () => {
   });
 
   it.each([
-    GENERATION.NOT_FOUND_SENTENCE,
-    GENERATION.NOT_FOUND_SENTENCE.replace("'", '’'),
+    CORPUS_COPY.notFound,
+    CORPUS_COPY.notFound.replace("'", '’'),
     'An uncited answer.',
     '`[P1]`',
   ])('returns not found without fallback for %j', async (answer) => {

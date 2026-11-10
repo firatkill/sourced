@@ -1,3 +1,4 @@
+import { CORPUS_COPY } from '@/lib/copy';
 import type { Metadata } from 'next';
 import { PipelineDiagram } from '@/components/how/PipelineDiagram';
 import { CHUNKING, GENERATION, RETRIEVAL } from '@/lib/config';
@@ -21,8 +22,8 @@ export default function HowItWorks() {
           <section>
             <h2>1. Preparing the documents</h2>
             <p>
-              The 35 PostgreSQL 17 documentation pages are parsed offline into sections, then split
-              into chunks of {CHUNKING.MIN_TOKENS}–{CHUNKING.MAX_TOKENS} tokens with{' '}
+              The {CORPUS_COPY.preparationSubject} are parsed offline into sections, then split into
+              chunks of {CHUNKING.MIN_TOKENS}–{CHUNKING.MAX_TOKENS} tokens with{' '}
               {CHUNKING.OVERLAP_TOKENS} tokens of overlap when a section needs splitting. Short
               sections can form smaller chunks. Each chunk keeps its heading and source URL. Its
               text and embedding are stored in Postgres with pgvector.
@@ -59,7 +60,7 @@ export default function HowItWorks() {
             <p>
               The server checks that each cited passage exists and that its supporting quote appears
               in the passage after normalization. Invalid citations are removed. If none remain, the
-              answer is replaced with “{GENERATION.NOT_FOUND_SENTENCE}”
+              answer is replaced with “{CORPUS_COPY.notFound}”
             </p>
           </section>
           <section>
@@ -103,7 +104,10 @@ export default function HowItWorks() {
                 A quote match proves the words exist in the passage, not that the passage fully
                 supports the sentence. That is what the faithfulness judge measures.
               </li>
-              <li>The corpus is 35 pages, not the full PostgreSQL documentation.</li>
+              <li>
+                The corpus is {CORPUS_COPY.corpusExtent}, not the full {CORPUS_COPY.rerankSubject}{' '}
+                documentation.
+              </li>
               <li>
                 The first request after a quiet period can be slow because the database scales to
                 zero.
