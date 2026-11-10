@@ -68,7 +68,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | done | 8b05a91 |
 | T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | 762a8a3 |
 | T-50 | M5 Configuration seams | Example corpus in the kit layout | done | 08cb06b |
-| T-51 | M5 Configuration seams | Deployment profiles | done | HEAD |
+| T-51 | M5 Configuration seams | Deployment profiles | done | 0403bde |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | doing | |
 | T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | todo | |
 | T-54 | M6 Sources and CLI | Generic HTML parser | todo | |
