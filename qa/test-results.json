@@ -4423,6 +4423,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-193",
+      "ac_reference": "T-52; PRD §12",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "M5 exit criteria",
+      "description": "M5 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-193.",
+      "expected_result": "Example behaves as v1.0.0 within the regression delta; the second fixture corpus runs end to end; milestone report written.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M5 exit: qa/m5-report.md; CI run 42807238685 on 732bb17 green in all six jobs (including E2E-26 with the sourced_kit_tr database); example eval within maxRegression (TC-189); second fixture corpus end to end (TC-192)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
