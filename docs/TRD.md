@@ -3609,7 +3609,7 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 | `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example` | `sourced.config.ts`, `.env.local` (names only), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
 | `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
 | `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
-| `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | report (section 34.4) |
+| `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
 | `inspect` | `--source <id>` | `corpus/<name>/inspect.json` | section 36.4 |
 | `ask` | `"<question>" --trace` | `query_log` row (source `cli`) | `{ outcome, answer, citations, trace? }` |
 | `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` |
@@ -3621,6 +3621,8 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 | `config:snapshot` | — | `.sourced/config.json` | `{ configHash }` |
 
 `query_log.source` check constraint gains `'cli'` (migration `0003_kit.sql`). v1 script names remain as aliases: `pnpm ingest` → `sourced ingest`, `pnpm eval` → `sourced eval`, `pnpm eval:validate` → `sourced eval --validate-only`, `pnpm cache:suggested` unchanged.
+
+Ingest report (D-109), the `result` of `ingest` with and without `--dry-run`: `{ mode: 'run' | 'dry-run', runId: string | null, corpusVersion: string | null, sources: Array<{ id, revision?: string, documents: { discovered, done, skipped, failed }, chunks: { new, changed, unchanged, deleted }, embeddingTokens, estimatedCostUsd: number | null, boilerplateRemoved, skipped: Array<{ key, reason }>, warnings: number }>, totals: same counters summed, plus estimatedCostUsd (null when any source's price is unknown) }`. A dry run has `runId: null` and `corpusVersion: null` and writes nothing. The human-readable output summarizes the same object; the v1 report lines stay for `pnpm ingest`.
 
 ### 34.2 JSON envelope (normative, `lib/cli/envelope.ts`)
 
