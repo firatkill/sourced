@@ -3522,7 +3522,7 @@ Location slug (D-101): the last path segment of the location (URL path or file p
 
 `SourceEvent` (implementation-defined, internal to the CLI): a discriminated union with at least `discovered`, `fetched`, `cached`, `skipped` (with reason) and `failed` (with error code), each carrying the document key. Git sources record `git rev-parse HEAD` per source in the ingest report (`sources[].revision`) and include it in the corpus version input; no schema change.
 
-File-source passage transport (FR-65, §33.1): retrieval preserves `source_kind`. Web passages retain an HTTP(S) `officialUrl` built from the document URL and chunk anchor fragment, independently of the document key. File passages carry `officialUrl: null` and a non-empty `filePath` taken from the source-relative location in the document key. `PassageDto` (§12.2) accepts these two alternatives; a missing file path or a `file://` link is invalid. Source viewers and related-reading cards render `filePath › heading` without a link, and copied citations use the path. Quote verification continues to use passage labels and content unchanged.
+File-source passage transport (FR-65, §33.1): retrieval preserves `source_kind`. Web passages retain an HTTP(S) `officialUrl` built from the document URL and chunk anchor fragment, independently of the document key. File passages carry `officialUrl: null` and a non-empty `filePath` taken from the source-relative location in the document key. `PassageDto` (§12.2) accepts these two alternatives; a missing file path or a `file://` link is invalid. Source viewers and related-reading cards render `filePath › heading` without a link, and copied citations use the path. For PDF passages (T-56), optional positive-integer `pageFrom` and `pageTo` fields in the SSE `meta` passage preserve `chunks.page_from` / `page_to`. Web PDF links use `url#page=<pageFrom>`; file PDF viewers, related-reading cards and copied citations use `filePath, page <pageFrom>` without a link. Non-PDF passages omit the page fields. Quote verification continues to use passage labels and content unchanged.
 
 ### 32.2 Drivers
 
@@ -3573,6 +3573,8 @@ The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtm
 ### 33.4 PDF (`parse-pdf.ts`, FR-70)
 
 `unpdf` (a `pdfjs-dist` wrapper that runs in Node without a canvas; A-21). Per page: text items with font size. Headings: lines whose font size is at least 1.25× the page's median size and under 120 characters. Sections from detected headings; if none are found, one section per page. Each block records its page. A PDF whose total extracted text is under 20 characters per page on average is reported `needs_ocr` and skipped.
+
+Title and heading levels (D-107): the title is the PDF Info `Title` when present and not empty, else the first detected heading on page 1, else the file name. Distinct heading font sizes, rounded to 0.5 pt, are ranked largest first and map to levels 1 to 6 (sizes beyond the sixth share level 6).
 
 ### 33.5 `.docx` (`parse-docx.ts`, D-70)
 
@@ -3900,7 +3902,7 @@ Record results in the PRD decisions log with the next free `D-` number.
 | `fast-xml-parser` | sitemaps | T-53 |
 | `@mozilla/readability`, `linkedom` | generic HTML | T-54 |
 | `unified`, `remark-parse`, `remark-gfm`, `remark-frontmatter`, `remark-mdx` | Markdown and MDX | T-55 |
-| `unpdf` | PDF | T-56 |
+| `unpdf` 1.9.1 | PDF; Node ≥22 (2.x requires Node ≥24) | T-56 |
 | `mammoth` | `.docx` | T-57 |
 | `@inquirer/prompts` | interactive CLI prompts | T-58 |
 
