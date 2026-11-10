@@ -71,7 +71,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-51 | M5 Configuration seams | Deployment profiles | done | 0403bde |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | done | 29d20da |
 | T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | done | 82cc09b |
-| T-54 | M6 Sources and CLI | Generic HTML parser | done | HEAD |
+| T-54 | M6 Sources and CLI | Generic HTML parser | done | c66a17d |
 | T-55 | M6 Sources and CLI | Markdown and MDX parser | doing | |
 | T-56 | M6 Sources and CLI | PDF parser | todo | |
 | T-57 | M6 Sources and CLI | `.docx` parser | todo | |
