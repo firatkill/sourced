@@ -67,7 +67,7 @@ const payload = CachedAnswerPayload.parse({
 
 beforeEach(async () => {
   await closeSqlForTests();
-  await getSql()`TRUNCATE answer_cache, ingest_runs`;
+  await getSql()`TRUNCATE answer_cache, ingest_items, ingest_runs`;
   await getSql()`INSERT INTO ingest_runs (status, finished_at, corpus_version, include_fixtures, embedding_model) VALUES ('succeeded', now(), 'corpus-a', false, 'mock-feature-hash')`;
   vi.stubEnv('DEMO_MODE', 'on');
   resetEnvForTests();

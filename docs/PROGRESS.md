@@ -63,8 +63,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | done | 190dafa, HEAD |
 | T-44 | M4 Polish and deploy | README, demo GIF and diagrams | done | 560d5c4 |
 | T-45 | M4 Polish and deploy | Release v1.0.0 | done | ea39e59 (tag v1.0.0) |
-| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | doing | |
-| T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | todo | |
+| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | HEAD |
+| T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | doing | |
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | todo | |
 | T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | todo | |
 | T-50 | M5 Configuration seams | Example corpus in the kit layout | todo | |

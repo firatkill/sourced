@@ -4024,6 +4024,69 @@
       "clickup_task": null,
       "retraction_reason": null,
       "automatable": false
+    },
+    {
+      "tc_reference": "TC-174",
+      "ac_reference": "T-46; FR-61; FR-72; D-92",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Migration 0003_kit applies on empty and v1 databases",
+      "description": "TRD §30.1; IT-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-174.",
+      "expected_result": "drizzle/0003_kit.sql matches TRD §30.1; pnpm db:migrate succeeds on an empty database and on a database holding the v1 example corpus; corpus_meta, ingest_items and the new columns exist; query_log.source accepts 'cli'.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "migrations.test.ts: empty and v1-populated databases migrate; 0003_kit matches TRD §30.1"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-175",
+      "ac_reference": "T-46; FR-67; D-92",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Same chunk text in two documents is stored twice",
+      "description": "IT-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-175.",
+      "expected_result": "Ingesting two documents that share one chunk text stores two chunk rows, one per document, and both are returned by search; the conflict target is (document_id, content_hash).",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-15 chunk-uniqueness.test.ts: shared text stored per document and retrieved"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-176",
+      "ac_reference": "T-46; FR-37; NFR-16",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Re-ingest after the migration is a no-op",
+      "description": "T-46 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-176.",
+      "expected_result": "Re-running pnpm ingest --offline on the example after 0003_kit reports 0 inserted, 0 updated, 0 deleted.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm ingest --offline after 0003_kit: 0 inserted, 0 updated, 201 unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

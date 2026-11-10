@@ -105,7 +105,7 @@ async function upsertDocument(
         )}::text[]
       ) AS t(document_id, ordinal, heading_path_json, anchor, content,
              token_count, content_hash, embedding_model, embedding_text)
-      ON CONFLICT (content_hash) DO UPDATE
+      ON CONFLICT (document_id, content_hash) DO UPDATE
         SET ordinal      = EXCLUDED.ordinal,
             heading_path = EXCLUDED.heading_path,
             anchor       = EXCLUDED.anchor,
