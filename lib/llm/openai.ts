@@ -4,14 +4,12 @@ import { embedMany, generateText, Output, streamText } from 'ai';
 import { EMBEDDING, GENERATION } from '@/lib/config';
 import { getEnv } from '@/lib/env';
 import { AppError, PROVIDER_ERROR_MESSAGE, PROVIDER_TIMEOUT_MESSAGE } from '@/lib/errors';
-import type { LlmProvider } from './types';
+import { modelCapabilities } from './models';
+import type { LlmProvider, Role } from './types';
 
-// A-03: verified 2026-11-09 with reasoning disabled; temperature 0 is accepted.
-export const MODEL_SUPPORTS_TEMPERATURE = true;
-
-function modelFor(role: 'chat' | 'judge') {
+function modelFor(role: Role, configuredId?: string) {
   const env = getEnv();
-  const id = role === 'chat' ? env.CHAT_MODEL : env.JUDGE_MODEL;
+  const id = configuredId ?? (role === 'judge' ? env.JUDGE_MODEL : env.CHAT_MODEL);
   if (!env.OPENAI_API_KEY || !id) {
     throw new AppError('PROVIDER_ERROR', 'Language model is not configured.');
   }
@@ -35,7 +33,12 @@ function usageOf(usage: { inputTokens?: number | undefined; outputTokens?: numbe
 
 /** Capability injection lets tests verify models that reject temperature. */
 export function createOpenaiProvider(
-  supportsTemperature: boolean = MODEL_SUPPORTS_TEMPERATURE,
+  supportsTemperature?: boolean,
+  model?: string,
+  embed: { model: string; dimensions: number } = {
+    model: EMBEDDING.MODEL,
+    dimensions: EMBEDDING.DIMENSIONS,
+  },
 ): LlmProvider {
   return {
     name: 'openai',
@@ -45,9 +48,9 @@ export function createOpenaiProvider(
       const openai = createOpenAI({ apiKey });
       // A-05 / embedding portion of A-11: verified against installed AI SDK 7 source.
       const result = await embedMany({
-        model: openai.embedding(EMBEDDING.MODEL),
+        model: openai.embedding(embed.model),
         values,
-        providerOptions: { openai: { dimensions: EMBEDDING.DIMENSIONS } },
+        providerOptions: { openai: { dimensions: embed.dimensions } },
         maxRetries: 0,
         ...(opts?.abortSignal ? { abortSignal: opts.abortSignal } : {}),
       });
@@ -67,12 +70,15 @@ export function createOpenaiProvider(
             const result = streamText({
               // fullStream below owns errors; the SDK default logs raw provider errors.
               onError: () => {},
-              model: modelFor(args.model),
+              model: modelFor(args.model, model),
               instructions: args.system,
               prompt: args.prompt,
               maxOutputTokens: args.maxOutputTokens,
               maxRetries: 0,
-              ...(supportsTemperature ? { temperature: GENERATION.TEMPERATURE } : {}),
+              ...((supportsTemperature ??
+              modelCapabilities('openai', model ?? getEnv().CHAT_MODEL ?? '').supportsTemperature)
+                ? { temperature: GENERATION.TEMPERATURE }
+                : {}),
               providerOptions: { openai: { reasoningEffort: 'none' } },
               ...(args.abortSignal ? { abortSignal: args.abortSignal } : {}),
             });
@@ -100,13 +106,16 @@ export function createOpenaiProvider(
       try {
         args.abortSignal?.throwIfAborted();
         const result = await generateText({
-          model: modelFor(args.model),
+          model: modelFor(args.model, model),
           instructions: args.system,
           prompt: args.prompt,
           output: Output.object({ schema: args.schema }),
           maxOutputTokens: args.maxOutputTokens,
           maxRetries: 0,
-          ...(supportsTemperature ? { temperature: GENERATION.TEMPERATURE } : {}),
+          ...((supportsTemperature ??
+          modelCapabilities('openai', model ?? getEnv().CHAT_MODEL ?? '').supportsTemperature)
+            ? { temperature: GENERATION.TEMPERATURE }
+            : {}),
           providerOptions: { openai: { reasoningEffort: 'none', strictJsonSchema: false } },
           ...(args.abortSignal ? { abortSignal: args.abortSignal } : {}),
         });

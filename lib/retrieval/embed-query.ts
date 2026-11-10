@@ -1,13 +1,15 @@
 import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { EMBEDDING } from '@/lib/config';
 import { AppError, PROVIDER_ERROR_MESSAGE, PROVIDER_TIMEOUT_MESSAGE } from '@/lib/errors';
-import { getProvider } from '@/lib/llm';
+import { getProviders } from '@/lib/llm';
 
-const responseSchema = z.object({
-  vectors: z.tuple([z.array(z.number()).length(EMBEDDING.DIMENSIONS)]),
-  tokens: z.number().int().nonnegative(),
-});
+const responseSchema = () =>
+  z.object({
+    vectors: z.tuple([z.array(z.number()).length(getKitConfig().models.embed.dimensions)]),
+    tokens: z.number().int().nonnegative(),
+  });
 const failureSchema = z.object({
   statusCode: z.number().optional(),
   isRetryable: z.boolean().optional(),
@@ -22,9 +24,9 @@ export async function embedQuery(question: string, signal?: AbortSignal) {
   for (let attempt = 0; ; attempt++) {
     try {
       abortSignal.throwIfAborted();
-      const response = await getProvider().embed([question], { abortSignal });
+      const response = await getProviders().embed.embed([question], { abortSignal });
       abortSignal.throwIfAborted();
-      const { vectors, tokens } = responseSchema.parse(response);
+      const { vectors, tokens } = responseSchema().parse(response);
       return { vector: vectors[0], tokens };
     } catch (error) {
       signal?.throwIfAborted();

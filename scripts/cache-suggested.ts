@@ -1,3 +1,4 @@
+import { loadConfig } from '@/lib/kit/load-config';
 import { spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
     });
     return;
   }
+  await loadConfig();
   const mode = process.argv.includes('--mock-worker') ? 'mock' : 'live';
   if (getEnv().LLM_MODE !== mode)
     throw new Error('cache:suggested requires live mode unless --mock is supplied.');

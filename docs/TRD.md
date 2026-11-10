@@ -2249,6 +2249,7 @@ export const ERROR_CODES = [
   'VALIDATION_FAILED', 'ORIGIN_FORBIDDEN', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE',
   'RATE_LIMITED_IP', 'RATE_LIMITED_GLOBAL', 'DEMO_READONLY', 'DEMO_OFF',
   'PROVIDER_ERROR', 'PROVIDER_TIMEOUT', 'RETRIEVAL_ERROR', 'INTERNAL_ERROR',
+  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export class AppError extends Error {
@@ -2260,6 +2261,9 @@ export class AppError extends Error {
 
 | Failure | Detected in | Code | HTTP / event | Retryable | Quota | User copy (PRD 9.3) | Log level |
 |---|---|---|---|---|---|---|---|
+| Invalid kit configuration | CLI / startup | `CONFIG_INVALID` | exit 1 / 500 | no | not used | Server error; CLI field path and fix | error |
+| Corpus model or language mismatch | search / eval | `CORPUS_MISMATCH` | exit 2 / `RETRIEVAL_ERROR` event | no | refunded | Server error; CLI re-ingest instruction (§30.3) | error |
+| Empty corpus | search / ask / dev | `CORPUS_EMPTY` | exit 2 / not-found state | no | — | Not found; CLI ingest instruction (§30.3) | info |
 | Bad JSON / schema | route | `VALIDATION_FAILED` | 400 JSON | no | not used | Validation error | info |
 | Cross-site origin | route | `ORIGIN_FORBIDDEN` | 403 JSON | no | not used | Server error copy | warn |
 | Body too large | route | `PAYLOAD_TOO_LARGE` | 413 JSON | no | not used | Validation (too long) | info |

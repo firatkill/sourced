@@ -9,7 +9,7 @@ import {
   PROVIDER_ERROR_MESSAGE,
   PROVIDER_TIMEOUT_MESSAGE,
 } from '@/lib/errors';
-import { getProvider, isInvalidOutput } from '@/lib/llm';
+import { getProviders, isInvalidOutput } from '@/lib/llm';
 import { MockDropSignal } from '@/lib/llm/mock';
 import { createLogger } from '@/lib/logger';
 import { buildAnswerPrompt, ANSWER_SYSTEM_PROMPT } from '@/lib/prompts/system';
@@ -118,7 +118,7 @@ async function runAnswer(input: {
       input.emit({ event: 'token', data: { delta } });
     };
     try {
-      const stream = getProvider().streamText({
+      const stream = getProviders().chat.streamText({
         model: 'chat',
         system: ANSWER_SYSTEM_PROMPT,
         prompt,
@@ -175,7 +175,7 @@ async function runAnswer(input: {
       const abortSignal = AbortSignal.any([input.signal, timeout]);
       try {
         const result = await withAbort(
-          getProvider().generateObject({
+          getProviders().chat.generateObject({
             model: 'chat',
             system: QUOTES_SYSTEM_PROMPT,
             prompt: buildQuotesPrompt(

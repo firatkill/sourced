@@ -4087,6 +4087,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-177",
+      "ac_reference": "T-47; FR-59",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Kit configuration schema and error messages",
+      "description": "UT-32.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-177.",
+      "expected_result": "Every rule in TRD §29.1–29.3 is enforced; an invalid sourced.config.ts stops with CONFIG_INVALID naming the field and the fix; secrets are rejected in the file.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-32 kit-config.test.ts: schema rules, CONFIG_INVALID naming the field, snapshot"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-178",
+      "ac_reference": "T-47; FR-61",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Embedding column follows configured dimensions",
+      "description": "IT-12.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-178.",
+      "expected_result": "ensureCorpusSchema creates vector(768) and halfvec(3072) columns with HNSW indexes, is a no-op on the same hash and raises CORPUS_MISMATCH when the model or dimensions change, unless rebuilt.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-12 kit-schema.test.ts: vector(768) and halfvec(3072) with HNSW, no-op on same hash, CORPUS_MISMATCH, rebuild; D-96 adoption"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-179",
+      "ac_reference": "T-47; FR-62",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Full-text language from configuration",
+      "description": "IT-13.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-179.",
+      "expected_result": "With a Turkish regconfig the keyword search finds hits that english misses; unsupported languages fall back to simple.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-13 kit-schema.test.ts: turkish regconfig finds hits english misses"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-180",
+      "ac_reference": "T-47; FR-60",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Providers resolved per role; v1 example unchanged",
+      "description": "T-47 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-180.",
+      "expected_result": "getProvider no longer exists; getProviders resolves unset roles to chat; the example with a sourced.config.ts mirroring v1 constants passes E2E-01–E2E-25.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "getProvider removed; getProviders resolves roles to chat; E2E 116 passed with the temporary v1-mirroring sourced.config.ts"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

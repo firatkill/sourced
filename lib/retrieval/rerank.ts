@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { RETRIEVAL } from '@/lib/config';
 import { AppError } from '@/lib/errors';
 import { decode, encode } from '@/lib/ingest/tokenizer';
-import { getProvider, isInvalidOutput } from '@/lib/llm';
+import { getProviders, isInvalidOutput } from '@/lib/llm';
 import { createLogger } from '@/lib/logger';
 import { buildRerankPrompt, RERANK_SYSTEM_PROMPT } from '@/lib/prompts/rerank';
 import type { RetrievedChunk, RetrievalResult } from './types';
@@ -65,8 +65,8 @@ export async function rerank(
   };
 
   try {
-    const result = await getProvider().generateObject({
-      model: 'chat',
+    const result = await getProviders().rerank.generateObject({
+      model: 'rerank',
       system: RERANK_SYSTEM_PROMPT,
       prompt: buildRerankPrompt(
         question,

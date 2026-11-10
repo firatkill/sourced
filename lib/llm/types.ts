@@ -1,14 +1,16 @@
 import 'server-only';
 import type { z } from 'zod';
 
+export type Role = 'chat' | 'rerank' | 'judge' | 'generate' | 'embed';
+
 export interface LlmProvider {
-  readonly name: string; // 'openai' | 'mock'
+  readonly name: 'openai' | 'gemini' | 'anthropic' | 'ollama' | 'mock';
   embed(
     values: string[],
     opts?: { abortSignal?: AbortSignal },
   ): Promise<{ vectors: number[][]; tokens: number }>;
   streamText(args: {
-    model: 'chat';
+    model: Role;
     system: string;
     prompt: string;
     maxOutputTokens: number;
@@ -18,7 +20,7 @@ export interface LlmProvider {
     usage: Promise<{ inputTokens: number; outputTokens: number }>;
   };
   generateObject<T>(args: {
-    model: 'chat' | 'judge';
+    model: Role;
     system: string;
     prompt: string;
     schema: z.ZodType<T>;

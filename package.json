@@ -7,9 +7,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:mock": "cross-env LLM_MODE=mock next dev",
-    "build": "next build",
+    "dev": "pnpm config:snapshot && next dev",
+    "dev:mock": "cross-env LLM_MODE=mock pnpm dev",
+    "build": "pnpm config:snapshot && next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
@@ -28,7 +28,8 @@
     "corpus:fetch": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/ingest.ts --fetch-only",
     "cache:suggested": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/cache-suggested.ts",
     "eval": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval.ts",
-    "eval:validate": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval-validate.ts"
+    "eval:validate": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/eval-validate.ts",
+    "config:snapshot": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/config-snapshot.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "4.0.99",

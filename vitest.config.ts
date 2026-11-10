@@ -44,6 +44,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unit',
+          globalSetup: ['./tests/setup/kit-snapshot.ts'],
           include: ['tests/unit/**/*.test.{ts,tsx}'],
           environment: 'node',
           setupFiles: ['./tests/setup/env.ts'],
@@ -55,7 +56,10 @@ export default defineConfig({
           name: 'integration',
           include: ['tests/integration/**/*.test.ts'],
           environment: 'node',
-          globalSetup: ['./tests/setup/integration-global-setup.ts'],
+          globalSetup: [
+            './tests/setup/kit-snapshot.ts',
+            './tests/setup/integration-global-setup.ts',
+          ],
           setupFiles: ['./tests/setup/env.ts', './tests/setup/integration-setup.ts'],
           pool: 'forks',
           maxWorkers: 1,

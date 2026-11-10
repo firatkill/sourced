@@ -1,3 +1,5 @@
+import { AppError } from '@/lib/errors';
+import { checkCorpusSchema } from '@/lib/kit/vector-schema';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -15,6 +17,11 @@ const state = vi.hoisted(() => ({
   calls: 0,
   writes: vi.fn(),
 }));
+vi.mock('@/lib/kit/load-config', async (original) => ({
+  ...(await original<typeof import('@/lib/kit/load-config')>()),
+  loadConfig: vi.fn(async () => {}),
+}));
+vi.mock('@/lib/kit/vector-schema', () => ({ checkCorpusSchema: vi.fn(async () => {}) }));
 vi.mock('node:child_process', () => ({ execFileSync: vi.fn(() => '') }));
 vi.mock('@/lib/db/client', () => ({
   closeSqlForTests: async () => {},
@@ -220,4 +227,14 @@ test('TC-127: --ci appends Markdown with resolved baseline and failures to step 
     '/tmp/sourced-test-summary',
     expect.stringContaining('Baseline: chosen.json (2026-11-09T10:00:00Z)'),
   );
+});
+
+test('T-47 / FR-61: eval refuses mismatched corpus before provider calls', async () => {
+  const error = logs();
+  const message =
+    'The corpus was indexed with a different embedding model or language. Run ./sourced ingest --rebuild.';
+  vi.mocked(checkCorpusSchema).mockRejectedValueOnce(new AppError('CORPUS_MISMATCH', message));
+  expect(await runEval(['--limit', '1', '--no-write'])).toBe(2);
+  expect(error).toHaveBeenCalledWith(message);
+  expect(state.calls).toBe(0);
 });

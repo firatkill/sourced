@@ -13,3 +13,5 @@ next-env.d.ts
 eval/results/
 # Normative, byte-identical to TRD 25.4
 .github/workflows/keepalive.yml
+
+.sourced/

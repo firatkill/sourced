@@ -1,8 +1,11 @@
+import { AppError } from '@/lib/errors';
 import { parseArgs } from 'node:util';
 import postgres from 'postgres';
-import { EMBEDDING } from '@/lib/config';
+import { loadConfig } from '@/lib/kit/load-config';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { getEnv } from '@/lib/env';
-import { getProvider } from '@/lib/llm';
+import { getProviders } from '@/lib/llm';
 import { assertIngestAllowed, loadCorpus } from '@/lib/ingest/load';
 import { previewCorpus } from '@/lib/ingest/preview';
 import { ingestCorpus } from '@/lib/ingest/upsert';
@@ -11,6 +14,8 @@ import { RobotsDisallowedError } from '@/lib/ingest/robots';
 
 try {
   const env = getEnv();
+  await loadConfig();
+  const config = getKitConfig();
   assertIngestAllowed(env.VERCEL);
   const { values } = parseArgs({
     options: {
@@ -19,6 +24,8 @@ try {
       'include-fixtures': { type: 'boolean' },
       refresh: { type: 'boolean' },
       offline: { type: 'boolean' },
+      rebuild: { type: 'boolean' },
+      yes: { type: 'boolean' },
     },
     strict: true,
   });
@@ -44,14 +51,19 @@ try {
       types: { bigint: postgres.BigInt },
     });
     try {
+      await ensureCorpusSchema(sql, config, {
+        rebuild: values.rebuild ?? false,
+        confirmed: values.yes ?? false,
+      });
       const report = await ingestCorpus({
         sql,
         loadDocuments,
-        provider: getProvider(),
-        embeddingModel: env.LLM_MODE === 'mock' ? EMBEDDING.MOCK_MODEL : EMBEDDING.MODEL,
+        provider: getProviders().embed,
+        embeddingModel: config.models.embed.model,
         includeFixtures,
         pricePerMillion: env.PRICE_EMBED_PER_MTOK,
       });
+      await sql`UPDATE corpus_meta SET documents_total=${report.documentsTotal}, updated_at=now() WHERE id=1`;
       console.log(formatIngestReport(report, new Date()));
     } finally {
       await sql.end();
@@ -59,5 +71,10 @@ try {
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Ingest failed.');
-  process.exitCode = error instanceof RobotsDisallowedError ? 2 : 1;
+  process.exitCode =
+    error instanceof RobotsDisallowedError ||
+    (error instanceof AppError &&
+      (error.code === 'CORPUS_MISMATCH' || error.code === 'CORPUS_EMPTY'))
+      ? 2
+      : 1;
 }

@@ -1,3 +1,7 @@
+import { AppError } from '@/lib/errors';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { checkCorpusSchema } from '@/lib/kit/vector-schema';
+import { loadConfig } from '@/lib/kit/load-config';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -5,7 +9,7 @@ import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises
 import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
-import { EMBEDDING, RETRIEVAL } from '@/lib/config';
+import { RETRIEVAL } from '@/lib/config';
 import { estimateCost } from '@/lib/cost/estimate';
 import { getEnv } from '@/lib/env';
 import { closeSqlForTests, getSql } from '@/lib/db/client';
@@ -233,6 +237,7 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
         ci: { type: 'boolean', default: false },
       },
     });
+    await loadConfig();
     const env = getEnv();
     if (env.LLM_MODE === 'mock' && !values['no-write'])
       throw new EvalAbort(2, 'LLM_MODE=mock requires --no-write');
@@ -266,8 +271,10 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
         ? undefined
         : z.coerce.number().int().positive().parse(values.limit);
     const entries = parsed.entries.filter((e) => !only || only.includes(e.id)).slice(0, limit);
-    const model = env.LLM_MODE === 'mock' ? EMBEDDING.MOCK_MODEL : EMBEDDING.MODEL;
+    const config = getKitConfig();
+    const model = config.models.embed.model;
     const sql = getSql();
+    await checkCorpusSchema(sql, config);
     const fixture = await sql`SELECT 1 FROM documents WHERE is_fixture LIMIT 1`;
     const ingest = await sql<
       { corpus_version: string; cost_usd_estimate: string }[]
@@ -352,11 +359,17 @@ export async function runEval(args: string[] = process.argv.slice(2)): Promise<n
     return result.pass ? 0 : 1;
   } catch (error) {
     console.error(
-      error instanceof EvalAbort
+      error instanceof EvalAbort ||
+        (error instanceof AppError &&
+          ['CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'].includes(error.code))
         ? error.message
         : 'Eval configuration failed; check arguments, files, environment and database.',
     );
-    return error instanceof EvalAbort ? error.exitCode : 2;
+    return error instanceof EvalAbort
+      ? error.exitCode
+      : error instanceof AppError && error.code === 'CONFIG_INVALID'
+        ? 1
+        : 2;
   } finally {
     await closeSqlForTests();
   }

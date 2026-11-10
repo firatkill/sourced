@@ -2,8 +2,9 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { JSONParseError, TypeValidationError, NoObjectGeneratedError } from 'ai';
 import { isInvalidOutput } from '@/lib/llm';
+import { modelCapabilities } from '@/lib/llm/models';
 import { GENERATION } from '@/lib/config';
-import { createOpenaiProvider, MODEL_SUPPORTS_TEMPERATURE, openaiProvider } from '@/lib/llm/openai';
+import { createOpenaiProvider, openaiProvider } from '@/lib/llm/openai';
 
 const doubles = vi.hoisted(() => ({
   streamText: vi.fn(),
@@ -52,7 +53,7 @@ test('TC-057: fullStream text filtering, usage mapping and exact SDK controls', 
   const result = openaiProvider.streamText({ ...request, abortSignal: signal });
   expect(await collect(result.textStream)).toEqual(['Hello', ' world']);
   expect(await result.usage).toEqual({ inputTokens: 11, outputTokens: 7 });
-  expect(MODEL_SUPPORTS_TEMPERATURE).toBe(true);
+  expect(modelCapabilities('openai', 'gpt-6-luna').supportsTemperature).toBe(true);
   expect(doubles.streamText).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
       model: expect.objectContaining({ modelId: 'test-chat' }) as unknown,

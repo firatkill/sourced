@@ -538,3 +538,15 @@ describe('useAsk orchestration — FR-03/04/10/11, D-77', () => {
     await hook.finish();
   });
 });
+
+it.each(['CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'] as const)(
+  'T-47 / TRD §30.3: client maps %s safely',
+  (code) => {
+    const state = askReducer(submitting, {
+      type: 'httpError',
+      status: 500,
+      body: { code, requestId },
+    });
+    expect(state.phase.kind).toBe(code === 'CORPUS_EMPTY' ? 'notFound' : 'serverError');
+  },
+);

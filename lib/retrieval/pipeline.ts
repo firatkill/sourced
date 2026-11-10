@@ -18,7 +18,9 @@ export async function retrieve(
     searched = await search(embedding.vector, question);
   } catch (cause) {
     signal.throwIfAborted();
-    throw new AppError('RETRIEVAL_ERROR', RETRIEVAL_ERROR_MESSAGE, { cause });
+    if (cause instanceof AppError && cause.code === 'CORPUS_EMPTY')
+      searched = { chunks: [], vectorCandidates: 0, ftsCandidates: 0 };
+    else throw new AppError('RETRIEVAL_ERROR', RETRIEVAL_ERROR_MESSAGE, { cause });
   }
   const candidates = searched.chunks;
   const searchMs = performance.now() - searchStarted;

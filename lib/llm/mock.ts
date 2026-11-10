@@ -110,7 +110,7 @@ export const mockProvider: LlmProvider = {
   name: 'mock',
   embed(values, opts) {
     opts?.abortSignal?.throwIfAborted();
-    const results = values.map(featureHash);
+    const results = values.map((value) => featureHash(value));
     return Promise.resolve({
       vectors: results.map((result) => result.vector),
       tokens: results.reduce((sum, result) => sum + result.tokens, 0),
@@ -177,3 +177,17 @@ export const mockProvider: LlmProvider = {
     });
   },
 };
+
+export function createMockProvider(dimensions: number): LlmProvider {
+  return {
+    ...mockProvider,
+    embed(values, opts) {
+      opts?.abortSignal?.throwIfAborted();
+      const results = values.map((value) => featureHash(value, dimensions));
+      return Promise.resolve({
+        vectors: results.map((r) => r.vector),
+        tokens: results.reduce((sum, r) => sum + r.tokens, 0),
+      });
+    },
+  };
+}
