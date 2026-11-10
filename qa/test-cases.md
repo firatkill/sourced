@@ -2123,3 +2123,296 @@ Source: PRD FR-59–FR-64, FR-67, FR-72, FR-74, §12 (M5), §16; TRD §28–§31
   1. Review TC-174–TC-192 results and write qa/m5-report.md.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Example behaves as v1.0.0 within the regression delta; the second fixture corpus runs end to end; milestone report written.
+
+## M6 Sources and CLI (v2)
+
+Source: PRD FR-65–FR-81, FR-94, NFR-20–NFR-22, NFR-25, §11, §12 (M6); TRD §32–§35, §39, §23 (UT-34–UT-45, IT-14, IT-16–IT-18, CT-01–CT-14); implementation plan T-53–T-64; decisions D-92–D-100. Designed from the specs before the code.
+
+| TC ID  | AC Reference                     | TRD test ID / source           | Title                                      | Priority | Automatable | Expected result                                                                                                                                                                                                                           |
+| ------ | -------------------------------- | ------------------------------ | ------------------------------------------ | -------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-194 | T-53; FR-65                      | UT-34; UT-35                   | Source keys and folder discovery           | High     | yes         | URLs and paths normalize to stable document keys; folder sources apply include/exclude globs, skip unsupported files with a reason and map extensions to MIME types.                                                                      |
+| TC-195 | T-53; FR-65; FR-66               | UT-36                          | Sitemap and crawl discovery                | High     | yes         | Sitemap indexes are followed; crawl stays on the origin, honours include/exclude, depth and page caps.                                                                                                                                    |
+| TC-196 | T-53; FR-66                      | UT-37                          | Per-host politeness                        | Critical | yes         | Each host gets its own limiter at the configured interval (Crawl-delay when larger), robots.txt is fetched once per host and fails closed except 404, User-Agent identifies Sourced.                                                      |
+| TC-197 | T-53; NFR-16                     | IT-16                          | Example unchanged after the source drivers | Critical | yes         | The example still ingests offline with chunk hashes identical to v1.                                                                                                                                                                      |
+| TC-198 | T-54; FR-68; NFR-25              | UT-38                          | Generic HTML on five unrelated sites       | Critical | yes         | Main content is detected and navigation, headers, footers and sidebars are dropped; sections come from h1-h6; expectations written from the saved pages; a page without text is reported, not ingested; line coverage >= 90%.             |
+| TC-199 | T-55; FR-69; NFR-25              | UT-39                          | Markdown and MDX                           | High     | yes         | Title from front matter or first heading; sections from headings; code fences kept with language; MDX imports and JSX removed with child text kept; coverage >= 90%.                                                                      |
+| TC-200 | T-56; FR-70; NFR-25; A-21        | UT-40                          | PDF text, headings and pages               | High     | yes         | Text per page, headings by font size, chunks record page ranges; a scanned PDF is reported needs_ocr and skipped; coverage >= 90%.                                                                                                        |
+| TC-201 | T-57; FR-70; D-70; NFR-25; A-26  | UT-41                          | DOCX headings, lists and tables            | High     | yes         | Title from properties or first heading; sections from Word heading styles; nested lists and tables kept as blocks; images ignored; coverage >= 90%.                                                                                       |
+| TC-202 | T-58; FR-76; FR-77; NFR-22       | UT-45                          | CLI envelope, exit codes, no secrets       | Critical | yes         | Every command supports --json with a versioned schema and nothing else on stdout; exit codes 0/1/2; no output ever contains a secret or full key.                                                                                         |
+| TC-203 | T-58; FR-76                      | T-58 acceptance                | v1 script aliases still work               | High     | yes         | pnpm ingest, pnpm eval and the other v1 scripts run through the CLI with unchanged behaviour.                                                                                                                                             |
+| TC-204 | T-59; FR-71                      | UT-42                          | Boilerplate removal                        | Medium   | yes         | Blocks repeated on a large share of documents are removed before chunking and counted in the report.                                                                                                                                      |
+| TC-205 | T-59; FR-72; NFR-21              | IT-14                          | Resumable ingest                           | Critical | yes         | An interrupted ingest resumes, re-embeds no completed document and ends with the same counts as an uninterrupted run; SIGINT then resume gives the same counts.                                                                           |
+| TC-206 | T-59; FR-73                      | UT-44                          | Dry run and confirmation                   | High     | yes         | --dry-run reports documents, chunks, tokens and cost per source without embedding calls; a run above INGEST_CONFIRM_ABOVE_USD asks or needs --yes; unknown prices follow TRD §31.4.                                                       |
+| TC-207 | T-59; FR-65; FR-67               | IT-17                          | Mixed folder end to end                    | Critical | yes         | A folder with md, mdx, html, pdf, docx and txt ingests in mock mode with anchors per TRD §33.1.                                                                                                                                           |
+| TC-208 | T-59; T-61; FR-65                | IT-18                          | Removing one source                        | High     | yes         | sources remove deletes only that source's documents and chunks.                                                                                                                                                                           |
+| TC-209 | T-60; FR-75                      | UT-43                          | Contextual embedding input                 | High     | yes         | Embedding input starts with title and heading path; display and quote check use the chunk text only; the hash version changes so affected chunks re-embed.                                                                                |
+| TC-210 | T-60; FR-75; FR-85; D-94         | T-60 acceptance                | Contextual embedding decided by eval       | High     | no          | sourced eval --compare on the example with the flag on and off is committed; the example's setting follows the no-regression rule; a decisions log row records it; cost within the D-94 budget.                                           |
+| TC-211 | T-61; FR-78; FR-79; FR-80; FR-81 | CT-01 to CT-14                 | CLI commands contract                      | Critical | yes         | Each section 34.1 command runs as a child process with --json against the integration database in mock mode; stdout matches its schema; exit codes match for success and each documented failure.                                         |
+| TC-212 | T-61; FR-80                      | T-61 acceptance                | ask --trace matches the app                | High     | yes         | sourced ask --trace prints the answer, citations with verification and the retrieval trace equal to the FR-08 data the app shows for the same question in mock mode.                                                                      |
+| TC-213 | T-61; FR-65                      | T-61 step                      | add detects sitemaps                       | Medium   | yes         | For a bare site URL, add finds /sitemap.xml or a robots.txt Sitemap line and proposes a sitemap source, else a crawl source.                                                                                                              |
+| TC-214 | T-62; FR-94; A-22                | T-62 acceptance; docker CI job | Docker path                                | Critical | yes         | docker compose up builds and starts the database and app; migrations run; ./sourced runs CLI commands in a one-off container with the repo mounted; the docker CI job passes; the TRD §35.4 sequence reaches a cited answer in mock mode. |
+| TC-215 | T-62; A-23                       | T-62 step                      | Host Ollama from containers                | Low      | no          | host.docker.internal reaches a host Ollama on the platforms checked; platforms recorded.                                                                                                                                                  |
+| TC-216 | T-63; NFR-21                     | T-63 acceptance                | Search at 100,000 chunks                   | High     | yes         | Hybrid search p95 warm <= 300 ms on a synthetic 100,000-chunk corpus with mock embeddings; result recorded in qa/.                                                                                                                        |
+| TC-217 | T-64; PRD §11; NFR-20; A-25      | T-64 acceptance                | Any-corpus check: public docs sitemap      | Critical | no          | On a clean Docker-only setup, a public documentation sitemap (MongoDB if A-25 holds) reaches a cited answer within NFR-20 with live embeddings inside the approved budget.                                                                |
+| TC-218 | T-64; PRD §11; NFR-20            | T-64 acceptance                | Any-corpus check: mixed folder             | Critical | no          | The mixed folder (small licensed files) reaches a cited answer on the Docker path within NFR-20.                                                                                                                                          |
+| TC-219 | T-64; PRD §12                    | M6 exit                        | M6 exit criteria                           | High     | no          | Any-corpus checks pass; milestone report written.                                                                                                                                                                                         |
+
+### TC-194: Source keys and folder discovery
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-53; FR-65; UT-34; UT-35.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-34 and UT-35 on in-memory filesystem fixtures.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: URLs and paths normalize to stable document keys; folder sources apply include/exclude globs, skip unsupported files with a reason and map extensions to MIME types.
+
+### TC-195: Sitemap and crawl discovery
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-53; FR-65; FR-66; UT-36.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-36 with an injected fetch.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Sitemap indexes are followed; crawl stays on the origin, honours include/exclude, depth and page caps.
+
+### TC-196: Per-host politeness
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-53; FR-66; UT-37.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-37 with an injected fetch and fake clock.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each host gets its own limiter at the configured interval (Crawl-delay when larger), robots.txt is fetched once per host and fails closed except 404, User-Agent identifies Sourced.
+
+### TC-197: Example unchanged after the source drivers
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-53; NFR-16; IT-16.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-16.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The example still ingests offline with chunk hashes identical to v1.
+
+### TC-198: Generic HTML on five unrelated sites
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-54; FR-68; NFR-25; UT-38.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-38 on five saved documentation sites.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Main content is detected and navigation, headers, footers and sidebars are dropped; sections come from h1-h6; expectations written from the saved pages; a page without text is reported, not ingested; line coverage >= 90%.
+
+### TC-199: Markdown and MDX
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-55; FR-69; NFR-25; UT-39.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-39.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Title from front matter or first heading; sections from headings; code fences kept with language; MDX imports and JSX removed with child text kept; coverage >= 90%.
+
+### TC-200: PDF text, headings and pages
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-56; FR-70; NFR-25; A-21; UT-40.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-40 on two text-layer PDFs and one scanned PDF.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Text per page, headings by font size, chunks record page ranges; a scanned PDF is reported needs_ocr and skipped; coverage >= 90%.
+
+### TC-201: DOCX headings, lists and tables
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-57; FR-70; D-70; NFR-25; A-26; UT-41.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-41.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Title from properties or first heading; sections from Word heading styles; nested lists and tables kept as blocks; images ignored; coverage >= 90%.
+
+### TC-202: CLI envelope, exit codes, no secrets
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-58; FR-76; FR-77; NFR-22; UT-45.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-45 with a fake env holding keys.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every command supports --json with a versioned schema and nothing else on stdout; exit codes 0/1/2; no output ever contains a secret or full key.
+
+### TC-203: v1 script aliases still work
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-58; FR-76; T-58 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the aliases in mock mode.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: pnpm ingest, pnpm eval and the other v1 scripts run through the CLI with unchanged behaviour.
+
+### TC-204: Boilerplate removal
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-59; FR-71; UT-42.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-42.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Blocks repeated on a large share of documents are removed before chunking and counted in the report.
+
+### TC-205: Resumable ingest
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-59; FR-72; NFR-21; IT-14.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-14 and a manual SIGINT check.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: An interrupted ingest resumes, re-embeds no completed document and ends with the same counts as an uninterrupted run; SIGINT then resume gives the same counts.
+
+### TC-206: Dry run and confirmation
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-59; FR-73; UT-44.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-44.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: --dry-run reports documents, chunks, tokens and cost per source without embedding calls; a run above INGEST_CONFIRM_ABOVE_USD asks or needs --yes; unknown prices follow TRD §31.4.
+
+### TC-207: Mixed folder end to end
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-59; FR-65; FR-67; IT-17.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-17.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A folder with md, mdx, html, pdf, docx and txt ingests in mock mode with anchors per TRD §33.1.
+
+### TC-208: Removing one source
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-59; T-61; FR-65; IT-18.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run IT-18.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: sources remove deletes only that source's documents and chunks.
+
+### TC-209: Contextual embedding input
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-60; FR-75; UT-43.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run UT-43.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Embedding input starts with title and heading path; display and quote check use the chunk text only; the hash version changes so affected chunks re-embed.
+
+### TC-210: Contextual embedding decided by eval
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-60; FR-75; FR-85; D-94; T-60 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the live comparison deliberately.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: sourced eval --compare on the example with the flag on and off is committed; the example's setting follows the no-regression rule; a decisions log row records it; cost within the D-94 budget.
+
+### TC-211: CLI commands contract
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-61; FR-78; FR-79; FR-80; FR-81; CT-01 to CT-14.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the contract project.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Each section 34.1 command runs as a child process with --json against the integration database in mock mode; stdout matches its schema; exit codes match for success and each documented failure.
+
+### TC-212: ask --trace matches the app
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-61; FR-80; T-61 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Compare CLI and API output for one question.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: sourced ask --trace prints the answer, citations with verification and the retrieval trace equal to the FR-08 data the app shows for the same question in mock mode.
+
+### TC-213: add detects sitemaps
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-61; FR-65; T-61 step.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Unit test with an injected fetch.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: For a bare site URL, add finds /sitemap.xml or a robots.txt Sitemap line and proposes a sitemap source, else a crawl source.
+
+### TC-214: Docker path
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-62; FR-94; A-22; T-62 acceptance; docker CI job.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the docker CI job and the §35.4 sequence locally.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: docker compose up builds and starts the database and app; migrations run; ./sourced runs CLI commands in a one-off container with the repo mounted; the docker CI job passes; the TRD §35.4 sequence reaches a cited answer in mock mode.
+
+### TC-215: Host Ollama from containers
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-62; A-23; T-62 step.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Owner action: no Ollama (D-94).
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: host.docker.internal reaches a host Ollama on the platforms checked; platforms recorded.
+
+### TC-216: Search at 100,000 chunks
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-63; NFR-21; T-63 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run scripts/bench-search.ts.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Hybrid search p95 warm <= 300 ms on a synthetic 100,000-chunk corpus with mock embeddings; result recorded in qa/.
+
+### TC-217: Any-corpus check: public docs sitemap
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-64; PRD §11; NFR-20; A-25; T-64 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the sequence and time it.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: On a clean Docker-only setup, a public documentation sitemap (MongoDB if A-25 holds) reaches a cited answer within NFR-20 with live embeddings inside the approved budget.
+
+### TC-218: Any-corpus check: mixed folder
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-64; PRD §11; NFR-20; T-64 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Run the sequence and time it.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The mixed folder (small licensed files) reaches a cited answer on the Docker path within NFR-20.
+
+### TC-219: M6 exit criteria
+
+- Milestone: M6 Sources and CLI
+- Requirement: T-64; PRD §12; M6 exit.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode and the local database unless the case says otherwise.
+- Steps:
+  1. Review TC-194 to TC-218 and write qa/m6-report.md.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Any-corpus checks pass; milestone report written.
