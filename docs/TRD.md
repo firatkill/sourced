@@ -3518,6 +3518,10 @@ export type SourceContext = {
 
 Key normalization: URLs drop the fragment, sort query parameters, remove a trailing `index.html`; file paths are POSIX, relative to the source root, case preserved.
 
+Location slug (D-101): the last path segment of the location (URL path or file path, after normalization; `index.html` when the URL path ends in `/`). `documents.slug` stores the document key (section 30.1), while the chunk `content_hash` and evaluation anchors (`<location slug>#<anchor>`) use the location slug, as v1 used its slug. For the example this keeps chunk hashes and golden anchors identical to v1 (IT-16). Moving a v1 database to v2 keys re-inserts the example's documents once on the first v2 ingest (about $0.002 of embeddings for the example).
+
+`SourceEvent` (implementation-defined, internal to the CLI): a discriminated union with at least `discovered`, `fetched`, `cached`, `skipped` (with reason) and `failed` (with error code), each carrying the document key. Git sources record `git rev-parse HEAD` per source in the ingest report (`sources[].revision`) and include it in the corpus version input; no schema change.
+
 ### 32.2 Drivers
 
 | Type | `discover` | `load` | Raw cache path |
