@@ -1,4 +1,3 @@
-import { NO_SOURCES } from '@/lib/cli/commands/config-files';
 import { setCliLogDestination } from '@/lib/logger';
 import { getCliSecrets } from '@/lib/env';
 import { dispatch, failure } from '@/lib/cli/router';
@@ -59,11 +58,8 @@ function finish(envelope: Parameters<typeof formatEnvelope>[0], exitCode: number
     ),
   );
   const parsed = CliEnvelope.parse(sanitized);
-  // These fields are registry-owned literals, never environment or user input.
-  // A local DB password such as the app name must not corrupt the next command.
+  // The command is a registry-owned literal, never environment or user input.
   parsed.command = envelope.command;
-  if (parsed.error && envelope.error?.message === NO_SOURCES) parsed.error.message = NO_SOURCES;
-  if (parsed.error && envelope.error?.fix) parsed.error.fix = envelope.error.fix;
   if (!json && (parsed.command === 'help' || args.includes('--help'))) stdout(`${helpText()}\n`);
   else stdout(formatEnvelope(parsed, json));
   process.exitCode = exitCode;

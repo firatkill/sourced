@@ -67,12 +67,10 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > deploy:ch
     "command": "deploy:check",
     "error": {
       "code": "CHECKS_FAILED",
-      "fix": "Set these variable names in the deployment environment.",
-      "message": "missing-variables: Set these variable names in the deployment environment.
-variables: Fill the required variable names in .env.local or the deployment environment.
-database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
+      "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+      "message": "database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
 fts: Choose an installed full-text language or use simple.
-corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
     },
     "ok": false,
     "result": {
@@ -88,16 +86,9 @@ corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mism
           "ok": true,
         },
         {
-          "detail": "DATABASE_URL",
-          "fix": "Set these variable names in the deployment environment.",
-          "id": "missing-variables",
-          "ok": false,
-        },
-        {
-          "detail": "variables check failed.",
-          "fix": "Fill the required variable names in .env.local or the deployment environment.",
+          "detail": "DATABASE_URL, QUESTION_HASH_SALT, NEXT_PUBLIC_SITE_URL",
           "id": "variables",
-          "ok": false,
+          "ok": true,
         },
         {
           "detail": "database check failed.",
@@ -113,7 +104,7 @@ corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mism
         },
         {
           "detail": "corpus check failed.",
-          "fix": "Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+          "fix": "Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
           "id": "corpus",
           "ok": false,
         },
@@ -150,18 +141,18 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > doctor --
     "error": {
       "code": "CHECKS_FAILED",
       "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
-      "message": "config: Edit [REDACTED].config.ts and run pnpm [REDACTED] config:snapshot.
+      "message": "config: Edit sourced.config.ts and run pnpm sourced config:snapshot.
 ports: Free port 3000 and the database port, or use the project containers.
 database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
 fts: Choose an installed full-text language or use simple.
-corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
     },
     "ok": false,
     "result": {
       "checks": [
         {
           "detail": "config check failed.",
-          "fix": "Edit [REDACTED].config.ts and run pnpm [REDACTED] config:snapshot.",
+          "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
           "id": "config",
           "ok": false,
         },
@@ -195,7 +186,7 @@ corpus: Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mism
         },
         {
           "detail": "corpus check failed.",
-          "fix": "Run pnpm [REDACTED] ingest (or ingest --rebuild for a configuration mismatch).",
+          "fix": "Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
           "id": "corpus",
           "ok": false,
         },
@@ -601,7 +592,7 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > sources r
     "error": {
       "code": "VALIDATION_FAILED",
       "fix": "pnpm sourced --help",
-      "message": "Unknown source. Run pnpm [REDACTED] sources list.",
+      "message": "Unknown source. Run pnpm sourced sources list.",
     },
     "ok": false,
     "schemaVersion": 1,

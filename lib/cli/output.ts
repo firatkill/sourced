@@ -3,9 +3,10 @@ import type { CliEnvelope } from './envelope';
 export function redact(text: string, secrets: readonly string[]): string {
   let safe = text;
   for (const secret of [...new Set(secrets)].sort((a, b) => b.length - a.length)) {
-    if (secret) safe = safe.replaceAll(secret, '[REDACTED]');
+    if (secret.length >= 8) safe = safe.replaceAll(secret, '[REDACTED]');
   }
   return safe
+    .replace(/\bpostgres(?:ql)?:\/\/[^\s<>"'`]+/gi, '[REDACTED]')
     .replace(/(https?:\/\/|postgres(?:ql)?:\/\/)[^\s/@]+:[^\s/@]+@/g, '$1[REDACTED]@')
     .replace(/\b(?:sk-[A-Za-z0-9_-]+|AIza[A-Za-z0-9_-]+)/g, '[REDACTED]');
 }

@@ -188,17 +188,13 @@ export function resetEnvForTests(): void {
 
 /** CLI output boundary only: usable even when runtime environment validation fails. */
 export function getCliSecrets(): string[] {
-  return Object.entries(process.env)
-    .filter(([name]) => /KEY|TOKEN|PASSWORD|SECRET|SALT|DATABASE_URL/.test(name))
-    .flatMap(([, value]) => {
-      if (!value) return [];
-      try {
-        const url = new URL(value);
-        return [value, decodeURIComponent(url.password)].filter(Boolean);
-      } catch {
-        return [value];
-      }
-    });
+  return (
+    Object.entries(process.env)
+      .filter(([name]) => /KEY|TOKEN|PASSWORD|SECRET|SALT|DATABASE_URL/.test(name))
+      // Keep full values only. URL credentials are redacted in URL context, never
+      // promoted to bare substrings that could corrupt ordinary CLI instructions.
+      .flatMap(([, value]) => (value ? [value] : []))
+  );
 }
 
 /** Diagnostic/bootstrap boundary: inspect names even before runtime settings are complete. */

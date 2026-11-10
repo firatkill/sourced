@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
+import { getCliSecrets } from '@/lib/env';
 import { AppError } from '@/lib/errors';
 import { CliEnvelope } from '@/lib/cli/envelope';
 import { commandSchemas } from '@/lib/cli/schemas/commands';
@@ -17,11 +18,15 @@ const root = process.cwd();
 let directory: string;
 const secret = 'sk-test-UT45-super-secret-0123456789';
 const other = 'UT45-provider-secret-9876543210';
-const environment = {
-  ...process.env,
+const environment: NodeJS.ProcessEnv = {
+  // Only executable discovery is inherited; no application or .env.local values.
+  PATH: process.env.PATH,
   LLM_MODE: 'mock',
-  DATABASE_URL: '',
-  MIGRATION_DATABASE_URL: '',
+  DATABASE_URL: 'postgres://unit:sourced@127.0.0.1:1/ut45',
+  MIGRATION_DATABASE_URL: 'postgres://unit:sourced@127.0.0.1:1/ut45',
+  NODE_ENV: 'test',
+  // Invalid runtime settings keep dev/ask/ingest from starting services in UT-45.
+  NEXT_PUBLIC_SITE_URL: 'invalid-unit-test-url',
   OPENAI_API_KEY: secret,
   GOOGLE_GENERATIVE_AI_API_KEY: other,
   ANTHROPIC_API_KEY: other,
@@ -262,3 +267,41 @@ test.each(['doctor', 'deploy:check'])(
     expect(passed.envelope.error).toBeUndefined();
   },
 );
+
+test.each(['sourced', 'postgres', 'admin'])(
+  'UT-45: database password %s cannot corrupt ordinary text',
+  (password) => {
+    const previous = process.env;
+    try {
+      process.env = {
+        NODE_ENV: 'test',
+        DATABASE_URL: `postgres://unit:${password}@localhost:5433/unit`,
+      };
+      const secrets = getCliSecrets();
+      expect(secrets).not.toContain(password);
+      expect(redact('pnpm sourced ingest; Edit sourced.config.ts; postgres admin', secrets)).toBe(
+        'pnpm sourced ingest; Edit sourced.config.ts; postgres admin',
+      );
+      expect(redact(process.env.DATABASE_URL ?? '', secrets)).toBe('[REDACTED]');
+      expect(redact(`https://unit:${password}@example.test/path`, secrets)).toBe(
+        'https://[REDACTED]@example.test/path',
+      );
+    } finally {
+      process.env = previous;
+    }
+  },
+);
+test('UT-45: full long secrets are redacted wherever they appear, including embedded text', () => {
+  expect(redact(`prefix${secret}suffix ${secret} ${other}`, [secret, other])).toBe(
+    'prefix[REDACTED]suffix [REDACTED] [REDACTED]',
+  );
+  expect(redact('pnpm sourced ingest admin', ['sourced', 'admin'])).toBe(
+    'pnpm sourced ingest admin',
+  );
+  expect(redact('abcdefgh', ['abcdefgh'])).toBe('[REDACTED]');
+});
+test('UT-45: database URLs are removed whole, including encoded passwords', () => {
+  const url = 'postgresql://unit:long%40password@localhost:5433/unit?sslmode=require';
+  expect(redact(`Database: ${url}`, [url])).toBe('Database: [REDACTED]');
+  expect(redact(`Database: ${url}`, [])).toBe('Database: [REDACTED]');
+});
