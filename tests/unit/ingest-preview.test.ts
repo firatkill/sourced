@@ -18,8 +18,9 @@ test('TC-041: dry-run hashes sorted content identities and prices heading-prefix
     { slug: 'a.html', document },
     { slug: 'b.html', document },
   ];
-  const preview = previewCorpus(inputs, 0.02);
-  expect(previewCorpus([...inputs].reverse(), 0.02)).toEqual(preview);
+  // TRD §33.6: this v1 preview asserts location hashes and heading-only embedding input.
+  const preview = previewCorpus(inputs, 0.02, false);
+  expect(previewCorpus([...inputs].reverse(), 0.02, false)).toEqual(preview);
   expect(preview).toMatchObject({
     documents: 2,
     chunks: 2,
@@ -34,7 +35,7 @@ test('TC-041: dry-run hashes sorted content identities and prices heading-prefix
         .join('\n'),
     ),
   );
-  expect(previewCorpus([], 0)).toMatchObject({
+  expect(previewCorpus([], 0, false)).toMatchObject({
     chunks: 0,
     embeddingTokens: 0,
     tokens: { min: 0, p50: 0, p95: 0, max: 0 },

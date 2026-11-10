@@ -26,6 +26,8 @@ test('IT-16 / T-50 / NFR-16: relocated example ingests identical v1 chunk hashes
     embeddingModel: EMBEDDING.MOCK_MODEL,
     includeFixtures: false,
     pricePerMillion: 0,
+    // NFR-16 compares with v1, whose embedding input had no contextual prefix (TRD §33.6).
+    contextualEmbedding: false,
   };
   const first = await ingestCorpus(options);
   expect(first.documentsTotal).toBe(new Set(baseline.map((row) => row.slug)).size);
@@ -56,4 +58,29 @@ test('IT-16 / T-50 / NFR-16: relocated example ingests identical v1 chunk hashes
     chunksUnchanged: baseline.length,
     embeddingInputs: 0,
   });
+});
+
+test('IT-16 / T-60: contextual embedding keeps the example chunks and changes only their embedding version', async () => {
+  const base = {
+    sql: getSql(),
+    loadDocuments: () => loadCorpus({ offline: true, refresh: false, includeFixtures: false }),
+    provider: mockProvider,
+    embeddingModel: EMBEDDING.MOCK_MODEL,
+    includeFixtures: false,
+    pricePerMillion: 0,
+  };
+  const read = () => base.sql<{ slug: string; ordinal: number; content: string; v: number }[]>`
+    SELECT d.slug, c.ordinal, c.content, c.embed_text_version AS v FROM chunks c
+    JOIN documents d ON d.id = c.document_id WHERE NOT d.is_fixture ORDER BY d.slug, c.ordinal`;
+  await ingestCorpus({ ...base, contextualEmbedding: false });
+  const off = await read();
+  const switched = await ingestCorpus({ ...base, contextualEmbedding: true });
+  expect(switched.chunksTotal).toBe(baseline.length);
+  expect(switched.embeddingInputs).toBe(baseline.length);
+  const on = await read();
+  expect(on.map(({ slug, ordinal, content }) => ({ slug, ordinal, content }))).toEqual(
+    off.map(({ slug, ordinal, content }) => ({ slug, ordinal, content })),
+  );
+  expect(new Set(off.map((row) => row.v))).toEqual(new Set([0]));
+  expect(new Set(on.map((row) => row.v))).toEqual(new Set([1]));
 });

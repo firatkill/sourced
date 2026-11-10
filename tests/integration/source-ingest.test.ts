@@ -7,7 +7,7 @@ import { ingestCorpus, type IngestDocument } from '@/lib/ingest/upsert';
 import { mockProvider } from '@/lib/llm/mock';
 import { ingestDocument } from '../helpers/ingest';
 
-const run = (documents: IngestDocument[]) =>
+const run = (documents: IngestDocument[], contextualEmbedding?: boolean) =>
   ingestCorpus({
     sql: getSql(),
     loadDocuments: () => Promise.resolve(documents),
@@ -15,6 +15,7 @@ const run = (documents: IngestDocument[]) =>
     embeddingModel: EMBEDDING.MOCK_MODEL,
     includeFixtures: false,
     pricePerMillion: 0,
+    ...(contextualEmbedding === undefined ? {} : { contextualEmbedding }),
   });
 
 test('T-53 / D-101: source keys are distinct while location hashes and anchors remain stable', async () => {
@@ -34,8 +35,9 @@ test('T-53 / D-101: source keys are distinct while location hashes and anchors r
     url: 'https://b.test/guide.html',
     sourceId: 'two',
   };
-  await run([a]);
-  const report = await run([a, b]);
+  // TRD §33.6: this D-101 compatibility case asserts the v1 location-based hashes.
+  await run([a], false);
+  const report = await run([a, b], false);
   expect(report).toMatchObject({
     documentsTotal: 2,
     chunksTotal: 2,
@@ -51,7 +53,7 @@ test('T-53 / D-101: source keys are distinct while location hashes and anchors r
     chunkContentHash('guide.html', base.chunks[0]!),
   ]);
   expect(rows.every((row) => row.anchor === base.chunks[0]?.anchor)).toBe(true);
-  const rerun = await run([a, b]);
+  const rerun = await run([a, b], false);
   expect(rerun).toMatchObject({
     embeddingInputs: 0,
     chunksUnchanged: 2,
@@ -63,7 +65,8 @@ test('T-53 / D-101: source keys are distinct while location hashes and anchors r
 test('T-53 / D-101: Git revisions enter reports and corpus version without changing chunks', async () => {
   const doc = ingestDocument('guide.md', ['A locally checked out handbook.']);
   const sources = [{ id: 'checkout', revision: 'a'.repeat(40) }];
-  const report = await run(Object.assign([doc], { sources }));
+  // TRD §33.6: this corpus-version assertion deliberately uses the v1 chunk hash.
+  const report = await run(Object.assign([doc], { sources }), false);
   expect(report.sources).toEqual(sources);
   expect(report.corpusVersion).toBe(
     sha256Hex(
@@ -72,6 +75,7 @@ test('T-53 / D-101: Git revisions enter reports and corpus version without chang
   );
   const changed = await run(
     Object.assign([doc], { sources: [{ id: 'checkout', revision: 'b'.repeat(40) }] }),
+    false,
   );
   expect(changed.corpusVersion).not.toBe(report.corpusVersion);
   expect(changed.embeddingInputs).toBe(0);
@@ -103,7 +107,8 @@ test('T-53 / FR-66: failed item allows successful documents to commit and preven
 
 test('T-53 / D-101: v1 URL uniqueness permits transactional replacement with the v2 key', async () => {
   const old = ingestDocument('guide.html', ['The original version-one passage.']);
-  await run([old]);
+  // TRD §33.6: v1-to-v2 identity replacement must retain the asserted v1 chunk hash.
+  await run([old], false);
   const next = {
     ...old,
     slug: `docs:${old.url}`,
@@ -111,7 +116,7 @@ test('T-53 / D-101: v1 URL uniqueness permits transactional replacement with the
     sourceId: 'docs',
     sourceKind: 'web' as const,
   };
-  const report = await run([next]);
+  const report = await run([next], false);
   expect(report).toMatchObject({
     documentsTotal: 1,
     documentsRemoved: 1,
