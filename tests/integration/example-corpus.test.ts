@@ -6,6 +6,7 @@ import { loadCorpus } from '@/lib/ingest/load';
 import { ingestCorpus } from '@/lib/ingest/upsert';
 import { mockProvider } from '@/lib/llm/mock';
 import baselineJson from '../fixtures/postgres-17-v1-chunks.json';
+import manifest from '../fixtures/postgres-17-v1-manifest.json';
 
 const baseline = z
   .array(
@@ -32,7 +33,19 @@ test('IT-16 / T-50 / NFR-16: relocated example ingests identical v1 chunk hashes
   const rows = await options.sql<{ slug: string; ordinal: number; content_hash: string }[]>`
     SELECT d.slug,c.ordinal,c.content_hash FROM chunks c
     JOIN documents d ON d.id=c.document_id WHERE NOT d.is_fixture ORDER BY d.slug,c.ordinal`;
-  expect(Array.from(rows)).toEqual(baseline);
+  const stored = await options.sql<{ slug: string }[]>`
+    SELECT slug FROM documents WHERE NOT is_fixture ORDER BY slug`;
+  expect(stored.map((row) => row.slug)).toEqual(
+    manifest.pages.map((page) => `pg17-${page.section}:${manifest.baseUrl}${page.slug}`).sort(),
+  );
+  // D-101: storage uses document keys; the v1 baseline uses location slugs.
+  const projected = rows
+    .map((row) => {
+      const url = new URL(row.slug.slice(row.slug.indexOf(':') + 1));
+      return { ...row, slug: url.pathname.split('/').at(-1) || 'index.html' };
+    })
+    .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : a.ordinal - b.ordinal));
+  expect(projected).toEqual(baseline);
   const second = await ingestCorpus(options);
   expect(second).toMatchObject({
     documentsChanged: 0,

@@ -70,8 +70,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-50 | M5 Configuration seams | Example corpus in the kit layout | done | 08cb06b |
 | T-51 | M5 Configuration seams | Deployment profiles | done | 0403bde |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | done | 29d20da |
-| T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | doing | |
-| T-54 | M6 Sources and CLI | Generic HTML parser | todo | |
+| T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | done | HEAD |
+| T-54 | M6 Sources and CLI | Generic HTML parser | doing | |
 | T-55 | M6 Sources and CLI | Markdown and MDX parser | todo | |
 | T-56 | M6 Sources and CLI | PDF parser | todo | |
 | T-57 | M6 Sources and CLI | `.docx` parser | todo | |

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { SourceSchema } from '@/lib/kit/config-schema';
 import { AppError } from '@/lib/errors';
+import { rawFilename } from '@/lib/sources/urls';
 
 const PageSchema = z.object({
   slug: z.string().regex(/^[a-z0-9-]+\.html$/),
@@ -74,7 +75,7 @@ export async function loadManifest(path?: string): Promise<Manifest> {
               slug,
               section: source.group,
               url,
-              path: join('corpus', config.corpus.name, 'raw', source.id, slug ?? ''),
+              path: join('corpus', config.corpus.name, 'raw', source.id, rawFilename(url)),
               html: source.html,
             };
           });

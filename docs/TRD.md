@@ -3522,6 +3522,8 @@ Location slug (D-101): the last path segment of the location (URL path or file p
 
 `SourceEvent` (implementation-defined, internal to the CLI): a discriminated union with at least `discovered`, `fetched`, `cached`, `skipped` (with reason) and `failed` (with error code), each carrying the document key. Git sources record `git rev-parse HEAD` per source in the ingest report (`sources[].revision`) and include it in the corpus version input; no schema change.
 
+File-source passage transport (FR-65, §33.1): retrieval preserves `source_kind`. Web passages retain an HTTP(S) `officialUrl` built from the document URL and chunk anchor fragment, independently of the document key. File passages carry `officialUrl: null` and a non-empty `filePath` taken from the source-relative location in the document key. `PassageDto` (§12.2) accepts these two alternatives; a missing file path or a `file://` link is invalid. Source viewers and related-reading cards render `filePath › heading` without a link, and copied citations use the path. Quote verification continues to use passage labels and content unchanged.
+
 ### 32.2 Drivers
 
 | Type | `discover` | `load` | Raw cache path |

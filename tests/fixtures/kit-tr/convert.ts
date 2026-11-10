@@ -1,9 +1,9 @@
 // T-52 bridge only: M6 folder/Markdown/generic HTML loaders replace this restricted converter.
-import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { load } from 'cheerio';
-import { sha256Hex } from '../../../lib/hash';
-import { chunkDocument } from '../../../lib/ingest/chunk';
+import { loadCorpus } from '../../../lib/ingest/load';
+import { KitConfigSchema } from '../../../lib/kit/config-schema';
+import fixtureConfig from './sourced.config';
 import type { Block, ParsedDocument, Section } from '../../../lib/ingest/parse-html';
 import type { IngestDocument } from '../../../lib/ingest/upsert';
 
@@ -71,24 +71,18 @@ export function convertFixture(text: string, extension: '.md' | '.html'): Parsed
 }
 
 export async function loadFixtureDocuments(): Promise<IngestDocument[]> {
-  const files = (await readdir(documentsDirectory)).sort();
-  return Promise.all(
-    files.map(async (filename) => {
-      const extension = filename.endsWith('.md') ? '.md' : '.html';
-      if (!filename.endsWith(extension)) throw new Error('Unsupported fixture file');
-      const bytes = await readFile(`${documentsDirectory}/${filename}`);
-      const document = convertFixture(bytes.toString('utf8'), extension);
-      return {
-        slug: filename,
-        url: `https://cep-bahcesi.example/${filename}`,
-        title: document.title,
-        version: '1',
-        section: 'kilavuz',
-        contentHash: sha256Hex(bytes),
-        // This is the deployment's entire corpus, not an optional injection fixture.
-        isFixture: false,
-        chunks: chunkDocument(document, filename),
-      };
-    }),
-  );
+  return loadCorpus({
+    config: KitConfigSchema.parse(fixtureConfig),
+    offline: true,
+    refresh: false,
+    includeFixtures: false,
+    parse: (raw) => {
+      if (raw.mimeType !== 'text/markdown' && raw.mimeType !== 'text/html')
+        throw new Error('Unsupported fixture file');
+      return convertFixture(
+        Buffer.from(raw.bytes).toString('utf8'),
+        raw.mimeType === 'text/markdown' ? '.md' : '.html',
+      );
+    },
+  });
 }

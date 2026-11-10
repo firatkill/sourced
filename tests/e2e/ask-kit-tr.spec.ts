@@ -27,8 +27,9 @@ test('TC-192 / E2E-26: Turkish copy and a verified fixture citation', async ({ p
   await answer.getByRole('button', { name: /Source P1:/ }).click();
   const viewer = page.getByRole('complementary', { name: 'Source viewer' });
   await expect(viewer.locator('mark').first()).toBeVisible();
-  await expect(viewer.getByRole('link', { name: copy.viewerLink })).toHaveAttribute(
-    'href',
-    /^https:\/\/cep-bahcesi\.example\/(saksilar\.md|sulama\.md|olcum\.html|paylasim\.html)#/,
-  );
+  // D-102 / FR-67: a folder source shows its file path and heading, with no external link.
+  await expect(
+    viewer.getByText(/^(saksilar\.md|sulama\.md|olcum\.html|paylasim\.html) › /),
+  ).toBeVisible();
+  await expect(viewer.getByRole('link', { name: copy.viewerLink })).toHaveCount(0);
 });

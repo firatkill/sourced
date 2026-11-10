@@ -40,6 +40,7 @@ for (const theme of ['light', 'dark'] as const) {
         const link = viewer.getByRole('link', {
           name: 'Open on postgresql.org (opens in a new tab)',
         });
+        if (passage.officialUrl === null) throw new Error('Expected a web-source URL');
         await expect(link).toHaveAttribute('href', passage.officialUrl);
         await expect(link).toHaveAttribute('target', '_blank');
         await expect(link).toHaveAttribute('rel', 'noopener noreferrer');

@@ -1,0 +1,26 @@
+{
+  "https://www.postgresql.org/docs/17/backup.html": {
+    "url": "https://www.postgresql.org/docs/17/backup.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "9ae90916118b8af4c31aa521e0c65af78f36b5c625547495eb26df59b2cef505",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.531Z"
+  },
+  "https://www.postgresql.org/docs/17/backup-dump.html": {
+    "url": "https://www.postgresql.org/docs/17/backup-dump.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "1e19f25c92c52e28150a8397c6d755c8793f12042eaa157bcd98e79904e62428",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.541Z"
+  },
+  "https://www.postgresql.org/docs/17/backup-file.html": {
+    "url": "https://www.postgresql.org/docs/17/backup-file.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "bdcd9e282228eb33532d09e1312b487dd4ec9843d619fe5a71616ff073533bad",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.551Z"
+  }
+}

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { load } from 'cheerio';
 import { expect, test } from 'vitest';
@@ -9,7 +10,9 @@ test('TC-030: UT-29 manifest loads 30–40 unique valid page slugs', async () =>
   expect(parsed.pages.map(({ slug, section }) => ({ slug, section }))).toEqual(manifest.pages);
   expect(parsed.fixtures).toEqual(manifest.fixtures);
   for (const page of parsed.pages) {
-    expect(page.path).toBe(`corpus/postgres-17/raw/pg17-${page.section}/${page.slug}`);
+    expect(page.path).toBe(
+      `corpus/postgres-17/raw/pg17-${page.section}/${createHash('sha1').update(page.url!).digest('hex')}.html`,
+    );
     expect(page.url).toBe(manifest.baseUrl + page.slug);
     expect(page.html).toEqual({
       preset: 'postgres-docbook',

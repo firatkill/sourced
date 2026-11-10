@@ -14,7 +14,9 @@ test('TC-192: original Markdown and HTML retain headings, code, tables and prove
     expect(doc.chunks.length).toBeGreaterThan(0);
     expect(
       doc.chunks.every(
-        (chunk) => chunk.anchor.startsWith(`${doc.slug}#`) && chunk.headingPath[0] === doc.title,
+        (chunk) =>
+          chunk.anchor.startsWith(`${doc.locationSlug ?? doc.slug}#`) &&
+          chunk.headingPath[0] === doc.title,
       ),
     ).toBe(true);
   }

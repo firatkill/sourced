@@ -151,3 +151,16 @@ it('TC-185 / UT-49 / TRD §31.4: unknown price is accepted as null at the SSE bo
   expect(DoneEvent.parse({ ...done, costUsdEstimate: null }).costUsdEstimate).toBeNull();
   expect(DoneEvent.safeParse({ ...done, costUsdEstimate: 'unknown' }).success).toBe(false);
 });
+
+it('T-53 / FR-65 / TRD §33.1: file passages require a display path and cannot expose file URLs', () => {
+  const file = { ...passage, officialUrl: null, filePath: 'manual/olcum.html' };
+  expect(PassageDto.parse(file)).toEqual(file);
+  for (const mutation of [
+    { officialUrl: null },
+    { officialUrl: null, filePath: '' },
+    { officialUrl: 'file:///private/manual.html' },
+    { officialUrl: '/private/manual.html' },
+  ]) {
+    expect(PassageDto.safeParse({ ...passage, ...mutation }).success).toBe(false);
+  }
+});

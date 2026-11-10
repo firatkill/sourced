@@ -65,6 +65,7 @@ async function runAnswer(input: {
       documentTitle: p.documentTitle,
       headingPath: p.headingPath,
       officialUrl: p.officialUrl,
+      ...(p.officialUrl === null ? { filePath: p.filePath } : {}),
       snippet: passageSnippet(p.content),
       content: p.content,
       scores: {

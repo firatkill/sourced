@@ -25,6 +25,7 @@ type SearchRow = {
   token_count: number;
   document_title: string;
   document_url: string;
+  source_kind: 'web' | 'file' | null;
   slug: string;
 };
 
@@ -86,7 +87,8 @@ SELECT fu.id::text                 AS chunk_id,
        c.token_count,
        d.title                     AS document_title,
        d.url                       AS document_url,
-       d.slug
+       d.slug,
+       d.source_kind
 FROM fused fu
 JOIN chunks c    ON c.id = fu.id
 JOIN documents d ON d.id = c.document_id
@@ -119,6 +121,7 @@ LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
       tokenCount: row.token_count,
       documentTitle: row.document_title,
       documentUrl: row.document_url,
+      sourceKind: row.source_kind ?? 'web',
       slug: row.slug,
     })),
   };

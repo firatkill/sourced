@@ -4444,6 +4444,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-194",
+      "ac_reference": "T-53; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Source keys and folder discovery",
+      "description": "UT-34; UT-35.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-194.",
+      "expected_result": "URLs and paths normalize to stable document keys; folder sources apply include/exclude globs, skip unsupported files with a reason and map extensions to MIME types.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-34 and UT-35 in sources.test.ts: key normalization, folder include/exclude, skips with reasons, MIME mapping on an in-memory filesystem"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-195",
+      "ac_reference": "T-53; FR-65; FR-66",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Sitemap and crawl discovery",
+      "description": "UT-36.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-195.",
+      "expected_result": "Sitemap indexes are followed; crawl stays on the origin, honours include/exclude, depth and page caps.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-36 in sources.test.ts: sitemap index nesting, same-origin and prefix limits, caps; crawl depth and page caps with injected fetch"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-196",
+      "ac_reference": "T-53; FR-66",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Per-host politeness",
+      "description": "UT-37.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-196.",
+      "expected_result": "Each host gets its own limiter at the configured interval (Crawl-delay when larger), robots.txt is fetched once per host and fails closed except 404, User-Agent identifies Sourced.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-37 in sources.test.ts: per-host limiter, Crawl-delay, robots.txt once per host and fail closed except 404, with fake clock"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-197",
+      "ac_reference": "T-53; NFR-16",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Example unchanged after the source drivers",
+      "description": "IT-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-197.",
+      "expected_result": "The example still ingests offline with chunk hashes identical to v1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-16 example-corpus.test.ts: 201 chunk hashes and counts identical to v1 after the sha1 raw-cache migration; stored slugs are D-101 document keys; repeat ingest 0 changes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

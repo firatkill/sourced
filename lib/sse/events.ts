@@ -1,12 +1,10 @@
 import { z } from 'zod';
 
-export const PassageDto = z.object({
+const PassageBase = z.object({
   label: z.string().regex(/^P[1-9]$/),
   chunkId: z.string(),
   documentTitle: z.string(),
   headingPath: z.array(z.string()).min(1),
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- normative TRD §12.2 schema
-  officialUrl: z.string().url(),
   snippet: z.string(),
   content: z.string(),
   scores: z.object({
@@ -16,6 +14,15 @@ export const PassageDto = z.object({
     rerankPosition: z.number().int().positive(),
   }),
 });
+
+// File citations carry a display path, never a browser-navigable file URL.
+export const PassageDto = z.union([
+  PassageBase.extend({
+    officialUrl: z.url({ protocol: /^https?$/ }),
+    filePath: z.never().optional(),
+  }),
+  PassageBase.extend({ officialUrl: z.null(), filePath: z.string().min(1) }),
+]);
 
 export const MetaEvent = z.object({
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- normative TRD §12.2 schema

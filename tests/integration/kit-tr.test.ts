@@ -1,8 +1,11 @@
 // TC-179, TC-192 / IT-13 / FR-62 / T-52. Dedicated corpus DB, never getSql().
-import { afterAll, beforeAll, expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 import postgres from 'postgres';
 import { createMockProvider } from '@/lib/llm/mock';
 import { corpusSchema } from '@/lib/kit/vector-schema';
+import { answerQuestion } from '@/lib/generation/answer';
+import { SseEvent } from '@/lib/sse/events';
+import * as searchModule from '@/lib/retrieval/search';
 import { searchInTransaction } from '@/lib/retrieval/search';
 import {
   fixtureDatabaseUrl,
@@ -45,13 +48,49 @@ test('TC-179 / IT-13: real Turkish folder passages have keyword hits that Englis
     expect(turkish.ftsCandidates).toBeGreaterThan(0);
     expect(
       turkish.chunks.filter((chunk) => chunk.ftsRank !== null).map((chunk) => chunk.slug),
-    ).toContain('saksilar.md');
+    ).toContain('kilavuz:saksilar.md');
     expect(english.ftsCandidates).toBe(0);
     // Also compare complete English indexing/querying with Turkish, not vector fallback.
     const [comparison] = await tx<{ turkish: boolean; english: boolean }[]>`
       SELECT bool_or(to_tsvector('turkish', content) @@ websearch_to_tsquery('turkish', 'etiket')) AS turkish,
              bool_or(to_tsvector('english', content) @@ websearch_to_tsquery('english', 'etiket')) AS english
-      FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE slug='saksilar.md')`;
+      FROM chunks WHERE document_id IN (SELECT id FROM documents WHERE slug='kilavuz:saksilar.md')`;
     expect(comparison).toEqual({ turkish: true, english: false });
   });
+});
+
+test('T-53 / E2E-26 / D-101: file keys survive retrieval, verification and every SSE event', async () => {
+  const search = vi
+    .spyOn(searchModule, 'search')
+    .mockImplementation((vector, question, limits) =>
+      sql.begin((tx) => searchInTransaction(tx, vector, question, limits, corpusSchema(config))),
+    );
+  try {
+    const events: unknown[] = [];
+    const result = await answerQuestion({
+      question: 'Saksı nasıl seçilir?',
+      requestId: crypto.randomUUID(),
+      signal: new AbortController().signal,
+      emit: (event) => events.push(event),
+    });
+    expect(result.passages.length).toBeGreaterThan(0);
+    expect(result.passages.every((p) => p.slug.startsWith('kilavuz:'))).toBe(true);
+    expect(result.verification.notFound).toBe(false);
+    expect(result.verification.valid.length).toBeGreaterThan(0);
+    const parsed = events.map((event) => SseEvent.parse(event));
+    expect(parsed.map((event) => event.event)).toEqual([
+      'meta',
+      ...parsed.filter((event) => event.event === 'token').map(() => 'token'),
+      'citations',
+      'done',
+    ]);
+    const meta = parsed[0];
+    if (meta?.event !== 'meta') throw new Error('Expected metadata');
+    for (const passage of meta.data.passages) {
+      expect(passage.officialUrl).toBeNull();
+      expect(passage).toHaveProperty('filePath', expect.stringMatching(/^[^:]+\.(md|html)$/));
+    }
+  } finally {
+    search.mockRestore();
+  }
 });

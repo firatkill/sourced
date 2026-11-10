@@ -27,7 +27,10 @@ beforeAll(async () => {
       },
     });
     documents.push({
-      slug,
+      slug: `pg17-test:${new URL(slug, manifest.baseUrl).href}`,
+      locationSlug: slug,
+      sourceId: 'pg17-test',
+      sourceKind: 'web',
       url: new URL(slug, manifest.baseUrl).href,
       title: parsed.title,
       version: manifest.version,
@@ -65,6 +68,8 @@ test('TC-062: FR-12–FR-14 retrieves fixture passages with provenance, usage an
     expect(passage.rerankPosition).toBe(index + 1);
     const fragment = passage.anchor.split('#')[1];
     expect(fragment).toBeTruthy();
+    expect(passage.slug).toBe(`pg17-test:${passage.documentUrl}`);
+    expect(passage.sourceKind).toBe('web');
     expect(passage.officialUrl).toBe(`${passage.documentUrl}#${String(fragment)}`);
   });
   expect(result.rerankFallback).toBe(false);

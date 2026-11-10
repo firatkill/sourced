@@ -1,0 +1,18 @@
+{
+  "https://www.postgresql.org/docs/17/datatype-json.html": {
+    "url": "https://www.postgresql.org/docs/17/datatype-json.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "29ea177639bfc9a6e2c0a0b4626ffc1a6a15bf5527d953bb73f15af38e75a891",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.421Z"
+  },
+  "https://www.postgresql.org/docs/17/functions-json.html": {
+    "url": "https://www.postgresql.org/docs/17/functions-json.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "17312d9a955d5b21a25292d147cc68286792ce3fbd91e2477fe3fe33f6b885e0",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.431Z"
+  }
+}

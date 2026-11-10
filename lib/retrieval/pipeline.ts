@@ -28,13 +28,15 @@ export async function retrieve(
   const result = await rerank(question, candidates, signal);
   const passages = result.reranked
     .slice(0, getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
-    .map((chunk, index) => {
+    .map((chunk, index): Passage => {
       const fragment = chunk.anchor.split('#')[1];
       return {
         ...chunk,
         label: `P${String(index + 1)}` as Passage['label'],
         rerankPosition: index + 1,
-        officialUrl: fragment ? `${chunk.documentUrl}#${fragment}` : chunk.documentUrl,
+        ...(chunk.sourceKind === 'file'
+          ? { officialUrl: null, filePath: chunk.slug.slice(chunk.slug.indexOf(':') + 1) }
+          : { officialUrl: fragment ? `${chunk.documentUrl}#${fragment}` : chunk.documentUrl }),
       };
     });
   return {

@@ -83,16 +83,22 @@ export function SourceViewer({
         <h2 className="text-xl! font-semibold">
           {passage.headingPath.at(-1) ?? passage.documentTitle}
         </h2>
-        <a
-          className="source-primary flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius)] text-sm font-semibold hover:no-underline"
-          href={passage.officialUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={`${ASK_COPY.viewerLink} (opens in a new tab)`}
-        >
-          {ASK_COPY.viewerLink}
-          <ChatIcon name="external" />
-        </a>
+        {passage.officialUrl === null ? (
+          <p className="text-sm text-[var(--ink-3)]">
+            {passage.filePath} › {passage.headingPath.join(' › ')}
+          </p>
+        ) : (
+          <a
+            className="source-primary flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius)] text-sm font-semibold hover:no-underline"
+            href={passage.officialUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${ASK_COPY.viewerLink} (opens in a new tab)`}
+          >
+            {ASK_COPY.viewerLink}
+            <ChatIcon name="external" />
+          </a>
+        )}
         <PassageCard
           passage={passage}
           citations={citations.valid.filter((c) => c.label === passage.label)}

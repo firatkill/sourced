@@ -28,3 +28,17 @@ export async function loadRobots(baseUrl: string, request: (url: string) => Prom
     },
   };
 }
+
+/** A rejected policy promise is retained: a host cannot fail open later in the run. */
+export function createRobotsCache(request: (url: string) => Promise<Response>) {
+  const policies = new Map<string, ReturnType<typeof loadRobots>>();
+  return (url: string) => {
+    const origin = new URL(url).origin;
+    let policy = policies.get(origin);
+    if (!policy) {
+      policy = loadRobots(origin, request);
+      policies.set(origin, policy);
+    }
+    return policy;
+  };
+}
