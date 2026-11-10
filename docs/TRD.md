@@ -3903,7 +3903,7 @@ Record results in the PRD decisions log with the next free `D-` number.
 | `@mozilla/readability`, `linkedom` | generic HTML | T-54 |
 | `unified`, `remark-parse`, `remark-gfm`, `remark-frontmatter`, `remark-mdx` | Markdown and MDX | T-55 |
 | `unpdf` 1.9.1 | PDF; Node ≥22 (2.x requires Node ≥24) | T-56 |
-| `mammoth` | `.docx` | T-57 |
+| `mammoth` 1.13.0 | `.docx` | T-57 |
 | `@inquirer/prompts` | interactive CLI prompts | T-58 |
 
 `tsx` moves from dev to runtime dependencies (the CLI runs in the image). Versions are pinned at task time.

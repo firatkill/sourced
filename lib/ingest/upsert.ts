@@ -25,7 +25,7 @@ type PreparedDocument = Omit<IngestDocument, 'chunks'> & { chunks: PreparedChunk
 
 type IngestOptions = {
   sql: postgres.Sql;
-  loadDocuments: () => Promise<IngestDocument[]>;
+  loadDocuments: () => Promise<IngestDocument[] & { warnings?: number }>;
   provider: Pick<LlmProvider, 'embed'>;
   embeddingModel: string;
   includeFixtures: boolean;
@@ -252,6 +252,7 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
           .join('\n'),
       ),
       sources,
+      warnings: loaded.warnings ?? 0,
       documentsTotal: documents.length,
       documentsChanged: 0,
       documentsRemoved: 0,

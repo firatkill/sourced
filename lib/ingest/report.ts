@@ -1,6 +1,7 @@
 export type IngestReport = {
   corpusVersion: string;
   sources?: { id: string; revision?: string }[];
+  warnings: number;
   documentsTotal: number;
   documentsChanged: number;
   documentsRemoved: number;
@@ -22,6 +23,7 @@ export function formatIngestReport(report: IngestReport, finishedAt: Date): stri
     `documents   ${String(report.documentsTotal)} total   ${String(report.documentsChanged)} changed   ${String(report.documentsRemoved)} removed   (fixtures: ${report.includeFixtures ? 'yes' : 'no'})`,
     `chunks      ${String(report.chunksTotal)} total   ${String(report.chunksInserted)} inserted   ${String(report.chunksUpdated)} updated   ${String(report.chunksUnchanged)} unchanged   ${String(report.chunksDeleted)} deleted`,
     `embedding   ${String(report.embeddingInputs)} inputs   ${report.embeddingTokens.toLocaleString('en-US')} tokens   est. $${report.costUsdEstimate.toFixed(4)}`,
+    `warnings    ${String(report.warnings)}`,
     ...(report.sources ?? [])
       .filter((source) => source.revision)
       .map((source) => `source ${source.id} revision ${source.revision ?? ''}`),

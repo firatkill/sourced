@@ -47,6 +47,7 @@
     "js-tiktoken": "1.0.21",
     "linkedom": "0.18.15",
     "lucide-react": "1.61.0",
+    "mammoth": "1.13.0",
     "next": "15.5.28",
     "picomatch": "4.0.7",
     "pino": "10.4.0",

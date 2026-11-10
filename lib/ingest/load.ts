@@ -22,6 +22,7 @@ import { createFetchSession } from './fetch';
 import { parseHtml, type ParsedDocument } from './parse-html';
 import { parseMarkdown } from './parse-markdown';
 import { parsePdf } from './parse-pdf';
+import { parseDocx } from './parse-docx';
 import { chunkDocument } from './chunk';
 import type { IngestDocument } from './upsert';
 
@@ -37,6 +38,7 @@ const Metadata = z.object({
 export type LoadedCorpus = (IngestDocument & { document: ParsedDocument })[] & {
   sources: { id: string; revision?: string }[];
   failedKeys: string[];
+  warnings: number;
 };
 export async function loadCorpus(options: {
   offline: boolean;
@@ -60,6 +62,7 @@ export async function loadCorpus(options: {
   const documents: LoadedCorpus = Object.assign([], {
     sources: [] as LoadedCorpus['sources'],
     failedKeys: [] as string[],
+    warnings: 0,
   });
   const ctx: SourceContext = {
     repoRoot: process.cwd(),
@@ -119,16 +122,25 @@ export async function loadCorpus(options: {
       let document: ParsedDocument;
       try {
         const isPdf = raw.mimeType === 'application/pdf' || /\.pdf$/i.test(slug);
+        const isDocx =
+          raw.mimeType ===
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          /\.docx$/i.test(slug);
         if (
           !options.parse &&
           !isPdf &&
+          !isDocx &&
           !['text/html', 'text/markdown', 'text/mdx'].includes(raw.mimeType)
         )
           throw new AppError(
             'UNSUPPORTED_MEDIA_TYPE',
             'This source format requires its M6 parser.',
           );
-        if (!options.parse && isPdf) {
+        if (!options.parse && isDocx) {
+          const parsed = await parseDocx(raw.bytes, slug);
+          document = parsed.document;
+          documents.warnings += parsed.warnings;
+        } else if (!options.parse && isPdf) {
           const parsed = await parsePdf(raw.bytes, slug);
           if (parsed.status === 'needs_ocr') {
             context.onEvent({ type: 'skipped', key: ref.key, reason: 'needs_ocr' });

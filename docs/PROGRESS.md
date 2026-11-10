@@ -74,8 +74,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-54 | M6 Sources and CLI | Generic HTML parser | done | c66a17d |
 | T-55 | M6 Sources and CLI | Markdown and MDX parser | done | d2e66bd |
 | T-56 | M6 Sources and CLI | PDF parser | done | 8ae9b15 |
-| T-57 | M6 Sources and CLI | `.docx` parser | doing | |
-| T-58 | M6 Sources and CLI | CLI framework | todo | |
+| T-57 | M6 Sources and CLI | `.docx` parser | done | HEAD |
+| T-58 | M6 Sources and CLI | CLI framework | doing | |
 | T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | todo | |
 | T-60 | M6 Sources and CLI | Contextual embedding input | todo | |
 | T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- T-57 note (reviewer): `lib/ingest/parse-docx.ts` and the fixture generator use mammoth's internal `mammoth/lib/zipfile` module (typed in `global.d.ts`) to read core properties and write fixtures without another dependency. It is not a public API: re-check it whenever `mammoth` (pinned 1.13.0) is upgraded.
 
 - T-50 note (reviewer): one integration run out of 13 failed once on 2026-11-10 and could not be reproduced (12 consecutive passes); the failing test name was not captured. If it recurs in CI, the log names it. `corpus/postgres-17/metadata.json` keeps the v1 manifest version and the fixture descriptor that the kit schema does not hold.
 
