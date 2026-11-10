@@ -3247,7 +3247,7 @@ export const KitConfigSchema = z.object({
     attribution: z.string().max(300).optional(),
     linkLabel: z.string().max(40).default('Read the source'),
   }),
-  sources: z.array(SourceSchema).min(1),
+  sources: z.array(SourceSchema).default([]),               // D-114: empty until `sourced add`
   models: z.object({
     chat: RoleModel,
     rerank: RoleModel.optional(),                            // defaults to chat
