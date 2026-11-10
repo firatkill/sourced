@@ -4339,6 +4339,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-189",
+      "ac_reference": "T-50; FR-41; D-94",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example eval within maxRegression",
+      "description": "T-50 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-189.",
+      "expected_result": "pnpm eval on the example (v1 chat model, judge in the free allowance) stays within maxRegression of the v1.0.0 run; cost recorded against the D-94 budget.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval.yml run 42801799391 on 08cb06b: every metric equal to or better than the v1.0.0 baseline (recallAt5 0.96875, mrr 0.9375, citationValidity 1, faithfulness 1, errors 0); within maxRegression"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
