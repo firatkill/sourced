@@ -73,7 +73,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | done | 82cc09b |
 | T-54 | M6 Sources and CLI | Generic HTML parser | done | c66a17d |
 | T-55 | M6 Sources and CLI | Markdown and MDX parser | done | d2e66bd |
-| T-56 | M6 Sources and CLI | PDF parser | done | HEAD |
+| T-56 | M6 Sources and CLI | PDF parser | done | 8ae9b15 |
 | T-57 | M6 Sources and CLI | `.docx` parser | doing | |
 | T-58 | M6 Sources and CLI | CLI framework | todo | |
 | T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | todo | |
