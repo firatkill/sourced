@@ -3568,7 +3568,7 @@ The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtm
 
 ### 33.3 Markdown and MDX (`parse-markdown.ts`, FR-69)
 
-`unified` + `remark-parse` + `remark-gfm` + `remark-frontmatter` (+ `remark-mdx` for `.mdx`). Title: front matter `title`, else first `h1`, else file name. MDX: drop `mdxjsEsm` nodes (imports, exports); for `mdxJsxFlowElement`/`mdxJsxTextElement` keep the text of their children; drop expressions. Code fences become code blocks with the language kept in a `lang` field (not embedded). Links keep their text only.
+`unified` + `remark-parse` + `remark-gfm` + `remark-frontmatter` (+ `remark-mdx` for `.mdx`). Title: front matter `title`, else first `h1`, else file name. Front matter is not parsed as full YAML (D-106): the title is the value of a top-level `title:` line in YAML front matter (`---` fences), plain or single- or double-quoted, on one line; any other form (block scalars, flow mappings, TOML `+++` front matter) falls back to the first `h1`. MDX: drop `mdxjsEsm` nodes (imports, exports); for `mdxJsxFlowElement`/`mdxJsxTextElement` keep the text of their children; drop expressions. Code fences become code blocks with the language kept in a `lang` field (not embedded). Links keep their text only.
 
 ### 33.4 PDF (`parse-pdf.ts`, FR-70)
 
