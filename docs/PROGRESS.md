@@ -34,36 +34,36 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
-| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | HEAD |
-| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | HEAD |
-| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | HEAD |
-| T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | HEAD |
-| T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | HEAD |
-| T-22 | M2 Ask, stream, citations | Stream splitter | done | HEAD |
-| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | HEAD |
-| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | HEAD |
-| T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | HEAD |
-| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | HEAD |
-| T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | HEAD |
-| T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | HEAD |
-| T-29 | M2 Ask, stream, citations | `GET /api/health` | done | HEAD |
-| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | HEAD |
-| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | HEAD |
-| T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | HEAD |
-| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | HEAD |
-| T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | HEAD |
-| T-35 | M3 Eval and CI | Golden set and validator | done | HEAD |
-| T-36 | M3 Eval and CI | Eval harness | done | HEAD |
+| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | ce93307 |
+| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | ce93307 |
+| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | ce93307 |
+| T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | ce93307 |
+| T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | ce93307 |
+| T-22 | M2 Ask, stream, citations | Stream splitter | done | ce93307 |
+| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | ce93307 |
+| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | ce93307 |
+| T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | ce93307 |
+| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | ce93307 |
+| T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | ce93307 |
+| T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | ce93307 |
+| T-29 | M2 Ask, stream, citations | `GET /api/health` | done | ce93307 |
+| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | ce93307 |
+| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | ce93307 |
+| T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | ce93307 |
+| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | ce93307 |
+| T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | ce93307 |
+| T-35 | M3 Eval and CI | Golden set and validator | done | ce93307 |
+| T-36 | M3 Eval and CI | Eval harness | done | ce93307 |
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | done | b396f38, 398d88c, 41425df |
-| T-38 | M3 Eval and CI | `/eval` page | done | HEAD |
-| T-39 | M3 Eval and CI | `/how-it-works` page | done | HEAD |
+| T-38 | M3 Eval and CI | `/eval` page | done | ce93307 |
+| T-39 | M3 Eval and CI | `/how-it-works` page | done | ce93307 |
 | T-40 | M4 Polish and deploy | Accessibility, keyboard and responsive pass | doing | HEAD |
 | T-41 | M4 Polish and deploy | Security review | done | 7151b26, 99c3c0d |
 | T-42 | M4 Polish and deploy | Supabase, OpenAI project and production data | done | 786499f, 5cd2a5b |
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | done | 190dafa, HEAD |
 | T-44 | M4 Polish and deploy | README, demo GIF and diagrams | done | 560d5c4 |
 | T-45 | M4 Polish and deploy | Release v1.0.0 | done | ea39e59 (tag v1.0.0) |
-| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | HEAD |
+| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | ce93307 |
 | T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | doing | |
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | todo | |
 | T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | todo | |
