@@ -251,3 +251,19 @@ test('TC-123 / FR-42: records verified citations in passage-label order and both
   expect(record?.judgeCostUsd).toBe(0.00015);
   expect(record?.result.costUsd).toBe((record?.answerCostUsd ?? 0) + 0.00015);
 });
+
+test('TC-185 / UT-49 / TRD §31.4: missing role price stops legacy eval before any provider call', async () => {
+  const runtime = await import('@/lib/kit/runtime-config');
+  const config = runtime.getKitConfig(false);
+  config.models.rerank = { provider: 'gemini', model: 'unpriced-rerank' };
+  vi.spyOn(runtime, 'getKitConfig').mockReturnValue(config);
+  const answer = vi.fn().mockResolvedValue(outcome);
+  const judge = vi.fn();
+  await expect(
+    evaluateQuestions([golden], { mode: 'mock', prices, limitUsd: 1, answer, judge }),
+  ).rejects.toThrow(
+    'Price unknown for gemini:unpriced-rerank; add it to pricing in sourced.config.ts to get an estimate.',
+  );
+  expect(answer).not.toHaveBeenCalled();
+  expect(judge).not.toHaveBeenCalled();
+});

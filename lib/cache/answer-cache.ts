@@ -13,7 +13,7 @@ export const CachedAnswerPayload = z.object({
   answerText: z.string(),
   citations: CitationsEvent,
   usageAtGeneration: DoneEvent.shape.usage,
-  costUsdAtGeneration: z.number(),
+  costUsdAtGeneration: z.number().nullable(),
 });
 
 export type CacheVersion = { corpusVersion: string; promptVersion: string; chatModel: string };

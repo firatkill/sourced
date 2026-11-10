@@ -146,3 +146,8 @@ describe('TC-068 / UT-13 / FR-23: normative SSE schemas', () => {
     expect(SseEvent.safeParse({ event: 'done', data: error }).success).toBe(false);
   });
 });
+
+it('TC-185 / UT-49 / TRD §31.4: unknown price is accepted as null at the SSE boundary', () => {
+  expect(DoneEvent.parse({ ...done, costUsdEstimate: null }).costUsdEstimate).toBeNull();
+  expect(DoneEvent.safeParse({ ...done, costUsdEstimate: 'unknown' }).success).toBe(false);
+});

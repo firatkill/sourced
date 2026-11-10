@@ -42,9 +42,12 @@ test('TC-096: E2E-07 disclosure reports real retrieval, timings, tokens and cost
       { exact: true },
     ),
   ).toBeVisible();
+  // The example corpus prices every role, so its cost is always known (TRD §31.4).
+  expect(done.costUsdEstimate).not.toBeNull();
+  const cost = done.costUsdEstimate ?? Number.NaN;
   await expect(
     page.getByText(
-      `Tokens: ${String(done.usage.inputTokens)} in, ${String(done.usage.outputTokens)} out · Estimated cost $${done.costUsdEstimate.toFixed(4)}`,
+      `Tokens: ${String(done.usage.inputTokens)} in, ${String(done.usage.outputTokens)} out · Estimated cost $${cost.toFixed(4)}`,
       { exact: true },
     ),
   ).toBeVisible();

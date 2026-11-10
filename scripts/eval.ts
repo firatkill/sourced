@@ -10,7 +10,7 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 import { RETRIEVAL } from '@/lib/config';
-import { estimateCost } from '@/lib/cost/estimate';
+import { estimateCost, rolePrice } from '@/lib/cost/estimate';
 import { getEnv } from '@/lib/env';
 import { closeSqlForTests, getSql } from '@/lib/db/client';
 import { answerQuestion } from '@/lib/generation/answer';
@@ -81,6 +81,17 @@ export async function evaluateQuestions(
     onQuestion?: (id: string) => void;
   },
 ): Promise<EvalRecord[]> {
+  const priceConfig = getKitConfig(false);
+  const unpricedRole = (['embed', 'chat', 'rerank'] as const).find(
+    (role) => rolePrice(role, priceConfig) === null,
+  );
+  if (unpricedRole) {
+    const model = priceConfig.models[unpricedRole] ?? priceConfig.models.chat;
+    throw new EvalAbort(
+      2,
+      `Price unknown for ${model.provider}:${model.model}; add it to pricing in sourced.config.ts to get an estimate.`,
+    );
+  }
   const records: EvalRecord[] = [];
   let accrued = 0;
   const now = options.now ?? (() => performance.now());
@@ -133,7 +144,9 @@ export async function evaluateQuestions(
       });
       const verification = outcome.verification;
       record.usage.answer = outcome.usage;
-      record.answerCostUsd = estimateCost(outcome.usage);
+      const answerCost = estimateCost(outcome.usage, priceConfig);
+      if (answerCost === null) throw new EvalAbort(2, 'Price configuration changed during eval.');
+      record.answerCostUsd = answerCost;
       charge(record.answerCostUsd);
       record.rrfTop20Anchors = outcome.candidates.map((chunk) => chunk.anchor);
       record.rerankedTop20Anchors = outcome.reranked.map((chunk) => chunk.anchor);

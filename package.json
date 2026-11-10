@@ -33,7 +33,10 @@
     "config:snapshot": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/config-snapshot.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "4.0.85",
+    "@ai-sdk/google": "4.0.102",
     "@ai-sdk/openai": "4.0.99",
+    "@ai-sdk/openai-compatible": "3.0.75",
     "ai": "7.0.148",
     "cheerio": "1.2.0",
     "class-variance-authority": "0.7.1",

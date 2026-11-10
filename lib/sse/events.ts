@@ -69,7 +69,7 @@ export const DoneEvent = z.object({
     inputTokens: z.number().int(), // rerank + answer + quote fallback
     outputTokens: z.number().int(),
   }),
-  costUsdEstimate: z.number(),
+  costUsdEstimate: z.number().nullable(),
   latencyMs: z.object({
     total: z.number(),
     firstToken: z.number().nullable(),

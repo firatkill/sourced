@@ -366,3 +366,11 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
     });
   });
 });
+
+it('TC-185 / UT-49 / TRD §31.4: unknown cost renders without a currency amount', () => {
+  render(
+    <HowAnswered meta={meta} done={{ ...done, costUsdEstimate: null }} citations={citations} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'How this was answered' }));
+  expect(screen.getByText('Tokens: 8120 in, 402 out · Estimated cost unknown')).toBeTruthy();
+});

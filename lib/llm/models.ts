@@ -30,6 +30,20 @@ export const MODELS: Readonly<Record<string, ModelCapabilities>> = {
     reasoning: false,
     embedDimensions: dimensions(128, 3072),
   },
+  'gemini:gemini-2.5-flash': {
+    supportsTemperature: true,
+    reasoning: true,
+    maxOutputTokens: 65536,
+  },
+  'anthropic:claude-opus-5-5': { supportsTemperature: false, reasoning: true },
+  'anthropic:claude-sonnet-5-5': { supportsTemperature: false, reasoning: true },
+  'anthropic:claude-haiku-5-5': { supportsTemperature: false, reasoning: true },
+  'ollama:llama3.2': { supportsTemperature: true, reasoning: false },
+  'ollama:nomic-embed-text': {
+    supportsTemperature: false,
+    reasoning: false,
+    embedDimensions: [768],
+  },
   'openai:gpt-6-luna': { supportsTemperature: true, reasoning: true },
   'openai:gpt-5.4': { supportsTemperature: true, reasoning: true },
 };

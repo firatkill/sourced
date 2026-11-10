@@ -5,6 +5,9 @@ import { EMBEDDING } from '@/lib/config';
 import { getEnv } from '@/lib/env';
 import { mockProvider } from './mock';
 import { createOpenaiProvider } from './openai';
+import { createGeminiProvider } from './gemini';
+import { createAnthropicProvider } from './anthropic';
+import { createOllamaProvider } from './ollama';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { createMockProvider } from './mock';
 import { AppError } from '@/lib/errors';
@@ -21,10 +24,9 @@ export function getProviders(): Record<Role, LlmProvider> {
     }
     if (model.provider === 'openai')
       return createOpenaiProvider(undefined, model.model, config.models.embed);
-    throw new AppError(
-      'CONFIG_INVALID',
-      `models.${role}.provider: ${model.provider} adapter is not installed yet (T-49).`,
-    );
+    if (model.provider === 'gemini') return createGeminiProvider(model.model, config.models.embed);
+    if (model.provider === 'anthropic') return createAnthropicProvider(model.model);
+    return createOllamaProvider(model.model, config.models.embed);
   };
   const chat = resolve('chat');
   return {

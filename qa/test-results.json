@@ -4255,6 +4255,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-185",
+      "ac_reference": "T-49; FR-60",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Gemini, Anthropic and Ollama providers with mocked transports",
+      "description": "UT-49.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-185.",
+      "expected_result": "Each provider maps errors like v1, passes options, uses maxRetries 0; a chat-only provider without an embedding provider is rejected with the list of embedding providers; no test makes a network call.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-49 additional-providers.test.ts with mocked transports: options, dimensions, error mapping, maxRetries 0, Claude 5.5 sends no temperature (SDK rejects sampling parameters); chat-only provider rejected with embedding list"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-186",
+      "ac_reference": "T-49; FR-60; A-19; D-94",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Manual live call per provider",
+      "description": "T-49 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-186.",
+      "expected_result": "One live call each to Gemini, Anthropic and a local Ollama succeeds.",
+      "status": "pending_decision",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action (D-94): no Gemini or Anthropic key and no Ollama; commands in docs/PROGRESS.md open questions"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

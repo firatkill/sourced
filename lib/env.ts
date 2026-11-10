@@ -1,5 +1,29 @@
 import 'server-only';
 import { z } from 'zod';
+import snapshot from '@/.sourced/config.json';
+
+// Defined by next.config.ts; CLI/tests use Node's current on-disk snapshot.
+declare const SOURCED_NODE_RUNTIME: boolean;
+const providerConfigSchema = z.object({
+  config: z.object({
+    profile: z.enum(['local', 'private', 'public-demo']),
+    models: z.record(
+      z.string(),
+      z.object({
+        provider: z.enum(['openai', 'gemini', 'anthropic', 'ollama', 'mock']),
+      }),
+    ),
+  }),
+});
+function providerConfig() {
+  // Edge middleware uses the build snapshot. Node must read the mounted snapshot
+  // at runtime (TRD §28.3), without pulling Node imports into the Edge bundle.
+  let value: unknown = snapshot;
+  if (typeof SOURCED_NODE_RUNTIME === 'undefined' || SOURCED_NODE_RUNTIME) {
+    value = JSON.parse(process.getBuiltinModule('fs').readFileSync('.sourced/config.json', 'utf8'));
+  }
+  return providerConfigSchema.parse(value).config;
+}
 
 const positiveInt = z.coerce.number().int().positive();
 const price = z.coerce.number().nonnegative().default(0);
@@ -17,6 +41,12 @@ const schema = z.object({
   LLM_MODE: z.enum(['live', 'mock']).default('live'),
   LLM_PROVIDER: z.literal('openai').default('openai'),
   OPENAI_API_KEY: optionalText,
+  GOOGLE_GENERATIVE_AI_API_KEY: optionalText,
+  ANTHROPIC_API_KEY: optionalText,
+  OLLAMA_BASE_URL: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.url().default('http://localhost:11434'),
+  ),
   CHAT_MODEL: optionalText,
   JUDGE_MODEL: optionalText,
   MAX_OUTPUT_TOKENS: z.coerce.number().int().min(200).max(2000).default(700),
@@ -91,13 +121,22 @@ export function getEnv(): Env {
   const result = schema
     .superRefine((env, ctx) => {
       if (env.LLM_MODE === 'live') {
-        for (const key of [
-          'OPENAI_API_KEY',
-          'CHAT_MODEL',
-          'PRICE_CHAT_INPUT_PER_MTOK',
-          'PRICE_CHAT_OUTPUT_PER_MTOK',
-          'PRICE_EMBED_PER_MTOK',
-        ] as const) {
+        const config = providerConfig();
+        const keys = new Set<string>();
+        for (const model of Object.values(config.models)) {
+          if (model.provider === 'openai') keys.add('OPENAI_API_KEY');
+          if (model.provider === 'gemini') keys.add('GOOGLE_GENERATIVE_AI_API_KEY');
+          if (model.provider === 'anthropic') keys.add('ANTHROPIC_API_KEY');
+        }
+        if (config.profile === 'public-demo')
+          for (const key of [
+            'CHAT_MODEL',
+            'PRICE_CHAT_INPUT_PER_MTOK',
+            'PRICE_CHAT_OUTPUT_PER_MTOK',
+            'PRICE_EMBED_PER_MTOK',
+          ] as const)
+            keys.add(key);
+        for (const key of keys) {
           if (!process.env[key]?.trim())
             ctx.addIssue({ code: 'custom', path: [key], message: 'Required in live mode' });
         }

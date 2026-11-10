@@ -466,8 +466,11 @@ export const JUDGE = {
 | `TEST_DATABASE_URL` | Tests | `postgres://sourced:sourced@localhost:5433/sourced_test` | Integration tests only. Must contain `localhost` or `127.0.0.1`; tests refuse otherwise. |
 | `DATABASE_POOL_MAX` | No | `5` | postgres.js `max`. Default 5. |
 | `LLM_MODE` | No | `live` | `live` or `mock`. Default `live`. `mock` is rejected when `VERCEL_ENV=production`. |
-| `LLM_PROVIDER` | No | `openai` | Only `openai` implemented (FR-56). |
-| `OPENAI_API_KEY` | When live | `sk-proj-...` | Project-scoped key from the "sourced" OpenAI project (section 26.2). |
+| `LLM_PROVIDER` | No | `openai` | Legacy v1 setting; kit roles select providers in `sourced.config.ts` (FR-60). |
+| `OPENAI_API_KEY` | Live OpenAI roles | `sk-proj-...` | Project-scoped key from the "sourced" OpenAI project (section 26.2). |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Live Gemini roles | — | Required when any configured role uses Gemini; empty in `.env.example`. |
+| `ANTHROPIC_API_KEY` | Live Anthropic roles | — | Required when any configured chat role uses Anthropic; empty in `.env.example`. |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama server origin, default `http://localhost:11434` when unset or empty; Docker uses `http://host.docker.internal:11434`. The adapter appends `/v1`. No key. |
 | `CHAT_MODEL` | When live | `<pin at build time, see section 24>` | Chat model for rerank, answer and quote fallback. Default documented as "the provider's current small, cheap model". In mock mode the effective chat model id is always `mock`, whatever this variable holds (used in the answer cache key, `query_log.chat_model` and eval results). |
 | `JUDGE_MODEL` | Eval | `<pin at build time>` | Judge model for faithfulness. May equal `CHAT_MODEL`. In mock mode the effective judge model id is always `mock`. |
 | `MAX_OUTPUT_TOKENS` | No | `700` | Answer generation cap. Integer 200–2000. |
@@ -493,7 +496,7 @@ export const JUDGE = {
 | `NODE_ENV` | Set by Next.js / Vitest | — | Read only. `development` enables `'unsafe-eval'` in the CSP; anything other than `production` enables SSE event validation in `send()` (section 12.3). |
 | `GITHUB_STEP_SUMMARY` | Set by GitHub Actions | — | Read only; `pnpm eval --ci` appends the Markdown summary to this file when set. |
 
-Zod rules: integer counts, limits, token caps and delays via `z.coerce.number().int().positive()` (`MOCK_STREAM_DELAY_MS` uses `.nonnegative()`); prices (`PRICE_*`) via `z.coerce.number().nonnegative()` (decimals allowed, default 0; the budget guard rejects 0 in live eval, section 17.7); `EVAL_MAX_COST_USD` via `z.coerce.number().positive()`; booleans via `z.enum(['true','false']).transform(v => v === 'true')`; `superRefine` enforces "required when live" (`OPENAI_API_KEY`, `CHAT_MODEL`, `PRICE_CHAT_*`, `PRICE_EMBED_PER_MTOK`) and "mock forbidden in production". `JUDGE_MODEL` and `PRICE_JUDGE_*` are checked by `scripts/eval.ts`, not by `getEnv()`. Error message lists every missing variable by name, never values.
+Zod rules: integer counts, limits, token caps and delays via `z.coerce.number().int().positive()` (`MOCK_STREAM_DELAY_MS` uses `.nonnegative()`); prices (`PRICE_*`) via `z.coerce.number().nonnegative()` (decimals allowed, default 0; the budget guard rejects 0 in live eval, section 17.7); `EVAL_MAX_COST_USD` via `z.coerce.number().positive()`; booleans via `z.enum(['true','false']).transform(v => v === 'true')`; `superRefine` enforces provider keys for configured live roles (`OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `ANTHROPIC_API_KEY`). The public-demo profile additionally requires `CHAT_MODEL`, `PRICE_CHAT_*`, `PRICE_EMBED_PER_MTOK` as in v1; other profiles use configured models and prices (section 29.4). It also enforces "mock forbidden in production". `JUDGE_MODEL` and `PRICE_JUDGE_*` are checked by `scripts/eval.ts`, not by `getEnv()`. Error message lists every missing variable by name, never values.
 
 `.env.example` contains every row above (read-only platform variables as commented lines). It must work unchanged for the no-API-key path (`cp .env.example .env.local && pnpm db:up && pnpm db:migrate && pnpm db:seed && pnpm dev:mock`): `DATABASE_URL` and `TEST_DATABASE_URL` point at the Docker database on port 5433, `NEXT_PUBLIC_SITE_URL=http://localhost:3000`, and `IP_HASH_SALT` / `QUESTION_HASH_SALT` hold obvious development-only placeholders of at least 32 characters (for example `dev-only-ip-salt-change-me-000000000000000`), with a comment that production values come from `openssl rand -hex 32`. `OPENAI_API_KEY` is empty; `CHAT_MODEL` and `JUDGE_MODEL` contain the pinned ids recorded in task T-18, with a comment line `# Pinned on <date> from <url>`.
 
@@ -1333,7 +1336,7 @@ export const DoneEvent = z.object({
     inputTokens: z.number().int(),    // rerank + answer + quote fallback
     outputTokens: z.number().int(),
   }),
-  costUsdEstimate: z.number(),
+  costUsdEstimate: z.number().nullable(), // v2: unknown price (§31.4)
   latencyMs: z.object({
     total: z.number(),
     firstToken: z.number().nullable(),
@@ -2051,7 +2054,7 @@ export const CachedAnswerPayload = z.object({
   answerText: z.string(),               // equals citations.answer
   citations: CitationsEvent,
   usageAtGeneration: DoneEvent.shape.usage,
-  costUsdAtGeneration: z.number(),
+  costUsdAtGeneration: z.number().nullable(), // v2: unknown price (§31.4)
 });
 ```
 

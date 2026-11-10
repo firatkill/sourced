@@ -66,8 +66,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | ce93307 |
 | T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | done | 1bf698f |
 | T-48 | M5 Configuration seams | Copy and prompts from configuration | done | 8b05a91 |
-| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | doing | |
-| T-50 | M5 Configuration seams | Example corpus in the kit layout | todo | |
+| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | HEAD |
+| T-50 | M5 Configuration seams | Example corpus in the kit layout | doing | |
 | T-51 | M5 Configuration seams | Deployment profiles | todo | |
 | T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | todo | |
 | T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- T-49 (TC-186, A-19, D-94): one live call each to Gemini, Anthropic and a local Ollama. When you have them, put `GOOGLE_GENERATIVE_AI_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` yourself and run `ollama serve`, then `ollama pull llama3.2` and `ollama pull nomic-embed-text`; the agent then runs the check script from the T-49 notes (`.codex-prompts/runs/32.last.md`) and records the result.
 
 - Release follow-ups (D-90), due 2026-11-16: Lighthouse mobile on production (median of 3), VoiceOver pass, 360 px check on a real phone, runbook test (`DEMO_MODE=readonly` and back in Vercel, then redeploy), rollback test (promote a previous preview deployment), link from firatkil.com. The agent collects NFR-01–NFR-05 from `query_log` on 2026-11-16 and checks on 2026-11-17 that Supabase stayed active with only keepalive traffic.
 

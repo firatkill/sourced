@@ -28,7 +28,7 @@ export function readSnapshot(filename: string): KitConfig {
     );
   return result.data.config;
 }
-export function getKitConfig(): KitConfig {
+export function getKitConfig(applyMock = true): KitConfig {
   cached ??= readSnapshot(path.join(process.cwd(), '.sourced/config.json'));
   const env = getConfigEnv();
   const config = structuredClone(cached);
@@ -58,7 +58,7 @@ export function getKitConfig(): KitConfig {
     price('embed', env.PRICE_EMBED_PER_MTOK, undefined);
   }
   // The v1 mock harness remains a runtime override, not a production config.
-  if (env.LLM_MODE === 'mock') {
+  if (applyMock && env.LLM_MODE === 'mock') {
     for (const role of ['chat', 'rerank', 'judge', 'generate'] as const)
       if (role === 'chat' || config.models[role])
         config.models[role] = { provider: 'mock', model: 'mock' };
