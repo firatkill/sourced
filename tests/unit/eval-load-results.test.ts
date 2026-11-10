@@ -68,3 +68,13 @@ test('T-50: default /eval loader reads the committed v1 results from the example
   expect(runs.at(-1)).toMatchObject({ date: '2026-11-09', sourceFile: '2026-11-09.json' });
   expect(runs.at(-1)?.questions).toHaveLength(40);
 });
+
+test('TC-188 / T-50: the default results directory loads the committed example runs', async () => {
+  // No override: getEnv() falls back to the kit layout default (eval/postgres-17/results).
+  vi.stubEnv('EVAL_RESULTS_DIR', undefined);
+  resetEnvForTests();
+  const runs = await loadResults();
+  expect(runs.length).toBeGreaterThan(0);
+  expect(runs.map((run) => run.sourceFile)).toContain('2026-11-09.json');
+  expect(runs.every((run) => EvalResult.safeParse(run).success)).toBe(true);
+});
