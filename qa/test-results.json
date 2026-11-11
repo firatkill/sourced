@@ -5300,6 +5300,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-233",
+      "ac_reference": "T-71; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "add-docs, ingest and check-quality skills",
+      "description": "T-71 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-233.",
+      "expected_result": "check-skills passes for the three skills; one rehearsal each (mock provider) with transcripts in qa/release-v2/: /add-docs proposes include and exclude rules and shows the dry run; /ingest summarises the report in plain words and resumes; /check-quality runs inspect, eval:generate with a cost question first, and eval, and turns results into concrete suggestions.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "check-skills passes for the three skills (1ac1ec3, pricing guide 6eb201f/ccd3438, D-130). Claude Code rehearsals on one clone: /add-docs (crawl of 30 MongoDB manual pages, dry run explained), /ingest (price lookup, ingest, inspect), /check-quality (generate, review, validate, mock eval explained); transcripts in qa/release-v2/. No FR-89 break. Bugs found and fixed: mock estimates and MOCK_MODE warning (e13d2a7), eval envelopes and eval without Git (ce8f63c, D-131, D-132). Remaining follow-ups in PROGRESS."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

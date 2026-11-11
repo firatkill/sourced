@@ -88,7 +88,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | done | fdaa6f5 |
 | T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | done | 2e4207c |
 | T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | done | 5b3de7b |
-| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | doing | |
+| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | (this commit) |
 | T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | todo | |
 | T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | todo | |
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- M8 rehearsal follow-ups (reviewer, T-70/T-71, `qa/release-v2/`): (a) the database host port is fixed at 5433, so a second checkout (or any service on 5433) stops the Docker launcher before the CLI runs, with no JSON envelope; (b) `doctor`'s `ports` check passes while another process listens on `*:3000` over IPv6; (c) `/add-docs` discovery made about eight quick requests to the docs site, against the skill's spacing rule; (d) MongoDB pages produce 193 tiny chunks of 228 (`inspect`), a chunking item for `/tune`. Fixed during M8: launcher `down`/`dev` envelopes, mock-mode estimates and warning, eval envelopes and eval without Git (the M7 follow-up (2) below).
 
 - M7 follow-ups (reviewer): (1) on the Node path the first CLI command in a fresh folder fails with CHAT_MODEL/PRICE_* errors because the config snapshot does not exist yet (the Docker path is unaffected); (2) `sourced eval` fails outside a git repository with a generic error because it records the commit; it should record no commit instead. Both found in T-68.
 
