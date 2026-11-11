@@ -16,10 +16,7 @@ if not exist .env.local (
     exit /b 2
   )
 )
-if "%~1"=="down" (
-  docker compose down
-  exit /b
-)
+if "%~1"=="down" goto down
 if "%~1"=="dev" goto dev
 if "%~1"=="init" echo Building the image on first run takes a few minutes. 1>&2
 docker compose build cli 1>&2
@@ -34,6 +31,27 @@ docker compose run --rm %ttyArgs% %mountArgs% cli %*
 exit /b
 :mount
 set mountArgs=%mountArgs% -v "%~1:%~1:ro"
+exit /b 0
+:down
+set "json=false"
+shift
+:downargs
+if "%~1"=="" goto stopapp
+if "%~1"=="--json" set "json=true"
+shift
+goto downargs
+:stopapp
+if "%json%"=="false" (
+  docker compose down
+  exit /b
+)
+rem Down stops the containers, so emit the fixed envelope without starting one.
+docker compose down 1>&2
+if errorlevel 1 (
+  echo {"schemaVersion":1,"command":"down","ok":false,"error":{"code":"INTERNAL_ERROR","message":"Docker Compose down failed.","fix":"Check Docker is running, then retry sourced.cmd down --json."},"warnings":[]}
+  exit /b 1
+)
+echo {"schemaVersion":1,"command":"down","ok":true,"result":{},"warnings":[]}
 exit /b 0
 :dev
 set "json=false"
@@ -63,12 +81,25 @@ if errorlevel 1 (
   exit /b 2
 )
 docker compose up -d --build --force-recreate app 1>&2
-if errorlevel 1 exit /b 1
-docker compose exec -T app node --input-type=module -e "for(let n=0;n<60;n++){try{const r=await fetch('http://127.0.0.1:3000/api/health',{signal:AbortSignal.timeout(1000)});if(r.ok)process.exit(0)}catch{}await new Promise(r=>setTimeout(r,1000))}process.exit(1)"
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+  if "%json%"=="true" echo {"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App container start failed.","fix":"Check Docker is running and review the start output, then retry sourced.cmd dev --json."},"warnings":[]}
+  exit /b 1
+)
+if "%json%"=="true" (
+  call :healthcheck 1>&2
+) else (
+  call :healthcheck
+)
+if errorlevel 1 (
+  if "%json%"=="true" echo {"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App health check failed.","fix":"Run docker compose logs app to diagnose the health check, then retry sourced.cmd dev --json."},"warnings":[]}
+  exit /b 1
+)
 if "%json%"=="true" (
   echo {"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%SOURCED_PORT%"},"warnings":[]}
 ) else (
   echo http://localhost:%SOURCED_PORT%
 )
 exit /b 0
+:healthcheck
+docker compose exec -T app node --input-type=module -e "for(let n=0;n<60;n++){try{const r=await fetch('http://127.0.0.1:3000/api/health',{signal:AbortSignal.timeout(1000)});if(r.ok)process.exit(0)}catch{}await new Promise(r=>setTimeout(r,1000))}process.exit(1)"
+exit /b

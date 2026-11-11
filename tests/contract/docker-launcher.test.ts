@@ -5,10 +5,12 @@ import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, test } from 'vitest';
+import { CliEnvelope } from '@/lib/cli/envelope';
+import { commandSchemas } from '@/lib/cli/schemas/commands';
 
 const execute = promisify(execFile);
 const directories: string[] = [];
-async function fixture() {
+async function fixture(downExitCode = 0, devFailure: 'up' | 'exec' | '' = '') {
   const root = await mkdtemp(path.join(tmpdir(), 'sourced-docker-'));
   directories.push(root);
   await copyFile('sourced', path.join(root, 'sourced'));
@@ -18,7 +20,19 @@ async function fixture() {
   const log = path.join(root, 'arguments');
   await writeFile(
     path.join(root, 'bin/docker'),
-    '#!/bin/sh\nprintf "%s\\n" CALL "$@" >> "$DOCKER_ARGUMENT_LOG"\n',
+    `#!/bin/sh
+printf "%s\\n" CALL "$@" >> "$DOCKER_ARGUMENT_LOG"
+if [ "$2" = '${devFailure}' ]; then
+  printf '%s\\n' 'Compose stdout'
+  printf '%s\\n' 'Compose stderr' >&2
+  exit 17
+fi
+if [ "$2" = down ]; then
+  printf '%s\\n' 'Compose stdout'
+  printf '%s\\n' 'Compose stderr' >&2
+  exit ${String(downExitCode)}
+fi
+`,
     { mode: 0o755 },
   );
   const run = (args: string[]) =>
@@ -89,8 +103,166 @@ test('TC-214: external folders (including an unterminated last line) mount read-
 test('TC-214: down never deletes volumes', async () => {
   const { root, run, log } = await fixture();
   await writeFile(path.join(root, '.env.local'), '');
-  await run(['down']);
+  expect(await run(['down'])).toMatchObject({
+    stdout: 'Compose stdout\n',
+    stderr: 'Compose stderr\n',
+  });
   expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\ndown\n');
+});
+
+const downSuccess = {
+  schemaVersion: 1,
+  command: 'down',
+  ok: true,
+  result: {},
+  warnings: [],
+};
+const downFailure = {
+  schemaVersion: 1,
+  command: 'down',
+  ok: false,
+  error: {
+    code: 'INTERNAL_ERROR',
+    message: 'Docker Compose down failed.',
+    fix: 'Check Docker is running, then retry ./sourced down --json.',
+  },
+  warnings: [],
+};
+const windowsDownFailure = {
+  ...downFailure,
+  error: { ...downFailure.error, fix: downFailure.error.fix.replace('./sourced', 'sourced.cmd') },
+};
+const devFailures = {
+  up: {
+    code: 'INTERNAL_ERROR',
+    message: 'App container start failed.',
+    fix: 'Check Docker is running and review the start output, then retry ./sourced dev --json.',
+  },
+  exec: {
+    code: 'INTERNAL_ERROR',
+    message: 'App health check failed.',
+    fix: 'Run docker compose logs app to diagnose the health check, then retry ./sourced dev --json.',
+  },
+};
+
+test.each([0, 17])('TC-214 / NFR-22: down --json handles Compose exit %i', async (code) => {
+  const { root, run, log } = await fixture(code);
+  await writeFile(path.join(root, '.env.local'), '');
+  const result = await run(['down', '--json']).then(
+    (output) => ({ ...output, code: 0 }),
+    (error: unknown) => {
+      expect(error).toMatchObject({
+        code: 1,
+        stdout: expect.any(String) as unknown,
+        stderr: expect.any(String) as unknown,
+      });
+      return error as { code: number; stdout: string; stderr: string };
+    },
+  );
+  expect(result.code).toBe(code === 0 ? 0 : 1);
+  expect(result.stdout.endsWith('\n')).toBe(true);
+  expect(result.stdout.trim().split('\n')).toHaveLength(1);
+  const envelope = CliEnvelope.parse(JSON.parse(result.stdout));
+  expect(envelope).toEqual(code === 0 ? downSuccess : downFailure);
+  if (envelope.ok) expect(commandSchemas.down.parse(envelope.result)).toEqual({});
+  expect(result.stderr).toBe('Compose stdout\nCompose stderr\n');
+  expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\ndown\n');
+});
+
+test('TC-214: down without --json preserves the Compose failure code and output', async () => {
+  const { root, run } = await fixture(17);
+  await writeFile(path.join(root, '.env.local'), '');
+  await expect(run(['down'])).rejects.toMatchObject({
+    code: 17,
+    stdout: 'Compose stdout\n',
+    stderr: 'Compose stderr\n',
+  });
+});
+
+test('TC-214 / NFR-22: Windows down has the same JSON branch and envelopes', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  expect(launcher).toContain('if "%~1"=="down" goto down');
+  const branch = launcher.split('\n:down\n')[1]?.split('\n:dev\n')[0];
+  expect(branch).toBeDefined();
+  expect(branch).toContain('if "%~1"=="--json" set "json=true"');
+  expect(branch).toContain('if "%json%"=="false" (\n  docker compose down\n  exit /b\n)');
+  expect(branch).toContain('docker compose down 1>&2\nif errorlevel 1 (');
+  const envelopes = [...(branch ?? '').matchAll(/echo (\{[^\n]+\})\n/g)].map((match) =>
+    CliEnvelope.parse(JSON.parse(match[1] ?? '')),
+  );
+  expect(envelopes).toEqual([windowsDownFailure, downSuccess]);
+  expect(commandSchemas.down.parse(envelopes[1]?.result)).toEqual({});
+  expect(branch).toContain(`${JSON.stringify(windowsDownFailure)}\n  exit /b 1\n)`);
+  expect(branch).toContain(`${JSON.stringify(downSuccess)}\nexit /b 0`);
+});
+
+test.each(['up', 'exec'] as const)(
+  'TC-214 / NFR-22: dev --json reports %s failure with one envelope and exit 1',
+  async (step) => {
+    const { root, run, log } = await fixture(0, step);
+    await writeFile(path.join(root, '.env.local'), '');
+    const result = await run(['dev', '--json']).then(
+      () => {
+        throw new Error('Expected dev to fail');
+      },
+      (error: unknown) => {
+        expect(error).toMatchObject({ code: 1 });
+        return error as { stdout: string; stderr: string };
+      },
+    );
+    expect(result.stdout.endsWith('\n')).toBe(true);
+    expect(result.stdout.trim().split('\n')).toHaveLength(1);
+    expect(CliEnvelope.parse(JSON.parse(result.stdout))).toEqual({
+      schemaVersion: 1,
+      command: 'dev',
+      ok: false,
+      error: devFailures[step],
+      warnings: [],
+    });
+    expect(result.stderr).toBe('Compose stdout\nCompose stderr\n');
+    const calls = await readFile(log, 'utf8');
+    expect(calls).toContain('compose\nup\n');
+    if (step === 'up') expect(calls).not.toContain('compose\nexec\n');
+    else expect(calls).toContain('/api/health');
+  },
+);
+
+test.each(['up', 'exec'] as const)(
+  'TC-214: dev human %s failure preserves output and exits 1',
+  async (step) => {
+    const { root, run } = await fixture(0, step);
+    await writeFile(path.join(root, '.env.local'), '');
+    await expect(run(['dev'])).rejects.toMatchObject({
+      code: 1,
+      stdout: step === 'up' ? '' : 'Compose stdout\n',
+      stderr: step === 'up' ? 'Compose stdout\nCompose stderr\n' : 'Compose stderr\n',
+    });
+  },
+);
+
+test('TC-214 / NFR-22: Windows dev has equivalent failure envelopes and exits', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  const branch = launcher.split('\n:dev\n')[1] ?? '';
+  expect(branch).toContain(
+    'docker compose up -d --build --force-recreate app 1>&2\nif errorlevel 1 (',
+  );
+  expect(branch).toContain(
+    'if "%json%"=="true" (\n  call :healthcheck 1>&2\n) else (\n  call :healthcheck\n)\nif errorlevel 1 (',
+  );
+  expect(branch).toContain(':healthcheck\ndocker compose exec -T app node');
+  expect(branch).toContain('/api/health');
+  const failures = [
+    ...branch.matchAll(/if "%json%"=="true" echo (\{[^\n]+\})\n  exit \/b 1\n\)/g),
+  ].map((match) => CliEnvelope.parse(JSON.parse(match[1] ?? '')));
+  expect(failures).toEqual(
+    Object.values(devFailures).map((error) => ({
+      schemaVersion: 1,
+      command: 'dev',
+      ok: false,
+      error: { ...error, fix: error.fix.replace('./sourced', 'sourced.cmd') },
+      warnings: [],
+    })),
+  );
 });
 test('TC-214: dev recreates the app, waits for health inside Docker, then prints its URL', async () => {
   const { root, run, log } = await fixture();
@@ -123,7 +295,9 @@ test('TC-214 / FR-77: dev --json has one envelope and honors --port', async () =
   await writeFile(path.join(root, '.env.local'), '');
   const { stdout } = await run(['dev', '--port', '3186', '--json']);
   expect(stdout.trim().split('\n')).toHaveLength(1);
-  expect(JSON.parse(stdout)).toEqual({
+  const envelope = CliEnvelope.parse(JSON.parse(stdout));
+  expect(commandSchemas.dev.parse(envelope.result)).toEqual({ url: 'http://localhost:3186' });
+  expect(envelope).toEqual({
     schemaVersion: 1,
     command: 'dev',
     ok: true,
