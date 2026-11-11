@@ -495,6 +495,8 @@ export const ACCESS = {
 | `PRICE_JUDGE_INPUT_PER_MTOK` | Eval | `0` | USD per 1M input tokens for `JUDGE_MODEL`. |
 | `PRICE_JUDGE_OUTPUT_PER_MTOK` | Eval | `0` | USD per 1M output tokens for `JUDGE_MODEL`. |
 | `SOURCED_ACCESS_TOKEN` | Private profile only | — | At least 24 characters; validated at startup (T-51). Access flow in §38 (T-74). |
+| `SOURCED_PORT` | No | `3000` | Docker path: host port of the app for `./sourced dev`; read from the shell or `.env.local` by the launchers (D-135). |
+| `SOURCED_DB_PORT` | No | `5433` | Docker path: host port of the local database (`docker-compose.yml`). The launchers read it, and `SOURCED_PORT`, from the shell or from that line of `.env.local` (D-135). |
 | `DEMO_MODE` | No | `on` | `on`, `readonly` or `off` (FR-30). Default `on`. |
 | `RATE_LIMIT_IP_DAILY` | No | `10` | Per-visitor live questions per UTC day. |
 | `RATE_LIMIT_GLOBAL_DAILY` | No | `300` | All visitors, live questions per UTC day. |
@@ -3671,7 +3673,7 @@ export const CliEnvelope = z.object({
 });
 ```
 
-With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
+The launchers write one envelope (`INTERNAL_ERROR`, the failed step, exit 1) when Compose fails before the CLI runs; a taken port names `SOURCED_DB_PORT` or `SOURCED_PORT` in the fix (D-135). With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
 
 When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` and `eval` include one `MOCK_MODE` warning with the message "Mock mode: no provider is called; embeddings and answers are stand-ins."; the warning is absent outside mock mode. Completed eval runs that fail floors, ceilings or regression checks keep `result`, return `CHECKS_FAILED` naming the failed metrics, and exit 1; `--validate-only` failures return `VALIDATION_FAILED` listing the problems (D-131). Cost estimates in mock mode use the prices of the configured models, so a mock dry run shows what a live run would cost (T-71 rehearsal).
 
@@ -3684,7 +3686,7 @@ When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` an
 
 ### 34.4 `doctor` checks (FR-78)
 
-`docker` (Docker path: `docker version`, Compose v2), `node` (Node path: ≥ 22, pnpm version from `packageManager`), `ports` (3000 and the DB port free or used by our containers), `disk` (≥ 2 GB free in the Docker data root or repository volume), `database` (connect, `vector` extension and version, migrations applied), `fts` (configured regconfig exists), `config` (valid, snapshot current), `keys` (each configured provider: OpenAI `GET /v1/models`, Gemini model list, Anthropic `GET /v1/models`, Ollama `GET /api/tags` and the configured models pulled), `dimensions` (one embedding call returns the configured length; skipped with a warning when the user passes `--no-network`), `corpus` (ingested? matches configuration?), `writable` (corpus and eval directories). Each failing check has a `fix`.
+`docker` (Docker path: `docker version`, Compose v2), `node` (Node path: ≥ 22, pnpm version from `packageManager`), `ports` (3000 and the DB port free or used by our containers), `disk` (≥ 2 GB free in the Docker data root or repository volume), `database` (connect, `vector` extension and version, migrations applied), `fts` (configured regconfig exists), `config` (valid, snapshot current), `keys` (each configured provider: OpenAI `GET /v1/models`, Gemini model list, Anthropic `GET /v1/models`, Ollama `GET /api/tags` and the configured models pulled), `dimensions` (one embedding call returns the configured length; skipped with a warning when the user passes `--no-network`), `corpus` (ingested? matches configuration?), `writable` (corpus and eval directories). Each failing check has a `fix`. `ports` probes IPv4 and IPv6 wildcard and loopback addresses on the Node path; inside the Docker CLI container host ports are not visible, so the check reports `ok: true` with the detail "not checked inside the CLI container", and the launchers report a taken port when Compose fails (D-135).
 
 ## 35. Docker path (FR-94, D-72)
 
@@ -3705,7 +3707,7 @@ services:
   db:
     image: pgvector/pgvector:pg17
     environment: { POSTGRES_USER: sourced, POSTGRES_PASSWORD: sourced, POSTGRES_DB: sourced }
-    ports: ['127.0.0.1:5433:5432']           # loopback only
+    ports: ['127.0.0.1:${SOURCED_DB_PORT:-5433}:5432']   # loopback only (D-135)
     volumes: [pgdata:/var/lib/postgresql/data, ./docker/initdb:/docker-entrypoint-initdb.d:ro]
     healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sourced -d sourced'], interval: 5s, timeout: 5s, retries: 20 }
   app:

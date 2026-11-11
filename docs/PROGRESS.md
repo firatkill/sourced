@@ -92,10 +92,12 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | doing | |
 | T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | done | de82d15 |
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | b7fb425 |
-| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | (this commit) |
+| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | 466ccd5 |
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- Hosted database on the Docker path (owner, D-135): in v2.0 a Docker-only user cannot migrate or ingest into a hosted database with `./sourced`, because Compose pins the CLI to the local database (TRD §34.1, §35.2); the `/deploy` skill says to use the Node path for that step. Decide whether v2.1 adds a Docker-path mechanism (for example a launcher option that passes `MIGRATION_DATABASE_URL` and `DATABASE_URL` from `.env.local` to the `cli` service).
 
 - M8 flaky unit test (reviewer): `tests/unit/ask-states.test.tsx` TC-104 ("Unverified draft") failed once in the fresh-worktree run on b7fb425 and once more in a full local run; it passes 5 of 5 alone and on rerun. A timing assumption under load; not raised or skipped.
 
