@@ -311,6 +311,40 @@ IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .e
 }
 `;
 
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example --yes --embed openai:text-embedding-3-small 1`] = `
+{
+  "envelope": {
+    "command": "init",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "pnpm sourced --help",
+      "message": "models.embed.dimensions: --embed requires provider:model:dims with numeric dimensions. Use --embed openai:text-embedding-3-small:1536.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example --yes --embed openai:text-embedding-3-small:not-a-number 1`] = `
+{
+  "envelope": {
+    "command": "init",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "pnpm sourced --help",
+      "message": "models.embed.dimensions: --embed requires provider:model:dims with numeric dimensions. Use --embed openai:text-embedding-3-small:1536.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
 exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example 1`] = `
 {
   "envelope": {

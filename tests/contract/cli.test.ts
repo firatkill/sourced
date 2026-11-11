@@ -50,6 +50,8 @@ afterAll(async () => {
 const invocations = [
   ['doctor', '--no-network'],
   ['init', '--example'],
+  ['init', '--example', '--yes', '--embed', 'openai:text-embedding-3-small'],
+  ['init', '--example', '--yes', '--embed', 'openai:text-embedding-3-small:not-a-number'],
   ['add', './docs', '--type', 'folder'],
   ['sources', 'list'],
   ['sources', 'remove', 'example', '--yes'],

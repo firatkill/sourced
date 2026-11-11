@@ -66,7 +66,10 @@ export async function detectSource(
           : { root: value }),
   });
   if ((source.type === 'folder' || source.type === 'git') && /[\r\n]/.test(source.path))
-    throw new AppError('CONFIG_INVALID', 'Source paths must not contain line breaks.');
+    throw new AppError(
+      'CONFIG_INVALID',
+      'sources.path: Line breaks are not allowed. Remove line breaks from the source path.',
+    );
   return { source, detected: { type: source.type, ...(sitemapUrl ? { sitemapUrl } : {}) } };
 }
 export async function runAdd(
@@ -79,7 +82,10 @@ export async function runAdd(
   if (!value) throw new AppError('VALIDATION_FAILED', 'Provide a URL or path.');
   const result = await detectSource(value, input.values, fetcher);
   if (config.sources.some((s) => s.id === result.source.id))
-    throw new AppError('CONFIG_INVALID', 'Choose a unique source id with --id.');
+    throw new AppError(
+      'CONFIG_INVALID',
+      'sources.id: Duplicate source id. Choose a unique source id with --id.',
+    );
   context.progress(`Detected ${result.detected.type} source.`);
   config.sources.push(result.source);
   await saveConfig(config);

@@ -1,7 +1,6 @@
 import { access } from 'node:fs/promises';
 import path from 'node:path';
 import { input as promptInput } from '@inquirer/prompts';
-import { z } from 'zod';
 import { AppError } from '@/lib/errors';
 import { loadConfig, parseKitConfig } from '@/lib/kit/load-config';
 import type { KitConfig } from '@/lib/kit/config-schema';
@@ -55,16 +54,31 @@ export async function runInit(
     }
   const role = (value: string) => {
     const separator = value.indexOf(':');
-    if (separator < 1) throw new AppError('CONFIG_INVALID', 'Use provider:model for a model.');
+    if (separator < 1 || separator === value.length - 1)
+      throw new AppError(
+        'CONFIG_INVALID',
+        'models.chat: --chat requires provider:model. Use --chat openai:gpt-6-luna.',
+      );
     return { provider: value.slice(0, separator), model: value.slice(separator + 1) };
   };
   const embedValue = typeof values.embed === 'string' ? values.embed : undefined;
-  const embed = embedValue
-    ? {
-        ...role(embedValue.slice(0, embedValue.lastIndexOf(':'))),
-        dimensions: Number(embedValue.slice(embedValue.lastIndexOf(':') + 1)),
-      }
-    : example?.models.embed;
+  let embed: { provider: string; model: string; dimensions: number } | undefined =
+    example?.models.embed;
+  if (embedValue !== undefined) {
+    const separator = embedValue.lastIndexOf(':');
+    const model = embedValue.slice(0, separator);
+    const dims = embedValue.slice(separator + 1);
+    if (!/^[^:]+:.+$/.test(model) || !/^\d+$/.test(dims))
+      throw new AppError(
+        'CONFIG_INVALID',
+        'models.embed.dimensions: --embed requires provider:model:dims with numeric dimensions. Use --embed openai:text-embedding-3-small:1536.',
+      );
+    embed = {
+      provider: model.slice(0, model.indexOf(':')),
+      model: model.slice(model.indexOf(':') + 1),
+      dimensions: Number(dims),
+    };
+  }
   const config = parseKitConfig({
     ...(example ?? {}),
     schemaVersion: 1,
@@ -86,7 +100,7 @@ export async function runInit(
   if (typeof values.source === 'string')
     config.sources.push((await detectSource(values.source, {}, dependencies.fetch)).source);
   // Validate all choices before touching files or starting the database.
-  z.object({ profile: z.enum(['local', 'private', 'public-demo']) }).parse(config);
+  parseKitConfig(config);
   await saveConfig(config, root);
   const envVarsToFill = await initializeEnv(config, root);
   if (config.profile === 'private')

@@ -31,7 +31,7 @@ export function parseKitConfig(value: unknown): KitConfig {
       result.error.issues
         .map(
           (i) =>
-            `${i.path.join('.')}: ${i.message}${i.path[0] === 'models' && i.path[1] === 'embed' ? ' Choose an embedding provider: openai, gemini, ollama, mock.' : ''}`,
+            `${i.path.join('.') || 'sourced.config.ts'}: ${i.message} Fix this field in sourced.config.ts to satisfy the stated constraint.${i.path[0] === 'models' && i.path[1] === 'embed' ? ' Choose an embedding provider: openai, gemini, ollama, mock.' : ''}`,
         )
         .join('\n'),
     );

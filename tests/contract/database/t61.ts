@@ -126,6 +126,19 @@ test('CT-02 init / FR-79, D-113–114: flags-only, dimensions, token preservatio
     '--profile',
     'private',
   ];
+  for (const malformed of ['openai:text-embedding-3-small', 'openai:text-embedding-3-small:no']) {
+    const invalid = [...flags];
+    invalid[invalid.indexOf('--embed') + 1] = malformed;
+    const error = (await cli(invalid, 1)).error;
+    expect(error?.code).toBe('CONFIG_INVALID');
+    expect(error?.message).toContain('models.embed.dimensions');
+    expect(error?.message).toContain('--embed');
+    expect(error?.message).toContain('provider:model:dims');
+    expect(error?.message).toContain('openai:text-embedding-3-small:1536');
+    await expect(readFile(join(dir, 'sourced.config.ts'))).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
+  }
   // A reachable CI service database must not require Docker on PATH (D-119).
   const first = await cli(flags, 0, { PATH: '/nonexistent' });
   expect(commandSchemas.init.parse(first.result).database).toBe('running');

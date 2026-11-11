@@ -59,7 +59,11 @@ export function parseInvocation(args: string[]): Invocation {
   if (values.type !== undefined)
     z.enum(['folder', 'urls', 'sitemap', 'crawl', 'git']).parse(values.type);
   if (values.profile !== undefined)
-    z.enum(['local', 'private', 'public-demo']).parse(values.profile);
+    if (!z.enum(['local', 'private', 'public-demo']).safeParse(values.profile).success)
+      throw new AppError(
+        'CONFIG_INVALID',
+        'profile: Invalid choice. Use --profile local|private|public-demo.',
+      );
   return { command: key, values, positionals, json: values.json === true };
 }
 export function failure(
@@ -199,11 +203,7 @@ export async function dispatch(
         CORPUS_EMPTY: error.message === NO_SOURCES ? NO_SOURCES : 'Nothing is indexed yet.',
       };
       const message =
-        error.code in messages
-          ? messages[error.code as keyof typeof messages]
-          : error.code === 'CONFIG_INVALID'
-            ? 'The configuration is invalid. Check sourced.config.ts.'
-            : error.message;
+        error.code in messages ? messages[error.code as keyof typeof messages] : error.message;
       const fix =
         error.message === NO_SOURCES
           ? 'sourced add <url or path>'

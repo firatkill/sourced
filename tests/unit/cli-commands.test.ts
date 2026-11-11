@@ -293,3 +293,133 @@ test('D-119: init supplies local settings and separate random salts, preserving 
     parseEnv(await readFile(path.join(other, '.env.local'), 'utf8')).QUESTION_HASH_SALT,
   ).not.toBe(values.QUESTION_HASH_SALT);
 });
+
+test.each([
+  'openai:text-embedding-3-small',
+  'openai:text-embedding-3-small:no',
+  'openai:text-embedding-3-small:',
+])('FR-59 / FR-79: malformed --embed %s fails before Node init side effects', async (embed) => {
+  const dir = await temporary();
+  const cwd = vi.spyOn(process, 'cwd').mockReturnValue(dir);
+  const database = vi.fn();
+  try {
+    const { dispatch } = await import('@/lib/cli/router');
+    const { readdir } = await import('node:fs/promises');
+    const result = await dispatch(
+      [
+        'init',
+        '--corpus-name',
+        'fixture',
+        '--title',
+        'Fixture',
+        '--description',
+        'Fixture docs',
+        '--language',
+        'en',
+        '--chat',
+        'mock:mock',
+        '--embed',
+        embed,
+        '--json',
+      ],
+      { isTTY: false, progress: vi.fn() },
+      async (input, context) => ({ result: await runInit(input, context, { database }) }),
+    );
+    expect(result.exitCode).toBe(1);
+    expect(result.envelope.error?.code).toBe('CONFIG_INVALID');
+    for (const json of [true, false]) {
+      const output = formatEnvelope(result.envelope, json);
+      expect(output).toContain('models.embed.dimensions');
+      expect(output).toContain('--embed');
+      expect(output).toContain('provider:model:dims');
+      expect(output).toContain('openai:text-embedding-3-small:1536');
+    }
+    expect(database).not.toHaveBeenCalled();
+    expect(await readdir(dir)).toEqual([]);
+  } finally {
+    cwd.mockRestore();
+  }
+});
+
+test.each([
+  ['--language', 'english', 'corpus.language'],
+  ['--profile', 'wrong', 'profile'],
+  ['--title', '', 'corpus.title'],
+  ['--embed', 'openai:text-embedding-3-small:1537', 'models.embed.dimensions'],
+])(
+  'FR-59 / FR-79: invalid %s is rejected before any writes or database startup',
+  async (flag, value, field) => {
+    const dir = await temporary();
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    const database = vi.fn();
+    try {
+      const { dispatch } = await import('@/lib/cli/router');
+      const { readdir } = await import('node:fs/promises');
+      const values = {
+        '--corpus-name': 'fixture',
+        '--title': 'Fixture',
+        '--description': 'Fixture docs',
+        '--language': 'en',
+        '--chat': 'mock:mock',
+        '--embed': 'mock:mock:768',
+        [flag]: value,
+      };
+      const result = await dispatch(
+        ['init', ...Object.entries(values).flat(), '--json'],
+        { isTTY: false, progress: vi.fn() },
+        async (input, context) => ({ result: await runInit(input, context, { database }) }),
+      );
+      expect(result.envelope.error?.message).toContain(field);
+      expect(database).not.toHaveBeenCalled();
+      expect(await readdir(dir)).toEqual([]);
+    } finally {
+      cwd.mockRestore();
+    }
+  },
+);
+
+test('FR-59 / FR-77: every command preserves all configuration field errors in both formats', async () => {
+  const { dispatch } = await import('@/lib/cli/router');
+  const { commands, helpText } = await import('@/lib/cli/registry');
+  const help = helpText();
+  for (const text of [
+    '--chat provider:model',
+    '--embed provider:model:dims',
+    'openai:text-embedding-3-small:1536',
+    '--profile local|private|public-demo',
+    '--language ISO 639-1',
+  ])
+    expect(help).toContain(text);
+  for (const args of [['--help'], ['init', '--help']]) {
+    const result = await dispatch(args, { isTTY: false, progress: vi.fn() });
+    expect(result.envelope.result).toEqual({ usage: help });
+  }
+  for (const [command, definition] of Object.entries(commands)) {
+    const args = [...command.split(' '), ...(definition.positional ? ['fixture'] : []), '--yes'];
+    const result = await dispatch(args, { isTTY: false, progress: vi.fn() }, async () => {
+      parseKitConfig({
+        ...config(),
+        corpus: { name: 'INVALID', title: '', description: '', language: 'english' },
+        models: {
+          ...config().models,
+          embed: { provider: 'openai', model: 'text-embedding-3-small', dimensions: 9000 },
+        },
+      });
+      return Promise.resolve({});
+    });
+    expect(result.envelope.error?.code).toBe('CONFIG_INVALID');
+    for (const json of [true, false]) {
+      const output = formatEnvelope(result.envelope, json);
+      for (const field of [
+        'corpus.name',
+        'corpus.title',
+        'corpus.description',
+        'corpus.language',
+        'models.embed.dimensions',
+      ])
+        expect(output).toContain(field);
+      expect(output).toContain('Fix this field');
+      expect(output).not.toContain('english');
+    }
+  }
+});

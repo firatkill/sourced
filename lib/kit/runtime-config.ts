@@ -19,7 +19,12 @@ export function readSnapshot(filename: string): KitConfig {
   if (!result.success)
     throw new AppError(
       'CONFIG_INVALID',
-      result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n'),
+      result.error.issues
+        .map(
+          (i) =>
+            `${i.path.join('.')}: ${i.message} Fix this field in sourced.config.ts and run pnpm sourced config:snapshot.`,
+        )
+        .join('\n'),
     );
   if (configHash(result.data.config) !== result.data.configHash)
     throw new AppError(

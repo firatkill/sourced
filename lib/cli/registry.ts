@@ -49,13 +49,20 @@ export const commands: Record<
   'deploy:check': { string: ['profile'] },
   'config:snapshot': {},
 };
+const formats: Record<string, string> = {
+  chat: 'provider:model',
+  embed: 'provider:model:dims',
+  profile: 'local|private|public-demo',
+  language: 'ISO 639-1 (e.g. en)',
+};
 export function helpText(): string {
   return [
     'Usage: pnpm sourced <command> [flags]',
     'Global flags: --json --yes --help',
+    'Embedding example: --embed openai:text-embedding-3-small:1536',
     ...Object.entries(commands).map(
       ([name, flags]) =>
-        `  ${name}${flags.positional ? ' <value>' : ''} ${[...(flags.boolean ?? []).map((f) => `--${f}`), ...(flags.string ?? []).map((f) => `--${f} <value>`)].join(' ')}`,
+        `  ${name}${flags.positional ? ' <value>' : ''} ${[...(flags.boolean ?? []).map((f) => `--${f}`), ...(flags.string ?? []).map((f) => `--${f} ${formats[f] ?? '<value>'}`)].join(' ')}`,
     ),
   ].join('\n');
 }
