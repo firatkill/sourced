@@ -4981,6 +4981,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-219",
+      "ac_reference": "T-64; PRD §12",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "M6 exit criteria",
+      "description": "M6 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-219.",
+      "expected_result": "Any-corpus checks pass; milestone report written.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M6 exit: qa/m6-report.md; any-corpus checks passed (TC-217, TC-218); CI green on edb03ae; M6 milestone eval run 42979153320 passed every gate"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
