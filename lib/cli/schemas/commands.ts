@@ -34,7 +34,7 @@ export const commandSchemas = {
     citations: CitationsEvent.shape.valid,
     trace: z.record(z.string(), z.unknown()).optional(),
   }),
-  'eval:generate': z.object({ written: count, costUsd: z.number().nonnegative() }),
+  'eval:generate': z.object({ written: count, costUsd: z.number().nonnegative().nullable() }),
   'eval:review': z.object({ accepted: count, rejected: count, edited: count }),
   eval: EvalResult.omit({ questions: true })
     .extend({ comparison: z.record(z.string(), z.unknown()).optional() })

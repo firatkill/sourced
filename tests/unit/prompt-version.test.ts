@@ -1,4 +1,10 @@
 import example from '@/sourced.config';
+import {
+  GENERATE_SYSTEM_PROMPT,
+  buildGeneratePrompt,
+  GENERATE_UNANSWERABLE_SYSTEM_PROMPT,
+  buildUnanswerablePrompt,
+} from '@/lib/prompts/generate';
 import { KitConfigSchema } from '@/lib/kit/config-schema';
 import { createHash } from 'node:crypto';
 import { expect, test } from 'vitest';
@@ -53,6 +59,17 @@ test('TC-058 / UT-11: every system prompt and user template is locked to its ver
     RERANK_SYSTEM_PROMPT,
     QUOTES_SYSTEM_PROMPT,
     JUDGE_SYSTEM_PROMPT,
+    GENERATE_SYSTEM_PROMPT,
+    GENERATE_UNANSWERABLE_SYSTEM_PROMPT,
+    buildUnanswerablePrompt('Group', ['Document > Section']),
+    buildGeneratePrompt(
+      {
+        anchor: 'guide.md#section',
+        headingPath: ['Document', 'Section'],
+        content: 'First content.',
+      },
+      ['Second content.'],
+    ),
     buildAnswerPrompt('Question?', sources),
     buildRerankPrompt('Question?', sources),
     buildQuotesPrompt('Answer [P2][P1][P2].', passages),
@@ -62,6 +79,7 @@ test('TC-058 / UT-11: every system prompt and user template is locked to its ver
   // Keep previous version/hash pairs when adding a version. Editing a prompt without
   // changing PROMPT_VERSION must fail, even when recording a new snapshot.
   const snapshots: Record<string, string> = {
+    '2026-11-v1': '0c738b183fa426b35a124576f11d83fb7cbc7d4c729808755e8d4a92ea8469c8',
     '2026-10-v1': '569d01c7e92af25ca850cd16c44cca0871f48d1edc2ad7ae42ef0387fd2b6755',
   };
   expect(PROMPT_VERSION).toMatch(/^\d{4}-\d{2}-v[1-9]\d*$/);

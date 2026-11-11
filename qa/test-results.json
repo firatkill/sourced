@@ -5044,6 +5044,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-222",
+      "ac_reference": "T-66; FR-83",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "eval:generate sampling and candidate checks",
+      "description": "UT-47.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-222.",
+      "expected_result": "Sampling is stratified by source and document, at most 2 per document, prefers 300+ tokens and is deterministic for a corpus_version and seed; candidates have existing anchors, hardRetrieval when the expected chunk is not in the RRF top 20, needsHumanCheck on unanswerables; cost is estimated first and EVAL_MAX_COST_USD guards it.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-47 eval-generate.test.ts (mock): stratified, at most 2 per document, 300+ token preference, deterministic for corpus_version and seed; anchors checked; hardRetrieval outside RRF top 20; needsHumanCheck unanswerables; cost estimated first with EVAL_MAX_COST_USD guard; dry run"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-223",
+      "ac_reference": "T-66; FR-83",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "eval:review accepts, edits and rejects",
+      "description": "TRD §36.2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-223.",
+      "expected_result": "eval:review --apply appends accepted candidates to golden.jsonl with origin generated and the next free id; needsHumanCheck candidates cannot be accepted with --yes; rejected ones are not appended.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval-review.test.ts and contracts: --apply appends accepted candidates with origin generated and the next free id; rejected not appended; needsHumanCheck cannot be accepted with --yes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-224",
+      "ac_reference": "T-66; FR-83; TRD §36.3",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Built-in injection set",
+      "description": "T-66 files.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-224.",
+      "expected_result": "eval/shared/injection.jsonl has the four corpus-independent injections with forbidden_strings and is always part of a kit corpus eval.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval/shared/injection.jsonl has the four TRD §36.3 question-borne injections with forbidden_strings, included in candidate output; mandatory merge into kit evals completes in T-67"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-225",
+      "ac_reference": "T-66; FR-83; D-123",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Live candidate generation on the MongoDB example",
+      "description": "T-66 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-225.",
+      "expected_result": "One live eval:generate run on the MongoDB example produces candidates the owner reviews; cost recorded within the approved amount.",
+      "status": "pending_decision",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action: approve live eval:generate on the MongoDB example and review the candidates"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

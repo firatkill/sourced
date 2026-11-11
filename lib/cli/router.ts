@@ -208,11 +208,15 @@ export async function dispatch(
         error.message === NO_SOURCES
           ? 'sourced add <url or path>'
           : error.code === 'NEEDS_CONFIRMATION'
-            ? command === 'init'
-              ? 'pnpm sourced init --help'
-              : command === 'ingest'
-                ? 'pnpm sourced ingest --yes'
-                : 'pnpm sourced sources remove <id> --yes'
+            ? command === 'eval:generate'
+              ? 'pnpm sourced eval:generate --help'
+              : command === 'eval:review'
+                ? 'pnpm sourced eval:review --apply'
+                : command === 'init'
+                  ? 'pnpm sourced init --help'
+                  : command === 'ingest'
+                    ? 'pnpm sourced ingest --yes'
+                    : 'pnpm sourced sources remove <id> --yes'
             : error.code === 'CORPUS_MISMATCH'
               ? 'pnpm sourced ingest --rebuild'
               : error.code === 'CORPUS_EMPTY'
@@ -249,6 +253,14 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     case 'sources list':
     case 'sources remove':
       return { result: await (await import('./commands/sources')).runSources(input) };
+    case 'eval:generate':
+      return {
+        result: await (await import('./commands/eval-generate')).runEvalGenerate(input, context),
+      };
+    case 'eval:review':
+      return {
+        result: await (await import('./commands/eval-review')).runEvalReview(input, context),
+      };
     case 'inspect':
       return { result: await (await import('./commands/inspect')).runInspect(input) };
     case 'ask': {
@@ -303,10 +315,9 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       });
       return { result, exitCode: status === 0 ? 0 : status === 2 || status === 3 ? 2 : 1 };
     }
-    default:
-      throw new AppError(
-        'INTERNAL_ERROR',
-        `${input.command} is not implemented yet. This command is reserved for a later implementation task.`,
-      );
+    default: {
+      const unreachable: never = input.command;
+      throw new AppError('INTERNAL_ERROR', `Unknown command: ${String(unreachable)}`);
+    }
   }
 }

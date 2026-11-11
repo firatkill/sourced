@@ -848,8 +848,15 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "properties": {
         "costUsd": {
-          "minimum": 0,
-          "type": "number",
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number",
+            },
+            {
+              "type": "null",
+            },
+          ],
         },
         "written": {
           "maximum": 9007199254740991,

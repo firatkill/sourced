@@ -151,7 +151,22 @@ export const mockProvider: LlmProvider = {
   generateObject(args) {
     args.abortSignal?.throwIfAborted();
     let output: unknown;
-    if (args.model === 'judge') {
+    if (args.model === 'generate') {
+      const anchor = /^Anchor: (.+)$/m.exec(args.prompt)?.[1];
+      output = anchor
+        ? {
+            question: 'How does the documented feature work in practice?',
+            reference_answer:
+              /^Content:\n([\s\S]*?)\nTARGET>>>/m
+                .exec(args.prompt)?.[1]
+                ?.trim()
+                .split(/\s+/)
+                .slice(0, 80)
+                .join(' ') ?? '',
+            expected_anchors: [anchor],
+          }
+        : { questions: ['What are the subscription fees for this service?'] };
+    } else if (args.model === 'judge') {
       output = { score: 1, unsupported_claims: [], rationale: 'mock' };
     } else if (/^Cited ids:/m.test(args.prompt)) {
       const ids =

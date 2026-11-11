@@ -3626,7 +3626,7 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 | `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
 | `inspect` | `--source <id>` | `corpus/<name>/inspect.json` | section 36.4 |
 | `ask` | `"<question>" --trace` | `query_log` row (source `cli`) | `{ outcome, answer, citations, trace? }` |
-| `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` |
+| `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` (`costUsd` is null for unknown generation pricing, §31.4; D-125) |
 | `eval:review` | `--apply` (non-interactive: apply `status` edits made in the file) | moves accepted candidates to `golden.jsonl` | `{ accepted, rejected, edited }` |
 | `eval` | `--compare <results-file|baseline> --validate-only --ci --yes` | `eval/<name>/results/<runId>.json/.md` | v1 results summary + `comparison?` |
 | `dev` | `--port` | — | starts the app; with `--json` prints `{ url }` once ready |

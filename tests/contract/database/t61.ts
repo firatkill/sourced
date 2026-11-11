@@ -445,20 +445,94 @@ test('CT-11 dev / FR-64: local snapshot; one ready envelope; shutdown forwards t
   expect(stdout.trim().split('\n')).toHaveLength(1);
 });
 
-for (const [id, command] of [
-  ['CT-08', 'eval:generate'],
-  ['CT-09', 'eval:review'],
-] as const) {
-  test(`${id} / D-122: ${command} reserves its schema and exits 1 until its implementation task`, async () => {
-    const { cli } = await fixture();
-    const result = await cli([command], 1);
-    expect(result.result).toBeUndefined();
-    expect(result.error?.code).toBe('INTERNAL_ERROR');
-    expect(result.error?.message).toBe(
-      `${command} is not implemented yet. This command is reserved for a later implementation task.`,
-    );
+test('CT-08 / UT-47 / FR-83: generation dry run, cost guard, candidates and failures', async () => {
+  const { cli, dir, config } = await fixture();
+  expect((await cli(['eval:generate'], 2)).error?.code).toBe('CORPUS_EMPTY');
+  await writeFile(
+    join(dir, 'guide.md'),
+    '# Configuration\n\nThe service accepts a configuration file containing settings for storage, retrieval and access. Save your changes before restarting the service.',
+  );
+  await cli(['add', join(dir, 'guide.md'), '--id', 'guide', '--group', 'guide']);
+  await cli(['ingest', '--offline']);
+  const dry = commandSchemas['eval:generate'].parse(
+    (await cli(['eval:generate', '--count', '1', '--dry-run'])).result,
+  );
+  expect(dry.written).toBe(0);
+  expect(dry.costUsd).toBeGreaterThan(0);
+  const candidatePath = join(dir, 'eval', config.corpus.name, 'candidates.jsonl');
+  await expect(readFile(candidatePath)).rejects.toMatchObject({ code: 'ENOENT' });
+  expect((await cli(['eval:generate', '--source', 'absent'], 1)).error?.code).toBe(
+    'VALIDATION_FAILED',
+  );
+  expect(
+    (await cli(['eval:generate', '--yes'], 2, { EVAL_MAX_COST_USD: '0.0000000001' })).error?.code,
+  ).toBe('NEEDS_CONFIRMATION');
+  await expect(readFile(candidatePath)).rejects.toMatchObject({ code: 'ENOENT' });
+  const generated = commandSchemas['eval:generate'].parse(
+    (await cli(['eval:generate', '--count', '1', '--yes'])).result,
+  );
+  expect(generated.written).toBe(6);
+  const { Candidate } = await import('@/lib/eval/generate');
+  const candidates = (await readFile(candidatePath, 'utf8'))
+    .trim()
+    .split('\n')
+    .map((line) => Candidate.parse(JSON.parse(line)));
+  expect(candidates.every((candidate) => candidate.status === 'pending')).toBe(true);
+  expect(candidates.filter((candidate) => candidate.type === 'injection')).toHaveLength(4);
+  expect(
+    candidates.find((candidate) => candidate.type === 'unanswerable')?.flags.needsHumanCheck,
+  ).toBe(true);
+  expect(
+    candidates.find((candidate) => candidate.type === 'answerable')?.sourceChunkId,
+  ).toBeTruthy();
+});
+
+test('CT-09 / FR-83: file review accepts only approved entries, is repeatable, and rejects malformed files', async () => {
+  const { cli, dir, config } = await fixture();
+  expect((await cli(['eval:review', '--apply'], 1)).error?.code).toBe('VALIDATION_FAILED');
+  const directory = join(dir, 'eval', config.corpus.name);
+  await mkdir(directory, { recursive: true });
+  const { Candidate, GeneratedGoldenEntry } = await import('@/lib/eval/generate');
+  const base = Candidate.parse({
+    id: 'q001',
+    type: 'unanswerable',
+    group: 'guide',
+    question: 'What are the subscription fees for this service?',
+    reference_answer: '',
+    expected_anchors: [],
+    status: 'accepted',
+    flags: { needsHumanCheck: true },
+    sourceChunkId: null,
   });
-}
+  const candidatePath = join(directory, 'candidates.jsonl');
+  await writeFile(candidatePath, JSON.stringify(base) + '\n');
+  expect((await cli(['eval:review'], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
+  expect((await cli(['eval:review', '--apply', '--yes'])).result).toEqual({
+    accepted: 0,
+    rejected: 0,
+    edited: 0,
+  });
+  expect((await cli(['eval:review', '--apply'])).result).toEqual({
+    accepted: 1,
+    rejected: 0,
+    edited: 0,
+  });
+  const text = await readFile(join(directory, 'golden.jsonl'), 'utf8');
+  expect(GeneratedGoldenEntry.parse(JSON.parse(text))).toMatchObject({
+    id: 'q001',
+    origin: 'generated',
+    group: 'guide',
+  });
+  expect((await cli(['eval:review', '--apply'])).result).toEqual({
+    accepted: 0,
+    rejected: 0,
+    edited: 0,
+  });
+  expect(await readFile(join(directory, 'golden.jsonl'), 'utf8')).toBe(text);
+  await writeFile(candidatePath, 'invalid\n');
+  expect((await cli(['eval:review', '--apply'], 1)).error?.code).toBe('VALIDATION_FAILED');
+  expect(await readFile(join(directory, 'golden.jsonl'), 'utf8')).toBe(text);
+});
 test('CT-12 / D-122: Node down directs the caller to the Docker launcher', async () => {
   const { cli } = await fixture();
   const result = await cli(['down'], 1);

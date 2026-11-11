@@ -263,15 +263,17 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval:gene
   "envelope": {
     "command": "eval:generate",
     "error": {
-      "code": "INTERNAL_ERROR",
-      "fix": "pnpm sourced --help",
-      "message": "eval:generate is not implemented yet. This command is reserved for a later implementation task.",
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
     },
     "ok": false,
     "schemaVersion": 1,
     "warnings": [],
   },
-  "exit": 1,
+  "exit": 2,
 }
 `;
 
@@ -280,9 +282,9 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval:revi
   "envelope": {
     "command": "eval:review",
     "error": {
-      "code": "INTERNAL_ERROR",
+      "code": "VALIDATION_FAILED",
       "fix": "pnpm sourced --help",
-      "message": "eval:review is not implemented yet. This command is reserved for a later implementation task.",
+      "message": "The command failed. Check its arguments, configuration and database connection.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -1513,8 +1515,15 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
     "costUsd": {
-      "minimum": 0,
-      "type": "number",
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number",
+        },
+        {
+          "type": "null",
+        },
+      ],
     },
     "written": {
       "maximum": 9007199254740991,
