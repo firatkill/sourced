@@ -5174,6 +5174,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-228",
+      "ac_reference": "T-68; PRD §12",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "M7 exit criteria",
+      "description": "M7 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-228.",
+      "expected_result": "Quality check done; milestone report written.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M7 exit: qa/m7-report.md and qa/M7-review.md; quality check passed on the MongoDB example (TC-227)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
