@@ -97,6 +97,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 
 ## Open questions for the owner
 
+- Eval budget overrun (reviewer, 2026-11-11): 20 completed eval runs on `v2/kit` reported about $6.8 at list prices (about $0.33 each, mostly the judge at the gpt-5.4 list price), against the $5 v2 cap (D-94). The D-110 count of "about 5.5 runs" was not checked against the run list and was wrong. Actual billing may be lower if the eval project's judge calls fall under the free daily allowance; only the OpenAI usage page shows that. Paid runs are paused until the owner decides; the eval on f24640b failed on citation validity (0.967 vs baseline 1) with retrieval unchanged and prompts verified identical, and is unconfirmed.
+
 - T-62 (TC-215, A-23): check that the app and CLI containers reach a host Ollama (`host.docker.internal` with `host-gateway`) on each OS you use, when Ollama is installed. Windows launcher (`sourced.cmd`) is untested.
 - 2026-11-11 incident (reviewer): the Mac's data disk filled up during Docker-heavy T-62 work; Docker's VM disk failed with I/O errors, and restarting Docker Desktop recreated an empty VM disk, which deleted every local Docker image, container and volume, including the `rehearse` and `bidlock` local databases. The sourced local database was rebuilt from migrations and ingest; production was not affected. macOS also purged `~/Library/Caches`, including the Playwright browsers, which were reinstalled.
 
