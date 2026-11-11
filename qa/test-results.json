@@ -5321,6 +5321,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-234",
+      "ac_reference": "T-72; FR-85; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "tune, troubleshoot and deploy skills",
+      "description": "T-72 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-234.",
+      "expected_result": "check-skills passes; the /tune rehearsal changes one setting, runs eval --compare and keeps or reverts it by the comparison; /troubleshoot reproduces with ask --trace and names the cause class (sources, chunking, retrieval, prompt); /deploy lists variables by name, sets the profile, runs deploy:check and stops without creating any external resource.",
+      "status": "open",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "fail",
+          "note": "Skills installed (2d43f15), check-skills passes. Claude Code rehearsals: /troubleshoot classified a wrong answer as sources from the trace and pointed to /add-docs; /deploy changed only profile after a yes, ran deploy:check --profile private, explained failures and stopped with no external action (qa/release-v2/). /tune conversational rehearsal pending: mock eval cannot write a baseline, so it needs a live run (owner approval). Codex scripted /tune command check in qa/release-v2/cli-check-tune.md."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
