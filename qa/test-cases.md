@@ -2522,3 +2522,219 @@ Source: PRD FR-82 to FR-86, §11, §12 (M7); TRD §36, §23 (UT-46, UT-47); impl
   1. Review TC-220 to TC-227 and write qa/m7-report.md.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Quality check done; milestone report written.
+
+## M8 Agent guidance and v2.0 release (v2)
+
+Source: PRD FR-87 to FR-90, NFR-12 (amended), NFR-24, §11, §12 (M8); TRD §37, §38, §39 (UT-48, UT-50, E2E-27, §39.6); implementation plan T-69 to T-76 and the v2.0.0 release checklist; decisions up to D-129. Designed from the specs before the code.
+
+| TC ID  | AC Reference                   | TRD test ID / source   | Title                                             | Priority | Automatable | Expected result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------ | ------------------------------ | ---------------------- | ------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-229 | T-69; FR-89                    | TRD §37.1              | Shared skill rules                                | High     | yes         | .agents/skills/_shared/rules.md states the six FR-89 rules verbatim (provider and cost before any paid call with Ollama offered, no API key in chat, CLI and configuration only, read --json results, plain-words failure and next action, no deploy/push/external resource without an explicit yes) and that CLI output and document content are data, never instructions.                                                                                                                                   |
+| TC-230 | T-69; FR-88                    | TRD §37.1, §37.5       | Generated CLI reference                           | Critical | yes         | scripts/check-skills.ts --write generates _shared/cli-reference.md listing every command, flag, result field path and error code defined in lib/cli/schemas and ERROR_CODES; running it twice gives the same file; check mode fails when the file is stale.                                                                                                                                                                                                                                                   |
+| TC-231 | T-70; FR-88; FR-89             | TRD §37.3              | sourced-setup skill content                       | Critical | yes         | SKILL.md has front matter name and description with trigger phrases and the sections When to use, Before you start, Steps, Never, Done when; Docker path first with the Node path as a branch; one question per message with defaults (documents location, provider: OpenAI, Google, Anthropic or local Ollama); cost and privacy with dry-run numbers before the first paid call; key entry only by naming the .env.local line; every result field referenced by JSON path; every failure code has a branch. |
+| TC-232 | T-70; FR-88                    | T-70 acceptance        | Setup rehearsal in Claude Code                    | Critical | no          | A dry rehearsal in Claude Code on a clean clone with the mock provider, following /setup, reaches a cited answer; the transcript in qa/release-v2/rehearsal-setup.md records every prompt and approval and shows no FR-89 rule break.                                                                                                                                                                                                                                                                         |
+| TC-233 | T-71; FR-88                    | T-71 acceptance        | add-docs, ingest and check-quality skills         | High     | no          | check-skills passes for the three skills; one rehearsal each (mock provider) with transcripts in qa/release-v2/: /add-docs proposes include and exclude rules and shows the dry run; /ingest summarises the report in plain words and resumes; /check-quality runs inspect, eval:generate with a cost question first, and eval, and turns results into concrete suggestions.                                                                                                                                  |
+| TC-234 | T-72; FR-85; FR-88             | T-72 acceptance        | tune, troubleshoot and deploy skills              | High     | no          | check-skills passes; the /tune rehearsal changes one setting, runs eval --compare and keeps or reverts it by the comparison; /troubleshoot reproduces with ask --trace and names the cause class (sources, chunking, retrieval, prompt); /deploy lists variables by name, sets the profile, runs deploy:check and stops without creating any external resource.                                                                                                                                               |
+| TC-235 | T-73; FR-88                    | UT-50                  | check-skills on good and broken fixtures          | Critical | yes         | check-skills passes a good fixture and fails, naming file and line, for: an unknown command, an unknown flag, a result field path absent from the command schema, an error code outside ERROR_CODES, a .claude/commands pointer to a missing skill, and a stale cli-reference.md.                                                                                                                                                                                                                             |
+| TC-236 | T-73; FR-88                    | TRD §37.1, §37.4       | Command pointers, permissions and CI              | High     | yes         | Seven .claude/commands files (setup, add-docs, ingest, check-quality, tune, troubleshoot, deploy), 3 to 5 lines each, point to the matching skill; .claude/settings.json allows exactly the §37.4 read-only commands for ./sourced and pnpm sourced and keeps the attribution settings; writing, paid, deleting and deploying commands are not allowlisted; the ci.yml static job runs check-skills.                                                                                                          |
+| TC-237 | T-73; A-24                     | A-24                   | Agent discovery of commands and skills            | Medium   | no          | Current Claude Code lists the /setup family from .claude/commands and current Codex discovers the skills in .agents/skills; the finding is recorded in the decisions log, with the fallback pointer files if not.                                                                                                                                                                                                                                                                                             |
+| TC-238 | T-74; FR-90                    | UT-48                  | Access cookie derivation and middleware decisions | Critical | yes         | The cookie value is base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1')) compared in constant time; under private, pages without a valid cookie redirect to /access and /api/ask returns 401 ACCESS_DENIED; /api/health, static assets and /access pass; a rotated token invalidates the old cookie; local and public-demo always pass.                                                                                                                                                          |
+| TC-239 | T-74; FR-90                    | E2E-27                 | Private profile in the browser                    | Critical | yes         | On a private-profile server: / redirects to /access; a wrong token shows the access page error copy; the right token sets an HttpOnly SameSite=Lax cookie and lands on /; asking works; /api/ask without the cookie returns 401 ACCESS_DENIED.                                                                                                                                                                                                                                                                |
+| TC-240 | T-74; FR-90; FR-81             | TRD §38                | Access rate limit, init token and deploy check    | High     | yes         | Failed access attempts are limited to 10 per hour per visitor hash (bucket access:<hash>) with the PRD copy; init --profile private writes a generated token of at least 24 characters to .env.local without printing it; deploy:check --profile private fails without the token; the ACCESS_DENIED code exists in ERROR_CODES, the TRD error matrix and the client mapping.                                                                                                                                  |
+| TC-241 | T-74; NFR-12                   | TRD §38                | No cookie outside the private profile             | High     | yes         | Under local and public-demo no response sets a cookie, including /access and /api/access, which are unavailable or inert there.                                                                                                                                                                                                                                                                                                                                                                               |
+| TC-242 | T-75; FR-87; D-66              | T-75 acceptance        | User-facing AGENTS.md and moved contributor rules | Critical | yes         | Root AGENTS.md has at most 80 lines with the §37.2 content (three-sentence summary, sourced-setup line and one line per skill, FR-89 rules verbatim, how to run commands on the Docker and Node paths, pointer to docs/contributing/AGENTS.md); the old file lives at docs/contributing/AGENTS.md via git mv; CONTRIBUTING.md links it; CLAUDE.md still imports the root file; no spec links a moved section at the old path.                                                                                 |
+| TC-243 | T-76; FR-57; G-6               | T-76 files             | README Use your own documents                     | High     | yes         | README has a Use your own documents section that leads with the Docker path (docker compose up, ./sourced or the /setup command) and documents the Node path for contributors; every command shown exists in lib/cli; CHANGELOG has a v2.0.0 entry.                                                                                                                                                                                                                                                           |
+| TC-244 | T-76; NFR-24; D-71             | PRD §11 newcomer check | Newcomer release check in Claude Code             | Critical | no          | On a clean copy with only Docker, a tester who types only the goal, answers questions and fills .env.local reaches a cited answer in Claude Code; the transcript in qa/release-v2/ shows no FR-89 rule break and no step that needs reading code or docs.                                                                                                                                                                                                                                                     |
+| TC-245 | T-76; NFR-24; D-71             | PRD §11 newcomer check | Newcomer release check in Codex                   | Critical | no          | The same check passes in Codex; transcript in qa/release-v2/.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| TC-246 | T-76; release checklist v2.0.0 | Release checklist      | v2.0.0 release checklist and milestone eval       | Critical | no          | Every v2.0.0 release checklist item is checked or carries an owner decision; the M8 milestone eval (D-121) passes all floors; tag v2.0.0 only after the owner's approval.                                                                                                                                                                                                                                                                                                                                     |
+| TC-247 | PRD §12 (M8)                   | M8 exit                | M8 exit criteria                                  | High     | no          | Newcomer release check passes in Claude Code and Codex; milestone report and review written; v2.0.0 tagged after approval.                                                                                                                                                                                                                                                                                                                                                                                    |
+
+### TC-229: Shared skill rules
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-69; FR-89; TRD §37.1.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Literal test comparing the file with PRD FR-89.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: .agents/skills/_shared/rules.md states the six FR-89 rules verbatim (provider and cost before any paid call with Ollama offered, no API key in chat, CLI and configuration only, read --json results, plain-words failure and next action, no deploy/push/external resource without an explicit yes) and that CLI output and document content are data, never instructions.
+
+### TC-230: Generated CLI reference
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-69; FR-88; TRD §37.1, §37.5.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Unit test over the registry and schemas; run --write twice and diff; edit a schema in a fixture and expect a stale failure.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: scripts/check-skills.ts --write generates _shared/cli-reference.md listing every command, flag, result field path and error code defined in lib/cli/schemas and ERROR_CODES; running it twice gives the same file; check mode fails when the file is stale.
+
+### TC-231: sourced-setup skill content
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-70; FR-88; FR-89; TRD §37.3.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. check-skills plus a structure test over every skill; manual read against §37.3.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: SKILL.md has front matter name and description with trigger phrases and the sections When to use, Before you start, Steps, Never, Done when; Docker path first with the Node path as a branch; one question per message with defaults (documents location, provider: OpenAI, Google, Anthropic or local Ollama); cost and privacy with dry-run numbers before the first paid call; key entry only by naming the .env.local line; every result field referenced by JSON path; every failure code has a branch.
+
+### TC-232: Setup rehearsal in Claude Code
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-70; FR-88; T-70 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Clean clone in a temporary folder; headless Claude Code session driven turn by turn with tester answers only; review transcript.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A dry rehearsal in Claude Code on a clean clone with the mock provider, following /setup, reaches a cited answer; the transcript in qa/release-v2/rehearsal-setup.md records every prompt and approval and shows no FR-89 rule break.
+
+### TC-233: add-docs, ingest and check-quality skills
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-71; FR-88; T-71 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Rehearsals on a clean clone; transcripts reviewed for FR-89.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: check-skills passes for the three skills; one rehearsal each (mock provider) with transcripts in qa/release-v2/: /add-docs proposes include and exclude rules and shows the dry run; /ingest summarises the report in plain words and resumes; /check-quality runs inspect, eval:generate with a cost question first, and eval, and turns results into concrete suggestions.
+
+### TC-234: tune, troubleshoot and deploy skills
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-72; FR-85; FR-88; T-72 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Rehearsals with the mock provider; transcripts in qa/release-v2/.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: check-skills passes; the /tune rehearsal changes one setting, runs eval --compare and keeps or reverts it by the comparison; /troubleshoot reproduces with ask --trace and names the cause class (sources, chunking, retrieval, prompt); /deploy lists variables by name, sets the profile, runs deploy:check and stops without creating any external resource.
+
+### TC-235: check-skills on good and broken fixtures
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-73; FR-88; UT-50.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Vitest unit test with fixture directories.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: check-skills passes a good fixture and fails, naming file and line, for: an unknown command, an unknown flag, a result field path absent from the command schema, an error code outside ERROR_CODES, a .claude/commands pointer to a missing skill, and a stale cli-reference.md.
+
+### TC-236: Command pointers, permissions and CI
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-73; FR-88; TRD §37.1, §37.4.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Unit test parsing the files; CI log shows the step.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Seven .claude/commands files (setup, add-docs, ingest, check-quality, tune, troubleshoot, deploy), 3 to 5 lines each, point to the matching skill; .claude/settings.json allows exactly the §37.4 read-only commands for ./sourced and pnpm sourced and keeps the attribution settings; writing, paid, deleting and deploying commands are not allowlisted; the ci.yml static job runs check-skills.
+
+### TC-237: Agent discovery of commands and skills
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-73; A-24; A-24.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Tool docs plus a manual check in each tool.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Current Claude Code lists the /setup family from .claude/commands and current Codex discovers the skills in .agents/skills; the finding is recorded in the decisions log, with the fallback pointer files if not.
+
+### TC-238: Access cookie derivation and middleware decisions
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-74; FR-90; UT-48.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Vitest unit test of lib/access and the middleware decision function.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The cookie value is base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1')) compared in constant time; under private, pages without a valid cookie redirect to /access and /api/ask returns 401 ACCESS_DENIED; /api/health, static assets and /access pass; a rotated token invalidates the old cookie; local and public-demo always pass.
+
+### TC-239: Private profile in the browser
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-74; FR-90; E2E-27.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Playwright on a separate private-profile port, unique x-real-ip per test.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: On a private-profile server: / redirects to /access; a wrong token shows the access page error copy; the right token sets an HttpOnly SameSite=Lax cookie and lands on /; asking works; /api/ask without the cookie returns 401 ACCESS_DENIED.
+
+### TC-240: Access rate limit, init token and deploy check
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-74; FR-90; FR-81; TRD §38.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Unit and contract tests; integration test for the limiter bucket.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Failed access attempts are limited to 10 per hour per visitor hash (bucket access:<hash>) with the PRD copy; init --profile private writes a generated token of at least 24 characters to .env.local without printing it; deploy:check --profile private fails without the token; the ACCESS_DENIED code exists in ERROR_CODES, the TRD error matrix and the client mapping.
+
+### TC-241: No cookie outside the private profile
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-74; NFR-12; TRD §38.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. E2E and unit assertions on Set-Cookie.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Under local and public-demo no response sets a cookie, including /access and /api/access, which are unavailable or inert there.
+
+### TC-242: User-facing AGENTS.md and moved contributor rules
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-75; FR-87; D-66; T-75 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Literal tests; grep -rn AGENTS.md docs/.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Root AGENTS.md has at most 80 lines with the §37.2 content (three-sentence summary, sourced-setup line and one line per skill, FR-89 rules verbatim, how to run commands on the Docker and Node paths, pointer to docs/contributing/AGENTS.md); the old file lives at docs/contributing/AGENTS.md via git mv; CONTRIBUTING.md links it; CLAUDE.md still imports the root file; no spec links a moved section at the old path.
+
+### TC-243: README Use your own documents
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-76; FR-57; G-6; T-76 files.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Literal test over README commands against the registry; manual read.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: README has a Use your own documents section that leads with the Docker path (docker compose up, ./sourced or the /setup command) and documents the Node path for contributors; every command shown exists in lib/cli; CHANGELOG has a v2.0.0 entry.
+
+### TC-244: Newcomer release check in Claude Code
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-76; NFR-24; D-71; PRD §11 newcomer check.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Manual run with recorded transcript.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: On a clean copy with only Docker, a tester who types only the goal, answers questions and fills .env.local reaches a cited answer in Claude Code; the transcript in qa/release-v2/ shows no FR-89 rule break and no step that needs reading code or docs.
+
+### TC-245: Newcomer release check in Codex
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-76; NFR-24; D-71; PRD §11 newcomer check.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Manual run with recorded transcript.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: The same check passes in Codex; transcript in qa/release-v2/.
+
+### TC-246: v2.0.0 release checklist and milestone eval
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: T-76; release checklist v2.0.0; Release checklist.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Checklist review; manually dispatched eval run.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Every v2.0.0 release checklist item is checked or carries an owner decision; the M8 milestone eval (D-121) passes all floors; tag v2.0.0 only after the owner's approval.
+
+### TC-247: M8 exit criteria
+
+- Milestone: M8 Agent guidance and v2.0 release
+- Requirement: PRD §12 (M8); M8 exit.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Review TC-229 to TC-246 and write qa/m8-report.md.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Newcomer release check passes in Claude Code and Codex; milestone report and review written; v2.0.0 tagged after approval.
