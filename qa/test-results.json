@@ -5330,12 +5330,16 @@
       "description": "T-72 acceptance.",
       "steps_to_reproduce": "See qa/test-cases.md TC-234.",
       "expected_result": "check-skills passes; the /tune rehearsal changes one setting, runs eval --compare and keeps or reverts it by the comparison; /troubleshoot reproduces with ask --trace and names the cause class (sources, chunking, retrieval, prompt); /deploy lists variables by name, sets the profile, runs deploy:check and stops without creating any external resource.",
-      "status": "open",
-      "environment": "local macOS, Docker Desktop, mock mode",
+      "status": "resolved",
+      "environment": "local macOS, Docker path, live OpenAI (Claude Code 2.1.322)",
       "attempts": [
         {
           "result": "fail",
           "note": "Skills installed (2d43f15), check-skills passes. Claude Code rehearsals: /troubleshoot classified a wrong answer as sources from the trace and pointed to /add-docs; /deploy changed only profile after a yes, ran deploy:check --profile private, explained failures and stopped with no external action (qa/release-v2/). /tune conversational rehearsal pending: mock eval cannot write a baseline, so it needs a live run (owner approval). Codex scripted /tune command check in qa/release-v2/cli-check-tune.md."
+        },
+        {
+          "result": "pass",
+          "note": "Live /tune on the Flask newcomer clone: one setting (finalPassages 6 to 4), eval --compare against the saved baseline, correctRefusal 0.714 < 0.80, config restored byte for byte; /troubleshoot and /deploy covered by the earlier mock rehearsals. Transcript qa/release-v2/rehearsal-tune-live.md. Found and fixed the per-command image re-export (4cf7d94)."
         }
       ],
       "regression_of": null,
@@ -5504,6 +5508,27 @@
         {
           "result": "pass",
           "note": "README 'Use your own documents' leads with the Docker path (agent route with the seven commands, manual route with ./sourced and sourced.cmd), Node path for contributors and hosted databases; CHANGELOG [Unreleased] v2.0.0 entry; tests/unit/readme-commands.test.ts checks every README command and flag against lib/cli/registry.ts, every /command against .claude/commands, and section order."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-244",
+      "ac_reference": "T-76; NFR-24; D-71",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Newcomer release check in Claude Code",
+      "description": "PRD §11 newcomer check.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-244.",
+      "expected_result": "On a clean copy with only Docker, a tester who types only the goal, answers questions and fills .env.local reaches a cited answer in Claude Code; the transcript in qa/release-v2/ shows no FR-89 rule break and no step that needs reading code or docs.",
+      "status": "resolved",
+      "environment": "fresh clone of v2/kit c33a664, Docker path, live OpenAI, Claude Code 2.1.322 headless",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Goal typed once; 13 turns; tester only answered and filled OPENAI_API_KEY in .env.local; ask returned outcome answered with 2 citations; no FR-89 break; no step needed reading code or docs. Transcript qa/release-v2/newcomer-claude-code.md. Minor: config fix text named pnpm sourced on the Docker path (fixed in 4cf7d94)."
         }
       ],
       "regression_of": null,
