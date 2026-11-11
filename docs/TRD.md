@@ -3811,6 +3811,7 @@ CLAUDE.md                         # "@AGENTS.md" (unchanged)
   sourced-deploy/SKILL.md
   _shared/rules.md                # the FR-89 rules, included by reference from every skill
   _shared/cli-reference.md        # generated from lib/cli/schemas by scripts/check-skills.ts --write
+  _shared/pricing.md              # how an agent resolves an unknown price with the user (D-130)
 .claude/commands/{setup,add-docs,ingest,check-quality,tune,troubleshoot,deploy}.md   # 3–5 lines each: "Follow .agents/skills/sourced-<name>/SKILL.md."
 .claude/settings.json             # permissions allowlist (section 37.4) plus the existing attribution settings
 docs/contributing/AGENTS.md       # today's AGENTS.md, moved
