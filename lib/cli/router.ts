@@ -23,6 +23,7 @@ export type CommandContext = {
 export type CommandResult = {
   result?: unknown;
   exitCode?: ExitCode;
+  error?: NonNullable<CliEnvelope['error']>;
   warnings?: { code: string; message: string }[];
 };
 export type Handler = (input: Invocation, context: CommandContext) => Promise<CommandResult>;
@@ -137,19 +138,22 @@ export async function dispatch(
         : {
             ...failure(
               command,
-              failedCheck
-                ? 'CHECKS_FAILED'
-                : exitCode === 2
-                  ? 'NEEDS_CONFIRMATION'
-                  : 'INTERNAL_ERROR',
-              failedCheck
-                ? failedChecks
-                    .map((check) => `${check.id}: ${check.fix ?? check.detail}`)
-                    .join('\n')
-                : exitCode === 2
-                  ? 'The command needs configuration or confirmation before it can continue.'
-                  : 'The command did not meet its required checks.',
-              failedCheck?.fix ??
+              outcome.error?.code ??
+                (failedCheck
+                  ? 'CHECKS_FAILED'
+                  : exitCode === 2
+                    ? 'NEEDS_CONFIRMATION'
+                    : 'INTERNAL_ERROR'),
+              outcome.error?.message ??
+                (failedCheck
+                  ? failedChecks
+                      .map((check) => `${check.id}: ${check.fix ?? check.detail}`)
+                      .join('\n')
+                  : exitCode === 2
+                    ? 'The command needs configuration or confirmation before it can continue.'
+                    : 'The command did not meet its required checks.'),
+              outcome.error?.fix ??
+                failedCheck?.fix ??
                 (command === 'eval' ? 'pnpm sourced eval --validate-only' : 'pnpm sourced --help'),
             ),
             ...(result === undefined ? {} : { result }),
@@ -316,25 +320,50 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       );
       if (input.values['validate-only']) {
         const { runEvalValidation } = await import('@/lib/eval/validate');
-        const exitCode = await runEvalValidation(args, context.progress);
-        return { exitCode: exitCode === 0 ? 0 : 1 };
+        const { exitCode, problems } = await runEvalValidation(args, context.progress);
+        return {
+          exitCode,
+          ...(problems.length
+            ? {
+                error: {
+                  code: 'VALIDATION_FAILED' as const,
+                  message: problems
+                    .map((problem) => (/[.!?]$/.test(problem) ? problem : `${problem}.`))
+                    .join(' '),
+                  fix: 'Add or accept the required questions, correct invalid entries and anchors against the indexed corpus, then run pnpm sourced eval --validate-only.',
+                },
+              }
+            : {}),
+        };
       }
       getEnv();
       const { runEval } = await import('@/lib/eval/run');
       let result: unknown;
-      let evalError: string | undefined;
+      let evalError: AppError | undefined;
       const status = await runEval(args, {
         result: (value) => {
           result = value;
         },
         write: context.progress,
-        error: (message) => {
-          evalError = message;
+        error: (message, code) => {
+          evalError = new AppError(code ?? 'INTERNAL_ERROR', message);
         },
       });
-      if (evalError)
-        throw new AppError(status === 1 ? 'CONFIG_INVALID' : 'NEEDS_CONFIRMATION', evalError);
-      return { result, exitCode: status === 0 ? 0 : status === 2 || status === 3 ? 2 : 1 };
+      if (evalError) throw evalError;
+      const evaluated = commandSchemas.eval.parse(result);
+      return {
+        result,
+        exitCode: status === 0 ? 0 : status === 2 || status === 3 ? 2 : 1,
+        ...(evaluated && !evaluated.pass
+          ? {
+              error: {
+                code: 'CHECKS_FAILED' as const,
+                message: `Eval checks failed: ${[...new Set(evaluated.failures.map((failure) => failure.metric))].join(', ')}.`,
+                fix: 'Review result.failures and their likely causes, adjust the corpus or configuration, then rerun pnpm sourced eval.',
+              },
+            }
+          : {}),
+      };
     }
     default: {
       const unreachable: never = input.command;

@@ -82,7 +82,7 @@ test.each(['chat', 'judge', 'rerank', 'embed'] as const)(
     const config = parseKitConfig(mongo);
     config.models[role] = { ...config.models.embed, provider: 'openai', model: 'unpriced' };
     expect(() => resolveEvalConfig(config)).toThrow(
-      'Price unknown for openai:unpriced; add it to pricing in sourced.config.ts to get an estimate.',
+      `${role}: Price unknown for openai:unpriced; add it to pricing in sourced.config.ts to get an estimate.`,
     );
     const resolved = resolveEvalConfig(config, true);
     expect(resolved.knownConfig.pricing['openai:unpriced']).toEqual({
@@ -116,7 +116,7 @@ test.each([true, false])(
     if (priced) expect(resolveEvalConfig(pricedConfig).prices.chatInput).toBe(0.1);
     else
       expect(() => resolveEvalConfig(pricedConfig)).toThrow(
-        'Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
+        'chat: Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
       );
   },
 );

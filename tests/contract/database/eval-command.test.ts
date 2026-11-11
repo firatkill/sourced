@@ -57,7 +57,9 @@ test('CT-10 / FR-77: real mock eval preserves its result schema when quality flo
   // answerable run must fail their unchanged floors. Validation-only covers
   // eval's exit-0 contract in eval-validate.test.ts.
   expect(result?.pass).toBe(false);
-  expect(envelope.error?.code).toBe('INTERNAL_ERROR');
+  expect(envelope.error?.code).toBe('CHECKS_FAILED');
+  for (const failure of result?.failures ?? [])
+    expect(envelope.error?.message).toContain(failure.metric);
   expect(result?.failures).toEqual(
     expect.arrayContaining([
       expect.objectContaining({

@@ -193,7 +193,7 @@ test('CT-10 / FR-77: eval validation succeeds and reports documented failure env
     expect((await run(['--validate-only', '--file', file, '--subset'], 0)).result).toBeUndefined();
     await writeFile(file, '{invalid}\n');
     expect((await run(['--validate-only', '--file', file, '--subset'], 1)).error?.code).toBe(
-      'INTERNAL_ERROR',
+      'VALIDATION_FAILED',
     );
     expect((await run([], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
     expect((await run(['--compare', 'baseline'], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
@@ -202,19 +202,29 @@ test('CT-10 / FR-77: eval validation succeeds and reports documented failure env
   }
 });
 
-test('CT-10 / FR-84 / D-129: kit eval uses config without model env and preserves confirmation diagnostics', async () => {
+async function kitEvalFixture() {
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
   const { mkdir, symlink } = await import('node:fs/promises');
   const { CliEnvelope } = await import('@/lib/cli/envelope');
-  const { commandSchemas } = await import('@/lib/cli/schemas/commands');
   const { parseKitConfig } = await import('@/lib/kit/load-config');
   const mongo = (await import('../../../examples/mongodb/sourced.config')).default;
   const root = process.cwd();
   const dir = await mkdtemp(join(tmpdir(), 'sourced-eval-contract-kit-'));
   const config = parseKitConfig(mongo);
   config.corpus.name = 'test-kit';
-  const run = async (args: string[]) => {
+  config.sources = parseKitConfig({
+    ...config,
+    sources: [{ id: 'crawl', type: 'crawl', root: 'https://example.com/docs', maxPages: 30 }],
+  }).sources;
+  const golden = Array.from({ length: 37 }, (_, index) => ({
+    ...subset[index % subset.length]!,
+    id: `q${String(index + 1).padStart(3, '0')}`,
+    origin: index < 34 ? 'generated' : 'handwritten',
+    type: index < 34 ? 'answerable' : 'unanswerable',
+    expected_anchors: index < 34 ? subset[index % subset.length]!.expected_anchors : [],
+  }));
+  const run = async (args: string[], path = process.env.PATH, repository = true) => {
     try {
       const result = await promisify(execFile)(
         process.execPath,
@@ -225,18 +235,14 @@ test('CT-10 / FR-84 / D-129: kit eval uses config without model env and preserve
           join(root, 'scripts/sourced.ts'),
           'eval',
           '--json',
-          '--no-write',
-          '--subset',
-          '--only',
-          'shared-inj-01',
+          ...(args.includes('--validate-only') ? [] : ['--no-write']),
           ...args,
         ],
         {
           cwd: dir,
           env: {
-            PATH: process.env.PATH,
-            GIT_DIR: join(root, '.git'),
-            GIT_WORK_TREE: root,
+            PATH: path,
+            ...(repository ? { GIT_DIR: join(root, '.git'), GIT_WORK_TREE: root } : {}),
             TSX_TSCONFIG_PATH: join(root, 'tsconfig.json'),
             LLM_MODE: 'mock',
             NODE_ENV: 'test',
@@ -244,38 +250,142 @@ test('CT-10 / FR-84 / D-129: kit eval uses config without model env and preserve
             QUESTION_HASH_SALT: 'test-only-question-salt-0000000000000000',
             IP_HASH_SALT: 'test-only-ip-salt-00000000000000000000000',
             NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+            MOCK_STREAM_DELAY_MS: '0',
           },
         },
       );
-      return CliEnvelope.parse(JSON.parse(result.stdout));
+      return {
+        ...CliEnvelope.parse(JSON.parse(result.stdout)),
+        exitCode: 0,
+        progress: result.stderr,
+      };
     } catch (error) {
       if (!(error instanceof Error && 'stdout' in error && typeof error.stdout === 'string'))
         throw error;
-      return CliEnvelope.parse(JSON.parse(error.stdout));
+      if (!('code' in error)) throw error;
+      if (!('stderr' in error) || typeof error.stderr !== 'string') throw error;
+      return {
+        ...CliEnvelope.parse(JSON.parse(error.stdout)),
+        exitCode: error.code,
+        progress: error.stderr,
+      };
     }
   };
   try {
     await symlink(join(root, 'node_modules'), join(dir, 'node_modules'), 'dir');
     await mkdir(join(dir, 'eval/test-kit'), { recursive: true });
-    await writeFile(join(dir, 'eval/test-kit/golden.jsonl'), jsonl(subset));
+    await writeFile(
+      join(dir, 'eval/test-kit/golden.jsonl'),
+      golden.map((entry) => JSON.stringify(entry)).join('\n') + '\n',
+    );
     await writeFile(join(dir, 'eval/thresholds.json'), await readFile('eval/thresholds.json'));
     await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
+    return { dir, config, golden, run };
+  } catch (error) {
+    await rm(dir, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+test('CT-10 / FR-84 / D-129: kit eval prices configured models and names missing roles', async () => {
+  const { dir, config, run } = await kitEvalFixture();
+  const { commandSchemas } = await import('@/lib/cli/schemas/commands');
+  try {
     const pricedEnvelope = await run([]);
     expect(pricedEnvelope.result, JSON.stringify(pricedEnvelope)).toBeDefined();
+    expect(pricedEnvelope.exitCode).toBe(1);
     const priced = commandSchemas.eval.unwrap().parse(pricedEnvelope.result);
     expect(priced.metrics.errors).toBe(0);
+    expect(priced.metrics.counts.total).toBe(41);
+    expect(pricedEnvelope.error?.code).toBe('CHECKS_FAILED');
+    for (const failure of priced.failures)
+      expect(pricedEnvelope.error?.message).toContain(failure.metric);
     expect(priced.config).toMatchObject({ chatModel: 'mock', judgeModel: 'mock' });
     expect(priced.metrics.cost.totalUsd).toBeTypeOf('number');
+    config.models.judge = { provider: 'openai', model: 'missing-judge' };
+    await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
+    const missingJudge = await run([]);
+    expect(missingJudge.exitCode).toBe(2);
+    expect(missingJudge.error?.code).toBe('NEEDS_CONFIRMATION');
+    expect(missingJudge.error?.message).toContain('judge');
+    expect(missingJudge.error?.message).toContain('Price unknown for openai:missing-judge;');
+    delete config.models.judge;
     config.pricing = {};
     await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
     const refused = await run([]);
     expect(refused.error?.message).toBe(
-      'Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
+      'chat: Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
     );
     const confirmed = commandSchemas.eval.unwrap().parse((await run(['--yes'])).result);
     expect(confirmed.metrics.errors).toBe(0);
     expect(confirmed.metrics.cost.totalUsd).toBeNull();
     expect(confirmed.metrics.cost.perQuestionUsd).toBeNull();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('CT-10 / FR-84 / D-132: eval works without Git and outside a repository', async () => {
+  const { dir, run } = await kitEvalFixture();
+  const { commandSchemas } = await import('@/lib/cli/schemas/commands');
+  const { mkdir } = await import('node:fs/promises');
+  try {
+    // D-132: both the slim runtime and a zip outside a repository can evaluate.
+    await mkdir(join(dir, 'eval/test-kit/results'));
+    await writeFile(
+      join(dir, 'eval/test-kit/results/prior.json'),
+      await readFile('tests/fixtures/eval-results/2026-11-01.json'),
+    );
+    for (const [path, repository] of [
+      [dir, true],
+      [process.env.PATH, false],
+    ] as const) {
+      const portable = await run(['--only', 'shared-inj-01'], path, repository);
+      expect(portable.exitCode).toBe(1);
+      expect(portable.error?.code).toBe('CHECKS_FAILED');
+      const result = commandSchemas.eval.unwrap().parse(portable.result);
+      expect(result.gitSha).toBe('none');
+      expect(result.metrics.errors).toBe(0);
+      expect(result.baseline?.file).toBe('eval/test-kit/results/prior.json');
+      expect(
+        portable.progress.split('Git not available; baseline taken from files on disk.'),
+      ).toHaveLength(2);
+    }
+    const unexpected = await run(['--yes', '--compare', 'missing-baseline.json']);
+    expect(unexpected.exitCode).toBe(1);
+    expect(unexpected.error?.code).toBe('INTERNAL_ERROR');
+    expect(unexpected.error?.message).toBe('Eval failed during baseline loading.');
+    expect(unexpected.result).toBeUndefined();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('CT-10 / FR-89: kit validation reports shortfalls and unknown anchors', async () => {
+  const { dir, config, golden, run } = await kitEvalFixture();
+  try {
+    config.pricing = {};
+    await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
+    const short = golden.filter((entry) => entry.type === 'answerable' || entry.id === 'q035');
+    await writeFile(
+      join(dir, 'eval/test-kit/golden.jsonl'),
+      short.map((entry) => JSON.stringify(entry)).join('\n') + '\n',
+    );
+    const undersized = await run(['--validate-only']);
+    expect(undersized.exitCode).toBe(1);
+    expect(undersized.error?.code).toBe('VALIDATION_FAILED');
+    expect(undersized.error?.message).toContain('unanswerable: need at least 3.');
+    expect(undersized.error?.fix).toContain('questions');
+    golden[0]!.expected_anchors = ['crawl:missing#anchor'];
+    await writeFile(
+      join(dir, 'eval/test-kit/golden.jsonl'),
+      golden.map((entry) => JSON.stringify(entry)).join('\n') + '\n',
+    );
+    const missingAnchor = await run(['--validate-only']);
+    expect(missingAnchor.exitCode).toBe(1);
+    expect(missingAnchor.error?.code).toBe('VALIDATION_FAILED');
+    expect(missingAnchor.error?.message).toContain('Missing anchor: crawl:missing#anchor');
+    expect(missingAnchor.error?.fix).toContain('anchor');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

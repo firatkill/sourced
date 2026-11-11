@@ -186,7 +186,7 @@ test('TC-127: automatic baseline uses committed contents and greatest runId, exc
   expect(execFileSync).toHaveBeenCalledWith(
     'git',
     ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/postgres-17/results'],
-    { encoding: 'utf8' },
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
   expect(execFileSync).not.toHaveBeenCalledWith(
     'git',
@@ -310,4 +310,40 @@ test('TC-226 / FR-84 / D-126: kit CLI merges built-ins, does not require fixture
   } finally {
     setCliKitConfig(originalConfig);
   }
+});
+
+// FR-89 rule 5 / TRD §18: unexpected exceptions are not confirmation requests.
+test('eval names the failed stage and preserves INTERNAL_ERROR for an unexpected database failure', async () => {
+  const error = vi.fn();
+  const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  vi.mocked(checkCorpusSchema).mockRejectedValueOnce(new TypeError('sensitive internal detail'));
+  expect(await runEval(['--no-write', '--yes'], { write: vi.fn(), error })).toBe(1);
+  expect(error).toHaveBeenCalledWith(
+    'Eval failed during database preconditions.',
+    'INTERNAL_ERROR',
+  );
+  expect(stderr.mock.calls.map(([line]) => String(line)).join('')).toContain('TypeError');
+  expect(stderr.mock.calls.map(([line]) => String(line)).join('')).not.toContain(
+    'sensitive internal detail',
+  );
+  expect(state.calls).toBe(0);
+});
+
+// D-132: both Git lookups share a single progress warning.
+test('missing Git completes evaluation and warns once', async () => {
+  const error = vi.fn();
+  const write = vi.fn();
+  const result = vi.fn();
+  vi.mocked(execFileSync).mockImplementation(() => {
+    throw Object.assign(new Error('spawnSync git ENOENT'), { code: 'ENOENT' });
+  });
+  expect(await runEval(['--no-write', '--limit', '1'], { write, error, result })).toBe(1);
+  expect(error).not.toHaveBeenCalled();
+  expect(result).toHaveBeenCalledWith(expect.objectContaining({ gitSha: 'none' }));
+  expect(
+    write.mock.calls.filter(
+      ([message]) => message === 'Git not available; baseline taken from files on disk.',
+    ),
+  ).toHaveLength(1);
+  expect(state.calls).toBe(1);
 });

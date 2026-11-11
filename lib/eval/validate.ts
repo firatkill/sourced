@@ -128,7 +128,7 @@ export async function runGoldenValidation(options: {
   subset?: boolean;
   profile?: ValidationProfile;
   write: (message: string) => void;
-}): Promise<number> {
+}): Promise<{ exitCode: 0 | 1; problems: string[] }> {
   const profile = options.profile ?? 'example';
   const { entries, errors, injections } = await loadGoldenSet(options.text, profile);
   errors.push(
@@ -155,7 +155,7 @@ export async function runGoldenValidation(options: {
   if (profile === 'example') options.write(formatGoldenDistribution(entries, options.corpus));
   for (const error of errors) options.write(error);
   if (errors.length === 0) options.write(`Validated ${String(entries.length)} golden entries.`);
-  return errors.length === 0 ? 0 : 1;
+  return { exitCode: errors.length === 0 ? 0 : 1, problems: errors };
 }
 
 export async function runEvalValidation(
@@ -163,7 +163,7 @@ export async function runEvalValidation(
   write: (message: string) => void = (message) => {
     process.stdout.write(`${message}\n`);
   },
-): Promise<number> {
+): Promise<{ exitCode: 0 | 1; problems: string[] }> {
   await loadConfig();
   const { values } = parseArgs({
     args,

@@ -11,10 +11,11 @@ import type { KitConfig } from '@/lib/kit/config-schema';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { checkCorpusSchema } from '@/lib/kit/vector-schema';
 import { loadConfig } from '@/lib/kit/load-config';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { access, appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
+import { access, appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import { RETRIEVAL } from '@/lib/config';
@@ -59,7 +60,7 @@ export function resolveEvalConfig(config: KitConfig, yes = false) {
       if (!yes)
         throw new EvalAbort(
           2,
-          `Price unknown for ${model.provider}:${model.model}; add it to pricing in sourced.config.ts to get an estimate.`,
+          `${role}: Price unknown for ${model.provider}:${model.model}; add it to pricing in sourced.config.ts to get an estimate.`,
         );
       knownConfig.pricing[`${model.provider}:${model.model}`] = {
         inputPerMTok: 0,
@@ -245,24 +246,90 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+type EvalGitOptions = {
+  git?: (args: string[]) => string;
+  onUnavailable?: () => void;
+};
+
+function gitOutput(args: string[]): string {
+  return execFileSync('git', args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+}
+
+function gitUnavailable(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if ('code' in error && error.code === 'ENOENT') return true;
+  return (
+    'stderr' in error &&
+    (typeof error.stderr === 'string' || Buffer.isBuffer(error.stderr)) &&
+    /fatal: not a git repository\b/.test(error.stderr.toString())
+  );
+}
+
+export function readGitSha(options: EvalGitOptions = {}): string {
+  try {
+    return (options.git ?? gitOutput)(['rev-parse', 'HEAD']).trim();
+  } catch (error) {
+    if (!gitUnavailable(error)) throw error;
+    options.onUnavailable?.();
+    return 'none';
+  }
+}
+
+async function diskBaselines(directory: string, outputFile: string) {
+  let files: Dirent[];
+  try {
+    files = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
+    throw error;
+  }
+  const results: { file: string; result: EvalResult }[] = [];
+  for (const entry of files) {
+    const file = join(directory, entry.name);
+    if (!entry.isFile() || !file.endsWith('.json') || resolve(file) === resolve(outputFile))
+      continue;
+    // Only valid result files can become a fallback baseline. Filesystem errors
+    // still surface; malformed or unrelated JSON is not an eval result.
+    const text = await readFile(file, 'utf8');
+    let json: unknown;
+    try {
+      json = JSON.parse(text) as unknown;
+    } catch (error) {
+      if (error instanceof SyntaxError) continue;
+      throw error;
+    }
+    const parsed = EvalResult.safeParse(json);
+    if (parsed.success) results.push({ file, result: parsed.data });
+  }
+  return results;
+}
+
 export async function loadBaseline(
   file: string | undefined,
   directory: string,
   outputFile: string,
+  options: EvalGitOptions = {},
 ): Promise<{ file: string; result: EvalResult } | null> {
   if (file) return { file, result: EvalResult.parse(JSON.parse(await readFile(file, 'utf8'))) };
-  const files = execFileSync('git', ['ls-tree', '-r', '--name-only', 'HEAD', '--', directory], {
-    encoding: 'utf8',
-  })
-    .trim()
-    .split('\n')
-    .filter((path) => path.endsWith('.json') && resolve(path) !== resolve(outputFile));
-  const results = files.map((path) => ({
-    file: path,
-    result: EvalResult.parse(
-      JSON.parse(execFileSync('git', ['show', `HEAD:${path}`], { encoding: 'utf8' })),
-    ),
-  }));
+  const git = options.git ?? gitOutput;
+  let results: { file: string; result: EvalResult }[];
+  try {
+    const files = git(['ls-tree', '-r', '--name-only', 'HEAD', '--', directory])
+      .trim()
+      .split('\n')
+      .filter((path) => path.endsWith('.json') && resolve(path) !== resolve(outputFile));
+    results = files.map((path) => ({
+      file: path,
+      result: EvalResult.parse(JSON.parse(git(['show', `HEAD:${path}`]))),
+    }));
+  } catch (error) {
+    if (!gitUnavailable(error)) throw error;
+    options.onUnavailable?.();
+    results = await diskBaselines(directory, outputFile);
+  }
   return results.sort((a, b) => b.result.runId.localeCompare(a.result.runId))[0] ?? null;
 }
 
@@ -270,7 +337,7 @@ export async function runEval(
   args: string[] = [],
   output?: {
     result?: (result: EvalResult) => void;
-    error?: (message: string) => void;
+    error?: (message: string, code?: AppError['code']) => void;
     write: (message: string) => void;
   },
 ): Promise<number> {
@@ -279,6 +346,16 @@ export async function runEval(
     ((message: string) => {
       process.stdout.write(`${message}\n`);
     });
+  let warnedAboutGit = false;
+  const gitOptions: EvalGitOptions = {
+    onUnavailable: () => {
+      if (!warnedAboutGit) {
+        write('Git not available; baseline taken from files on disk.');
+        warnedAboutGit = true;
+      }
+    },
+  };
+  let stage = 'argument parsing';
   try {
     const { values } = parseArgs({
       args,
@@ -294,10 +371,12 @@ export async function runEval(
         yes: { type: 'boolean', default: false },
       },
     });
+    stage = 'configuration loading';
     await loadConfig();
     const env = getEnv();
     if (env.LLM_MODE === 'mock' && !values['no-write'])
       throw new EvalAbort(2, 'LLM_MODE=mock requires --no-write');
+    stage = 'pricing';
     const priceConfig = getKitConfig(false);
     const { prices } = resolveEvalConfig(priceConfig, values.yes);
     if (priceConfig.profile === 'public-demo') {
@@ -315,6 +394,7 @@ export async function runEval(
       }
       validatePrices(env.LLM_MODE, legacyPrices);
     }
+    stage = 'golden set validation';
     const profile = evalProfile(getKitConfig().corpus.name);
     const parsed = await loadGoldenSet(
       await readFile(values.file ?? `eval/${getKitConfig().corpus.name}/golden.jsonl`, 'utf8'),
@@ -327,6 +407,7 @@ export async function runEval(
       ...validateGoldenProfile(parsed.entries, corpus, profile, parsed.injections, values.subset),
     ];
     if (errors.length) throw new EvalAbort(2, 'Invalid golden set; run pnpm eval:validate');
+    stage = 'threshold loading';
     const thresholds = await loadThresholds(getKitConfig().corpus.name);
     const only =
       values.only === undefined
@@ -344,6 +425,7 @@ export async function runEval(
     const entries = parsed.entries.filter((e) => !only || only.includes(e.id)).slice(0, limit);
     const config = getKitConfig();
     const model = config.models.embed.model;
+    stage = 'database preconditions';
     const sql = getSql();
     await checkCorpusSchema(sql, config);
     const fixture = await sql`SELECT 1 FROM documents WHERE is_fixture LIMIT 1`;
@@ -358,6 +440,7 @@ export async function runEval(
       hasIngest: ingest.length > 0,
       modelMismatch: mismatch.length > 0,
     });
+    stage = 'anchor validation';
     const anchors = await sql<{ anchor: string }[]>`SELECT DISTINCT anchor FROM chunks`;
     if (
       missingGoldenAnchors(
@@ -370,10 +453,12 @@ export async function runEval(
     const resultsDir =
       profile === 'example' ? env.EVAL_RESULTS_DIR : `eval/${config.corpus.name}/results`;
     const stem = await resultFileStem(resultsDir, () => runDate, exists);
+    stage = 'baseline loading';
     const baseline = await loadBaseline(
       values.compare === 'baseline' ? values.baseline : (values.compare ?? values.baseline),
       resultsDir,
       `${stem}.json`,
+      gitOptions,
     );
     checkBudget(
       projectCost(
@@ -390,6 +475,7 @@ export async function runEval(
       env.EVAL_MAX_COST_USD,
       env.LLM_MODE,
     );
+    stage = 'question evaluation';
     const records = await evaluateQuestions(entries, {
       mode: env.LLM_MODE,
       prices,
@@ -399,12 +485,13 @@ export async function runEval(
         write(`Completed ${id}`);
       },
     });
+    stage = 'result validation';
     const metrics = aggregateMetrics(records, Number(ingest[0]?.cost_usd_estimate ?? 0));
     const result = EvalResult.parse({
       schemaVersion: 1,
       runId: runDate.toISOString(),
       date: runDate.toISOString().slice(0, 10),
-      gitSha: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
+      gitSha: readGitSha(gitOptions),
       config: {
         chatModel: config.models.chat.model,
         judgeModel: (config.models.judge ?? config.models.chat).model,
@@ -425,6 +512,7 @@ export async function runEval(
       ...checkRun(metrics, thresholds, baseline?.result.metrics ?? null),
       questions: records.map((r) => r.result),
     });
+    stage = 'inspection report loading';
     const findings = await readInspectFindings(config.corpus.name);
     result.failures = result.failures.map((failure) =>
       failure.kind === 'floor'
@@ -444,7 +532,9 @@ export async function runEval(
     }
     write(renderMetricsTable(result, baseline?.result.metrics ?? null));
     if (!baseline) write('No baseline');
+    stage = 'report rendering';
     const markdown = renderMarkdown(result, baseline?.result.metrics ?? null);
+    stage = 'report writing';
     if (!values['no-write']) {
       await mkdir(resultsDir, { recursive: true });
       await writeFile(`${stem}.json`, `${JSON.stringify(result, null, 2)}\n`, { flag: 'wx' });
@@ -454,24 +544,46 @@ export async function runEval(
     output?.result?.(result);
     return result.pass ? 0 : 1;
   } catch (error) {
-    (
-      output?.error ??
-      output?.write ??
-      ((message: string) => {
-        process.stderr.write(`${message}\n`);
-      })
-    )(
-      error instanceof EvalAbort ||
-        (error instanceof AppError &&
-          ['CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY'].includes(error.code))
-        ? error.message
-        : 'Eval configuration failed; check arguments, files, environment and database.',
-    );
+    const known = error instanceof EvalAbort || error instanceof AppError;
+    const code =
+      error instanceof EvalAbort
+        ? 'NEEDS_CONFIRMATION'
+        : error instanceof AppError
+          ? error.code
+          : 'INTERNAL_ERROR';
+    const message = known ? error.message : `Eval failed during ${stage}.`;
+    if (!known) {
+      // Record structural diagnostics only: raw exceptions can contain SQL,
+      // connection strings, question text, or provider output.
+      createLogger({
+        write: (line) => {
+          process.stderr.write(line);
+        },
+      }).error({
+        event: 'eval.failed',
+        stage,
+        errorType: error instanceof Error ? error.name : typeof error,
+        ...(error instanceof Error &&
+        'code' in error &&
+        ['ENOENT', 'EACCES', 'ECONNREFUSED', 'ETIMEDOUT'].includes(String(error.code))
+          ? { errorCode: error.code }
+          : {}),
+        ...(error instanceof z.ZodError
+          ? {
+              issues: error.issues.map((issue) => ({ path: issue.path, code: issue.code })),
+            }
+          : {}),
+      });
+    }
+    if (output?.error) output.error(message, code);
+    else if (output?.write) output.write(message);
+    else process.stderr.write(`${message}\n`);
     return error instanceof EvalAbort
       ? error.exitCode
-      : error instanceof AppError && error.code === 'CONFIG_INVALID'
-        ? 1
-        : 2;
+      : error instanceof AppError &&
+          ['CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION'].includes(error.code)
+        ? 2
+        : 1;
   } finally {
     await closeSqlForTests();
   }

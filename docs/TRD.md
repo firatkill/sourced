@@ -2279,6 +2279,7 @@ export class AppError extends Error {
 |---|---|---|---|---|---|---|---|
 | CLI confirmation required | CLI | `NEEDS_CONFIRMATION` | exit 2 | no | not used | Confirm interactively or pass `--yes`; app server error fallback | info |
 | Diagnostic checks failed | CLI (`doctor`, `deploy:check`) | `CHECKS_FAILED` | exit 2 (CLI-only) | no | not used | List each failed check id and its fix; app server error fallback | info |
+| Completed eval failed its gates (D-131) | CLI (`eval`) | `CHECKS_FAILED` | exit 1 (CLI-only), `result` kept | no | not used | Name each failed metric with its value and limit | info |
 | Invalid kit configuration | CLI / startup | `CONFIG_INVALID` | exit 1 / 500 | no | not used | Server error; CLI field path and fix | error |
 | Corpus model or language mismatch | search / eval | `CORPUS_MISMATCH` | exit 2 / `RETRIEVAL_ERROR` event | no | refunded | Server error; CLI re-ingest instruction (§30.3) | error |
 | Empty corpus | search / ask / dev | `CORPUS_EMPTY` | exit 2 / not-found state | no | — | Not found; CLI ingest instruction (§30.3) | info |
@@ -3470,7 +3471,7 @@ Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
 | `SOURCE_FAILED` | ingest | per-document item `failed`; run continues | Listed in the report with the reason |
 | `ACCESS_DENIED` | `/api/ask`, pages | 401 JSON / token prompt | PRD-level copy added in T-74: H2 "This chatbot is private", body "Enter the access token you were given.", button "Continue", error "That token is not valid." |
 | `NEEDS_CONFIRMATION` | CLI | exit 2 | The estimate and the flag to pass (`--yes`) |
-| `CHECKS_FAILED` | CLI (`doctor`, `deploy:check`) | exit 2 (CLI-only) | Each failed check id and its fix (D-115); app server error fallback. |
+| `CHECKS_FAILED` | CLI (`doctor`, `deploy:check`; `eval` per D-131) | exit 2 (CLI-only); exit 1 for a completed eval that failed its gates | Each failed check id and its fix (D-115), or each failed eval metric (D-131); app server error fallback. |
 
 ## 31. Providers
 
@@ -3663,7 +3664,7 @@ export const CliEnvelope = z.object({
 
 With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
 
-When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` and `eval` include one `MOCK_MODE` warning with the message "Mock mode: no provider is called; embeddings and answers are stand-ins."; the warning is absent outside mock mode. Cost estimates in mock mode use the prices of the configured models, so a mock dry run shows what a live run would cost (T-71 rehearsal).
+When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` and `eval` include one `MOCK_MODE` warning with the message "Mock mode: no provider is called; embeddings and answers are stand-ins."; the warning is absent outside mock mode. Completed eval runs that fail floors, ceilings or regression checks keep `result`, return `CHECKS_FAILED` naming the failed metrics, and exit 1; `--validate-only` failures return `VALIDATION_FAILED` listing the problems (D-131). Cost estimates in mock mode use the prices of the configured models, so a mock dry run shows what a live run would cost (T-71 rehearsal).
 
 ### 34.3 Interaction rules
 

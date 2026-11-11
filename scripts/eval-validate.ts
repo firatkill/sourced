@@ -2,11 +2,11 @@ import { pathToFileURL } from 'node:url';
 import { runEvalValidation as run } from '@/lib/eval/validate';
 export { readGoldenCorpus, runGoldenValidation } from '@/lib/eval/validate';
 
-export function runEvalValidation(
+export async function runEvalValidation(
   args = process.argv.slice(2),
   write: (message: string) => void = console.log,
 ) {
-  return run(args, write);
+  return (await run(args, write)).exitCode;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

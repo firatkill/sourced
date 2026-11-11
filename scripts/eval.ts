@@ -4,7 +4,15 @@ export { checkPreconditions, evaluateQuestions, loadBaseline } from '@/lib/eval/
 
 /** Compatibility API for existing script callers; implementation belongs to lib/. */
 export function runEval(args = process.argv.slice(2), output?: Parameters<typeof run>[1]) {
-  return run(args, output ?? { write: console.log, error: console.error });
+  return run(
+    args,
+    output ?? {
+      write: console.log,
+      error: (message) => {
+        console.error(message);
+      },
+    },
+  );
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
