@@ -2860,7 +2860,8 @@ jobs:
   eval:
     name: Retrieval and answer evaluation
     # Secrets are unavailable to pull requests from forks; skip them instead of failing.
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # D-121: the v2/kit integration branch runs eval by manual dispatch at each milestone end only.
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'v2/kit')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: eval
