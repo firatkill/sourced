@@ -16,6 +16,7 @@
     "typecheck": "pnpm config:snapshot && tsc --noEmit",
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
+    "test:contract": "vitest run --project contract",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "db:up": "docker compose up -d --wait db",

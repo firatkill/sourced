@@ -1,19 +1,21 @@
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import type { SseEvent } from '@/lib/sse/events';
 import { ExternalLink } from 'lucide-react';
 
 export function NotFound({
-  body = ASK_COPY.notFoundBody,
+  copy = ASK_COPY,
+  body = copy.notFoundBody,
   passages,
   onAnother,
 }: {
   body?: string;
+  copy?: CorpusCopy;
   passages: Extract<SseEvent, { event: 'meta' }>['data']['passages'];
   onAnother: () => void;
 }) {
   return (
     <div className="space-y-4">
-      <h2>{ASK_COPY.notFoundHeading}</h2>
+      <h2>{copy.notFoundHeading}</h2>
       <p>{body}</p>
       <h3>{ASK_COPY.relatedReading}</h3>
       {passages.map((passage) =>
@@ -37,8 +39,8 @@ export function NotFound({
           >
             <span>
               {passage.headingPath.at(-1) ?? passage.documentTitle}
-              {ASK_COPY.docsDomain && (
-                <span className="block text-xs text-[var(--ink-3)]">{ASK_COPY.docsDomain}</span>
+              {copy.docsDomain && (
+                <span className="block text-xs text-[var(--ink-3)]">{copy.docsDomain}</span>
               )}
             </span>
             <ExternalLink size={16} aria-hidden="true" />

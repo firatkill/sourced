@@ -463,7 +463,7 @@ export const JUDGE = {
 
 | Name | Required | Example | Description |
 |---|---|---|---|
-| `DATABASE_URL` | Yes | `postgres://sourced:sourced@localhost:5433/sourced` | App connection. On Supabase use the pooler (Supavisor) in **transaction mode**, port 6543, for example `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require`. |
+| `DATABASE_URL` | Yes | `postgres://sourced:sourced@localhost:5433/sourced` | `init` fills the local Node-path URL from `docker-compose.yml`, preserving existing assignments; Compose supplies the internal Docker URL (D-119). App connection. On Supabase use the pooler (Supavisor) in **transaction mode**, port 6543, for example `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require`. |
 | `MIGRATION_DATABASE_URL` | No | `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require` | Session-mode pooler URL (port 5432) or the direct URL (`db.<ref>.supabase.co:5432`) for `drizzle-kit migrate` and `pnpm ingest`. Never the transaction-mode URL. Defaults to `DATABASE_URL`. |
 | `TEST_DATABASE_URL` | Tests | `postgres://sourced:sourced@localhost:5433/sourced_test` | Integration tests only. Must contain `localhost` or `127.0.0.1`; tests refuse otherwise. |
 | `DATABASE_POOL_MAX` | No | `5` | postgres.js `max`. Default 5. |
@@ -485,11 +485,11 @@ export const JUDGE = {
 | `DEMO_MODE` | No | `on` | `on`, `readonly` or `off` (FR-30). Default `on`. |
 | `RATE_LIMIT_IP_DAILY` | No | `10` | Per-visitor live questions per UTC day. |
 | `RATE_LIMIT_GLOBAL_DAILY` | No | `300` | All visitors, live questions per UTC day. |
-| `IP_HASH_SALT` | Public-demo only | 64 hex chars | `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
-| `QUESTION_HASH_SALT` | Yes | 64 hex chars | Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
+| `IP_HASH_SALT` | Public-demo only | 64 hex chars | `init` generates 32 random bytes as 64 hex characters for `public-demo`, preserving existing assignments and never printing the salt (D-119). Otherwise use `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
+| `QUESTION_HASH_SALT` | Yes | 64 hex chars | `init` generates 32 random bytes as 64 hex characters, preserving existing values and never printing the salt (D-119). Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
 | `STORE_QUESTIONS` | No | `false` | `true` stores raw question text in `query_log.question_text` (FR-54). Never `true` in production without a privacy note change. |
 | `LOG_LEVEL` | No | `info` | pino level. |
-| `NEXT_PUBLIC_SITE_URL` | Yes | `https://sourced.firatkil.com` | Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
+| `NEXT_PUBLIC_SITE_URL` | Yes | `https://sourced.firatkil.com` | `init` writes `http://localhost:<port>` (default 3000), preserving existing values (D-119). Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
 | `ALLOWED_ORIGINS` | No | `https://sourced-git-main-firatkill.vercel.app` | Comma-separated extra origins for the origin check (preview URLs). `VERCEL_URL`, `VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are added automatically (as `https://<value>`) when set. |
 | `INGEST_INCLUDE_FIXTURES` | No | `false` | `true` ingests `corpus/fixtures/*` (tests and eval only, FR-39). |
 | `INGEST_CONFIRM_ABOVE_USD` | no | `1.00` | Nonnegative USD threshold for ingest confirmation (§33.8). |
@@ -3349,6 +3349,8 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 
 ### 29.5 Copy rendering (FR-63, `lib/kit/copy.ts`)
 
+Corpus copy is resolved from the runtime snapshot by server components and passed to client components as props (section 8). Never embed corpus copy at build time or import generated files. After updating the configuration and snapshot, restarting `next start` shows the new copy without rebuilding the image.
+
 `getCopy(config)` returns the corpus-dependent strings. Defaults when `copy.*` is unset:
 
 | Key | Default |
@@ -3440,7 +3442,7 @@ The embedding column type and the generated `tsv` column depend on the configura
 1. Reads `corpus_meta`. If it is empty and `chunks` is empty: `ALTER TABLE chunks ALTER COLUMN embedding TYPE <type>(<n>)`, drop and recreate `chunks_embedding_hnsw_idx` with the operator class, drop and re-add `tsv` as `GENERATED ALWAYS AS (to_tsvector('<fts_config>'::regconfig, content)) STORED`, recreate `chunks_tsv_gin_idx`, insert `corpus_meta`.
 1a. Adoption of a v1 database (D-96). If `corpus_meta` is empty and `chunks` is not: read the stored state from the catalog and the data, without DDL: the embedding column's type and dimensions (`format_type` of `chunks.embedding`), the `regconfig` in the `tsv` generation expression (`pg_get_expr` on its `pg_attrdef` entry), and `SELECT DISTINCT embedding_model FROM chunks`. If the column type and dimensions, the `regconfig` and a single distinct embedding model all equal the configuration's, insert `corpus_meta` from the configuration (`documents_total` from `documents`) and change nothing else. Otherwise return `CORPUS_MISMATCH` with the stored and configured values; step 3 applies. The app's read-only check performs the same comparison without inserting, and caches the result per process.
 2. If `corpus_meta` exists and its `retrieval_hash` equals the configuration's: no-op.
-3. If it differs: return `CORPUS_MISMATCH` with the stored and configured values. Only `sourced ingest --rebuild` (which requires confirmation or `--yes`, section 34.3) truncates `chunks` and `documents`, then runs step 1.
+3. If it differs and `chunks` is empty (D-120): re-run step 1 for the new configuration (no data is lost). If it differs and `chunks` is not empty: return `CORPUS_MISMATCH` with the stored and configured values. Only `sourced ingest --rebuild` (which requires confirmation or `--yes`, section 34.3) truncates `chunks` and `documents`, then runs step 1.
 
 Language map (FR-62), a constant in `lib/kit/fts.ts`: `en→english, de→german, fr→french, es→spanish, it→italian, pt→portuguese, nl→dutch, tr→turkish, ru→russian, sv→swedish, da→danish, no→norwegian, fi→finnish, hu→hungarian, ro→romanian`; any other code → `simple`. `doctor` confirms the configuration exists with `SELECT cfgname FROM pg_ts_config`.
 
@@ -3610,7 +3612,7 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 | Command | Flags | Writes | Result object (`result` in section 34.2) |
 |---|---|---|---|
 | `doctor` | `--no-network` | nothing | `{ checks: { id, ok, detail, fix? }[] }` |
-| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example --source <url-or-path>` | `sourced.config.ts`, `.env.local` (empty provider keys; generated private token per D-113), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
+| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example --source <url-or-path>` | `sourced.config.ts`, `.env.local` (empty provider keys; generated private token per D-113; generated hash salts, local site URL and Node-path local Docker database URL per D-119), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
 | `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
 | `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
 | `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
@@ -3629,6 +3631,8 @@ Title and heading levels (D-107): the title is the PDF Info `Title` when present
 Ingest report (D-109), the `result` of `ingest` with and without `--dry-run`: `{ mode: 'run' | 'dry-run', runId: string | null, corpusVersion: string | null, sources: Array<{ id, revision?: string, documents: { discovered, done, skipped, failed }, chunks: { new, changed, unchanged, deleted }, embeddingTokens, estimatedCostUsd: number | null, boilerplateRemoved, skipped: Array<{ key, reason }>, warnings: number }>, totals: same counters summed, plus estimatedCostUsd (null when any source's price is unknown) }`. A dry run has `runId: null` and `corpusVersion: null` and writes nothing. The human-readable output summarizes the same object; the v1 report lines stay for `pnpm ingest`.
 
 T-58 reserves later-task commands with their flags and result schemas: `doctor`, `init`, `add`, `sources list`, `sources remove`, `inspect`, `ask`, `eval:generate`, `eval:review`, `dev`, `down`, and `deploy:check`. Until their tasks land, they return `INTERNAL_ERROR`, a “not implemented yet” message, and exit 1. Destructive commands still require confirmation first (§34.3). Ingest `--restart` waits for T-59; eval `--compare` waits for T-67. `eval --validate-only` omits `result` and communicates validation through `ok`, the exit code, and progress output.
+
+`init` generates `QUESTION_HASH_SALT` using `crypto.randomBytes(32)` and, for `public-demo`, a separate `IP_HASH_SALT`. It never prints these values or overwrites existing assignments. On the Node path it reads the local database connection settings from `docker-compose.yml`; Docker supplies its internal connection URL. `NEXT_PUBLIC_SITE_URL` uses the launcher port (`SOURCED_PORT`) or 3000. Provider keys remain empty. Before starting a local database container, probe the configured database: a reachable service database needs no Docker command. Connection, container startup and migration failures identify the failed step without exposing connection values. Missing or invalid environment settings name each variable and its fix; missing provider keys exit 2 (D-119).
 
 ### 34.2 JSON envelope (normative, `lib/cli/envelope.ts`)
 
@@ -3864,6 +3868,8 @@ Fails when a skill names a command or flag that `lib/cli` does not define, a res
 | IT-18 | `sources remove` deletes only that source's documents |
 
 ### 39.3 Contract tests (`tests/contract`, Vitest project `contract`)
+
+`pnpm test:contract` runs `tests/contract/**/*.test.ts`, including CLI subprocesses, toolchain/import probes, literal checks and launcher tests. The project uses one fork with file parallelism disabled, a 30-second test timeout for child-process startup and command completion, and a 60-second hook timeout for database setup (not UI waits). Unit timeouts are unchanged. Database-backed contracts live in `tests/contract/database/` and reuse the integration database setup; other contract files do not receive database hooks. Coverage includes all three projects, ordered unit → integration → contract so shared-database suites cannot overlap. CI runs `test:contract` in the existing integration job with its service database, then the combined coverage command.
 
 CT-01 to CT-14: one per command in section 34.1, running the real CLI as a child process against the integration database in mock mode with `--json`, validating stdout against the command's schema and checking the exit code for success and for each documented failure. Contract schemas are snapshot-tested; a schema change without a `schemaVersion` bump fails (NFR-22).
 

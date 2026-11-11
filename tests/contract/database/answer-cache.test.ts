@@ -18,9 +18,9 @@ import { SseEvent } from '@/lib/sse/events';
 import { SUGGESTED } from '@/lib/suggested';
 import { SSE } from '@/lib/config';
 import { sha256Hex } from '@/lib/hash';
-import { requireLocalDatabase } from '../helpers/local-database';
+import { requireLocalDatabase } from '../../helpers/local-database';
 import { mockProvider } from '@/lib/llm/mock';
-import { cacheSuggested } from '../../scripts/cache-suggested';
+import { cacheSuggested } from '../../../scripts/cache-suggested';
 
 const version = { corpusVersion: 'corpus-a', promptVersion: PROMPT_VERSION, chatModel: 'mock' };
 const payload = CachedAnswerPayload.parse({

@@ -12,7 +12,7 @@ import { parseHtml } from '@/lib/ingest/parse-html';
 import { ingestCorpus } from '@/lib/ingest/upsert';
 import { mockProvider } from '@/lib/llm/mock';
 import { GoldenEntry, parseGolden } from '@/lib/eval/golden';
-import { requireLocalDatabase } from '../helpers/local-database';
+import { requireLocalDatabase } from '../../helpers/local-database';
 
 let subset: GoldenEntry[];
 beforeAll(async () => {

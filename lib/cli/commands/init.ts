@@ -75,7 +75,7 @@ export async function runInit(
       description: values.description ?? example?.corpus.description,
       language: values.language ?? example?.corpus.language,
     },
-    sources: [],
+    sources: example?.sources ?? [],
     profile: values.profile ?? 'local',
     models: {
       ...example?.models,

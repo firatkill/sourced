@@ -3,7 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { Square } from 'lucide-react';
 import { askStatus, isInFlight, type AskState } from '@/hooks/useAsk';
-import { ASK_COPY, formatAskCopy } from '@/lib/copy';
+import { ASK_COPY, formatAskCopy, type CorpusCopy } from '@/lib/copy';
 import { SourcesPanel } from './SourcesPanel';
 import { HowAnswered } from './HowAnswered';
 import { NotFound } from './states/NotFound';
@@ -28,7 +28,7 @@ export function Turn({
   onStop,
 }: {
   turn: ChatTurn;
-  copy?: Pick<typeof ASK_COPY, 'notFoundBody' | 'searched'>;
+  copy?: CorpusCopy;
   limits: { ipDaily: number; globalDaily: number };
   selected: string | null;
   onSelect: (label: string) => void;
@@ -56,6 +56,7 @@ export function Turn({
       case 'notFound':
         return (
           <NotFound
+            copy={copy}
             body={copy.notFoundBody}
             passages={meta?.passages ?? []}
             onAnother={onAnother}

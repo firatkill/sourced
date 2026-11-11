@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import { AppError } from '@/lib/errors';
+import { EnvironmentError, getEnv } from '@/lib/env';
 import { RobotsDisallowedError } from '@/lib/ingest/robots';
 import { CliEnvelope, type ExitCode } from './envelope';
 import { commands, helpText } from './registry';
@@ -175,6 +176,16 @@ export async function dispatch(
         ),
         exitCode: 2,
       };
+    if (error instanceof EnvironmentError)
+      return {
+        envelope: failure(
+          command,
+          'CONFIG_INVALID',
+          error.message,
+          error.issues.map((issue) => issue.fix).join(' '),
+        ),
+        exitCode: 2,
+      };
     if (error instanceof AppError) {
       const action = [
         'NEEDS_CONFIRMATION',
@@ -266,6 +277,7 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
         const exitCode = await runEvalValidation(args, context.progress);
         return { exitCode: exitCode === 0 ? 0 : 1 };
       }
+      getEnv();
       const { runEval } = await import('@/lib/eval/run');
       let result: unknown;
       const status = await runEval(args, {

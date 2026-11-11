@@ -5,6 +5,8 @@ import path from 'node:path';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import { parseKitConfig, writeConfigSnapshot } from '@/lib/kit/load-config';
 import { AppError } from '@/lib/errors';
+import { getCliEnvironment } from '@/lib/env';
+import { localDatabaseUrl } from './database';
 
 export const NO_SOURCES = 'No sources configured. Next: sourced add <url or path>';
 export function requireSources(config: KitConfig) {
@@ -82,6 +84,9 @@ export function requiredVariables(config: KitConfig): string[] {
 }
 /** Preserve the original bytes and all existing assignments, including empty ones. */
 export async function initializeEnv(config: KitConfig, root: string) {
+  const env = getCliEnvironment();
+  const port = env.SOURCED_PORT ?? '3000';
+  const database = env.SOURCED_DOCKER === '1' ? undefined : await localDatabaseUrl();
   const target = path.join(root, '.env.local');
   const original = await readOptional(target);
   const assignments = new Map(Object.entries(parseEnv(original)));
@@ -89,7 +94,42 @@ export async function initializeEnv(config: KitConfig, root: string) {
   const additions = names
     .filter((name) => !assignments.has(name))
     .map((name) => {
-      const value = name === 'SOURCED_ACCESS_TOKEN' ? randomBytes(24).toString('base64url') : '';
+      const value =
+        name === 'SOURCED_ACCESS_TOKEN'
+          ? randomBytes(24).toString('base64url')
+          : name === 'QUESTION_HASH_SALT' || name === 'IP_HASH_SALT'
+            ? randomBytes(32).toString('hex')
+            : name === 'NEXT_PUBLIC_SITE_URL'
+              ? `http://localhost:${port}`
+              : name === 'DATABASE_URL'
+                ? (database ?? '')
+                : name === 'CHAT_MODEL'
+                  ? config.models.chat.model
+                  : name === 'DEMO_MODE'
+                    ? 'on'
+                    : name === 'RATE_LIMIT_IP_DAILY' || name === 'RATE_LIMIT_GLOBAL_DAILY'
+                      ? name === 'RATE_LIMIT_IP_DAILY'
+                        ? '10'
+                        : '300'
+                      : name === 'PRICE_CHAT_INPUT_PER_MTOK'
+                        ? String(
+                            config.pricing[
+                              `${config.models.chat.provider}:${config.models.chat.model}`
+                            ]?.inputPerMTok ?? 0,
+                          )
+                        : name === 'PRICE_CHAT_OUTPUT_PER_MTOK'
+                          ? String(
+                              config.pricing[
+                                `${config.models.chat.provider}:${config.models.chat.model}`
+                              ]?.outputPerMTok ?? 0,
+                            )
+                          : name === 'PRICE_EMBED_PER_MTOK'
+                            ? String(
+                                config.pricing[
+                                  `${config.models.embed.provider}:${config.models.embed.model}`
+                                ]?.inputPerMTok ?? 0,
+                              )
+                            : '';
       assignments.set(name, value);
       return `${name}=${value}`;
     });
@@ -100,6 +140,8 @@ export async function initializeEnv(config: KitConfig, root: string) {
       { mode: 0o600 },
     );
   return names.filter(
-    (name) => !assignments.get(name) || ['""', "''"].includes(assignments.get(name) ?? ''),
+    (name) =>
+      !(name === 'DATABASE_URL' && env.SOURCED_DOCKER === '1') &&
+      (!assignments.get(name) || ['""', "''"].includes(assignments.get(name) ?? '')),
   );
 }

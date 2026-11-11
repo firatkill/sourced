@@ -35,8 +35,10 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > ask What 
     "command": "ask",
     "error": {
       "code": "CONFIG_INVALID",
-      "fix": "Edit .env.local using the variable names in .env.example, then retry.",
-      "message": "Required environment settings are missing or invalid.",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -123,8 +125,9 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > dev --por
     "command": "dev",
     "error": {
       "code": "CONFIG_INVALID",
-      "fix": "Edit .env.local using the variable names in .env.example, then retry.",
-      "message": "Required environment settings are missing or invalid.",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -241,9 +244,11 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval --no
   "envelope": {
     "command": "eval",
     "error": {
-      "code": "NEEDS_CONFIRMATION",
-      "fix": "pnpm sourced eval --validate-only",
-      "message": "The command needs configuration or confirmation before it can continue.",
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -293,8 +298,10 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > ingest --
     "command": "ingest",
     "error": {
       "code": "CONFIG_INVALID",
-      "fix": "Edit .env.local using the variable names in .env.example, then retry.",
-      "message": "Required environment settings are missing or invalid.",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
     },
     "ok": false,
     "schemaVersion": 1,

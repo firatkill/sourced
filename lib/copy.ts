@@ -1,13 +1,25 @@
 import type { CorpusCopy } from '@/lib/kit/copy';
 
-// Only rendered public copy crosses the client boundary; no server config or models.
-declare const SOURCED_CORPUS_COPY: CorpusCopy;
-export const CORPUS_COPY: CorpusCopy =
-  typeof SOURCED_CORPUS_COPY !== 'undefined'
-    ? SOURCED_CORPUS_COPY
-    : (JSON.parse(
-        process.getBuiltinModule('fs').readFileSync('.sourced/copy.json', 'utf8'),
-      ) as CorpusCopy);
+import { getCopy } from '@/lib/kit/copy';
+export type { CorpusCopy } from '@/lib/kit/copy';
+
+// Generic fallbacks only. The server passes the mounted corpus's rendered copy as props.
+export const CORPUS_COPY: CorpusCopy = getCopy({
+  corpus: {
+    name: 'documents',
+    title: 'your documents',
+    description: 'your documents',
+    language: 'en',
+    linkLabel: 'Read the source',
+  },
+  copy: { suggested: [] },
+  overrides: { retrieval: {} },
+});
+export const CONFIGURATION_COPY = {
+  heading: 'Sourced needs configuration',
+  body: 'Fix the settings below in .env.local, then restart Sourced.',
+  snapshot: 'Check sourced.config.ts and run ./sourced config:snapshot, then restart Sourced.',
+};
 
 // Corpus-specific UI copy (PRD §9.2–9.3, FR-74).
 export const ASK_COPY = {

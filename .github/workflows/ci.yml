@@ -95,6 +95,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:migrate
+      - run: pnpm test:contract
       - run: pnpm test:coverage
       - uses: actions/upload-artifact@v7
         if: always()
@@ -159,3 +160,50 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+
+  docker:
+    name: Docker-only smoke (mock provider)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      COMPOSE_PROJECT_NAME: sourced-docker-ci
+    steps:
+      - uses: actions/checkout@v7
+      - name: Configure image user
+        run: echo "SOURCED_UID=$(id -u)" >> "$GITHUB_ENV"
+      - run: docker compose build app cli
+      - run: docker compose up -d --wait db
+      - run: ./sourced init --example --profile local --yes --json
+      - name: Require actionable missing-key error
+        run: |
+          set +e
+          ./sourced ingest --offline --yes --json > /tmp/sourced-missing.json
+          status=$?
+          set -e
+          test "$status" -eq 2
+          jq -e '.error.code == "CONFIG_INVALID" and (.error.message | contains("OPENAI_API_KEY"))' /tmp/sourced-missing.json
+      - run: printf '\nLLM_MODE=mock\n' >> .env.local
+      - run: ./sourced ingest --offline --yes --json
+      - run: ./sourced dev
+      - run: curl --fail http://localhost:3000/api/health
+      - name: Require runtime corpus copy
+        run: curl --fail http://localhost:3000/ | grep -F 'Ask the PostgreSQL docs.'
+      - name: Require a cited answer
+        run: |
+          ./sourced ask "When should I use a partial index?" --json > /tmp/sourced-answer.json
+          jq -e '.ok == true and .result.outcome == "answered" and (.result.citations | length > 0)' /tmp/sourced-answer.json
+      - name: Change runtime copy without rebuilding
+        run: |
+          before=$(docker compose images -q app)
+          sed -i 's/Ask the PostgreSQL docs./Ask the runtime docs./' sourced.config.ts
+          docker compose run --rm -T cli config:snapshot --json
+          docker compose restart app
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:3000/ > /tmp/sourced-page.html && grep -qF 'Ask the runtime docs.' /tmp/sourced-page.html; then break; fi
+            sleep 1
+          done
+          grep -qF 'Ask the runtime docs.' /tmp/sourced-page.html
+          test "$before" = "$(docker compose images -q app)"
+      - name: Stop without deleting data
+        if: always()
+        run: ./sourced down

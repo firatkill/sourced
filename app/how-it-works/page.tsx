@@ -1,4 +1,5 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { readAppConfiguration } from '@/lib/kit/app-configuration';
+import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import type { Metadata } from 'next';
 import { PipelineDiagram } from '@/components/how/PipelineDiagram';
 import { CHUNKING, GENERATION, RETRIEVAL } from '@/lib/config';
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default function HowItWorks() {
+  const configuration = readAppConfiguration();
+  if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
+  const CORPUS_COPY = configuration.copy;
   return (
     <article>
       <h1>What happens when you ask</h1>

@@ -1,4 +1,4 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { getRuntimeCopy } from '@/lib/kit/copy-server';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import { getCopy } from '@/lib/kit/copy';
 import { getKitConfig } from '@/lib/kit/runtime-config';
@@ -7,7 +7,7 @@ import { sanitize, sanitizeQuestion, sourceLabel } from './sanitize';
 import type { SourcePassage } from './sanitize';
 
 export function renderAnswerSystemPrompt(config?: KitConfig): string {
-  const copy = config ? getCopy(config) : CORPUS_COPY;
+  const copy = config ? getCopy(config) : getRuntimeCopy();
   return `You are Sourced, an assistant that answers questions about ${copy.promptSubject} using only the numbered documentation passages provided in the user message.
 
 Rules:

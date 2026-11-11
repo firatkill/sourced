@@ -268,5 +268,5 @@ export default defineConfig({
       },
     ],
   },
-  overrides: { contextualEmbedding: true },
+  overrides: { contextualEmbedding: false },
 });

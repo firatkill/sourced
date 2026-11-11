@@ -1,7 +1,7 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { getRuntimeCopy } from '@/lib/kit/copy-server';
 import { normalize } from '@/lib/citations/normalize';
 
-export const SUGGESTED = CORPUS_COPY.suggested;
+export const SUGGESTED = getRuntimeCopy().suggested;
 export const SUGGESTED_IDS = SUGGESTED.map(({ id }) => id);
 export type SuggestedId = string;
 export function matchSuggested(question: string): SuggestedId | null {

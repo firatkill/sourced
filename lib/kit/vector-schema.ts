@@ -87,6 +87,11 @@ export async function ensureCorpusSchema(
       await tx`TRUNCATE chunks, documents CASCADE`;
       await tx`DELETE FROM corpus_meta`;
     }
+    // D-120: init may reserve a model before the first ingest. Nothing indexed
+    // means there is no embedding data to protect; retain documents and reconfigure.
+    const configured = corpusSchema(config);
+    await tx`DELETE FROM corpus_meta WHERE retrieval_hash <> ${configured.retrieval_hash}
+      AND NOT EXISTS (SELECT 1 FROM chunks)`;
     const state = await checkCorpusSchema(tx, config);
     if (state.initialized) return state.schema;
     const schema = state.schema;

@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import type { NextConfig } from 'next';
 
 type BuildConfig = { plugins?: unknown[] };
@@ -17,7 +16,6 @@ const nextConfig: NextConfig = {
     config.plugins.push(
       new compiler.DefinePlugin({
         SOURCED_NODE_RUNTIME: JSON.stringify(nextRuntime === 'nodejs'),
-        SOURCED_CORPUS_COPY: JSON.stringify(JSON.parse(readFileSync('.sourced/copy.json', 'utf8'))),
       }),
     );
     if (!isServer) {

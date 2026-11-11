@@ -237,3 +237,59 @@ test('FR-78 / FR-77: human diagnostics include every failing check and its fix',
   expect(result).toContain('Fix: Set OPENAI_API_KEY in .env.local.');
   expect(result.trim().split('\n').at(-1)).toBe('Next: Set OPENAI_API_KEY in .env.local.');
 });
+
+test('FR-79 / D-117: init --example retains the complete example, requires --yes to overwrite', async () => {
+  const { loadConfig } = await import('@/lib/kit/load-config');
+  const { repositoryRoot } = await import('@/lib/cli/commands/database');
+  const example = await loadConfig(repositoryRoot, { writeSnapshot: false });
+  const dir = await temporary();
+  await writeFile(path.join(dir, 'sourced.config.ts'), 'export default {};\n');
+  const cwd = vi.spyOn(process, 'cwd').mockReturnValue(dir);
+  const database = vi.fn().mockResolvedValue('running');
+  try {
+    await expect(
+      runInit(
+        parseInvocation(['init', '--example', '--profile', 'local', '--json']),
+        { isTTY: false, progress: vi.fn() },
+        { database },
+      ),
+    ).rejects.toMatchObject({ code: 'NEEDS_CONFIRMATION' });
+    expect(database).not.toHaveBeenCalled();
+    await runInit(
+      parseInvocation(['init', '--example', '--profile', 'local', '--yes', '--json']),
+      { isTTY: false, progress: vi.fn() },
+      { database },
+    );
+    expect(await loadConfig(dir, { writeSnapshot: false })).toEqual({
+      ...example,
+      profile: 'local',
+    });
+    expect(example.sources.length).toBeGreaterThan(0);
+  } finally {
+    cwd.mockRestore();
+  }
+});
+
+test('D-119: init supplies local settings and separate random salts, preserving every assignment', async () => {
+  const dir = await temporary();
+  vi.stubEnv('SOURCED_PORT', '3188');
+  vi.stubEnv('SOURCED_DOCKER', '');
+  const c = { ...config(), profile: 'public-demo' as const };
+  expect(await initializeEnv(c, dir)).toEqual(['OPENAI_API_KEY']);
+  const first = await readFile(path.join(dir, '.env.local'), 'utf8');
+  const { parseEnv } = await import('node:util');
+  const values = parseEnv(first);
+  expect(values.QUESTION_HASH_SALT).toMatch(/^[a-f0-9]{64}$/);
+  expect(values.IP_HASH_SALT).toMatch(/^[a-f0-9]{64}$/);
+  expect(values.QUESTION_HASH_SALT).not.toBe(values.IP_HASH_SALT);
+  expect(values.NEXT_PUBLIC_SITE_URL).toBe('http://localhost:3188');
+  expect(new URL(values.DATABASE_URL ?? '').port).toBe('5433');
+  expect(values.OPENAI_API_KEY).toBe('');
+  await initializeEnv(c, dir);
+  expect(await readFile(path.join(dir, '.env.local'), 'utf8')).toBe(first);
+  const other = await temporary();
+  await initializeEnv(c, other);
+  expect(
+    parseEnv(await readFile(path.join(other, '.env.local'), 'utf8')).QUESTION_HASH_SALT,
+  ).not.toBe(values.QUESTION_HASH_SALT);
+});

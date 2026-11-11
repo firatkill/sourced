@@ -1,0 +1,78 @@
+#!/bin/sh
+set -eu
+cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+command=${1:-help}
+if [ ! -f .env.local ]; then
+  case "$command" in
+    init|doctor) ;;
+    *) printf '%s\n' 'Run ./sourced init first.' >&2; exit 2 ;;
+  esac
+fi
+if ! command -v docker >/dev/null 2>&1; then
+  case "$(uname -s)" in
+    Darwin) link=https://docs.docker.com/desktop/setup/install/mac-install/ ;;
+    *) link=https://docs.docker.com/engine/install/ ;;
+  esac
+  printf 'Install Docker: %s\n' "$link" >&2
+  exit 2
+fi
+[ -f .env.local ] || (umask 077; touch .env.local)
+SOURCED_UID=$(id -u)
+export SOURCED_UID
+case "$command" in
+  down) exec docker compose down ;;
+  dev)
+    shift
+    json=false
+    SOURCED_PORT=${SOURCED_PORT:-3000}
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --json) json=true ;;
+        --port) shift; SOURCED_PORT=${1:-} ;;
+        *) printf '%s\n' 'Usage: ./sourced dev [--port <port>] [--json]' >&2; exit 2 ;;
+      esac
+      [ "$#" -eq 0 ] || shift
+    done
+    case "$SOURCED_PORT" in
+      ''|*[!0-9]*) printf '%s\n' 'Port must be an integer from 1 to 65535.' >&2; exit 2 ;;
+    esac
+    if [ "$SOURCED_PORT" -lt 1 ] || [ "$SOURCED_PORT" -gt 65535 ]; then
+      printf '%s\n' 'Port must be an integer from 1 to 65535.' >&2
+      exit 2
+    fi
+    export SOURCED_PORT
+    docker compose up -d --build --force-recreate app >&2
+    # Use Node inside the image: the Docker-only host needs neither Node nor curl.
+    docker compose exec -T app node --input-type=module -e '
+      for (let attempt = 0; attempt < 60; attempt++) {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/api/health", { signal: AbortSignal.timeout(1000) });
+          if (response.ok) process.exit(0);
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      process.exit(1);
+    '
+    if [ "$json" = true ]; then
+      printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s"},"warnings":[]}\n' "$SOURCED_PORT"
+    else
+      printf 'http://localhost:%s\n' "$SOURCED_PORT"
+    fi
+    exit 0
+    ;;
+  init) printf '%s\n' 'Building the image on first run takes a few minutes.' >&2 ;;
+esac
+docker compose build cli >&2
+# Prepend each argument without eval so spaces and shell metacharacters stay literal.
+set -- cli "$@"
+if [ -f .sourced/mounts ]; then
+  while IFS= read -r mount || [ -n "$mount" ]; do
+    [ -n "$mount" ] || continue
+    set -- -v "$mount:$mount:ro" "$@"
+  done < .sourced/mounts
+fi
+if [ -t 0 ]; then
+  exec docker compose run --rm "$@"
+else
+  exec docker compose run --rm -T "$@"
+fi

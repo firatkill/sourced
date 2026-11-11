@@ -14,3 +14,7 @@ export async function getPageCopy() {
   const row = z.object({ documents_total: z.number().int().nonnegative() }).parse(rows[0]);
   return getCopy(config, row.documents_total);
 }
+
+export function getRuntimeCopy() {
+  return getCopy(getKitConfig());
+}

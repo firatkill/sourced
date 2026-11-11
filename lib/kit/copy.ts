@@ -2,7 +2,12 @@ import { RETRIEVAL } from '@/lib/config';
 import type { KitConfig } from './config-schema';
 
 /** Pure renderer shared by the snapshot writer and server-side prompt builders (UT-33). */
-export function getCopy(config: KitConfig, documentCount: number | string = '{documentCount}') {
+export function getCopy(
+  config: Pick<KitConfig, 'corpus' | 'copy'> & {
+    overrides: Pick<KitConfig['overrides'], 'retrieval'>;
+  },
+  documentCount: number | string = '{documentCount}',
+) {
   const { corpus, copy } = config;
   const promptSubject = copy.promptSubject ?? corpus.title;
   const rerankSubject = copy.rerankSubject ?? promptSubject;

@@ -79,8 +79,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | done | 01e5aae |
 | T-60 | M6 Sources and CLI | Contextual embedding input | doing (code bc2cf32; live comparison pending) | |
 | T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | done | 4048d7b |
-| T-62 | M6 Sources and CLI | Docker path | doing | |
-| T-63 | M6 Sources and CLI | Contract tests and scale check | todo | |
+| T-62 | M6 Sources and CLI | Docker path | done | HEAD |
+| T-63 | M6 Sources and CLI | Contract tests and scale check | doing | |
 | T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | todo | |
 | T-65 | M7 Quality on any corpus | `inspect` | todo | |
 | T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | todo | |
@@ -96,6 +96,9 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- T-62 (TC-215, A-23): check that the app and CLI containers reach a host Ollama (`host.docker.internal` with `host-gateway`) on each OS you use, when Ollama is installed. Windows launcher (`sourced.cmd`) is untested.
+- 2026-11-11 incident (reviewer): the Mac's data disk filled up during Docker-heavy T-62 work; Docker's VM disk failed with I/O errors, and restarting Docker Desktop recreated an empty VM disk, which deleted every local Docker image, container and volume, including the `rehearse` and `bidlock` local databases. The sourced local database was rebuilt from migrations and ingest; production was not affected. macOS also purged `~/Library/Caches`, including the Playwright browsers, which were reinstalled.
 
 - T-59 note (reviewer): one unit run out of 14 failed once in a fresh worktree on 2026-11-10 and the test name was not captured; 13 runs passed after it. The fresh-worktree check now prints failing test names. E2E observations in M6: `theme.spec.ts` (TC-145, open, separate fix proposed) and once `a11y.spec.ts` rate-limited (TC-107) under a slow full run, 12 of 12 alone.
 

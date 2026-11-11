@@ -1,4 +1,4 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { CORPUS_COPY } from '../helpers/runtime-copy';
 import { describe, expect, it, vi } from 'vitest';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { parseBlock, parseMarkers, removeMarkers } from '@/lib/citations/parse';

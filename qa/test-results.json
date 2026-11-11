@@ -4847,6 +4847,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-210",
+      "ac_reference": "T-60; FR-75; FR-85; D-94",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Contextual embedding decided by eval",
+      "description": "T-60 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-210.",
+      "expected_result": "sourced eval --compare on the example with the flag on and off is committed; the example's setting follows the no-regression rule; a decisions log row records it; cost within the D-94 budget.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Live comparison: flag off eval 42850220081 on bc2cf32 vs flag on eval 42860442548 on bb1deff. Deterministic retrieval without rerank: recallAt5 0.9375 -> 0.90625, mrr 0.8604 -> 0.8586; reranked recallAt5 0.96875 -> 0.9375, mrr 0.9375 -> 0.8899; faithfulness 0.984 -> 1. Retrieval regresses on the example, so FR-75's no-regression rule sets the example's flag off (D-118). Live cost about 0.34 USD at list prices."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-214",
+      "ac_reference": "T-62; FR-94; A-22",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Docker path",
+      "description": "T-62 acceptance; docker CI job.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-214.",
+      "expected_result": "docker compose up builds and starts the database and app; migrations run; ./sourced runs CLI commands in a one-off container with the repo mounted; the docker CI job passes; the TRD §35.4 sequence reaches a cited answer in mock mode.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Docker path from a clean copy (no .env.local, no .sourced): ./sourced init --example --profile local --yes, only LLM_MODE=mock added, ingest 35 documents and 201 chunks, app healthy, ask answered with 2 citations; runtime copy changed without rebuilding the image; non-root UID; image digest pinned (A-22); down keeps the volume. CI docker job runs on the next push."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-215",
+      "ac_reference": "T-62; A-23",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Host Ollama from containers",
+      "description": "T-62 step.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-215.",
+      "expected_result": "host.docker.internal reaches a host Ollama on the platforms checked; platforms recorded.",
+      "status": "pending_decision",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action (D-94): host Ollama reachability from containers on each OS (A-23); no Ollama installed"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

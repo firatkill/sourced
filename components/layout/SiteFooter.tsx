@@ -1,7 +1,7 @@
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import Link from 'next/link';
 
-export function SiteFooter() {
+export function SiteFooter({ copy = ASK_COPY }: { copy?: CorpusCopy }) {
   return (
     <footer className="site-footer small">
       <div className="shell">
@@ -9,13 +9,13 @@ export function SiteFooter() {
           Built by Fırat Kıl · <a href="https://firatkil.com">firatkil.com</a> ·{' '}
           <a href="https://github.com/firatkill/sourced">Source on GitHub (MIT)</a>
         </p>
-        {(ASK_COPY.attribution || ASK_COPY.license) && (
+        {(copy.attribution || copy.license) && (
           <p>
-            {ASK_COPY.attribution}
-            {ASK_COPY.license && (
+            {copy.attribution}
+            {copy.license && (
               <>
-                {ASK_COPY.attribution ? ' ' : ''}
-                <a href={ASK_COPY.license.url}>{ASK_COPY.license.name}</a>.
+                {copy.attribution ? ' ' : ''}
+                <a href={copy.license.url}>{copy.license.name}</a>.
               </>
             )}
           </p>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 import type { SseEvent } from '@/lib/sse/events';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
 import { PassageCard } from './PassageCard';
@@ -17,12 +17,14 @@ function subscribe(callback: () => void) {
   };
 }
 export function SourceViewer({
+  copy = ASK_COPY,
   passages,
   citations,
   label,
   onSelect,
   onClose,
 }: {
+  copy?: Pick<CorpusCopy, 'viewerLink'>;
   passages: Meta['passages'];
   citations: Citations;
   label: string;
@@ -98,9 +100,9 @@ export function SourceViewer({
             href={passage.officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${ASK_COPY.viewerLink} (opens in a new tab)`}
+            aria-label={`${copy.viewerLink} (opens in a new tab)`}
           >
-            {ASK_COPY.viewerLink}
+            {copy.viewerLink}
             <ChatIcon name="external" />
           </a>
         )}

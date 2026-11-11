@@ -1,12 +1,13 @@
 'use client';
 
 import type { Ref } from 'react';
-import { ASK_COPY, formatAskCopy } from '@/lib/copy';
+import { ASK_COPY, formatAskCopy, type CorpusCopy } from '@/lib/copy';
 import { QUESTION } from '@/lib/config';
 import { ChatIcon } from './ChatIcon';
 import { Textarea } from '@/components/ui/textarea';
 
 type AskFormProps = {
+  copy?: Pick<CorpusCopy, 'placeholder' | 'nextPlaceholder'>;
   question: string;
   onChange: (question: string) => void;
   onSubmit: () => void;
@@ -19,6 +20,7 @@ type AskFormProps = {
 };
 
 export function AskForm({
+  copy = ASK_COPY,
   question,
   onChange,
   onSubmit,
@@ -49,8 +51,8 @@ export function AskForm({
             disabled
               ? ASK_COPY.readonlyPlaceholder
               : hasTurns
-                ? ASK_COPY.nextPlaceholder
-                : ASK_COPY.placeholder
+                ? copy.nextPlaceholder
+                : copy.placeholder
           }
           rows={2}
           value={question}

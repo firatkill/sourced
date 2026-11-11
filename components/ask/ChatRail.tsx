@@ -3,12 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
 
-type Props = { turns: { id: number; question: string }[]; busy: boolean; onNew: () => void };
-export function ChatRail({ turns, busy, onNew }: Props) {
+type Props = {
+  copy?: CorpusCopy;
+  turns: { id: number; question: string }[];
+  busy: boolean;
+  onNew: () => void;
+};
+export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
   const [selection, setSelection] = useState<{ id: number; count: number } | null>(null);
   const currentId = selection?.count === turns.length ? selection.id : turns.at(-1)?.id;
   const [open, setOpen] = useState(false);
@@ -46,7 +51,7 @@ export function ChatRail({ turns, busy, onNew }: Props) {
           <span>
             Sourced
             <span className="block text-xs font-normal text-[var(--ink-3)]">
-              {ASK_COPY.railSubtitle}
+              {copy.railSubtitle}
             </span>
           </span>
         </Link>
@@ -127,13 +132,13 @@ export function ChatRail({ turns, busy, onNew }: Props) {
           Built by Fırat Kıl · <a href="https://firatkil.com">firatkil.com</a> ·{' '}
           <a href="https://github.com/firatkill/sourced">Source on GitHub (MIT)</a>
         </p>
-        {(ASK_COPY.attribution || ASK_COPY.license) && (
+        {(copy.attribution || copy.license) && (
           <p>
-            {ASK_COPY.attribution}
-            {ASK_COPY.license && (
+            {copy.attribution}
+            {copy.license && (
               <>
-                {ASK_COPY.attribution ? ' ' : ''}
-                <a href={ASK_COPY.license.url}>{ASK_COPY.license.name}</a>.
+                {copy.attribution ? ' ' : ''}
+                <a href={copy.license.url}>{copy.license.name}</a>.
               </>
             )}
           </p>

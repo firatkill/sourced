@@ -1,4 +1,4 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { CORPUS_COPY } from '../helpers/runtime-copy';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { GENERATION } from '@/lib/config';

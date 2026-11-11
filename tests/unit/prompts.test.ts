@@ -1,4 +1,4 @@
-import { CORPUS_COPY } from '@/lib/copy';
+import { CORPUS_COPY } from '../helpers/runtime-copy';
 import { expect, test } from 'vitest';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { encode, decode } from '@/lib/ingest/tokenizer';

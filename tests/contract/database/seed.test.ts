@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { expect, test } from 'vitest';
 import { getSql } from '@/lib/db/client';
 import { EMBEDDING } from '@/lib/config';
-import { requireLocalDatabase } from '../helpers/local-database';
+import { requireLocalDatabase } from '../../helpers/local-database';
 
 test('TC-052: T-16 offline mock seed produces more than 200 chunks, excludes fixtures and reports exact totals', async () => {
   const databaseUrl = requireLocalDatabase(process.env.TEST_DATABASE_URL);

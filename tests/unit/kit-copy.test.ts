@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import example from '@/sourced.config';
 import { getCopy } from '@/lib/kit/copy';
 import { KitConfigSchema } from '@/lib/kit/config-schema';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY } from '../helpers/runtime-copy';
 import { renderAnswerSystemPrompt } from '@/lib/prompts/system';
 import { renderRerankSystemPrompt } from '@/lib/prompts/rerank';
 import { getPageCopy } from '@/lib/kit/copy-server';

@@ -8,7 +8,7 @@ import { expect, test } from 'vitest';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { CliEnvelope } from '@/lib/cli/envelope';
 import { IngestResult } from '@/lib/cli/schemas/ingest';
-import { requireLocalDatabase } from '../helpers/local-database';
+import { requireLocalDatabase } from '../../helpers/local-database';
 const execute = promisify(execFile);
 async function timestamps(root: string): Promise<Record<string, number>> {
   const result: Record<string, number> = {};

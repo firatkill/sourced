@@ -1,25 +1,29 @@
 import { getPageCopy } from '@/lib/kit/copy-server';
 import type { Metadata } from 'next';
 import { AskApp } from '@/components/ask/AskApp';
-import { ASK_COPY } from '@/lib/copy';
-import { getEnv } from '@/lib/env';
+import { CONFIGURATION_COPY } from '@/lib/copy';
+import { ConfigurationError } from '@/components/layout/ConfigurationError';
+import { readAppConfiguration } from '@/lib/kit/app-configuration';
 import { isPublicDemo } from '@/lib/kit/profile';
-import { SUGGESTED } from '@/lib/suggested';
 
-export const metadata: Metadata = {
-  title: ASK_COPY.documentTitle,
-  description: ASK_COPY.lead,
-};
+export function generateMetadata(): Metadata {
+  const configuration = readAppConfiguration();
+  return configuration.ok
+    ? { title: configuration.copy.documentTitle, description: configuration.copy.lead }
+    : { title: CONFIGURATION_COPY.heading };
+}
 
 export default async function Home() {
+  const configuration = readAppConfiguration();
+  if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
   const copy = await getPageCopy();
-  const env = getEnv();
+  const { env } = configuration;
   return (
     <AskApp
       demoMode={isPublicDemo() ? env.DEMO_MODE : 'on'}
       publicDemo={isPublicDemo()}
       limits={{ ipDaily: env.RATE_LIMIT_IP_DAILY, globalDaily: env.RATE_LIMIT_GLOBAL_DAILY }}
-      suggested={SUGGESTED}
+      suggested={copy.suggested}
       copy={copy}
     />
   );

@@ -7,7 +7,7 @@ import { HowAnswered } from '@/components/ask/HowAnswered';
 import { rateLimitCopy } from '@/components/ask/states/RateLimited';
 import { useAsk, isInFlight, askStatus, type Phase } from '@/hooks/useAsk';
 import { meta, citations, done, passage } from '../fixtures/sse-streams';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY } from '../helpers/runtime-copy';
 
 vi.mock('@/hooks/useAsk', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useAsk')>()),

@@ -11,7 +11,7 @@ import { commandSchemas } from '@/lib/cli/schemas/commands';
 import { parseInvocation } from '@/lib/cli/router';
 import { getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
 import { getSql } from '@/lib/db/client';
-import { requireLocalDatabase } from '../helpers/local-database';
+import { requireLocalDatabase } from '../../helpers/local-database';
 import { createSseParser } from '@/lib/sse/parse';
 import { SseEvent } from '@/lib/sse/events';
 import { POST } from '@/app/api/ask/route';
@@ -104,7 +104,8 @@ test('CT draft init / FR-79, D-113–114: flags-only, dimensions, token preserva
     '--profile',
     'private',
   ];
-  const first = await cli(flags);
+  // A reachable CI service database must not require Docker on PATH (D-119).
+  const first = await cli(flags, 0, { PATH: '/nonexistent' });
   expect(commandSchemas.init.parse(first.result).database).toBe('running');
   const before = await readFile(join(dir, '.env.local'), 'utf8');
   expect(before).toMatch(/SOURCED_ACCESS_TOKEN=[A-Za-z0-9_-]{32}\n/);
@@ -121,6 +122,18 @@ test('CT draft init / FR-79, D-113–114: flags-only, dimensions, token preserva
   ).toEqual([]);
   await cli(['ask', 'What is a transaction?'], 2);
   await cli(['ingest', '--offline'], 2);
+});
+test('CT draft init / D-117: example sources survive initialization and replacement requires --yes', async () => {
+  const { cli } = await fixture();
+  expect((await cli(['init', '--example', '--profile', 'local'], 2)).error?.code).toBe(
+    'NEEDS_CONFIRMATION',
+  );
+  await cli(['init', '--example', '--profile', 'local', '--yes']);
+  const sources = commandSchemas['sources list'].parse(
+    (await cli(['sources', 'list'])).result,
+  ).sources;
+  expect(sources.map((source) => source.id)).toEqual(template.sources.map((source) => source.id));
+  expect(sources.length).toBeGreaterThan(0);
 });
 test('CT draft add/sources / IT-18: only selected source documents and chunks removed; last source removable', async () => {
   const { dir, cli } = await fixture();

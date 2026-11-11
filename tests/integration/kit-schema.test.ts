@@ -46,9 +46,16 @@ test.each([
     const before = await sql`SELECT * FROM corpus_meta`;
     await ensureCorpusSchema(sql, config);
     expect(await sql`SELECT * FROM corpus_meta`).toEqual(before);
+    await insertSearchChunks(sql, 'protected', [
+      { content: 'Existing indexed content.', vector: vector(dimensions) },
+    ]);
+    const stored = await sql`SELECT * FROM corpus_meta`;
+    const chunks = await sql`SELECT * FROM chunks`;
     await expect(
       ensureCorpusSchema(sql, configFor(dimensions === 768 ? 3072 : 768)),
     ).rejects.toMatchObject({ code: 'CORPUS_MISMATCH' });
+    expect(await sql`SELECT * FROM corpus_meta`).toEqual(stored);
+    expect(await sql`SELECT * FROM chunks`).toEqual(chunks);
   },
 );
 test('IT-12: rebuild requires explicit confirmation and replaces the schema', async () => {
@@ -157,4 +164,19 @@ test('A-18: installed HNSW enforces vector 2000 and halfvec 4000 limits', async 
     await tx`CREATE TEMP TABLE halfvec_supported (embedding halfvec(4000)) ON COMMIT DROP`;
     await tx`CREATE INDEX ON halfvec_supported USING hnsw (embedding halfvec_cosine_ops)`;
   });
+});
+
+test('IT-12 / D-120: empty initialized corpus adopts new provider, dimensions and language without rebuild', async () => {
+  const initial = configFor(1536);
+  initial.models.embed = { provider: 'openai', model: 'text-embedding-3-small', dimensions: 1536 };
+  await ensureCorpusSchema(sql, initial);
+  const next = configFor(768, 'tr');
+  await ensureCorpusSchema(sql, next);
+  expect((await checkCorpusSchema(sql, next)).schema).toEqual(corpusSchema(next));
+  const [column] = await sql<
+    { type: string }[]
+  >`SELECT format_type(atttypid,atttypmod) AS type FROM pg_attribute WHERE attrelid='chunks'::regclass AND attname='embedding'`;
+  expect(column?.type).toBe('vector(768)');
+  expect(await sql`SELECT * FROM chunks`).toHaveLength(0);
+  expect(await sql`SELECT * FROM corpus_meta`).toHaveLength(1);
 });

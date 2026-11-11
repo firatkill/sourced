@@ -2,6 +2,8 @@
 declare const SOURCED_NODE_RUNTIME: boolean;
 export async function register() {
   if (SOURCED_NODE_RUNTIME) {
+    const { readAppConfiguration } = await import('./lib/kit/app-configuration');
+    if (!readAppConfiguration().ok) return;
     const { getKitConfig } = await import('./lib/kit/runtime-config');
     const { getSql } = await import('./lib/db/client');
     const { checkAppCorpusSchema } = await import('./lib/kit/vector-schema');
