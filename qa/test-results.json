@@ -5116,12 +5116,16 @@
       "description": "T-66 acceptance.",
       "steps_to_reproduce": "See qa/test-cases.md TC-225.",
       "expected_result": "One live eval:generate run on the MongoDB example produces candidates the owner reviews; cost recorded within the approved amount.",
-      "status": "pending_decision",
+      "status": "resolved",
       "environment": "local",
       "attempts": [
         {
           "result": "pending",
           "note": "Owner action: approve live eval:generate on the MongoDB example and review the candidates"
+        },
+        {
+          "result": "pass",
+          "note": "Live eval:generate on the MongoDB example (after the D-128 slug fix): 53 candidates for 0.0087 USD; review delegated by the owner (D-127); decisions and reasons in eval/mongodb-manual/review-notes.md"
         }
       ],
       "regression_of": null,
@@ -5143,6 +5147,27 @@
         {
           "result": "pass",
           "note": "GoldenEntry uses group and origin with the wider anchors; example golden set validates under its v1 profile (40 entries, 320 field values unchanged apart from chapter to group); kit profile per TRD §36.1; shared injections merged at load with question-borne-only reporting (D-126); likelyCause from the §36.5 table, null when unmapped; --compare exits 1 on regression; /eval E2E passed (118)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-227",
+      "ac_reference": "T-68; PRD §11",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Quality check on the MongoDB example",
+      "description": "T-68 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-227.",
+      "expected_result": "A reviewed golden set of at least 30 questions for the MongoDB example; sourced eval meets the default floors or the gaps and fixes are recorded for the owner's decision; results in eval/mongodb/results/ with no corpus data.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Reviewed MongoDB golden set (26 answerable, 4 unanswerable, plus 4 shared injections); live eval met every default floor: recallAt5 0.903, mrr 0.931, citationValidity 1, faithfulness 1 (judge = chat model, may be optimistic), correctRefusal 1, injection 1 question-borne only, cost 0.026 USD; eval/mongodb-manual/results/2026-11-11.md, no corpus data committed"
         }
       ],
       "regression_of": null,

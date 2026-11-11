@@ -83,9 +83,9 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-63 | M6 Sources and CLI | Contract tests and scale check | done | 704c357 |
 | T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | done | 2356098 |
 | T-65 | M7 Quality on any corpus | `inspect` | done | 26b41aa |
-| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | doing (code HEAD; live run pending owner) | |
+| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | done | 64bfa5d |
 | T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | done | 73d65e5 |
-| T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | todo | |
+| T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | done | HEAD |
 | T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | todo | |
 | T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | todo | |
 | T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | todo | |
@@ -96,6 +96,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- M7 follow-ups (reviewer): (1) on the Node path the first CLI command in a fresh folder fails with CHAT_MODEL/PRICE_* errors because the config snapshot does not exist yet (the Docker path is unaffected); (2) `sourced eval` fails outside a git repository with a generic error because it records the commit; it should record no commit instead. Both found in T-68.
 
 - T-63 (reviewer): NFR-21 search p95 is not yet established. Broad full-text queries rank every match before `LIMIT 40`; the worst-case profile (terms in tens of thousands of chunks) has p95 1.15 s, mostly in FTS. A retrieval change to cap or pre-filter FTS ranking needs an eval run and a decision; options are in `qa/t63-bench.md`. On 2026-11-11 this repository's `node_modules` was deleted by a process outside this session (another project's `node_modules` was being removed at the same time); it was reinstalled from the lockfile.
 
