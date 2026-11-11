@@ -1,6 +1,6 @@
 # Owner decisions
 
-Decided by the owner, Fırat Kıl, on 2026-10-21. These hold for all five projects (Sourced, Bidlock, Rehearse, Outbox, efatura). They are settled: do not ask about them again, and do not change them without the owner's approval (AGENTS.md, checkpoint 2). Where the PRD or TRD says something different, this file wins; tell the owner about the conflict and record it in the PRD decisions log.
+Decided by the owner, Fırat Kıl, on 2026-10-21. These hold for all five projects (Sourced, Bidlock, Rehearse, Outbox, efatura). They are settled: do not ask about them again, and do not change them without the owner's approval (docs/contributing/AGENTS.md, checkpoint 2). Where the PRD or TRD says something different, this file wins; tell the owner about the conflict and record it in the PRD decisions log.
 
 ## Shared standards
 
@@ -30,4 +30,4 @@ Decided by the owner, Fırat Kıl, on 2026-10-21. These hold for all five projec
 
 ## Still needs the owner
 
-Everything not settled above, in particular the items in AGENTS.md "Owner approval checkpoints" 2 to 5: specs that do not hold, creating external resources (including the GitHub repository), new runtime dependencies, and destructive operations. Ask these as one grouped list.
+Everything not settled above, in particular the items in docs/contributing/AGENTS.md "Owner approval checkpoints" 2 to 5: specs that do not hold, creating external resources (including the GitHub repository), new runtime dependencies, and destructive operations. Ask these as one grouped list.

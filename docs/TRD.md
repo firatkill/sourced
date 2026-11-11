@@ -118,7 +118,7 @@ Every file below is created by a task in the implementation plan. Paths are rela
 
 ```text
 sourced/
-├── AGENTS.md                      Rules for AI coding agents (read first)
+├── AGENTS.md                      User-facing kit guidance (section 37.2)
 ├── README.md                      Public README (section 27)
 ├── LICENSE                        MIT, "Copyright (c) <year> Fırat Kıl"
 ├── CHANGELOG.md                   Keep a Changelog format; v1.0.0 entry at release (T-45)
@@ -126,13 +126,13 @@ sourced/
 ├── .gitignore                     node_modules, .next, .env*, !.env.example, coverage, playwright-report, test-results, eval/.cache
 ├── .nvmrc                         "22"
 ├── .prettierrc.json               { "semi": true, "singleQuote": true, "trailingComma": "all", "printWidth": 100, "plugins": ["prettier-plugin-tailwindcss"] }
-├── .prettierignore                corpus/postgres-17/raw, drizzle/meta, pnpm-lock.yaml, eval/postgres-17/results/*.md, docs/*.md, AGENTS.md (spec files stay byte-stable)
+├── .prettierignore                corpus/postgres-17/raw, drizzle/meta, pnpm-lock.yaml, eval/postgres-17/results/*.md, docs/*.md, docs/contributing/AGENTS.md (spec files stay byte-stable)
 ├── package.json                   Scripts in section 3.1; exact versions
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  strict options in section 2; paths "@/*": ["./*"]
 ├── next.config.ts                 outputFileTracingIncludes for eval results; poweredByHeader false
 ├── middleware.ts                  Request id, CSP nonce, security headers (D-52, Next 15)
-├── eslint.config.mjs              Flat config; rules in AGENTS.md
+├── eslint.config.mjs              Flat config; rules in docs/contributing/AGENTS.md
 ├── postcss.config.mjs             @tailwindcss/postcss
 ├── components.json                shadcn config (style "new-york", baseColor "neutral", cssVariables true)
 ├── drizzle.config.ts              schema ./lib/db/schema.ts, out ./drizzle, dialect postgresql, url MIGRATION_DATABASE_URL ?? DATABASE_URL
@@ -3443,7 +3443,7 @@ ALTER TABLE ingest_runs ADD COLUMN config_hash text;
 
 Migration notes:
 
-- Dropping `chunks_content_hash_key` is not additive. It is the one exception to the additive-only rule in AGENTS.md and needs the owner's approval in T-46 (checkpoint 4). Reason: in arbitrary corpora the same chunk text (a shared disclaimer, a repeated code sample) appears in several documents; with a global unique key the second document's upsert silently re-parents the chunk (`ON CONFLICT (content_hash)` in `lib/ingest/upsert.ts`). The upsert's conflict target changes to `(document_id, content_hash)` in the same task.
+- Dropping `chunks_content_hash_key` is not additive. It is the one exception to the additive-only rule in docs/contributing/AGENTS.md and needs the owner's approval in T-46 (checkpoint 4). Reason: in arbitrary corpora the same chunk text (a shared disclaimer, a repeated code sample) appears in several documents; with a global unique key the second document's upsert silently re-parents the chunk (`ON CONFLICT (content_hash)` in `lib/ingest/upsert.ts`). The upsert's conflict target changes to `(document_id, content_hash)` in the same task.
 - `documents.slug` keeps its unique constraint; v2 writes `slug = document_key` (section 32.1). The v1 regex check on slugs lives in the manifest schema, not the database, and is replaced by `SourceSchema`.
 
 ### 30.2 Embedding column and full-text column (`lib/kit/vector-schema.ts`)
@@ -3498,7 +3498,7 @@ Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
 | `lib/llm/ollama.ts` | AI SDK community Ollama provider, or Ollama's OpenAI-compatible endpoint through `@ai-sdk/openai-compatible` (decided by A-19) | `OLLAMA_BASE_URL` (default `http://localhost:11434`; `http://host.docker.internal:11434` on the Docker path) | No key. Pricing 0. Structured output through JSON mode with Zod validation; if the model cannot produce valid JSON for rerank, the rerank fallback applies as in v1. |
 | `lib/llm/mock.ts` | — | — | Dimensions from config (feature hashing into `n` dimensions). |
 
-Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR` / `PROVIDER_TIMEOUT` exactly as TRD §13.0 describes for OpenAI. Each new runtime package needs the owner's approval in its task (AGENTS.md checkpoint 5).
+Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR` / `PROVIDER_TIMEOUT` exactly as TRD §13.0 describes for OpenAI. Each new runtime package needs the owner's approval in its task (docs/contributing/AGENTS.md checkpoint 5).
 
 ### 31.3 Capability flags
 
@@ -3936,7 +3936,7 @@ The PRD section 11 checks (any-corpus, newcomer, quality on a new corpus) are ru
 
 Record results in the PRD decisions log with the next free `D-` number.
 
-## 41. New runtime dependencies (owner approval per task, AGENTS.md checkpoint 5)
+## 41. New runtime dependencies (owner approval per task, docs/contributing/AGENTS.md checkpoint 5)
 
 | Package | Purpose | Task |
 |---|---|---|

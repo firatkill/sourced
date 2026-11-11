@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Instructions for AI coding agents (Claude Code, Cursor, Codex, Aider, Copilot and others) and human contributors working on Sourced. Read this file first, then the spec for the task you are on.
+Instructions for AI coding agents (Claude Code, Cursor, Codex, Aider, Copilot and others) and human contributors working on Sourced. Read this file first, then the spec for the task you are on. Run commands from the repository root; code paths below are relative to that root.
 
 ## 1. Project summary
 
@@ -12,10 +12,10 @@ Single Next.js App Router app, TypeScript strict, pnpm, Node 22+, Tailwind v4, s
 
 | Document | Use it for |
 |---|---|
-| `docs/PRD.md` | Behaviour, requirements (US-, FR-, NFR-), every page and state with exact copy, decisions log (D-) |
-| `docs/TRD.md` | Architecture, schema DDL, SQL, prompts, API and SSE contracts, algorithms, tests, CI, deployment, assumptions to verify (A-) |
-| `docs/OWNER-DECISIONS.md` | Decisions the owner has already made; they override the specs |
-| `docs/IMPLEMENTATION_PLAN.md` | Ordered tasks (T-), files, acceptance criteria, traceability, release checklist |
+| `../PRD.md` | Behaviour, requirements (US-, FR-, NFR-), every page and state with exact copy, decisions log (D-) |
+| `../TRD.md` | Architecture, schema DDL, SQL, prompts, API and SSE contracts, algorithms, tests, CI, deployment, assumptions to verify (A-) |
+| `../OWNER-DECISIONS.md` | Decisions the owner has already made; they override the specs |
+| `../IMPLEMENTATION_PLAN.md` | Ordered tasks (T-), files, acceptance criteria, traceability, release checklist |
 
 Rules for the specs:
 
@@ -128,7 +128,7 @@ The folder starts with only these documents. Before T-01:
 2. `git init -b main`, then `git config core.hooksPath .githooks` (the commit-msg hook enforces authorship, see Authorship).
 3. Commit the documents as the first commit: `docs: add specs and agent rules`.
 4. Ask the owner before creating the remote. After a yes: `gh repo create firatkill/sourced --public --source . --remote origin --push`, with the description from PRD §1.
-5. Create `docs/PROGRESS.md` (see below) and commit it.
+5. Create `../PROGRESS.md` (see below) and commit it.
 
 After this, `git init` is never run again in this repository.
 
@@ -140,13 +140,13 @@ After this, `git init` is never run again in this repository.
 
 ### Progress file
 
-`docs/PROGRESS.md` is the running plan: one line per task from `IMPLEMENTATION_PLAN.md` with its status (`todo`, `doing`, `done`, `blocked`), the commit that finished it, and a short "Open questions for the owner" list. Update it in the same commit as the task it describes.
+`../PROGRESS.md` is the running plan: one line per task from `../IMPLEMENTATION_PLAN.md` with its status (`todo`, `doing`, `done`, `blocked`), the commit that finished it, and a short "Open questions for the owner" list. Update it in the same commit as the task it describes.
 
 ### Owner approval checkpoints
 
 The owner decides these. Ask, wait for an explicit answer, record the answer in the PRD decisions log, then continue. Never pick one yourself because it seems reasonable.
 
-1. **Before T-01**, read `docs/OWNER-DECISIONS.md`. Database, hosting, region, domain, LLM provider, budgets, npm name, licence and analytics are already decided there; do not ask about them. Ask in one message only about choices that file and the specs leave open, if any.
+1. **Before T-01**, read `../OWNER-DECISIONS.md`. Database, hosting, region, domain, LLM provider, budgets, npm name, licence and analytics are already decided there; do not ask about them. Ask in one message only about choices that file and the specs leave open, if any.
 2. **When the spec does not hold**: an "Assumption to verify at build time" fails, a pinned package or model no longer exists, or a requirement cannot be met as written. Propose the change; do not work around it silently.
 3. **Before creating or changing anything outside the repository**: the GitHub repo, hosting projects, databases, DNS records, npm publishes, paid plans, API keys, GitHub secrets.
 4. **Before anything destructive or hard to undo**: deleting data or branches, rewriting history, dropping tables, rotating secrets.
@@ -156,7 +156,7 @@ Group questions so the owner gets one short list, not a stream of single questio
 
 ### QA workflow and tests
 
-Tests are written from the specs, never from the code. Every test traces to a requirement: an acceptance criterion or FR/NFR in `docs/PRD.md`, and the test IDs and cases in TRD §23 (Testing strategy). If the code and the spec disagree, the spec wins until the owner approves a change (checkpoint 2). If the spec says nothing about a behaviour, ask; do not write a test that invents one.
+Tests are written from the specs, never from the code. Every test traces to a requirement: an acceptance criterion or FR/NFR in `../PRD.md`, and the test IDs and cases in TRD §23 (Testing strategy). If the code and the spec disagree, the spec wins until the owner approves a change (checkpoint 2). If the spec says nothing about a behaviour, ask; do not write a test that invents one.
 
 Use the QA skills throughout the build, not only at the end. They exist as the `vizio-qa-loop` plugin in Claude Code and as skills in `~/.codex/skills/qa-*` for Codex. With any other tool, open the matching `~/.codex/skills/<name>/SKILL.md` and follow it.
 
@@ -173,7 +173,7 @@ Use the QA skills throughout the build, not only at the end. They exist as the `
 
 Overrides for this repository (these win over the skills):
 
-- There is no ClickUp or Slack. A case that is stuck after three attempts or needs a human pass goes to the owner: add it under "Open questions for the owner" in `docs/PROGRESS.md` and mention it in your milestone summary. Record that in the log entry instead of a ClickUp link.
+- There is no ClickUp or Slack. A case that is stuck after three attempts or needs a human pass goes to the owner: add it under "Open questions for the owner" in `../PROGRESS.md` and mention it in your milestone summary. Record that in the log entry instead of a ClickUp link.
 - Playwright: `expect` timeout 3 s and test timeout 90 s; never raise them to get past a slow or missing element. Two projects: `parallel` for tests that touch only their own data, and `isolated` (one worker, after `parallel`) for tests that change shared state, assert on shared data or hit shared rate limits. Every test creates unique data.
 - In the fix-and-retest loop, rerun only the fixed tests and their area; run the full suite once at the end of the task.
 - Never weaken, skip or delete a test to make it pass. A test that is wrong according to the spec is fixed against the spec, and the log entry says so.
@@ -183,7 +183,7 @@ Overrides for this repository (these win over the skills):
 
 A task is done when all of the following hold:
 
-1. Every acceptance criterion of the task in `docs/IMPLEMENTATION_PLAN.md` passes, verified by running the listed commands.
+1. Every acceptance criterion of the task in `../IMPLEMENTATION_PLAN.md` passes, verified by running the listed commands.
 2. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration` pass; `pnpm test:e2e` passes from T-34 onward.
 3. New code has tests; coverage thresholds hold.
 4. Copy, prompts and normative code match the specs exactly.

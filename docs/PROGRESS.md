@@ -4,7 +4,7 @@ Updated: 2026-11-10.
 
 ## Repository setup
 
-- Read AGENTS.md, PRD, TRD, IMPLEMENTATION_PLAN and OWNER-DECISIONS from start to finish.
+- Read docs/contributing/AGENTS.md, PRD, TRD, IMPLEMENTATION_PLAN and OWNER-DECISIONS from start to finish.
 - Verified the required local Git identity for author and committer.
 - Initialized `main` and enabled the existing executable `.githooks/commit-msg` hook.
 - Initial documents and authorship controls committed in `0abe745` (`docs: add specs and agent rules`).
@@ -91,11 +91,13 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | 438b338 |
 | T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | doing | |
 | T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | done | de82d15 |
-| T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | (this commit) |
-| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | todo | |
+| T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | b7fb425 |
+| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | (this commit) |
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
 
 ## Open questions for the owner
+
+- M8 flaky unit test (reviewer): `tests/unit/ask-states.test.tsx` TC-104 ("Unverified draft") failed once in the fresh-worktree run on b7fb425 and once more in a full local run; it passes 5 of 5 alone and on rerun. A timing assumption under load; not raised or skipped.
 
 - M8 rehearsal follow-ups (reviewer, T-70/T-71, `qa/release-v2/`): (a) the database host port is fixed at 5433, so a second checkout (or any service on 5433) stops the Docker launcher before the CLI runs, with no JSON envelope; (b) `doctor`'s `ports` check passes while another process listens on `*:3000` over IPv6; (c) `/add-docs` discovery made about eight quick requests to the docs site, against the skill's spacing rule; (d) MongoDB pages produce 193 tiny chunks of 228 (`inspect`), a chunking item for `/tune`. (e) the generic HTML parser keeps MongoDB navigation icon names (`arrow-right…menu-vertical`) in headings and titles, a likely cause of (d) (`/troubleshoot` rehearsal); (f) `/deploy` tells a Docker-only user to run `pnpm db:migrate` against the hosted database, but the Docker path has no documented way to migrate or ingest into a hosted database; (g) mock eval cannot write a results file, so `/tune` cannot be rehearsed end to end in mock mode (Codex's scripted check in `qa/release-v2/cli-check-tune.md` used a test harness). Fixed during M8: launcher `down`/`dev` envelopes, mock-mode estimates and warning, eval envelopes and eval without Git (the M7 follow-up (2) below).
 

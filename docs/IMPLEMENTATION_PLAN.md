@@ -1,11 +1,11 @@
 # Sourced: Implementation Plan
 
-Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to M4, T-01 to T-45), then to the v2.0.0 RAG kit (M5 to M8, T-46 to T-76, specified in TRD Part II). Read `AGENTS.md` first, then `docs/PRD.md` (what) and `docs/TRD.md` (how). This plan says in what order and how to know each step is done.
+Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to M4, T-01 to T-45), then to the v2.0.0 RAG kit (M5 to M8, T-46 to T-76, specified in TRD Part II). Read `docs/contributing/AGENTS.md` first, then `docs/PRD.md` (what) and `docs/TRD.md` (how). This plan says in what order and how to know each step is done.
 
 ## How to use this plan
 
-- Do tasks in ID order unless the "Depends on" line allows otherwise. One task is one branch and one pull request (or a short series of small commits on `main` before the first deploy, if working alone; see AGENTS.md).
-- Each task lists the requirements it implements (FR/NFR), the files it touches, steps, and acceptance criteria. A task is done only when every acceptance command passes and the Definition of Done in AGENTS.md holds.
+- Do tasks in ID order unless the "Depends on" line allows otherwise. One task is one branch and one pull request (or a short series of small commits on `main` before the first deploy, if working alone; see docs/contributing/AGENTS.md).
+- Each task lists the requirements it implements (FR/NFR), the files it touches, steps, and acceptance criteria. A task is done only when every acceptance command passes and the Definition of Done in docs/contributing/AGENTS.md holds.
 - "TRD §n" means section n of `docs/TRD.md`. Test IDs (UT-, IT-, E2E-) are defined in TRD §23.
 - Every acceptance list implicitly includes: `pnpm lint && pnpm typecheck && pnpm test` pass. From T-05 on it also includes `pnpm test:integration` (with `pnpm db:up`), and from T-34 on `pnpm test:e2e`.
 - When a task requires verifying an assumption (TRD §24, A-xx), record the result as a new row in the PRD decisions log in the same pull request.
@@ -591,7 +591,7 @@ v2 tasks start after v1.0.0 is tagged (PRD section 16). "TRD §n" in these tasks
 - **Implements**: FR-61, FR-72 (schema), FR-67 (page columns); TRD §30.1
 - **Files**: `lib/db/schema.ts`, `drizzle/0003_kit.sql`, `lib/ingest/upsert.ts` (conflict target), `tests/integration/migrations.test.ts`, IT-15.
 - **Steps**:
-  1. Ask the owner to approve dropping `chunks_content_hash_key` (AGENTS.md checkpoint 4; TRD §30.1 explains why). Record the answer in the PRD decisions log.
+  1. Ask the owner to approve dropping `chunks_content_hash_key` (docs/contributing/AGENTS.md checkpoint 4; TRD §30.1 explains why). Record the answer in the PRD decisions log.
   2. Write the schema changes and the migration exactly as TRD §30.1. Add `'cli'` to the `query_log.source` check.
   3. Change the upsert conflict target to `(document_id, content_hash)`.
 - **Acceptance**: migrations apply on an empty database and on a database holding the v1 example corpus; IT-15 passes; re-running `pnpm ingest --offline` on the example reports 0 inserts.
@@ -847,7 +847,7 @@ v2 tasks start after v1.0.0 is tagged (PRD section 16). "TRD §n" in these tasks
 
 - **Implements**: FR-87, D-66; TRD §37.2
 - **Files**: `AGENTS.md` (new user-facing content), `docs/contributing/AGENTS.md` (today's file, `git mv`), `CONTRIBUTING.md`, `.prettierignore` (path update), links in `docs/*.md`.
-- **Steps**: move first, then write the new root file; update every reference to `AGENTS.md` sections in the specs to the new path.
+- **Steps**: move first, then write the new root file; update every contributor-section reference in the specs to `docs/contributing/AGENTS.md`.
 - **Acceptance**: no spec links to a moved section at the old path (`grep -rn "AGENTS.md" docs/`); `CLAUDE.md` still imports the root file.
 - **Depends on**: T-73
 

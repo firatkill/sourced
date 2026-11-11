@@ -3,7 +3,7 @@ drizzle/meta
 pnpm-lock.yaml
 eval/*/results/*.md
 docs/*.md
-AGENTS.md
+docs/contributing/AGENTS.md
 .next
 node_modules
 coverage

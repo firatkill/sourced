@@ -5468,6 +5468,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-242",
+      "ac_reference": "T-75; FR-87; D-66",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "User-facing AGENTS.md and moved contributor rules",
+      "description": "T-75 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-242.",
+      "expected_result": "Root AGENTS.md has at most 80 lines with the §37.2 content (three-sentence summary, sourced-setup line and one line per skill, FR-89 rules verbatim, how to run commands on the Docker and Node paths, pointer to docs/contributing/AGENTS.md); the old file lives at docs/contributing/AGENTS.md via git mv; CONTRIBUTING.md links it; CLAUDE.md still imports the root file; no spec links a moved section at the old path.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Contributor rules moved with git mv (04404b0) to docs/contributing/AGENTS.md; new root AGENTS.md (26 lines, TRD 37.2 order, FR-89 verbatim, one line per skill, Docker and Node commands, contributor pointer); CONTRIBUTING.md links it; CLAUDE.md still @AGENTS.md; every grep hit in docs/ reviewed; commit-msg hook messages updated; TC-242 literal tests in tests/unit/agent-files.test.ts."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
