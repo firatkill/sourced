@@ -86,7 +86,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | done | 64bfa5d |
 | T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | done | 73d65e5 |
 | T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | done | fdaa6f5 |
-| T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | todo | |
+| T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | done | (this commit) |
 | T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | todo | |
 | T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | todo | |
 | T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | todo | |
