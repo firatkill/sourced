@@ -88,8 +88,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | done | fdaa6f5 |
 | T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | done | 2e4207c |
 | T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | done | 5b3de7b |
-| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | (this commit) |
-| T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | todo | |
+| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | 438b338 |
+| T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | doing | |
 | T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | todo | |
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | todo | |
 | T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | todo | |
