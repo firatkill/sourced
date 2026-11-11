@@ -4923,12 +4923,58 @@
       "description": "T-63 acceptance.",
       "steps_to_reproduce": "See qa/test-cases.md TC-216.",
       "expected_result": "Hybrid search p95 warm <= 300 ms on a synthetic 100,000-chunk corpus with mock embeddings; result recorded in qa/.",
-      "status": "open",
+      "status": "resolved",
       "environment": "local",
       "attempts": [
         {
           "result": "fail",
           "note": "NFR-21 not yet established. Idle run (load 3-4) on the first synthetic generator: p50 28 ms, p95 807 ms (fails; every query term matched about 43% of chunks). Two-profile proving run (load unknown): realistic p95 70 ms (p99 2.1 s, broad FTS matches), worst case p95 1,154 ms (FTS ranks up to 80,000 matches; 698 ms FTS vs 13 ms vector). Official idle measurement pending: the machine has been under heavy load from other projects (load average 12 to 41)."
+        },
+        {
+          "result": "pass",
+          "note": "NFR-21 met on the realistic profile (D-124): 100,000 chunks, 224 golden-set queries, p50 11 ms, p95 70 ms, p99 1.9 s at load average about 10. Worst-case profile p95 3.3 s (broad full-text ranking) recorded as a follow-up needing an eval and an owner decision. qa/t63-bench.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-217",
+      "ac_reference": "T-64; PRD §11; NFR-20; A-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Any-corpus check: public docs sitemap",
+      "description": "T-64 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-217.",
+      "expected_result": "On a clean Docker-only setup, a public documentation sitemap (MongoDB if A-25 holds) reaches a cited answer within NFR-20 with live embeddings inside the approved budget.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "MongoDB manual sitemap (A-25 holds), 200 pages, Docker path from a clean copy, live embeddings: 1,278 chunks, cited answer; clone to cited answer about 20 min with cached image, about 29 min with the first image build (NFR-20 at most 30 min, met narrowly); one question not_found because the 200-page cap did not reach the index pages (coverage). qa/t64-any-corpus.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-218",
+      "ac_reference": "T-64; PRD §11; NFR-20",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Any-corpus check: mixed folder",
+      "description": "T-64 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-218.",
+      "expected_result": "The mixed folder (small licensed files) reaches a cited answer on the Docker path within NFR-20.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "examples/mixed-folder (md, mdx, html, pdf, docx, txt) on the Docker path with live embeddings: 7 documents, 8 chunks, both questions answered with verified file citations, 72 s with cached image. qa/t64-any-corpus.md"
         }
       ],
       "regression_of": null,

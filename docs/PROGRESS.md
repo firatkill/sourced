@@ -80,8 +80,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-60 | M6 Sources and CLI | Contextual embedding input | doing (code bc2cf32; live comparison pending) | |
 | T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | done | 4048d7b |
 | T-62 | M6 Sources and CLI | Docker path | done | e35fe7a |
-| T-63 | M6 Sources and CLI | Contract tests and scale check | done (NFR-21 measurement pending) | 704c357 |
-| T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | todo | |
+| T-63 | M6 Sources and CLI | Contract tests and scale check | done | 704c357 |
+| T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | done | HEAD |
 | T-65 | M7 Quality on any corpus | `inspect` | todo | |
 | T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | todo | |
 | T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | todo | |

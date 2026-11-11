@@ -104,3 +104,14 @@ and memory behavior; evaluate a bounded lexical candidate stage (which changes
 ranking/recall), or a ranking-aware index (which adds a dependency). Any such
 change needs its own approved retrieval design and quality evaluation. No option
 has been implemented here.
+
+## Official measurement (reviewer, 2026-11-11)
+
+The machine was not idle at any point (other projects' workloads); this run was taken at load average about 10.5 before and after.
+
+| Profile    | Queries | p50 ms |  p95 ms |  p99 ms | p95 ≤300 ms |
+| ---------- | ------: | -----: | ------: | ------: | ----------- |
+| Realistic  |     224 |  11.02 |   69.51 | 1,902.5 | Yes         |
+| Worst case |     200 |  87.70 | 3,300.0 | 5,864.9 | **No**      |
+
+NFR-21 is met on the realistic profile (D-124). The worst-case tail comes from full-text ranking of every match; options to cap or pre-filter it are listed above and need an eval run and an owner decision. The `sourced_bench` database was dropped after the run to free disk space; `--regenerate` rebuilds it.
