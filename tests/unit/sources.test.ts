@@ -11,6 +11,7 @@ import {
   normalizeUrl,
   normalizePath,
   locationSlug,
+  sourceLocationSlug,
   webRef,
   type SourceContext,
   type SourceEvent,
@@ -73,10 +74,10 @@ test('UT-34 / FR-65: stable normalized URLs and case-preserving relative POSIX k
   );
   expect(normalizeUrl('https://a.test/myindex.html')).toBe('https://a.test/myindex.html');
   expect(normalizePath('.\\Manual\\a\\..\\Case.md')).toBe('Manual/Case.md');
-  expect(locationSlug({ kind: 'web', url: 'https://a.test/docs/index.html?q=1' })).toBe(
-    'index.html',
+  expect(locationSlug({ kind: 'web', url: 'https://a.test/docs/index.html?q=1' }, '/docs/')).toBe(
+    'index?q=1',
   );
-  expect(locationSlug({ kind: 'file', path: 'Manual/Case.md' })).toBe('Case.md');
+  expect(locationSlug({ kind: 'file', path: 'Manual/Case.md' }, 'Manual')).toBe('Case.md');
   expect(webRef(source, 'https://a.test/docs/a.html#x').key).toBe(
     'docs:https://a.test/docs/a.html',
   );
@@ -376,7 +377,9 @@ test('UT-35 / FR-65: nested files have root-relative keys and literal file paths
   });
   const source = SourceSchema.parse({ id: 'docs', type: 'folder', path: 'manual' });
   if (source.type !== 'folder') throw new Error('fixture');
-  expect((await collect(driver.discover(source, ctx.ctx)))[0]?.key).toBe('docs:Section/Case.md');
+  const nested = (await collect(driver.discover(source, ctx.ctx)))[0]!;
+  expect(nested.key).toBe('docs:Section/Case.md');
+  expect(sourceLocationSlug(nested, source)).toBe('Section/Case.md');
   expect(
     (await collect(driver.discover({ ...source, path: 'manual/Section/Case.md' }, ctx.ctx)))[0]
       ?.key,
@@ -402,4 +405,44 @@ test('UT-34 / FR-65: URL discovery filters path globs and deduplicates normalize
     (await collect(createUrlsDriver(ctx.cache).discover(source, ctx.ctx))).map((ref) => ref.key),
   ).toEqual(['docs:https://a.test/docs/a.html']);
   expect(ctx.fetcher).not.toHaveBeenCalled();
+});
+
+test('UT-34 / D-128: source-relative slugs retain nested paths and normalized queries', () => {
+  const sitemap = SourceSchema.parse({
+    id: 'manual',
+    type: 'sitemap',
+    url: 'https://a.test/manual/sitemap.xml',
+  });
+  for (const [path, slug] of [
+    ['a/', 'a'],
+    ['b/', 'b'],
+    ['', 'index'],
+    ['core/indexes/create-index/', 'core/indexes/create-index'],
+    ['index.html?z=2&a=1#part', 'index?a=1&z=2'],
+  ] as const) {
+    expect(sourceLocationSlug(webRef(sitemap, `https://a.test/manual/${path}`), sitemap)).toBe(
+      slug,
+    );
+  }
+  const urls = SourceSchema.parse({
+    id: 'manual',
+    type: 'urls',
+    urls: [
+      'https://a.test/manual/a/',
+      'https://a.test/manual/b/',
+      'https://a.test/manual/core/indexes/',
+    ],
+    include: ['/manual/a/**'],
+  });
+  expect(sourceLocationSlug(webRef(urls, 'https://a.test/manual/a/'), urls)).toBe('a');
+  expect(sourceLocationSlug(webRef(urls, 'https://a.test/manual/core/indexes/'), urls)).toBe(
+    'core/indexes',
+  );
+  const crawl = SourceSchema.parse({ id: 'manual', type: 'crawl', root: 'https://a.test/manual/' });
+  expect(sourceLocationSlug(webRef(crawl, 'https://a.test/manual/'), crawl)).toBe('index');
+  expect(sourceLocationSlug(webRef(crawl, 'https://a.test/manual/core/indexes/'), crawl)).toBe(
+    'core/indexes',
+  );
+  expect(locationSlug({ kind: 'file', path: 'docs/guide.md' }, 'docs')).toBe('guide.md');
+  expect(locationSlug({ kind: 'file', path: 'docs/core/guide.md' }, 'docs')).toBe('core/guide.md');
 });

@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import type { z } from 'zod';
 import type { SourceSchema } from '@/lib/kit/config-schema';
-import type { ErrorCode } from '@/lib/errors';
+import { AppError, type ErrorCode } from '@/lib/errors';
 
 export type Source = z.infer<typeof SourceSchema>;
 export type DocumentRef = {
@@ -51,12 +51,48 @@ export function normalizeUrl(input: string): string {
 export function normalizePath(path: string): string {
   return posix.normalize(path.replaceAll('\\', '/')).replace(/^\.\//, '');
 }
-export function locationSlug(location: DocumentRef['location']): string {
-  const path =
-    location.kind === 'web'
-      ? new URL(normalizeUrl(location.url)).pathname
-      : normalizePath(location.path);
-  return path.split('/').at(-1) || 'index.html';
+/** D-128: the base is a directory; file locations may already be source-relative. */
+export function locationSlug(location: DocumentRef['location'], base: string): string {
+  if (location.kind === 'file') {
+    return (
+      posix.relative(normalizePath(base), normalizePath(location.path)).replace(/\/$/, '') ||
+      'index'
+    );
+  }
+  const url = new URL(normalizeUrl(location.url));
+  const path = posix.relative(base, url.pathname).replace(/\/$/, '') || 'index';
+  return `${path}${url.search}`;
+}
+
+/** Resolve against the configured source, never the discovered/filtered subset. */
+export function sourceLocationSlug(ref: DocumentRef, source: Source): string {
+  if (ref.location.kind === 'file') {
+    // Folder discovery resolves globs and literal files and records the effective root
+    // in the source-relative key. Git delegates to the same driver at its subdir.
+    return locationSlug({ kind: 'file', path: ref.key.slice(source.id.length + 1) }, '.');
+  }
+  let base: string;
+  switch (source.type) {
+    case 'urls': {
+      const directories = source.urls.map((url) => new URL('.', normalizeUrl(url)).pathname);
+      base = directories[0] ?? '/';
+      for (const directory of directories) {
+        while (!directory.startsWith(base))
+          base = `${posix.dirname(base.slice(0, -1))}/`.replace(/\/+/g, '/');
+      }
+      break;
+    }
+    case 'sitemap':
+      base = new URL('.', normalizeUrl(source.url)).pathname;
+      break;
+    case 'crawl':
+      base = new URL('.', normalizeUrl(source.root)).pathname;
+      break;
+    case 'folder':
+    case 'git':
+      throw new AppError('VALIDATION_FAILED', 'A file source must have a file location.');
+  }
+  return locationSlug(ref.location, base);
 }
 export function webRef(source: Pick<Source, 'id' | 'group'>, url: string): DocumentRef {
   const normalized = normalizeUrl(url);

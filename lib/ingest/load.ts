@@ -12,7 +12,7 @@ import { createUrlsDriver, createRawCache, cacheFs } from '@/lib/sources/urls';
 import { createSitemapDriver } from '@/lib/sources/sitemap';
 import { createCrawlDriver } from '@/lib/sources/crawl';
 import {
-  locationSlug,
+  sourceLocationSlug,
   type SourceContext,
   type SourceEvent,
   type RawDocument,
@@ -138,7 +138,7 @@ export async function loadCorpus(options: {
         continue;
       }
       if (options.fetchOnly) continue;
-      const slug = locationSlug(ref.location);
+      const slug = sourceLocationSlug(ref, source);
       let document: ParsedDocument;
       try {
         const isPdf = raw.mimeType === 'application/pdf' || /\.pdf$/i.test(slug);
