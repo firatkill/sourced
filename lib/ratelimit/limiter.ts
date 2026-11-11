@@ -1,5 +1,5 @@
 import 'server-only';
-import { MAINTENANCE } from '@/lib/config';
+import { ACCESS, MAINTENANCE } from '@/lib/config';
 import { getSql } from '@/lib/db/client';
 import { getEnv } from '@/lib/env';
 import { isPublicDemo } from '@/lib/kit/profile';
@@ -62,4 +62,19 @@ export async function cleanup(requestId: string): Promise<void> {
   } catch {
     withRequest(requestId).warn({ event: 'maintenance.failed' });
   }
+}
+
+/** D-134: independent access bucket, retaining the existing date column and daily quotas. */
+export async function consumeAccess(hash: string, now = new Date()) {
+  const hour = now.toISOString().slice(0, 13);
+  const resetAt = new Date(`${hour}:00:00.000Z`);
+  resetAt.setUTCHours(resetAt.getUTCHours() + 1);
+  const rows = await getSql()`
+    INSERT INTO rate_limits (bucket, window_start, count)
+    VALUES (${`access:${hash}:${hour}`}, ${utcDate(now)}::date, 1)
+    ON CONFLICT (bucket, window_start)
+    DO UPDATE SET count = rate_limits.count + 1, updated_at = now()
+    WHERE rate_limits.count < ${ACCESS.FAILED_ATTEMPTS_PER_HOUR}
+    RETURNING count`;
+  return { ok: rows.length > 0, resetAt };
 }

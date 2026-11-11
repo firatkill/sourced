@@ -456,6 +456,15 @@ Document title: "How it works · Sourced"
 
 The PostgreSQL License requires the copyright notice and permission paragraphs to appear in copies. The repository ships `corpus/postgres-17/LICENSE-POSTGRESQL.txt` with the license text copied verbatim from https://www.postgresql.org/about/licence/ at implementation time, and `corpus/postgres-17/NOTICE` stating that `corpus/postgres-17/raw/` contains unmodified copies of PostgreSQL 17 documentation pages. The site footer line 2 (section 9.1) links "PostgreSQL License" to that page.
 
+### 9.9 `/access` Access page *(v2, `private` profile only, FR-90)*
+
+- Title: "Access · Sourced".
+- H1: "This chatbot is private". Body: "Enter the access token you were given."
+- One password-type input with the label "Access token" and a button "Continue".
+- Wrong token: inline error "That token is not valid."
+- Too many failed attempts (10 per hour per visitor): "Too many attempts. Try again in an hour."
+- Under the `local` and `public-demo` profiles the page does not exist and no cookie is set.
+
 ## 10. Content safety and prompt injection
 
 ### 10.1 Threats
@@ -682,6 +691,7 @@ No prompt-only defence is complete. A model can still be manipulated into produc
 | D-131 | `sourced eval` reports why it failed in the JSON envelope: a completed run that fails floors, ceilings or regression checks keeps `result` and returns `CHECKS_FAILED` naming the failed metrics with exit 1 (TRD §17.1); `--validate-only` returns `VALIDATION_FAILED` listing the problems; unexpected errors return `INTERNAL_ERROR` naming the failed stage instead of a confirmation request. | The `/check-quality` rehearsal showed agents reading only the envelope got `INTERNAL_ERROR` or a misleading `NEEDS_CONFIRMATION` with the reason only on stderr (FR-89 rule 4). No existing code described a completed below-floor run; `CHECKS_FAILED` is the closest. | Reviewer, 2026-11-11 |
 | D-132 | `sourced eval` works without Git and outside a Git repository: `gitSha` is recorded as `none`, and the default baseline is the newest results file on disk in the corpus's results directory. With Git, the v1 behaviour (baseline from `HEAD`) is unchanged. Git is not added to the Docker image. | The `/check-quality` rehearsal failed on the Docker path because the image has no Git (`spawnSync git ENOENT`), and M7 found the same failure outside a repository. | Reviewer, 2026-11-11 |
 | D-133 | A-24 verified on 2026-11-11: Claude Code 2.1.322 runs `/setup` and the other commands from `.claude/commands/` (headless rehearsals in `qa/release-v2/`), and Codex CLI 0.166.0 lists the seven skills in `.agents/skills/` in its available skills. No per-tool pointer files are needed. The `static` job of TRD §37.5 is the existing "Lint and format" job, which runs `pnpm check-skills`. | Assumption check for T-73. | Reviewer, 2026-11-11 |
+| D-134 | Under `private`, the access limiter's visitor hash uses a key derived from the token, `HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-visitor-v1')`, in place of `IP_HASH_SALT` (which only `public-demo` requires); rotating the token resets the counters. Failed attempts are counted in a fixed UTC hour window (bucket `access:<hash>:<YYYY-MM-DDTHH>`, limit 10); exhausted attempts return `RATE_LIMITED_IP` with `Retry-After`. Access page copy is §9.9. | T-74 found that TRD §38's per-visitor limit needs a hash secret that a `private` deployment does not have (D-119) and a window shorter than the daily one the limiter used. | Reviewer, 2026-11-11 |
 
 ## 16. v1 to v2 transition and open questions *(v2)*
 

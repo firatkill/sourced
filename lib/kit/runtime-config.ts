@@ -33,10 +33,14 @@ export function readSnapshot(filename: string): KitConfig {
     );
   return result.data.config;
 }
-export function getKitConfig(applyMock = true): KitConfig {
+/** Shared cached snapshot, independent of provider/environment overrides. */
+export function getSnapshotConfig(): KitConfig {
   cached ??= readSnapshot(path.join(process.cwd(), '.sourced/config.json'));
+  return structuredClone(cached);
+}
+export function getKitConfig(applyMock = true): KitConfig {
+  const config = getSnapshotConfig();
   const env = getConfigEnv();
-  const config = structuredClone(cached);
   if (config.profile === 'public-demo') {
     if (env.CHAT_MODEL) config.models.chat.model = env.CHAT_MODEL;
     if (env.JUDGE_MODEL)

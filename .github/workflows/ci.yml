@@ -161,6 +161,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+      - name: Require the runtime snapshot in the Node middleware trace
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { readFileSync } from 'node:fs';
+          import { dirname, resolve } from 'node:path';
+          const filename = '.next/server/middleware.js.nft.json';
+          const trace = JSON.parse(readFileSync(filename, 'utf8'));
+          assert(trace.files.some(file => resolve(dirname(filename), file) === resolve('.sourced/config.json')));
+          JS
 
   docker:
     name: Docker-only smoke (mock provider)
@@ -204,6 +214,23 @@ jobs:
             sleep 1
           done
           grep -qF 'Ask the runtime docs.' /tmp/sourced-page.html
+          test "$before" = "$(docker compose images -q app)"
+      - name: Require private access without rebuilding
+        run: |
+          before=$(docker compose images -q app)
+          ./sourced init --example --profile private --yes --json
+          docker compose up -d --no-build --force-recreate app
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:3000/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:3000/api/health > /dev/null
+          status=$(curl --silent --show-error -o /tmp/sourced-private-api.json -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data '{"question":"When should I use a partial index?"}' http://localhost:3000/api/ask)
+          test "$status" = 401
+          jq -e '.error.code == "ACCESS_DENIED"' /tmp/sourced-private-api.json
+          status=$(curl --silent --show-error -D /tmp/sourced-private-headers -o /dev/null -w '%{http_code}' http://localhost:3000/)
+          test "$status" = 307
+          tr -d '\r' < /tmp/sourced-private-headers | grep -Ei '^location: (http://localhost:3000)?/access$'
           test "$before" = "$(docker compose images -q app)"
       - name: Stop without deleting data
         if: always()

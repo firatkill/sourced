@@ -7,14 +7,14 @@ afterEach(() => {
   vi.unstubAllEnvs();
   resetEnvForTests();
 });
-it('TC-010: NFR-14 fresh ids and nonces, security headers, production CSP', () => {
+it('TC-010: NFR-14 fresh ids and nonces, security headers, production CSP', async () => {
   vi.stubEnv('NODE_ENV', 'production');
   resetEnvForTests();
   const request = new NextRequest('http://localhost:3000', {
     headers: { 'x-request-id': 'client-supplied' },
   });
-  const first = middleware(request);
-  const second = middleware(request);
+  const first = await middleware(request);
+  const second = await middleware(request);
   expect(first.headers.get('x-request-id')).not.toBe('client-supplied');
   expect(first.headers.get('x-request-id')).not.toBe(second.headers.get('x-request-id'));
   const csp = first.headers.get('content-security-policy');
@@ -35,22 +35,22 @@ it('TC-010: NFR-14 fresh ids and nonces, security headers, production CSP', () =
   }))
     expect(first.headers.get(name)).toBe(value);
 });
-it('TC-010: development eval allowance and deployed HTTPS upgrade follow env', () => {
+it('TC-010: development eval allowance and deployed HTTPS upgrade follow env', async () => {
   vi.stubEnv('NODE_ENV', 'development');
   vi.stubEnv('VERCEL_ENV', 'preview');
   resetEnvForTests();
-  const csp = middleware(new NextRequest('https://preview.example')).headers.get(
+  const csp = (await middleware(new NextRequest('https://preview.example'))).headers.get(
     'content-security-policy',
   );
   expect(csp).toContain("'unsafe-eval'");
   expect(csp).toContain('upgrade-insecure-requests');
 });
 
-it('TC-190: Edge security headers do not require public-demo credentials or a runtime snapshot', () => {
+it('TC-190: security headers do not require public-demo credentials or a runtime snapshot', async () => {
   vi.stubEnv('LLM_MODE', 'live');
   for (const name of ['IP_HASH_SALT', 'OPENAI_API_KEY', 'CHAT_MODEL', 'SOURCED_ACCESS_TOKEN'])
     vi.stubEnv(name, '');
-  const response = middleware(new NextRequest('http://localhost:3000'));
+  const response = await middleware(new NextRequest('http://localhost:3000'));
   expect(response.headers.get('content-security-policy')).toContain("'strict-dynamic'");
   expect(response.headers.get('x-request-id')).toBeTruthy();
 });

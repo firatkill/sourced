@@ -5384,6 +5384,90 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-238",
+      "ac_reference": "T-74; FR-90",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Access cookie derivation and middleware decisions",
+      "description": "UT-48.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-238.",
+      "expected_result": "The cookie value is base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1')) compared in constant time; under private, pages without a valid cookie redirect to /access and /api/ask returns 401 ACCESS_DENIED; /api/health, static assets and /access pass; a rotated token invalidates the old cookie; local and public-demo always pass.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-48 (tests/unit/access.test.ts, access-runtime.test.ts): cookie derivation, constant-time compare, decision table over profiles x paths x cookie states, rotation, runtime-snapshot profile (found in review: the build-time profile left Docker images unprotected; fixed by Node middleware reading the snapshot)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-239",
+      "ac_reference": "T-74; FR-90",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Private profile in the browser",
+      "description": "E2E-27.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-239.",
+      "expected_result": "On a private-profile server: / redirects to /access; a wrong token shows the access page error copy; the right token sets an HttpOnly SameSite=Lax cookie and lands on /; asking works; /api/ask without the cookie returns 401 ACCESS_DENIED.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-27 in tests/e2e/access.spec.ts on port 3105, server built as local and run with a private runtime snapshot: redirect, wrong-token error, keyboard submit, cookie attributes, asking, 401 without cookie. First run failed on the test's alert locator (Next route announcer also has role alert); locator scoped to main, per spec. E2E-28 (file citations without a link) in tests/e2e/file-citations.spec.ts passes. Full E2E 124/124."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-240",
+      "ac_reference": "T-74; FR-90; FR-81",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Access rate limit, init token and deploy check",
+      "description": "TRD §38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-240.",
+      "expected_result": "Failed access attempts are limited to 10 per hour per visitor hash (bucket access:<hash>) with the PRD copy; init --profile private writes a generated token of at least 24 characters to .env.local without printing it; deploy:check --profile private fails without the token; the ACCESS_DENIED code exists in ERROR_CODES, the TRD error matrix and the client mapping.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Access limiter (D-134): token-derived visitor hash, fixed UTC hour bucket, 10 failures, RATE_LIMITED_IP with Retry-After (integration and route tests); init --profile private writes a generated token without printing it and deploy:check --profile private fails without it (contracts); ACCESS_DENIED in ERROR_CODES, TRD matrix and client mapping."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-241",
+      "ac_reference": "T-74; NFR-12",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "No cookie outside the private profile",
+      "description": "TRD §38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-241.",
+      "expected_result": "Under local and public-demo no response sets a cookie, including /access and /api/access, which are unavailable or inert there.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "No Set-Cookie under local and public-demo (route and E2E assertions); /access and /api/access return 404 outside private."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const ERROR_CODES = [
+  'ACCESS_DENIED',
   'VALIDATION_FAILED',
   'ORIGIN_FORBIDDEN',
   'PAYLOAD_TOO_LARGE',

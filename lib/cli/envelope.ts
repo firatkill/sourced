@@ -8,7 +8,8 @@ export const CliEnvelope = z.object({
   result: z.unknown().optional(),
   error: z
     .object({
-      code: z.enum(ERROR_CODES),
+      // Browser access failures are HTTP-only; preserve the versioned CLI contract.
+      code: z.enum(ERROR_CODES.filter((code) => code !== 'ACCESS_DENIED')),
       message: z.string(),
       fix: z.string().optional(),
     })

@@ -371,6 +371,10 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
           onHttpError(status, body) {
             if (ownsRequest()) {
               flush();
+              if (status === 401 && body.code === 'ACCESS_DENIED') {
+                window.location.assign(new URL('/access', window.location.href).href);
+                return;
+              }
               send({ type: 'httpError', status, body });
             }
           },

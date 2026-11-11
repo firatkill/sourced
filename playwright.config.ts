@@ -56,6 +56,12 @@ export default defineConfig({
     },
   ],
   webServer: [
+    {
+      ...server(3105, {
+        SOURCED_ACCESS_TOKEN: 'test-access-token-0000000000000000',
+      }),
+      command: 'pnpm exec tsx --conditions=react-server tests/fixtures/private-profile-server.ts',
+    },
     server(3100, { DEMO_MODE: 'on' }),
     server(3101, { DEMO_MODE: 'readonly' }),
     server(3102, { DEMO_MODE: 'off' }),

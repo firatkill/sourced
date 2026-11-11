@@ -442,6 +442,12 @@ export const JUDGE = {
   MAX_OUTPUT_TOKENS: 300,
   TIMEOUT_MS: 20_000,
 } as const;
+
+// TRD §38 / D-134: private access settings.
+export const ACCESS = {
+  COOKIE_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
+  FAILED_ATTEMPTS_PER_HOUR: 10,
+} as const;
 ```
 
 ### 4.1 Why these numbers
@@ -2287,6 +2293,9 @@ export class AppError extends Error {
 | Cross-site origin | route | `ORIGIN_FORBIDDEN` | 403 JSON | no | not used | Server error copy | warn |
 | Body too large | route | `PAYLOAD_TOO_LARGE` | 413 JSON | no | not used | Validation (too long) | info |
 | Wrong content type | route | `UNSUPPORTED_MEDIA_TYPE` | 415 JSON | no | not used | Server error copy | info |
+| Missing or invalid access cookie (`private`) | middleware | `ACCESS_DENIED` | `/api/ask` 401 JSON; pages redirect to `/access` | no | not used | PRD 9.9 page | info |
+| Wrong access token (`private`) | `/api/access` | `ACCESS_DENIED` | 401 JSON; form error | no | counts toward the access limit | "That token is not valid." | info |
+| Access attempts exhausted (`private`, D-134) | `/api/access` limiter | `RATE_LIMITED_IP` | 429 JSON + `Retry-After` | after the hour | — | "Too many attempts. Try again in an hour." | info |
 | Visitor over quota | limiter | `RATE_LIMITED_IP` | 429 JSON + `Retry-After` | after reset | — | Rate-limited (visitor) | info |
 | Global over quota | limiter | `RATE_LIMITED_GLOBAL` | 429 JSON + `Retry-After` | after reset | — | Rate-limited (global) | warn |
 | Readonly, not cached | route | `DEMO_READONLY` | 503 JSON | no | not used | Read-only | info |
@@ -3845,7 +3854,7 @@ Fails when a skill names a command or flag that `lib/cli` does not define, a res
 
 - Env `SOURCED_ACCESS_TOKEN` (required for `private`, ≥ 24 characters; `init --profile private` generates one with `crypto.randomBytes(24).toString('base64url')` and writes it to `.env.local`, then tells the user where it is without printing it).
 - Middleware (`middleware.ts`) checks every page and `/api/ask` request when `profile === 'private'`: cookie `sourced_access` must equal `base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1'))`, compared in constant time. `/api/health`, static assets and `/access` are exempt.
-- `/access` page: one password-type input, POST to `/api/access` which validates the token, sets the cookie (`HttpOnly; Secure` outside localhost; `SameSite=Lax`; `Path=/`; 30 days) and redirects to `/`. Failed attempts are rate-limited per visitor hash with the existing limiter (bucket `access:<hash>`, 10 per hour).
+- `/access` page: one password-type input, POST to `/api/access` which validates the token, sets the cookie (`HttpOnly; Secure` outside localhost; `SameSite=Lax`; `Path=/`; 30 days) and redirects to `/`. Failed attempts are rate-limited per visitor hash with the existing limiter (bucket `access:<hash>:<YYYY-MM-DDTHH>`, 10 per fixed UTC hour; the hash key is `HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-visitor-v1')`, D-134).
 - Without a valid cookie: pages redirect to `/access`; `/api/ask` returns 401 `ACCESS_DENIED`.
 - Rotating the token invalidates every cookie.
 - The `public-demo` and `local` profiles never set this cookie; PRD NFR-12 holds for them unchanged.

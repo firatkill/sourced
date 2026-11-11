@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: {
     '/*': ['./.sourced/config.json'],
+    // Node middleware's trace entry is named middleware (without a leading slash).
+    middleware: ['./.sourced/config.json'],
     '/eval': ['./eval/postgres-17/results/**/*.json'],
   },
   outputFileTracingRoot: import.meta.dirname,

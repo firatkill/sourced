@@ -17,7 +17,7 @@ Require a single envelope with `$.schemaVersion` 1, matching `$.command`, `$.ok`
 
 ## Steps
 
-1. **Choose the audience and set the profile after a yes.** Ask: “Which profile: private for one team (recommended), or public-demo for anyone with the link?” Never select `local` for hosting. Explain that private requires a shared `SOURCED_ACCESS_TOKEN`, at least 24 characters; FR-90 specifies a token prompt and protected ask page/API. T-74 is not built yet: the current check tests token presence/length, not an implemented access page or working authorization. Do not recommend exposing confidential documents until that access flow exists and is verified. Public-demo exposes the corpus to visitors, requires explicit quotas and salted daily IP hashing, and must never store raw IPs. It also requires priced models and one to six configured suggested questions (TRD §29).
+1. **Choose the audience and set the profile after a yes.** Ask: “Which profile: private for one team (recommended), or public-demo for anyone with the link?” Never select `local` for hosting. Explain that private requires a shared `SOURCED_ACCESS_TOKEN`, at least 24 characters; visitors enter it once on the `/access` page, which sets a site cookie; without it the pages redirect to `/access` and `/api/ask` returns 401. Share the token privately with the team; rotating it signs everyone out. `deploy:check` only verifies that the token is set and long enough; verify the access page on the deployed site. Public-demo exposes the corpus to visitors, requires explicit quotas and salted daily IP hashing, and must never store raw IPs. It also requires priced models and one to six configured suggested questions (TRD §29).
 
    Propose changing only `profile` in `sourced.config.ts`, show the proposed diff and ask for a yes (default wait); then apply it and show the actual diff. If public-demo needs prices or suggested questions, explain those missing prerequisites and get separate approval rather than inventing them. Follow the pricing guide for missing prices. Never alter the corpus or model selection silently.
 
@@ -46,14 +46,14 @@ Require a single envelope with `$.schemaVersion` 1, matching `$.command`, `$.ok`
    1. In Supabase, create or select a free project in a region near your users, enable the vector extension, and obtain SSL transaction-mode and session/direct connection details privately. Do not upgrade a plan.
    2. On the user's machine, configure the hosted maintenance connections in `.env.local`. Run `pnpm db:migrate`; then use `/ingest` for a fresh preview and provider/cost approval before indexing without fixtures. Never run migrations or ingestion on Vercel. For public-demo precompute suggested answers with `pnpm cache:suggested` locally only after disclosing providers/cost and obtaining a separate yes.
    3. In Vercel, create/select a Hobby project, import the intended repository through Git integration, choose Next.js, Node 22+ and the function region nearest the database, use the pinned pnpm install and `pnpm build`, and enter the applicable variable names above. Confirm the production branch and environment scope. Deploy only after the unresolved checks are fixed and the user says yes; no mock mode in production.
-   4. Rerun the pre-deploy check locally against the intended hosted database after preparation. Verify dashboard settings separately. After an authorized deployment, smoke-test health, a cited question and `/eval`; private also requires the completed T-74 token flow and unauthorized API rejection. Configure a custom domain only through a separately approved manual Vercel/DNS step using the record Vercel supplies.
+   4. Rerun the pre-deploy check locally against the intended hosted database after preparation. Verify dashboard settings separately. After an authorized deployment, smoke-test health, a cited question and `/eval`; for private, also check that `/` redirects to `/access`, the token works, and `/api/ask` without the cookie returns 401. Configure a custom domain only through a separately approved manual Vercel/DNS step using the record Vercel supplies.
 
    End explicitly: “I have stopped at the pre-deploy check. I will not deploy, push, create accounts/resources or change DNS without your explicit yes.” Do not execute any manual step as part of this skill.
 
 ## Never
 
-No account creation, Vercel/Supabase CLI calls, pushes, DNS changes, hosted migrations/ingestion, or claims that the pending access page exists. Never treat a check against a local mock database as verification of the hosted service.
+No account creation, Vercel/Supabase CLI calls, pushes, DNS changes, hosted migrations/ingestion, or claims that access works on a deployed site that nobody has checked. Never treat a check against a local mock database as verification of the hosted service.
 
 ## Done when
 
-The chosen profile, environment names, every failed check and manual hosting steps are explained. No external resource was created or changed; pending private access enforcement is clearly disclosed.
+The chosen profile, environment names, every failed check and manual hosting steps are explained. No external resource was created or changed; for private, the user knows how the team enters the token and how to check that access is enforced after deploying.

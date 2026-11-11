@@ -1,3 +1,4 @@
+import { ACCESS_COPY } from '@/lib/copy';
 import { QUESTION } from '@/lib/config';
 import { ErrorBody, type ErrorCode } from '@/lib/errors';
 import type { ValidationDetails } from './ask-request';
@@ -11,6 +12,7 @@ export function jsonError(input: {
   retryAfter?: number;
 }): Response {
   let message = 'Something went wrong on our side';
+  if (input.code === 'ACCESS_DENIED') message = ACCESS_COPY.heading;
   if (input.code === 'DEMO_OFF') message = 'The demo is offline for maintenance';
   if (input.code === 'DEMO_READONLY')
     message =

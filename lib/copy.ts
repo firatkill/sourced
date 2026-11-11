@@ -94,3 +94,14 @@ export function formatAskCopy(template: string, values: Record<string, string | 
 export function removedCitationsCopy(count: number): string {
   return count === 1 ? ASK_COPY.removedOne : formatAskCopy(ASK_COPY.removedMany, { n: count });
 }
+
+// PRD §9.9 / D-134.
+export const ACCESS_COPY = {
+  title: 'Access · Sourced',
+  heading: 'This chatbot is private',
+  body: 'Enter the access token you were given.',
+  label: 'Access token',
+  button: 'Continue',
+  error: 'That token is not valid.',
+  limited: 'Too many attempts. Try again in an hour.',
+} as const;

@@ -83,3 +83,9 @@ export const JUDGE = {
   MAX_OUTPUT_TOKENS: 300,
   TIMEOUT_MS: 20_000,
 } as const;
+
+// TRD §38 / D-134: private access settings.
+export const ACCESS = {
+  COOKIE_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
+  FAILED_ATTEMPTS_PER_HOUR: 10,
+} as const;

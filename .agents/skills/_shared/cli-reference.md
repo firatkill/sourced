@@ -330,6 +330,7 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 
 ## Error codes
 
+- `ACCESS_DENIED`
 - `VALIDATION_FAILED`
 - `ORIGIN_FORBIDDEN`
 - `PAYLOAD_TOO_LARGE`

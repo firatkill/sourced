@@ -31,10 +31,15 @@ export class EnvironmentError extends AppError {
 function invalidEnvironment(error: z.ZodError): EnvironmentError {
   return new EnvironmentError(error.issues.map((issue) => String(issue.path[0] ?? 'environment')));
 }
+
 // CSP construction must still run when unrelated runtime settings are invalid.
 export function getMiddlewareEnv() {
   return z
-    .object({ NODE_ENV: z.string().optional(), VERCEL_ENV: z.string().optional() })
+    .object({
+      NODE_ENV: z.string().optional(),
+      VERCEL_ENV: z.string().optional(),
+      SOURCED_ACCESS_TOKEN: z.string().optional(),
+    })
     .parse(process.env);
 }
 
