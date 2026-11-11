@@ -5342,6 +5342,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-236",
+      "ac_reference": "T-73; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Command pointers, permissions and CI",
+      "description": "TRD §37.1, §37.4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-236.",
+      "expected_result": "Seven .claude/commands files (setup, add-docs, ingest, check-quality, tune, troubleshoot, deploy), 3 to 5 lines each, point to the matching skill; .claude/settings.json allows exactly the §37.4 read-only commands for ./sourced and pnpm sourced and keeps the attribution settings; writing, paid, deleting and deploying commands are not allowlisted; the ci.yml static job runs check-skills.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Seven .claude/commands pointers (3-5 lines each); .claude/settings.json allows exactly the TRD 37.4 read-only commands for ./sourced and pnpm sourced and keeps attribution off; tests/unit/agent-files.test.ts (5 tests) checks both and the CI step; ci.yml lint job runs pnpm check-skills."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-237",
+      "ac_reference": "T-73; A-24",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Agent discovery of commands and skills",
+      "description": "A-24.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-237.",
+      "expected_result": "Current Claude Code lists the /setup family from .claude/commands and current Codex discovers the skills in .agents/skills; the finding is recorded in the decisions log, with the fallback pointer files if not.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "A-24 (D-133): Claude Code 2.1.322 ran /setup, /add-docs, /ingest, /check-quality, /troubleshoot and /deploy from .claude/commands in the rehearsals; Codex CLI 0.166.0 lists all seven .agents/skills skills."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

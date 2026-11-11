@@ -90,7 +90,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | done | 5b3de7b |
 | T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | 438b338 |
 | T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | doing | |
-| T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | todo | |
+| T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | done | (this commit) |
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | todo | |
 | T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | todo | |
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |

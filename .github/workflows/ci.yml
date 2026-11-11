@@ -33,6 +33,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm check-skills
       - run: pnpm lint
       - run: pnpm check:corpus-literals
       - run: pnpm audit --prod --audit-level high
