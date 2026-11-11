@@ -4799,6 +4799,10 @@
         {
           "result": "pass",
           "note": "CT drafts for doctor, init, add, sources, ask, dev, deploy:check: real CLI as a child process with --json in mock mode, stdout matches each schema, exit codes for success and documented failures including CHECKS_FAILED (D-115); finalized in T-63"
+        },
+        {
+          "result": "pass",
+          "note": "CT-01 to CT-14 final (D-122): every implemented command runs as a child process with --json in mock mode against the integration database; schemas and exit codes for success and documented failures; inspect/eval:generate/eval:review not-implemented contracts; down points to ./sourced down; schema change without schemaVersion bump fails (schema-version.test.ts); 262 contract tests pass"
         }
       ],
       "regression_of": null,
@@ -4909,6 +4913,27 @@
       "regression_of": null,
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-216",
+      "ac_reference": "T-63; NFR-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Search at 100,000 chunks",
+      "description": "T-63 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-216.",
+      "expected_result": "Hybrid search p95 warm <= 300 ms on a synthetic 100,000-chunk corpus with mock embeddings; result recorded in qa/.",
+      "status": "open",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "fail",
+          "note": "NFR-21 not yet established. Idle run (load 3-4) on the first synthetic generator: p50 28 ms, p95 807 ms (fails; every query term matched about 43% of chunks). Two-profile proving run (load unknown): realistic p95 70 ms (p99 2.1 s, broad FTS matches), worst case p95 1,154 ms (FTS ranks up to 80,000 matches; 698 ms FTS vs 13 ms vector). Official idle measurement pending: the machine has been under heavy load from other projects (load average 12 to 41)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
       "retraction_reason": null
     }
   ]

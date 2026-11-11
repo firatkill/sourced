@@ -19,6 +19,7 @@ import {
   type Source,
 } from '@/lib/sources/types';
 import { createFetchSession } from './fetch';
+import { RobotsDisallowedError } from './robots';
 import { parseHtml, type ParsedDocument } from './parse-html';
 import { parseMarkdown } from './parse-markdown';
 import { parsePdf } from './parse-pdf';
@@ -130,7 +131,9 @@ export async function loadCorpus(options: {
       let raw: RawDocument;
       try {
         raw = await drivers[source.type].load(ref, context);
-      } catch {
+      } catch (error) {
+        // Preserve robots refusals for the CLI's user-action exit 2 (TRD §34.2).
+        if (error instanceof RobotsDisallowedError) throw error;
         if (!documents.failedKeys.includes(ref.key)) documents.failedKeys.push(ref.key);
         continue;
       }

@@ -229,7 +229,7 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > down 1`] 
     "error": {
       "code": "INTERNAL_ERROR",
       "fix": "pnpm sourced --help",
-      "message": "down is not implemented yet. This command is reserved for a later implementation task.",
+      "message": "Use ./sourced down to stop containers on the Docker path.",
     },
     "ok": false,
     "schemaVersion": 1,

@@ -18,7 +18,7 @@ async function timestamps(root: string): Promise<Record<string, number>> {
   }
   return result;
 }
-test('TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run contract in mock mode', async () => {
+test('CT-05 / TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run contract in mock mode', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'sourced-cli-integration-'));
   const url = requireLocalDatabase(process.env.TEST_DATABASE_URL);
   const config = getKitConfig(false);
@@ -35,15 +35,20 @@ test('TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run contract in
     },
   ];
   const args = [
-    resolve('node_modules/tsx/dist/cli.mjs'),
-    '--tsconfig',
-    resolve('tsconfig.json'),
+    '--import',
+    resolve('node_modules/tsx/dist/loader.mjs'),
     '--conditions=react-server',
     resolve('scripts/sourced.ts'),
   ];
   const options = {
     cwd: directory,
-    env: { ...process.env, LLM_MODE: 'mock', DATABASE_URL: url, MIGRATION_DATABASE_URL: url },
+    env: {
+      ...process.env,
+      TSX_TSCONFIG_PATH: resolve('tsconfig.json'),
+      LLM_MODE: 'mock',
+      DATABASE_URL: url,
+      MIGRATION_DATABASE_URL: url,
+    },
   };
   try {
     await writeFile(

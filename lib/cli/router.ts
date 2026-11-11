@@ -7,7 +7,7 @@ import { CliEnvelope, type ExitCode } from './envelope';
 import { commands, helpText } from './registry';
 import { commandSchemas, type Command } from './schemas/commands';
 import { confirmAction } from './prompts';
-import { NO_SOURCES } from './commands/config-files';
+import { NO_SOURCES, requireSources } from './commands/config-files';
 
 export type Invocation = {
   command: Command;
@@ -249,11 +249,24 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     case 'sources list':
     case 'sources remove':
       return { result: await (await import('./commands/sources')).runSources(input) };
-    case 'ask':
+    case 'ask': {
+      // Prompt and request-schema modules read configuration at import time.
+      // Bootstrap from the TS config before importing them, even without a snapshot.
+      const { loadConfig } = await import('@/lib/kit/load-config');
+      const { setCliKitConfig } = await import('@/lib/kit/runtime-config');
+      const config = await loadConfig(process.cwd(), { writeSnapshot: false });
+      requireSources(config);
+      setCliKitConfig(config);
       return { result: await (await import('./commands/ask')).runAsk(input) };
+    }
     case 'dev':
       return { result: await (await import('./commands/dev')).runDev(input, context) };
 
+    case 'down':
+      throw new AppError(
+        'INTERNAL_ERROR',
+        'Use ./sourced down to stop containers on the Docker path.',
+      );
     case 'config:snapshot': {
       const { loadConfig, configHash } = await import('@/lib/kit/load-config');
       return { result: { configHash: configHash(await loadConfig()) } };

@@ -136,3 +136,68 @@ test('TC-113 / IT-11 / FR-40: subset mode still enforces question length', async
   expect(result.code).toBe(1);
   expect(result.output).toContain('6–25 words');
 });
+
+test('CT-10 / FR-77: eval validation succeeds and reports documented failure envelopes', async () => {
+  const { CliEnvelope } = await import('@/lib/cli/envelope');
+  const { commandSchemas } = await import('@/lib/cli/schemas/commands');
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { z } = await import('zod');
+  const dir = await mkdtemp(join(tmpdir(), 'sourced-eval-contract-'));
+  const file = join(dir, 'golden.jsonl');
+  const run = async (args: string[], expected: number) => {
+    let stdout: string;
+    let stderr: string;
+    let code = 0;
+    try {
+      ({ stdout, stderr } = await promisify(execFile)(
+        process.execPath,
+        [
+          '--import',
+          'tsx',
+          '--conditions=react-server',
+          'scripts/sourced.ts',
+          'eval',
+          ...args,
+          '--json',
+        ],
+        {
+          env: {
+            PATH: process.env.PATH,
+            LLM_MODE: 'mock',
+            NODE_ENV: 'test',
+            DATABASE_URL: requireLocalDatabase(process.env.TEST_DATABASE_URL),
+            QUESTION_HASH_SALT: 'test-only-question-salt-0000000000000000',
+            IP_HASH_SALT: 'test-only-ip-salt-00000000000000000000000',
+            NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+          },
+        },
+      ));
+    } catch (error) {
+      ({ stdout, stderr, code } = z
+        .object({ stdout: z.string(), stderr: z.string(), code: z.number() })
+        .parse(error));
+    }
+    expect(code, stdout).toBe(expected);
+    expect(stdout.trim().split('\n')).toHaveLength(1);
+    const envelope = CliEnvelope.parse(JSON.parse(stdout));
+    expect(envelope.command).toBe('eval');
+    expect(envelope.ok).toBe(expected === 0);
+    commandSchemas.eval.parse(envelope.result);
+    for (const line of stderr.trim().split('\n').filter(Boolean))
+      expect(JSON.parse(line)).toHaveProperty('event');
+    return envelope;
+  };
+  try {
+    await writeFile(file, jsonl(subset));
+    expect((await run(['--validate-only', '--file', file, '--subset'], 0)).result).toBeUndefined();
+    await writeFile(file, '{invalid}\n');
+    expect((await run(['--validate-only', '--file', file, '--subset'], 1)).error?.code).toBe(
+      'INTERNAL_ERROR',
+    );
+    expect((await run([], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
+    expect((await run(['--compare', 'baseline'], 1)).error?.code).toBe('INTERNAL_ERROR');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
