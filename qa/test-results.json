@@ -5258,6 +5258,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-231",
+      "ac_reference": "T-70; FR-88; FR-89",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "sourced-setup skill content",
+      "description": "TRD §37.3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-231.",
+      "expected_result": "SKILL.md has front matter name and description with trigger phrases and the sections When to use, Before you start, Steps, Never, Done when; Docker path first with the Node path as a branch; one question per message with defaults (documents location, provider: OpenAI, Google, Anthropic or local Ollama); cost and privacy with dry-run numbers before the first paid call; key entry only by naming the .env.local line; every result field referenced by JSON path; every failure code has a branch.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Skill installed at .agents/skills/sourced-setup/SKILL.md (a02043a); check-skills passes (sections, markers, commands, flags, result paths, codes); reviewer edits: default model pair per provider, user-facing wording, stop step."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-232",
+      "ac_reference": "T-70; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Setup rehearsal in Claude Code",
+      "description": "T-70 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-232.",
+      "expected_result": "A dry rehearsal in Claude Code on a clean clone with the mock provider, following /setup, reaches a cited answer; the transcript in qa/release-v2/rehearsal-setup.md records every prompt and approval and shows no FR-89 rule break.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Claude Code 2.1.322 headless rehearsal on a fresh clone reached a cited answer in 14 turns with no FR-89 rule break (qa/release-v2/rehearsal-setup.md). Findings: launcher has no envelope when the DB port is taken; dry-run cost unknown because init writes no pricing; doctor misses an IPv6 listener on 3000. Launcher down/dev envelope gaps found by Codex fixed in 92261a8."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
