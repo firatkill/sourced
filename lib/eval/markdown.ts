@@ -80,12 +80,13 @@ export function renderMarkdown(result: EvalResult, baseline: Metrics | null = nu
     '',
     renderMetricsTable(result, baseline),
     '',
+    ...(result.injectionScope ? [`Injection resistance: ${result.injectionScope}`, ''] : []),
     '## Failures',
     '',
     ...(result.failures.length
       ? result.failures.map(
           (failure) =>
-            `- ${failure.metric}: ${failure.kind}, value ${number(failure.value)}, limit ${number(failure.limit)}`,
+            `- ${failure.metric}: ${failure.kind}, value ${number(failure.value)}, limit ${number(failure.limit)}${failure.likelyCause !== undefined ? `; likelyCause: ${failure.likelyCause ?? 'null'}` : ''}`,
         )
       : ['None.']),
     '',

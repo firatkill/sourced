@@ -1,3 +1,11 @@
+import {
+  compareResults,
+  renderComparison,
+  loadThresholds,
+  likelyCause,
+  readInspectFindings,
+  injectionScope,
+} from '@/lib/eval/compare';
 import { AppError } from '@/lib/errors';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { checkCorpusSchema } from '@/lib/kit/vector-schema';
@@ -16,12 +24,7 @@ import { answerQuestion } from '@/lib/generation/answer';
 import { createLogger } from '@/lib/logger';
 import { PROMPT_VERSION } from '@/lib/prompts/version';
 import type { SseEvent } from '@/lib/sse/events';
-import {
-  parseGolden,
-  validateGolden,
-  missingGoldenAnchors,
-  type GoldenEntry,
-} from '@/lib/eval/golden';
+import { missingGoldenAnchors, type GoldenEntry } from '@/lib/eval/golden';
 import {
   accrueCost,
   checkBudget,
@@ -41,14 +44,9 @@ import {
   type EvalRecord,
 } from '@/lib/eval/metrics';
 import { EvalResult, type QuestionResult } from '@/lib/eval/results-schema';
-import {
-  EvalThresholds,
-  renderMarkdown,
-  renderMetricsTable,
-  resultFileStem,
-} from '@/lib/eval/markdown';
+import { renderMarkdown, renderMetricsTable, resultFileStem } from '@/lib/eval/markdown';
 import { checkRun } from '@/lib/eval/thresholds';
-import { readGoldenCorpus } from './validate';
+import { readGoldenCorpus, loadGoldenSet, validateGoldenProfile, evalProfile } from './validate';
 
 export function checkPreconditions(input: {
   mode: 'mock' | 'live';
@@ -104,7 +102,7 @@ export async function evaluateQuestions(
     const result: QuestionResult = {
       id: golden.id,
       type: golden.type,
-      chapter: golden.chapter,
+      chapter: golden.group,
       question: golden.question,
       outcome: 'error',
       recallAt5: golden.type === 'answerable' ? 0 : null,
@@ -261,6 +259,9 @@ export async function runEval(
         limit: { type: 'string' },
         only: { type: 'string' },
         baseline: { type: 'string' },
+        compare: { type: 'string' },
+        file: { type: 'string' },
+        subset: { type: 'boolean', default: false },
         'no-write': { type: 'boolean', default: false },
         ci: { type: 'boolean', default: false },
       },
@@ -279,19 +280,24 @@ export async function runEval(
       embed: env.PRICE_EMBED_PER_MTOK,
     };
     validatePrices(env.LLM_MODE, prices);
-    const parsed = parseGolden(
-      await readFile(`eval/${getKitConfig().corpus.name}/golden.jsonl`, 'utf8'),
+    const profile = evalProfile(getKitConfig().corpus.name);
+    const parsed = await loadGoldenSet(
+      await readFile(values.file ?? `eval/${getKitConfig().corpus.name}/golden.jsonl`, 'utf8'),
+      profile,
     );
-    const errors = [...parsed.errors, ...validateGolden(parsed.entries, await readGoldenCorpus())];
+    const corpus =
+      profile === 'example' ? await readGoldenCorpus() : { headings: [], identifiers: [] };
+    const errors = [
+      ...parsed.errors,
+      ...validateGoldenProfile(parsed.entries, corpus, profile, parsed.injections, values.subset),
+    ];
     if (errors.length) throw new EvalAbort(2, 'Invalid golden set; run pnpm eval:validate');
-    const thresholds = EvalThresholds.parse(
-      JSON.parse(await readFile('eval/thresholds.json', 'utf8')),
-    );
+    const thresholds = await loadThresholds(getKitConfig().corpus.name);
     const only =
       values.only === undefined
         ? null
         : z
-            .array(z.string().regex(/^q\d{3}$/))
+            .array(z.string().regex(/^(?:q\d{3}|shared-inj-0[1-4])$/))
             .min(1)
             .parse(values.only.split(','));
     if (only?.some((id) => !parsed.entries.some((e) => e.id === id)))
@@ -308,12 +314,12 @@ export async function runEval(
     const fixture = await sql`SELECT 1 FROM documents WHERE is_fixture LIMIT 1`;
     const ingest = await sql<
       { corpus_version: string; cost_usd_estimate: string }[]
-    >`SELECT corpus_version, cost_usd_estimate FROM ingest_runs WHERE status = 'succeeded' AND include_fixtures ORDER BY finished_at DESC LIMIT 1`;
+    >`SELECT corpus_version, cost_usd_estimate FROM ingest_runs WHERE status = 'succeeded' AND (${profile === 'kit'} OR include_fixtures) ORDER BY finished_at DESC LIMIT 1`;
     const mismatch = await sql`SELECT 1 FROM chunks WHERE embedding_model <> ${model} LIMIT 1`;
     checkPreconditions({
       mode: env.LLM_MODE,
       noWrite: values['no-write'],
-      hasFixtures: fixture.length > 0,
+      hasFixtures: profile === 'kit' || fixture.length > 0,
       hasIngest: ingest.length > 0,
       modelMismatch: mismatch.length > 0,
     });
@@ -326,8 +332,14 @@ export async function runEval(
     )
       throw new EvalAbort(2, 'Missing golden anchors; run pnpm eval:validate');
     const runDate = new Date();
-    const stem = await resultFileStem(env.EVAL_RESULTS_DIR, () => runDate, exists);
-    const baseline = await loadBaseline(values.baseline, env.EVAL_RESULTS_DIR, `${stem}.json`);
+    const resultsDir =
+      profile === 'example' ? env.EVAL_RESULTS_DIR : `eval/${config.corpus.name}/results`;
+    const stem = await resultFileStem(resultsDir, () => runDate, exists);
+    const baseline = await loadBaseline(
+      values.compare === 'baseline' ? values.baseline : (values.compare ?? values.baseline),
+      resultsDir,
+      `${stem}.json`,
+    );
     checkBudget(
       projectCost(
         entries.length,
@@ -377,11 +389,28 @@ export async function runEval(
       ...checkRun(metrics, thresholds, baseline?.result.metrics ?? null),
       questions: records.map((r) => r.result),
     });
+    const findings = await readInspectFindings(config.corpus.name);
+    result.failures = result.failures.map((failure) =>
+      failure.kind === 'floor'
+        ? { ...failure, likelyCause: likelyCause(failure.metric, findings) }
+        : failure,
+    );
+    if (profile === 'kit') {
+      result.injectionScope = injectionScope(fixture.length > 0);
+      write(`Injection resistance: ${result.injectionScope}`);
+    }
+    for (const failure of result.failures)
+      if (failure.kind === 'floor')
+        write(`${failure.metric}: likelyCause=${failure.likelyCause ?? 'null'}`);
+    if (values.compare && baseline) {
+      result.comparison = compareResults(result, baseline.result, thresholds);
+      write(renderComparison(result.comparison));
+    }
     write(renderMetricsTable(result, baseline?.result.metrics ?? null));
     if (!baseline) write('No baseline');
     const markdown = renderMarkdown(result, baseline?.result.metrics ?? null);
     if (!values['no-write']) {
-      await mkdir(env.EVAL_RESULTS_DIR, { recursive: true });
+      await mkdir(resultsDir, { recursive: true });
       await writeFile(`${stem}.json`, `${JSON.stringify(result, null, 2)}\n`, { flag: 'wx' });
       await writeFile(`${stem}.md`, markdown, { flag: 'wx' });
     }

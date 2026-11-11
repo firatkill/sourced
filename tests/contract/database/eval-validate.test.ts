@@ -196,7 +196,7 @@ test('CT-10 / FR-77: eval validation succeeds and reports documented failure env
       'INTERNAL_ERROR',
     );
     expect((await run([], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
-    expect((await run(['--compare', 'baseline'], 1)).error?.code).toBe('INTERNAL_ERROR');
+    expect((await run(['--compare', 'baseline'], 2)).error?.code).toBe('NEEDS_CONFIRMATION');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

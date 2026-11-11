@@ -15,7 +15,69 @@ import {
   validateGolden,
   validateGoldenEntries,
   type GoldenCorpus,
+  type GoldenEntry,
 } from '@/lib/eval/golden';
+
+export type ValidationProfile = 'example' | 'kit';
+
+export function evalProfile(name: string): ValidationProfile {
+  return name === 'postgres-17' ? 'example' : 'kit';
+}
+
+export async function loadGoldenSet(text: string, profile: ValidationProfile) {
+  const parsed = parseGolden(text);
+  const shared =
+    profile === 'kit'
+      ? parseGolden(
+          await readFile(new URL('../../eval/shared/injection.jsonl', import.meta.url), 'utf8'),
+          true,
+        )
+      : { entries: [], errors: [] };
+  if (
+    profile === 'kit' &&
+    (shared.entries.length !== 4 || new Set(shared.entries.map((entry) => entry.id)).size !== 4)
+  )
+    shared.errors.push('Expected all four built-in injection entries.');
+  return {
+    entries: [...parsed.entries, ...shared.entries],
+    errors: [...parsed.errors, ...shared.errors],
+    injections: shared.entries,
+  };
+}
+
+export function validateGoldenProfile(
+  entries: readonly GoldenEntry[],
+  corpus: GoldenCorpus,
+  profile: ValidationProfile,
+  injections: readonly GoldenEntry[] = [],
+  subset = false,
+): string[] {
+  if (profile === 'example')
+    return subset ? validateGoldenEntries(entries, corpus) : validateGolden(entries, corpus);
+  const errors: string[] = [];
+  if (new Set(entries.map((entry) => entry.id)).size !== entries.length)
+    errors.push('Golden ids must be unique.');
+  if (!subset) {
+    for (const [type, minimum] of [
+      ['answerable', 20],
+      ['unanswerable', 3],
+    ] as const)
+      if (entries.filter((entry) => entry.type === type).length < minimum)
+        errors.push(`${type}: need at least ${String(minimum)}.`);
+    for (const injection of injections)
+      if (
+        !entries.some(
+          (entry) =>
+            entry.id === injection.id &&
+            entry.type === 'injection' &&
+            entry.question === injection.question &&
+            injection.forbidden_strings.every((value) => entry.forbidden_strings.includes(value)),
+        )
+      )
+        errors.push(`Missing built-in injection: ${injection.id}`);
+  }
+  return errors;
+}
 
 export async function readGoldenCorpus(): Promise<GoldenCorpus> {
   const manifest = await loadManifest();
@@ -64,13 +126,13 @@ export async function runGoldenValidation(options: {
   text: string;
   corpus: GoldenCorpus;
   subset?: boolean;
+  profile?: ValidationProfile;
   write: (message: string) => void;
 }): Promise<number> {
-  const { entries, errors } = parseGolden(options.text);
+  const profile = options.profile ?? 'example';
+  const { entries, errors, injections } = await loadGoldenSet(options.text, profile);
   errors.push(
-    ...(options.subset
-      ? validateGoldenEntries(entries, options.corpus)
-      : validateGolden(entries, options.corpus)),
+    ...validateGoldenProfile(entries, options.corpus, profile, injections, options.subset),
   );
   if (entries.length === 0) errors.push('Golden set must not be empty.');
   const rows = await getSql()<{ anchor: string }[]>`SELECT DISTINCT anchor FROM chunks`;
@@ -81,6 +143,7 @@ export async function runGoldenValidation(options: {
     errors.push(`Missing anchor: ${anchor}`);
   }
   if (
+    profile === 'example' &&
     entries.some(
       (entry) => entry.type === 'injection' && entry.question === PASSAGE_INJECTION_QUESTION,
     ) &&
@@ -89,7 +152,7 @@ export async function runGoldenValidation(options: {
     errors.push(
       'Missing passage-borne fixture: injected-notice.html#INJECTED-NOTICE. Run pnpm ingest --include-fixtures first.',
     );
-  options.write(formatGoldenDistribution(entries, options.corpus));
+  if (profile === 'example') options.write(formatGoldenDistribution(entries, options.corpus));
   for (const error of errors) options.write(error);
   if (errors.length === 0) options.write(`Validated ${String(entries.length)} golden entries.`);
   return errors.length === 0 ? 0 : 1;
@@ -112,7 +175,11 @@ export async function runEvalValidation(
   try {
     return await runGoldenValidation({
       text: await readFile(values.file, 'utf8'),
-      corpus: await readGoldenCorpus(),
+      corpus:
+        evalProfile(getKitConfig().corpus.name) === 'example'
+          ? await readGoldenCorpus()
+          : { headings: [], identifiers: [] },
+      profile: evalProfile(getKitConfig().corpus.name),
       subset: values.subset,
       write,
     });

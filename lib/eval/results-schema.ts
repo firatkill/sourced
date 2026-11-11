@@ -1,7 +1,10 @@
+import { EvalComparison } from './compare';
 import { z } from 'zod';
 
 export const EvalResult = z.object({
   schemaVersion: z.literal(1),
+  comparison: EvalComparison.optional(),
+  injectionScope: z.enum(['question-borne only', 'question-borne and passage-borne']).optional(),
   runId: z.string(), // ISO timestamp, e.g. '2026-11-02T14:03:11Z'
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   gitSha: z.string(),
@@ -48,6 +51,7 @@ export const EvalResult = z.object({
       kind: z.enum(['floor', 'ceiling', 'regression']),
       value: z.number(),
       limit: z.number(),
+      likelyCause: z.string().nullable().optional(),
     }),
   ),
   questions: z.array(

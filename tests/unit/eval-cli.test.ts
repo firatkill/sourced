@@ -35,7 +35,8 @@ vi.mock('@/lib/db/client', () => ({
     return entries.flatMap((entry) => entry.expected_anchors.map((anchor) => ({ anchor })));
   },
 }));
-vi.mock('@/lib/eval/validate', () => ({
+vi.mock('@/lib/eval/validate', async (original) => ({
+  ...(await original<typeof import('@/lib/eval/validate')>()),
   readGoldenCorpus: (): Promise<GoldenCorpus> => Promise.resolve({ headings: [], identifiers: [] }),
 }));
 vi.mock('@/lib/eval/golden', async (importOriginal) => ({
@@ -247,4 +248,66 @@ test('T-47 / FR-61: eval refuses mismatched corpus before provider calls', async
   expect(await runEval(['--limit', '1', '--no-write'])).toBe(2);
   expect(error).toHaveBeenCalledWith(message);
   expect(state.calls).toBe(0);
+});
+
+test('TC-226 / FR-85: --compare fixture prints deltas and exits 1 on regression', async () => {
+  const write = vi.fn();
+  let result: EvalResult | undefined;
+  expect(
+    await runEval(
+      ['--only', 'q001', '--no-write', '--compare', 'tests/fixtures/eval-results/2026-11-01.json'],
+      {
+        write,
+        result: (value) => {
+          result = value;
+        },
+      },
+    ),
+  ).toBe(1);
+  expect(result?.comparison?.regressions).toContainEqual(
+    expect.objectContaining({ metric: 'recallAt5' }),
+  );
+  expect(write).toHaveBeenCalledWith(expect.stringContaining('| Metric | Delta |'));
+});
+
+test('TC-226 / FR-84 / D-126: kit CLI merges built-ins, does not require fixtures, and reports nullable causes', async () => {
+  const { getKitConfig, setCliKitConfig } = await import('@/lib/kit/runtime-config');
+  const originalConfig = getKitConfig(false);
+  const config = structuredClone(originalConfig);
+  config.corpus.name = 'test-kit';
+  const fs = await import('node:fs/promises');
+  const originalRead = fs.readFile;
+  const golden = await originalRead('eval/postgres-17/golden.jsonl', 'utf8');
+  vi.spyOn(fs, 'readFile').mockImplementation((...args) =>
+    args[0] === 'eval/test-kit/golden.jsonl' ? Promise.resolve(golden) : originalRead(...args),
+  );
+  setCliKitConfig(config);
+  state.fixtures = false;
+  try {
+    const write = vi.fn();
+    let result: EvalResult | undefined;
+    expect(
+      await runEval(['--no-write', '--only', 'shared-inj-01'], {
+        write,
+        result: (value) => {
+          result = value;
+        },
+      }),
+    ).toBe(1);
+    expect(result?.questions.map((q) => q.id)).toEqual(['shared-inj-01']);
+    expect(result?.injectionScope).toBe('question-borne only');
+    expect(result?.failures).toContainEqual(
+      expect.objectContaining({ metric: 'recallAt5', likelyCause: null }),
+    );
+    expect(result?.failures).toContainEqual(
+      expect.objectContaining({
+        metric: 'citationValidity',
+        likelyCause: 'quote fallback rate and model',
+      }),
+    );
+    expect(write).toHaveBeenCalledWith('Injection resistance: question-borne only');
+    expect(state.writes).not.toHaveBeenCalled();
+  } finally {
+    setCliKitConfig(originalConfig);
+  }
 });

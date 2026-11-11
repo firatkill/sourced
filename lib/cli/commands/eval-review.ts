@@ -67,17 +67,7 @@ export async function runEvalReview(input: Invocation, context: CommandContext) 
   const goldenPath = join(directory, 'golden.jsonl');
   const candidates = parseJsonLines(await readFile(candidatePath, 'utf8'), Candidate);
   const goldenText = await readOptionalFile(goldenPath);
-  const golden = parseJsonLines(
-    goldenText,
-    z.union([
-      GeneratedGoldenEntry,
-      GoldenEntry.transform(({ chapter, ...entry }) => ({
-        ...entry,
-        group: chapter,
-        origin: 'handwritten' as const,
-      })),
-    ]),
-  );
+  const golden = parseJsonLines(goldenText, GoldenEntry);
   let edited = 0;
   if (!input.values.apply) {
     if (input.json || !context.isTTY)

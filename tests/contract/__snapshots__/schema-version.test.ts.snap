@@ -670,6 +670,12 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
                 ],
                 "type": "string",
               },
+              "likelyCause": {
+                "type": [
+                  "string",
+                  "null",
+                ],
+              },
               "limit": {
                 "type": "number",
               },
@@ -691,6 +697,13 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
           "type": "array",
         },
         "gitSha": {
+          "type": "string",
+        },
+        "injectionScope": {
+          "enum": [
+            "question-borne only",
+            "question-borne and passage-borne",
+          ],
           "type": "string",
         },
         "metrics": {

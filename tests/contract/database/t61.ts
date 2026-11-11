@@ -471,14 +471,15 @@ test('CT-08 / UT-47 / FR-83: generation dry run, cost guard, candidates and fail
   const generated = commandSchemas['eval:generate'].parse(
     (await cli(['eval:generate', '--count', '1', '--yes'])).result,
   );
-  expect(generated.written).toBe(6);
+  expect(generated.written).toBe(2);
   const { Candidate } = await import('@/lib/eval/generate');
   const candidates = (await readFile(candidatePath, 'utf8'))
     .trim()
     .split('\n')
     .map((line) => Candidate.parse(JSON.parse(line)));
   expect(candidates.every((candidate) => candidate.status === 'pending')).toBe(true);
-  expect(candidates.filter((candidate) => candidate.type === 'injection')).toHaveLength(4);
+  // D-126: shared injections enter at eval load, never through accepted candidates.
+  expect(candidates.filter((candidate) => candidate.type === 'injection')).toHaveLength(0);
   expect(
     candidates.find((candidate) => candidate.type === 'unanswerable')?.flags.needsHumanCheck,
   ).toBe(true);
@@ -673,4 +674,56 @@ test('CT-06: inspect handles no sources, un-ingested sources and invalid configu
   expect((await cli(['inspect'], 2)).error?.code).toBe('CORPUS_EMPTY');
   await writeFile(join(dir, 'sourced.config.ts'), 'export default {schemaVersion: 999};');
   expect((await cli(['inspect'], 1)).error?.code).toBe('CONFIG_INVALID');
+});
+
+test('CT-10 / TC-226 / FR-84 / D-126: kit validation and eval merge shared injections without passage fixtures', async () => {
+  const { cli, dir, config } = await fixture();
+  config.corpus.name = 'kit-eval-contract';
+  // Eval reads committed provenance and the kit's default thresholds.
+  await symlink(join(root, '.git'), join(dir, '.git'), 'dir');
+  await mkdir(join(dir, 'eval'), { recursive: true });
+  await writeFile(
+    join(dir, 'eval/thresholds.json'),
+    await readFile(join(root, 'eval/thresholds.json')),
+  );
+  await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};\n`);
+  await writeFile(
+    join(dir, 'guide.md'),
+    '# Setup\n\nSave the configuration file and restart the service to apply the changed storage settings.',
+  );
+  await cli(['add', join(dir, 'guide.md'), '--id', 'guide', '--group', 'guide']);
+  await cli(['ingest', '--offline']);
+  const [chunk] = await getSql()<{ anchor: string }[]>`SELECT anchor FROM chunks LIMIT 1`;
+  expect(chunk).toBeDefined();
+  const entries = Array.from({ length: 23 }, (_, index) => ({
+    id: `q${String(index + 1).padStart(3, '0')}`,
+    type: index < 20 ? 'answerable' : 'unanswerable',
+    group: 'guide',
+    question: 'How should I apply changed storage settings?',
+    expected_anchors: index < 20 ? [chunk!.anchor] : [],
+    reference_answer: '',
+    origin: 'handwritten',
+  }));
+  const directory = join(dir, 'eval', config.corpus.name);
+  await mkdir(directory, { recursive: true });
+  const path = join(directory, 'golden.jsonl');
+  const text = entries.map((entry) => JSON.stringify(entry)).join('\n') + '\n';
+  await writeFile(path, text);
+  await cli(['eval', '--validate-only']);
+  const result = commandSchemas.eval.parse(
+    (await cli(['eval', '--no-write', '--only', 'shared-inj-01'], 1)).result,
+  );
+  expect(result?.injectionScope).toBe('question-borne only');
+  expect(result?.metrics.counts).toEqual({
+    total: 1,
+    answerable: 0,
+    unanswerable: 0,
+    injection: 1,
+  });
+  expect(result?.failures).toContainEqual(
+    expect.objectContaining({ metric: 'recallAt5', likelyCause: null }),
+  );
+  expect(await readFile(path, 'utf8')).toBe(text);
+  await writeFile(path, text.replaceAll(chunk!.anchor, 'missing.md#anchor'));
+  await cli(['eval', '--validate-only'], 1);
 });

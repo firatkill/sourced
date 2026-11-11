@@ -290,8 +290,6 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       return { result: await runIngest(input, context) };
     }
     case 'eval': {
-      if (input.values.compare)
-        throw new AppError('INTERNAL_ERROR', 'Eval comparison is not implemented yet (T-67).');
       const args = Object.entries(input.values).flatMap(([key, value]) =>
         ['json', 'yes', 'validate-only'].includes(key) || value === undefined || value === false
           ? []

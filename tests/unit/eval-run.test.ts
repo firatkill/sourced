@@ -7,7 +7,7 @@ import { resetEnvForTests } from '@/lib/env';
 const golden = GoldenEntry.parse({
   id: 'q001',
   type: 'answerable',
-  chapter: 'indexes',
+  group: 'indexes',
   question: 'When should I create a partial index?',
   expected_anchors: ['indexes.html#INDEXES'],
   reference_answer: '',

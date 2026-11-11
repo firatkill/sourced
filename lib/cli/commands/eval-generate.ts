@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 import { loadConfig } from '@/lib/kit/load-config';
@@ -14,7 +14,6 @@ import { RETRIEVAL, QUESTION } from '@/lib/config';
 import {
   Candidate,
   GenerationChunk,
-  GeneratedGoldenEntry,
   sampleChunks,
   generateAnswerCandidate,
   estimateGenerationCost,
@@ -27,9 +26,9 @@ import {
   buildUnanswerablePrompt,
 } from '@/lib/prompts/generate';
 import type { CommandContext, Invocation } from '../router';
-import { connectDatabase, repositoryRoot } from './database';
+import { connectDatabase } from './database';
 import { requireSources } from './config-files';
-import { jsonLines, parseJsonLines } from './eval-review';
+import { jsonLines } from './eval-review';
 
 export async function runEvalGenerate(input: Invocation, context: CommandContext) {
   const config = await loadConfig(process.cwd(), { writeSnapshot: false });
@@ -198,12 +197,6 @@ export async function runEvalGenerate(input: Invocation, context: CommandContext
           sourceChunkId: null,
         });
     }
-    const injections = parseJsonLines(
-      await readFile(join(repositoryRoot, 'eval/shared/injection.jsonl'), 'utf8'),
-      GeneratedGoldenEntry,
-    );
-    for (const injection of injections)
-      add({ ...injection, status: 'pending', flags: {}, sourceChunkId: null });
     const directory = join(process.cwd(), 'eval', config.corpus.name);
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'candidates.jsonl'), jsonLines(candidates), 'utf8');

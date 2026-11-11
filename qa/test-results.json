@@ -5128,6 +5128,27 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-226",
+      "ac_reference": "T-67; FR-84; FR-85",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Golden schema, profiles and comparison",
+      "description": "T-67 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-226.",
+      "expected_result": "GoldenEntry uses group and origin with the widened anchor regex; the example validates under its profile; kit corpora use the §36.1 rules; --compare prints deltas and exits 1 on regression; below-floor metrics get a likelyCause; /eval still renders.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "GoldenEntry uses group and origin with the wider anchors; example golden set validates under its v1 profile (40 entries, 320 field values unchanged apart from chapter to group); kit profile per TRD §36.1; shared injections merged at load with question-borne-only reporting (D-126); likelyCause from the §36.5 table, null when unmapped; --compare exits 1 on regression; /eval E2E passed (118)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

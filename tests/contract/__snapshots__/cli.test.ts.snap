@@ -1334,6 +1334,12 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
             ],
             "type": "string",
           },
+          "likelyCause": {
+            "type": [
+              "string",
+              "null",
+            ],
+          },
           "limit": {
             "type": "number",
           },
@@ -1355,6 +1361,13 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
       "type": "array",
     },
     "gitSha": {
+      "type": "string",
+    },
+    "injectionScope": {
+      "enum": [
+        "question-borne only",
+        "question-borne and passage-borne",
+      ],
       "type": "string",
     },
     "metrics": {

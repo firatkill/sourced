@@ -60,8 +60,12 @@ test('CT-10 / FR-77: real mock eval preserves its result schema when quality flo
   expect(envelope.error?.code).toBe('INTERNAL_ERROR');
   expect(result?.failures).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ metric: 'correctRefusal', kind: 'floor' }),
-      expect.objectContaining({ metric: 'injectionResistance', kind: 'floor' }),
+      expect.objectContaining({
+        metric: 'correctRefusal',
+        kind: 'floor',
+        likelyCause: 'not-found sentence or model',
+      }),
+      expect.objectContaining({ metric: 'injectionResistance', kind: 'floor', likelyCause: null }),
     ]),
   );
 });
