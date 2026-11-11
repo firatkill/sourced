@@ -31,10 +31,9 @@ export function compareResults(
       changedQuestions.push(question.id);
   return {
     deltas: Object.fromEntries(
-      Object.entries(metricValues(current.metrics)).map(([metric, value]) => [
-        metric,
-        value - (prior[metric] ?? 0),
-      ]),
+      Object.entries(metricValues(current.metrics)).flatMap(([metric, value]) =>
+        value === null || prior[metric] == null ? [] : [[metric, value - (prior[metric] ?? 0)]],
+      ),
     ),
     changedQuestions,
     regressions: checkRun(current.metrics, thresholds, baseline.metrics)

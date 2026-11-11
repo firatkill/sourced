@@ -122,3 +122,20 @@ test('TC-123 / FR-42: deterministic date names reserve either extension, then -2
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('D-129: null costs remain unknown and the ceiling is not evaluated', async () => {
+  const { checkRun } = await import('@/lib/eval/thresholds');
+  const { compareResults } = await import('@/lib/eval/compare');
+  const r = result();
+  r.metrics.cost.totalUsd = null;
+  r.metrics.cost.perQuestionUsd = null;
+  r.questions[0]!.costUsd = null;
+  expect(EvalResult.parse(r)).toEqual(r);
+  expect(
+    checkRun(r.metrics, thresholds, null).failures.some((f) => f.metric === 'costPerQuestionUsd'),
+  ).toBe(false);
+  expect(renderMetricsTable(r)).toContain(
+    '| costPerQuestionUsd | unknown | ≤ 0.02 | — | — | Not evaluated |',
+  );
+  expect(compareResults(r, result(), thresholds).deltas).not.toHaveProperty('costPerQuestionUsd');
+});

@@ -36,7 +36,7 @@ test('TC-133 / D-84: negative latency and cost deltas retain their units and pre
   const previous = EvalResult.parse(older);
   const latest = EvalResult.parse(newer);
   latest.metrics.latencyMs.p95 = previous.metrics.latencyMs.p95 - 900;
-  latest.metrics.cost.perQuestionUsd = previous.metrics.cost.perQuestionUsd - 0.0013;
+  latest.metrics.cost.perQuestionUsd = (previous.metrics.cost.perQuestionUsd ?? 0) - 0.0013;
   render(<EvalView resultsDirectory="eval/postgres-17/results" runs={[previous, latest]} />);
   expect(screen.getByText('−0.9 s vs previous')).toBeTruthy();
   expect(screen.getByText('−$0.0013 vs previous')).toBeTruthy();
@@ -57,4 +57,16 @@ test('R1 / REDESIGN §6.1 and §7: lead counts and result filename come from the
   expect(screen.getByRole('link', { name: 'Full results file' }).getAttribute('href')).toBe(
     'https://github.com/firatkill/sourced/blob/main/eval/postgres-17/results/2026-11-02-2.json',
   );
+});
+
+test('D-129 / FR-84: unknown costs render without a passing ceiling or false trend', () => {
+  const run = EvalResult.parse(newer);
+  run.metrics.cost.totalUsd = null;
+  run.metrics.cost.perQuestionUsd = null;
+  render(<EvalView resultsDirectory="eval/test/results" runs={[EvalResult.parse(older), run]} />);
+  const cost = within(screen.getByRole('article', { name: 'Cost per answer' }));
+  expect(cost.getByText('unknown')).toBeTruthy();
+  expect(cost.getByText('Not evaluated')).toBeTruthy();
+  expect(cost.queryByText('Above ceiling')).toBeNull();
+  expect(cost.queryByRole('img')).toBeNull();
 });

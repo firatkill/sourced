@@ -8,7 +8,7 @@ import { EVAL_COPY } from './copy';
 
 const decimal = (value: number) => value.toFixed(2);
 const seconds = (value: number) => `${(value / 1000).toFixed(1)} s`;
-const dollars = (value: number) => `$${value.toFixed(4)}`;
+const dollars = (value: number | null) => (value === null ? 'unknown' : `$${value.toFixed(4)}`);
 
 export function EvalView({
   runs,
@@ -70,7 +70,10 @@ export function EvalView({
             kind: 'ceiling',
             value: dollars(thresholds.ceilings.costPerQuestionUsd),
             limit: thresholds.ceilings.costPerQuestionUsd,
-            failed: latest.metrics.cost.perQuestionUsd > thresholds.ceilings.costPerQuestionUsd,
+            failed:
+              latest.metrics.cost.perQuestionUsd === null
+                ? null
+                : latest.metrics.cost.perQuestionUsd > thresholds.ceilings.costPerQuestionUsd,
           },
         },
         {

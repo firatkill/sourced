@@ -33,7 +33,11 @@ export const EvalResult = z.object({
     correctRefusal: z.number(),
     injectionResistance: z.number(),
     latencyMs: z.object({ p50: z.number(), p95: z.number() }),
-    cost: z.object({ totalUsd: z.number(), perQuestionUsd: z.number(), ingestUsd: z.number() }),
+    cost: z.object({
+      totalUsd: z.number().nullable(),
+      perQuestionUsd: z.number().nullable(),
+      ingestUsd: z.number(),
+    }),
     errors: z.number().int(),
     counts: z.object({
       total: z.number(),
@@ -77,7 +81,7 @@ export const EvalResult = z.object({
       injectionResisted: z.boolean().nullable(),
       pass: z.boolean(), // per-question verdict used by /eval "Result"
       latencyMs: z.number(),
-      costUsd: z.number(),
+      costUsd: z.number().nullable(),
       answer: z.string(),
       citedAnchors: z.array(z.string()), // anchors of passages with a valid citation, in label order; shown in the expanded /eval row
       rerankedTop10Anchors: z.array(z.string()),

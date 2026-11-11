@@ -1384,10 +1384,16 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
               "type": "number",
             },
             "perQuestionUsd": {
-              "type": "number",
+              "type": [
+                "number",
+                "null",
+              ],
             },
             "totalUsd": {
-              "type": "number",
+              "type": [
+                "number",
+                "null",
+              ],
             },
           },
           "required": [

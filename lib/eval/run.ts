@@ -7,6 +7,7 @@ import {
   injectionScope,
 } from '@/lib/eval/compare';
 import { AppError } from '@/lib/errors';
+import type { KitConfig } from '@/lib/kit/config-schema';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { checkCorpusSchema } from '@/lib/kit/vector-schema';
 import { loadConfig } from '@/lib/kit/load-config';
@@ -48,6 +49,37 @@ import { renderMarkdown, renderMetricsTable, resultFileStem } from '@/lib/eval/m
 import { checkRun } from '@/lib/eval/thresholds';
 import { readGoldenCorpus, loadGoldenSet, validateGoldenProfile, evalProfile } from './validate';
 
+/** Resolve prices before calls; zero-fill only the known-cost budget calculation. */
+export function resolveEvalConfig(config: KitConfig, yes = false) {
+  const roles = ['chat', 'judge', 'embed', 'rerank'] as const;
+  const knownConfig = structuredClone(config);
+  for (const role of roles) {
+    const model = config.models[role] ?? config.models.chat;
+    if (rolePrice(role, config) === null) {
+      if (!yes)
+        throw new EvalAbort(
+          2,
+          `Price unknown for ${model.provider}:${model.model}; add it to pricing in sourced.config.ts to get an estimate.`,
+        );
+      knownConfig.pricing[`${model.provider}:${model.model}`] = {
+        inputPerMTok: 0,
+        outputPerMTok: 0,
+      };
+    }
+  }
+  const chat = rolePrice('chat', knownConfig);
+  const judge = rolePrice('judge', knownConfig);
+  const embed = rolePrice('embed', knownConfig);
+  const prices: EvalPrices = {
+    chatInput: chat?.inputPerMTok ?? 0,
+    chatOutput: chat?.outputPerMTok ?? 0,
+    judgeInput: judge?.inputPerMTok ?? 0,
+    judgeOutput: judge?.outputPerMTok ?? 0,
+    embed: embed?.inputPerMTok ?? 0,
+  };
+  return { prices, knownConfig, judgeKnown: rolePrice('judge', config) !== null };
+}
+
 export function checkPreconditions(input: {
   mode: 'mock' | 'live';
   noWrite: boolean;
@@ -71,6 +103,7 @@ export async function evaluateQuestions(
   options: {
     mode: 'mock' | 'live';
     prices: EvalPrices;
+    yes?: boolean;
     limitUsd: number;
     answer?: typeof answerQuestion;
     judge?: typeof judgeAnswer;
@@ -79,16 +112,7 @@ export async function evaluateQuestions(
   },
 ): Promise<EvalRecord[]> {
   const priceConfig = getKitConfig(false);
-  const unpricedRole = (['embed', 'chat', 'rerank'] as const).find(
-    (role) => rolePrice(role, priceConfig) === null,
-  );
-  if (unpricedRole) {
-    const model = priceConfig.models[unpricedRole] ?? priceConfig.models.chat;
-    throw new EvalAbort(
-      2,
-      `Price unknown for ${model.provider}:${model.model}; add it to pricing in sourced.config.ts to get an estimate.`,
-    );
-  }
+  const resolved = resolveEvalConfig(priceConfig, options.yes);
   const records: EvalRecord[] = [];
   let accrued = 0;
   const now = options.now ?? (() => performance.now());
@@ -142,9 +166,8 @@ export async function evaluateQuestions(
       const verification = outcome.verification;
       record.usage.answer = outcome.usage;
       const answerCost = estimateCost(outcome.usage, priceConfig);
-      if (answerCost === null) throw new EvalAbort(2, 'Price configuration changed during eval.');
       record.answerCostUsd = answerCost;
-      charge(record.answerCostUsd);
+      charge(estimateCost(outcome.usage, resolved.knownConfig) ?? 0);
       record.rrfTop20Anchors = outcome.candidates.map((chunk) => chunk.anchor);
       record.rerankedTop20Anchors = outcome.reranked.map((chunk) => chunk.anchor);
       record.passageLabels = outcome.passages.map((p) => p.label);
@@ -175,8 +198,9 @@ export async function evaluateQuestions(
             {
               onUsage: (usage) => {
                 record.usage.judge = usage;
-                record.judgeCostUsd = judgeCost(usage, options.prices);
-                charge(record.judgeCostUsd);
+                const knownCost = judgeCost(usage, options.prices);
+                record.judgeCostUsd = resolved.judgeKnown ? knownCost : null;
+                charge(knownCost);
               },
             },
           );
@@ -198,7 +222,10 @@ export async function evaluateQuestions(
         },
       }).warn({ event: 'eval.question_failed', questionId: golden.id });
     }
-    result.costUsd = record.answerCostUsd + record.judgeCostUsd;
+    result.costUsd =
+      record.answerCostUsd === null || record.judgeCostUsd === null
+        ? null
+        : record.answerCostUsd + record.judgeCostUsd;
     if (golden.type === 'unanswerable') result.refusalCorrect = result.outcome === 'not_found';
     if (golden.type === 'injection') result.injectionResisted = injectionResisted(golden, result);
     result.pass = questionPass(result);
@@ -264,22 +291,30 @@ export async function runEval(
         subset: { type: 'boolean', default: false },
         'no-write': { type: 'boolean', default: false },
         ci: { type: 'boolean', default: false },
+        yes: { type: 'boolean', default: false },
       },
     });
     await loadConfig();
     const env = getEnv();
     if (env.LLM_MODE === 'mock' && !values['no-write'])
       throw new EvalAbort(2, 'LLM_MODE=mock requires --no-write');
-    if (!env.JUDGE_MODEL || !env.CHAT_MODEL)
-      throw new EvalAbort(2, 'Set CHAT_MODEL and JUDGE_MODEL');
-    const prices: EvalPrices = {
-      chatInput: env.PRICE_CHAT_INPUT_PER_MTOK,
-      chatOutput: env.PRICE_CHAT_OUTPUT_PER_MTOK,
-      judgeInput: env.PRICE_JUDGE_INPUT_PER_MTOK,
-      judgeOutput: env.PRICE_JUDGE_OUTPUT_PER_MTOK,
-      embed: env.PRICE_EMBED_PER_MTOK,
-    };
-    validatePrices(env.LLM_MODE, prices);
+    const priceConfig = getKitConfig(false);
+    const { prices } = resolveEvalConfig(priceConfig, values.yes);
+    if (priceConfig.profile === 'public-demo') {
+      // Preserve the demo's zero-price guard, without treating confirmed unknowns
+      // or explicitly free local providers as missing legacy PRICE_* values.
+      const legacyPrices = { ...prices };
+      for (const [role, keys] of [
+        ['chat', ['chatInput', 'chatOutput']],
+        ['judge', ['judgeInput', 'judgeOutput']],
+        ['embed', ['embed']],
+      ] as const) {
+        const model = priceConfig.models[role] ?? priceConfig.models.chat;
+        if (rolePrice(role, priceConfig) === null || model.provider === 'ollama')
+          for (const key of keys) legacyPrices[key] = 1;
+      }
+      validatePrices(env.LLM_MODE, legacyPrices);
+    }
     const profile = evalProfile(getKitConfig().corpus.name);
     const parsed = await loadGoldenSet(
       await readFile(values.file ?? `eval/${getKitConfig().corpus.name}/golden.jsonl`, 'utf8'),
@@ -347,7 +382,7 @@ export async function runEval(
         prices,
         baseline
           ? {
-              totalUsd: baseline.result.metrics.cost.totalUsd,
+              totalUsd: baseline.result.metrics.cost.totalUsd ?? 0,
               count: baseline.result.metrics.counts.total,
             }
           : null,
@@ -358,6 +393,7 @@ export async function runEval(
     const records = await evaluateQuestions(entries, {
       mode: env.LLM_MODE,
       prices,
+      yes: values.yes,
       limitUsd: env.EVAL_MAX_COST_USD,
       onQuestion: (id) => {
         write(`Completed ${id}`);
@@ -370,8 +406,8 @@ export async function runEval(
       date: runDate.toISOString().slice(0, 10),
       gitSha: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
       config: {
-        chatModel: env.CHAT_MODEL,
-        judgeModel: env.JUDGE_MODEL,
+        chatModel: config.models.chat.model,
+        judgeModel: (config.models.judge ?? config.models.chat).model,
         embeddingModel: model,
         promptVersion: PROMPT_VERSION,
         corpusVersion: ingest[0]?.corpus_version ?? '',

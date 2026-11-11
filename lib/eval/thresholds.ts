@@ -19,7 +19,7 @@ export function checkRun(
     for (const [metric, threshold] of Object.entries(limits)) {
       const value = values[metric];
       const limit = kind === 'regression' ? (prior?.[metric] ?? 0) - threshold : threshold;
-      if (value !== undefined && (kind === 'ceiling' ? value > limit : value < limit))
+      if (value != null && (kind === 'ceiling' ? value > limit : value < limit))
         failures.push({ metric, kind, value, limit });
     }
   }

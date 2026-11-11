@@ -208,15 +208,17 @@ export async function dispatch(
         error.message === NO_SOURCES
           ? 'sourced add <url or path>'
           : error.code === 'NEEDS_CONFIRMATION'
-            ? command === 'eval:generate'
-              ? 'pnpm sourced eval:generate --help'
-              : command === 'eval:review'
-                ? 'pnpm sourced eval:review --apply'
-                : command === 'init'
-                  ? 'pnpm sourced init --help'
-                  : command === 'ingest'
-                    ? 'pnpm sourced ingest --yes'
-                    : 'pnpm sourced sources remove <id> --yes'
+            ? command === 'eval'
+              ? 'Add missing pricing in sourced.config.ts or run pnpm sourced eval --yes.'
+              : command === 'eval:generate'
+                ? 'pnpm sourced eval:generate --help'
+                : command === 'eval:review'
+                  ? 'pnpm sourced eval:review --apply'
+                  : command === 'init'
+                    ? 'pnpm sourced init --help'
+                    : command === 'ingest'
+                      ? 'pnpm sourced ingest --yes'
+                      : 'pnpm sourced sources remove <id> --yes'
             : error.code === 'CORPUS_MISMATCH'
               ? 'pnpm sourced ingest --rebuild'
               : error.code === 'CORPUS_EMPTY'
@@ -290,8 +292,15 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       return { result: await runIngest(input, context) };
     }
     case 'eval': {
+      // Resolve the current file before importing prompts or validating provider env.
+      const { loadConfig } = await import('@/lib/kit/load-config');
+      const { setCliKitConfig } = await import('@/lib/kit/runtime-config');
+      setCliKitConfig(await loadConfig());
       const args = Object.entries(input.values).flatMap(([key, value]) =>
-        ['json', 'yes', 'validate-only'].includes(key) || value === undefined || value === false
+        ['json', 'validate-only'].includes(key) ||
+        (key === 'yes' && input.values['validate-only']) ||
+        value === undefined ||
+        value === false
           ? []
           : value === true
             ? [`--${key}`]
@@ -305,12 +314,18 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       getEnv();
       const { runEval } = await import('@/lib/eval/run');
       let result: unknown;
+      let evalError: string | undefined;
       const status = await runEval(args, {
         result: (value) => {
           result = value;
         },
         write: context.progress,
+        error: (message) => {
+          evalError = message;
+        },
       });
+      if (evalError)
+        throw new AppError(status === 1 ? 'CONFIG_INVALID' : 'NEEDS_CONFIRMATION', evalError);
       return { result, exitCode: status === 0 ? 0 : status === 2 || status === 3 ? 2 : 1 };
     }
     default: {

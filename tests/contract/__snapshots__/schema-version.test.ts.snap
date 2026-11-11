@@ -720,10 +720,16 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
                   "type": "number",
                 },
                 "perQuestionUsd": {
-                  "type": "number",
+                  "type": [
+                    "number",
+                    "null",
+                  ],
                 },
                 "totalUsd": {
-                  "type": "number",
+                  "type": [
+                    "number",
+                    "null",
+                  ],
                 },
               },
               "required": [

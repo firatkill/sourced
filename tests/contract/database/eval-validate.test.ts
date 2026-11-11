@@ -201,3 +201,82 @@ test('CT-10 / FR-77: eval validation succeeds and reports documented failure env
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('CT-10 / FR-84 / D-129: kit eval uses config without model env and preserves confirmation diagnostics', async () => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { mkdir, symlink } = await import('node:fs/promises');
+  const { CliEnvelope } = await import('@/lib/cli/envelope');
+  const { commandSchemas } = await import('@/lib/cli/schemas/commands');
+  const { parseKitConfig } = await import('@/lib/kit/load-config');
+  const mongo = (await import('../../../examples/mongodb/sourced.config')).default;
+  const root = process.cwd();
+  const dir = await mkdtemp(join(tmpdir(), 'sourced-eval-contract-kit-'));
+  const config = parseKitConfig(mongo);
+  config.corpus.name = 'test-kit';
+  const run = async (args: string[]) => {
+    try {
+      const result = await promisify(execFile)(
+        process.execPath,
+        [
+          '--import',
+          'tsx',
+          '--conditions=react-server',
+          join(root, 'scripts/sourced.ts'),
+          'eval',
+          '--json',
+          '--no-write',
+          '--subset',
+          '--only',
+          'shared-inj-01',
+          ...args,
+        ],
+        {
+          cwd: dir,
+          env: {
+            PATH: process.env.PATH,
+            GIT_DIR: join(root, '.git'),
+            GIT_WORK_TREE: root,
+            TSX_TSCONFIG_PATH: join(root, 'tsconfig.json'),
+            LLM_MODE: 'mock',
+            NODE_ENV: 'test',
+            DATABASE_URL: requireLocalDatabase(process.env.TEST_DATABASE_URL),
+            QUESTION_HASH_SALT: 'test-only-question-salt-0000000000000000',
+            IP_HASH_SALT: 'test-only-ip-salt-00000000000000000000000',
+            NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+          },
+        },
+      );
+      return CliEnvelope.parse(JSON.parse(result.stdout));
+    } catch (error) {
+      if (!(error instanceof Error && 'stdout' in error && typeof error.stdout === 'string'))
+        throw error;
+      return CliEnvelope.parse(JSON.parse(error.stdout));
+    }
+  };
+  try {
+    await symlink(join(root, 'node_modules'), join(dir, 'node_modules'), 'dir');
+    await mkdir(join(dir, 'eval/test-kit'), { recursive: true });
+    await writeFile(join(dir, 'eval/test-kit/golden.jsonl'), jsonl(subset));
+    await writeFile(join(dir, 'eval/thresholds.json'), await readFile('eval/thresholds.json'));
+    await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
+    const pricedEnvelope = await run([]);
+    expect(pricedEnvelope.result, JSON.stringify(pricedEnvelope)).toBeDefined();
+    const priced = commandSchemas.eval.unwrap().parse(pricedEnvelope.result);
+    expect(priced.metrics.errors).toBe(0);
+    expect(priced.config).toMatchObject({ chatModel: 'mock', judgeModel: 'mock' });
+    expect(priced.metrics.cost.totalUsd).toBeTypeOf('number');
+    config.pricing = {};
+    await writeFile(join(dir, 'sourced.config.ts'), `export default ${JSON.stringify(config)};`);
+    const refused = await run([]);
+    expect(refused.error?.message).toBe(
+      'Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
+    );
+    const confirmed = commandSchemas.eval.unwrap().parse((await run(['--yes'])).result);
+    expect(confirmed.metrics.errors).toBe(0);
+    expect(confirmed.metrics.cost.totalUsd).toBeNull();
+    expect(confirmed.metrics.cost.perQuestionUsd).toBeNull();
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});

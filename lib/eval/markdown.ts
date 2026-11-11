@@ -22,7 +22,7 @@ export const EvalThresholds = z.object({
 });
 export type EvalThresholds = z.infer<typeof EvalThresholds>;
 
-export function metricValues(metrics: Metrics): Record<string, number> {
+export function metricValues(metrics: Metrics): Record<string, number | null> {
   return {
     recallAt5: metrics.recallAt5,
     recallAt10: metrics.recallAt10,
@@ -60,12 +60,15 @@ export function renderMetricsTable(result: EvalResult, baseline: Metrics | null 
     '| --- | ---: | --- | ---: | ---: | --- |',
     ...Object.entries(metricValues(result.metrics)).map(([key, value]) => {
       const base = prior[key];
-      const status = result.failures.some((failure) => failure.metric === key)
-        ? 'FAIL'
-        : limits[key]
-          ? 'PASS'
-          : 'Reported';
-      return `| ${key} | ${number(value)} | ${limits[key] ?? '—'} | ${number(base)} | ${number(base === undefined ? null : value - base)} | ${status} |`;
+      const status =
+        value === null && limits[key]
+          ? 'Not evaluated'
+          : result.failures.some((failure) => failure.metric === key)
+            ? 'FAIL'
+            : limits[key]
+              ? 'PASS'
+              : 'Reported';
+      return `| ${key} | ${value === null ? 'unknown' : number(value)} | ${limits[key] ?? '—'} | ${number(base)} | ${number(base == null || value === null ? null : value - base)} | ${status} |`;
     }),
   ].join('\n');
 }
