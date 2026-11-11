@@ -22,6 +22,10 @@ test('CT-05 / TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run con
   const directory = await mkdtemp(join(tmpdir(), 'sourced-cli-integration-'));
   const url = requireLocalDatabase(process.env.TEST_DATABASE_URL);
   const config = getKitConfig(false);
+  config.pricing[`${config.models.embed.provider}:${config.models.embed.model}`] = {
+    inputPerMTok: 0.02,
+    outputPerMTok: 0,
+  };
   config.sources = [
     {
       id: 'docs',
@@ -59,6 +63,21 @@ test('CT-05 / TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run con
       join(directory, 'sourced.config.ts'),
       `export default ${JSON.stringify(config)};\n`,
     );
+    const initialDry = await execute(
+      process.execPath,
+      [...args, 'ingest', '--offline', '--dry-run', '--json'],
+      options,
+    );
+    const initialEnvelope = CliEnvelope.parse(JSON.parse(initialDry.stdout));
+    const initialPreview = IngestResult.parse(initialEnvelope.result);
+    expect(initialPreview.totals.embeddingTokens).toBeGreaterThan(0);
+    expect(initialPreview.totals.estimatedCostUsd).toBe(
+      (initialPreview.totals.embeddingTokens * 0.02) / 1_000_000,
+    );
+    expect(initialEnvelope.warnings).toContainEqual({
+      code: 'MOCK_MODE',
+      message: 'Mock mode: no provider is called; embeddings and answers are stand-ins.',
+    });
     const first = await execute(
       process.execPath,
       [...args, 'ingest', '--offline', '--json'],
@@ -68,6 +87,7 @@ test('CT-05 / TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run con
     expect(envelope.ok).toBe(true);
     const run = IngestResult.parse(envelope.result);
     expect(run.mode).toBe('run');
+    expect(run.totals.estimatedCostUsd).toBe(initialPreview.totals.estimatedCostUsd);
     expect(run.runId).toMatch(/^\d+$/);
     expect(run.totals.documents.done).toBe(1);
     expect(run.totals.chunks.new).toBeGreaterThan(0);

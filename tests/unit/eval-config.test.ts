@@ -3,6 +3,8 @@ import mongo from '../../examples/mongodb/sourced.config';
 import { parseKitConfig } from '@/lib/kit/load-config';
 import { getKitConfig, setCliKitConfig, resetKitConfigForTests } from '@/lib/kit/runtime-config';
 import { resetEnvForTests } from '@/lib/env';
+import { rolePrice } from '@/lib/cost/estimate';
+import { estimateGenerationCost } from '@/lib/eval/generate';
 import { resolveEvalConfig } from '@/lib/eval/run';
 
 afterEach(() => {
@@ -97,3 +99,24 @@ test('D-112: Ollama is free without confirmation', () => {
   config.models.chat = { provider: 'ollama', model: 'local' };
   expect(resolveEvalConfig(config).prices).toMatchObject({ chatInput: 0, judgeInput: 0 });
 });
+
+// FR-83 / D-112 / D-129: costs describe live configuration during a mock rehearsal.
+test.each([true, false])(
+  'mock generation and eval pricing: configured price present=%s',
+  (priced) => {
+    vi.stubEnv('LLM_MODE', 'mock');
+    const config = parseKitConfig(mongo);
+    if (!priced) config.pricing = {};
+    setCliKitConfig(config);
+    const pricedConfig = getKitConfig(false);
+    expect(getKitConfig().models.chat).toEqual({ provider: 'mock', model: 'mock' });
+    expect(estimateGenerationCost(1000, 100, rolePrice('generate', pricedConfig))).toBe(
+      priced ? (1000 * 0.1 + 100 * 0.5) / 1_000_000 : null,
+    );
+    if (priced) expect(resolveEvalConfig(pricedConfig).prices.chatInput).toBe(0.1);
+    else
+      expect(() => resolveEvalConfig(pricedConfig)).toThrow(
+        'Price unknown for openai:gpt-6-luna; add it to pricing in sourced.config.ts to get an estimate.',
+      );
+  },
+);

@@ -3663,6 +3663,8 @@ export const CliEnvelope = z.object({
 
 With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
 
+When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` and `eval` include one `MOCK_MODE` warning with the message "Mock mode: no provider is called; embeddings and answers are stand-ins."; the warning is absent outside mock mode. Cost estimates in mock mode use the prices of the configured models, so a mock dry run shows what a live run would cost (T-71 rehearsal).
+
 ### 34.3 Interaction rules
 
 - Commands never read a secret from stdin and never print an environment variable's value. Keys are checked by presence and by an authenticated call; output shows at most the last 4 characters (`sk-…a1b2`).

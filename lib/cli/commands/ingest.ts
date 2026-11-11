@@ -56,6 +56,8 @@ export async function runIngest(input: Invocation, context: CommandContext) {
   requireSources(getKitConfig());
   const env = getEnv();
   const config = structuredClone(getKitConfig());
+  const priceConfig = getKitConfig(false);
+  const pricedModel = priceConfig.models.embed;
   assertIngestAllowed(env.VERCEL);
   if (typeof input.values.source === 'string') {
     config.sources = config.sources.filter((s) => s.id === input.values.source);
@@ -102,10 +104,9 @@ export async function runIngest(input: Invocation, context: CommandContext) {
   process.on('SIGINT', onInterrupt);
   try {
     const price =
-      config.models.embed.provider === 'ollama'
+      pricedModel.provider === 'ollama'
         ? 0
-        : config.pricing[`${config.models.embed.provider}:${config.models.embed.model}`]
-            ?.inputPerMTok;
+        : priceConfig.pricing[`${pricedModel.provider}:${pricedModel.model}`]?.inputPerMTok;
     let sources: IngestSource[] = [];
     const loadAndPlan = async () => {
       const loaded = await loadDocuments();
@@ -135,8 +136,8 @@ export async function runIngest(input: Invocation, context: CommandContext) {
         tokens: totals.embeddingTokens,
         cost: totals.estimatedCostUsd,
         threshold: env.INGEST_CONFIRM_ABOVE_USD,
-        provider: config.models.embed.provider,
-        model: config.models.embed.model,
+        provider: pricedModel.provider,
+        model: pricedModel.model,
         yes: input.values.yes === true,
         json: input.json,
       },

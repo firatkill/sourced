@@ -1,7 +1,7 @@
 import { parseArgs } from 'node:util';
 import { z } from 'zod';
 import { AppError } from '@/lib/errors';
-import { EnvironmentError, getEnv } from '@/lib/env';
+import { EnvironmentError, getEnv, getCliEnvironment } from '@/lib/env';
 import { RobotsDisallowedError } from '@/lib/ingest/robots';
 import { CliEnvelope, type ExitCode } from './envelope';
 import { commands, helpText } from './registry';
@@ -154,7 +154,15 @@ export async function dispatch(
             ),
             ...(result === undefined ? {} : { result }),
           };
-    envelope.warnings = outcome.warnings ?? [];
+    envelope.warnings = [...(outcome.warnings ?? [])];
+    if (
+      ['doctor', 'ingest', 'ask', 'eval:generate', 'eval'].includes(command) &&
+      getCliEnvironment().LLM_MODE === 'mock'
+    )
+      envelope.warnings.push({
+        code: 'MOCK_MODE',
+        message: 'Mock mode: no provider is called; embeddings and answers are stand-ins.',
+      });
     return { envelope, exitCode };
   } catch (error) {
     if (

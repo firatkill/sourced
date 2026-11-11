@@ -216,6 +216,10 @@ corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatc
         "code": "NETWORK_SKIPPED",
         "message": "Provider authentication and embedding dimensions skipped (--no-network).",
       },
+      {
+        "code": "MOCK_MODE",
+        "message": "Mock mode: no provider is called; embeddings and answers are stand-ins.",
+      },
     ],
   },
   "exit": 2,
