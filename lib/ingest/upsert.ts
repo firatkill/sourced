@@ -50,6 +50,7 @@ type IngestOptions = {
   configHash?: string;
   restart?: boolean;
   signal?: AbortSignal;
+  onRunStarted?: (runId: string) => Promise<void>;
   onDocument?: (key: string) => void | Promise<void>;
   onProgress?: (message: string) => void;
 };
@@ -236,6 +237,7 @@ export async function ingestCorpus(options: IngestOptions): Promise<IngestReport
   const started = now();
   const runId = await startRun(sql, options);
   try {
+    await options.onRunStarted?.(runId);
     const loaded = await options.loadDocuments();
     const sources =
       'sources' in loaded

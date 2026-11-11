@@ -379,6 +379,13 @@ export const CHUNKING = {
   TINY_SECTION_TOKENS: 40,
 } as const;
 
+export const INSPECT = {
+  SAMPLE_CHUNKS: 200,
+  TINY_RATIO: 0.2,
+  DUPLICATE_RATIO: 0.02,
+  DUPLICATE_SIMILARITY: 0.98,
+} as const;
+
 export const EMBEDDING = {
   MODEL: 'text-embedding-3-small',
   MOCK_MODEL: 'mock-feature-hash',
@@ -3773,6 +3780,13 @@ The image build on first run takes a few minutes; `init` prints that before star
 | `failed_items` | items `failed` in the last run, with reasons | error |
 
 Each finding has `affects` (retrieval, citations, cost) and `fix` text. The result is written to `corpus/<name>/inspect.json` and summarized on stdout.
+
+D-125 completes the version-1 result as `{ corpus, sources: [{ id, documents, chunks, smallestChunkTokens, largestChunkTokens }], findings: [{ code, severity, affects, fix, sourceId?, count?, details? }], path }`. Empty sources have null token extrema. `--source` scopes statistics, sampled chunks, comparison neighbours and ingest items to the selected source. Findings are diagnostic results (exit 0, even for `failed_items`); command/configuration/database/write failures retain §34.2 exit codes. A configured corpus with no chunks and no ingest run returns `CORPUS_EMPTY`; an all-skipped run remains inspectable.
+
+Implementation: exact counts and extrema come from database aggregates. Language detection uses up to `INSPECT.SAMPLE_CHUNKS` chunks selected by hashed chunk id, taking the highest stopword/token ratio among the built-in FTS languages; tied scores or no stopword evidence abstain. Near-duplicate detection probes the nearest cross-document neighbour for those same sampled chunks with cosine distance, allowing the HNSW index. It warns when more than `INSPECT.DUPLICATE_RATIO` of sampled chunks have a match at or above `INSPECT.DUPLICATE_SIMILARITY`; `count` is affected sampled chunks, with sample size, total chunks and pairs in `details`. Sampling costs O(N log 200); there are at most 200 nearest-neighbour probes, with an O(200 × N × dimensions) sequential-scan fallback, never an all-pairs join. Approximation can miss duplicates; reported counts are not extrapolated totals.
+
+The CLI saves the ingest run's planned D-109 report before embedding in `.sourced/ingest/<corpus>/<runId>.json`, including the run start timestamp to reject stale files after a database reset. This preserves boilerplate counts even if embedding later fails. Inspect takes item statuses and reasons from the latest run's `ingest_items`, and boilerplate counts from that run's saved report. Historical runs without a saved report report an unknown count (omitted `count`) and a re-ingest fix, not a fabricated zero. No source files are reparsed and no provider is called by inspect.
+
 
 ### 36.5 Eval on kit corpora and comparison (FR-84, FR-85)
 

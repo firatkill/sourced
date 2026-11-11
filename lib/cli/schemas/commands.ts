@@ -3,6 +3,7 @@ import { SourceSchema } from '@/lib/kit/config-schema';
 import { EvalResult } from '@/lib/eval/results-schema';
 import { CitationsEvent } from '@/lib/sse/events';
 import { IngestResult } from './ingest';
+import { InspectResult } from '@/lib/inspect/schema';
 const count = z.number().int().nonnegative();
 const checks = z.object({
   checks: z.array(
@@ -26,26 +27,7 @@ export const commandSchemas = {
   'sources list': z.object({ sources: z.array(SourceSchema) }),
   'sources remove': z.object({ removedDocuments: count }),
   ingest: IngestResult,
-  inspect: z.object({
-    findings: z.array(
-      z.object({
-        code: z.enum([
-          'empty_document',
-          'needs_ocr',
-          'tiny_chunks',
-          'oversized_chunks',
-          'near_duplicates',
-          'boilerplate_removed',
-          'language_mismatch',
-          'skipped_files',
-          'failed_items',
-        ]),
-        severity: z.enum(['info', 'warn', 'error']),
-        affects: z.array(z.enum(['retrieval', 'citations', 'cost'])),
-        fix: z.string(),
-      }),
-    ),
-  }),
+  inspect: InspectResult,
   ask: z.object({
     outcome: z.enum(['answered', 'not_found', 'error']),
     answer: z.string(),

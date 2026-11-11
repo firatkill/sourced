@@ -185,6 +185,32 @@ describe('CT-03 / CT-04: source commands', () => {
     }
     await cli(['ingest', '--offline']);
   });
+  test('CT-06 / FR-82 / D-125: inspect success, source filter, persisted result and failures', async () => {
+    const { cli, dir, config } = context;
+    const all = commandSchemas.inspect.parse((await cli(['inspect'])).result);
+    expect(all.sources.map((s) => s.id)).toEqual(['alpha', 'beta']);
+    expect(all.sources.every((s) => s.documents === 1 && s.chunks > 0)).toBe(true);
+    expect(all.corpus).toBe(config.corpus.name);
+    expect(JSON.parse(await readFile(join(dir, all.path), 'utf8'))).toEqual(all);
+    const selected = commandSchemas.inspect.parse(
+      (await cli(['inspect', '--source', 'alpha'])).result,
+    );
+    expect(selected.sources.map((s) => s.id)).toEqual(['alpha']);
+    expect(selected.findings.filter((f) => f.code === 'boilerplate_removed')).toMatchObject([
+      { sourceId: 'alpha', count: 0 },
+    ]);
+    expect((await cli(['inspect', '--source', 'missing'], 1)).error?.code).toBe(
+      'VALIDATION_FAILED',
+    );
+    expect((await cli(['inspect', '--invalid'], 1)).error?.code).toBe('VALIDATION_FAILED');
+    expect((await cli(['inspect'], 2, { DATABASE_URL: '' })).error?.code).toBe(
+      'NEEDS_CONFIRMATION',
+    );
+    await cli(['inspect'], 1, { DATABASE_URL: 'postgres://test:test@127.0.0.1:1/test' });
+    await rm(join(dir, 'corpus'), { recursive: true, force: true });
+    await writeFile(join(dir, 'corpus'), 'blocks report directory');
+    expect((await cli(['inspect'], 1)).error?.code).toBe('VALIDATION_FAILED');
+  });
   test('CT-03 add rejects duplicate ids; CT-04 sources list returns both sources', async () => {
     const { dir, cli } = context;
     await cli(['add', join(dir, 'alpha.md'), '--id', 'alpha'], 1);
@@ -420,7 +446,6 @@ test('CT-11 dev / FR-64: local snapshot; one ready envelope; shutdown forwards t
 });
 
 for (const [id, command] of [
-  ['CT-06', 'inspect'],
   ['CT-08', 'eval:generate'],
   ['CT-09', 'eval:review'],
 ] as const) {
@@ -562,4 +587,16 @@ test('CT-07: configured sources with no indexed chunks exit 2 with CORPUS_EMPTY'
   expect((await cli(['ask', 'When should I use a partial index?'], 2)).error?.code).toBe(
     'CORPUS_EMPTY',
   );
+});
+
+test('CT-06: inspect handles no sources, un-ingested sources and invalid configuration', async () => {
+  const { cli, dir } = await fixture();
+  expect((await cli(['inspect'], 2)).error?.code).toBe('CORPUS_EMPTY');
+  await writeFile(join(dir, 'guide.txt'), 'A guide.');
+  await cli(['add', join(dir, 'guide.txt'), '--id', 'guide']);
+  // Clear previous runs too: an all-skipped run must remain inspectable.
+  await getSql()`TRUNCATE ingest_runs CASCADE`;
+  expect((await cli(['inspect'], 2)).error?.code).toBe('CORPUS_EMPTY');
+  await writeFile(join(dir, 'sourced.config.ts'), 'export default {schemaVersion: 999};');
+  expect((await cli(['inspect'], 1)).error?.code).toBe('CONFIG_INVALID');
 });

@@ -21,7 +21,9 @@ test('CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion', () => {
   }).toMatchSnapshot(`schemaVersion=${String(version)}`);
 });
 
-test('CT-01–CT-14 / NFR-22: changing a schema in a temporary copy fails without a version bump', async () => {
+// D-125: the approved inspect placeholder completion updates the version-1 baseline.
+// Mutate released config:snapshot below, never an unreleased placeholder; the guard stays strict.
+test('CT-01–CT-14 / NFR-22: changing a released schema in a temporary copy fails without a version bump', async () => {
   const root = process.cwd();
   const dir = await mkdtemp(join(tmpdir(), 'sourced-schema-mutation-'));
   try {

@@ -12,6 +12,22 @@ export function redact(text: string, secrets: readonly string[]): string {
 }
 export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   if (json) return `${JSON.stringify(envelope)}\n`;
+  if (envelope.command === 'inspect' && envelope.ok) {
+    const report = commandSchemas.inspect.parse(envelope.result);
+    return [
+      `Corpus: ${report.corpus}`,
+      ...report.sources.map(
+        (source) =>
+          `${source.id}: ${String(source.documents)} documents, ${String(source.chunks)} chunks; tokens ${String(source.smallestChunkTokens ?? 'none')}–${String(source.largestChunkTokens ?? 'none')}`,
+      ),
+      ...report.findings.map(
+        (finding) =>
+          `${finding.severity}: ${finding.code}${finding.sourceId ? ` (${finding.sourceId})` : ''}${finding.count === undefined ? '' : `: ${String(finding.count)}`} — affects ${finding.affects.join(', ')}\n${finding.details ? JSON.stringify(finding.details) + '\n' : ''}Fix: ${finding.fix}`,
+      ),
+      `Report: ${report.path}`,
+      '',
+    ].join('\n');
+  }
   const diagnostics =
     envelope.command === 'doctor' || envelope.command === 'deploy:check'
       ? commandSchemas.doctor.safeParse(envelope.result)

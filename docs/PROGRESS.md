@@ -82,8 +82,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-62 | M6 Sources and CLI | Docker path | done | e35fe7a |
 | T-63 | M6 Sources and CLI | Contract tests and scale check | done | 704c357 |
 | T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | done | 2356098 |
-| T-65 | M7 Quality on any corpus | `inspect` | doing | |
-| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | todo | |
+| T-65 | M7 Quality on any corpus | `inspect` | done | HEAD |
+| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | doing | |
 | T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | todo | |
 | T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | todo | |
 | T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | todo | |

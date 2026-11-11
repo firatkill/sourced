@@ -5002,6 +5002,48 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-220",
+      "ac_reference": "T-65; FR-82",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "inspect findings",
+      "description": "UT-46.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-220.",
+      "expected_result": "inspect reports each TRD §36.4 finding (empty_document, needs_ocr, tiny_chunks, oversized_chunks, near_duplicates, boilerplate_removed, language_mismatch, skipped_files, failed_items) by its rule and severity, each with affects and fix, writes corpus/<name>/inspect.json and a stdout summary.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-46 inspect.test.ts: every TRD §36.4 finding with its rule, severity, affects and fix, including threshold edges; structured D-125 result; inspect.json written; near duplicates by at most 200 sampled nearest-neighbour probes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-221",
+      "ac_reference": "T-65; FR-82",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "inspect on the mixed folder",
+      "description": "T-65 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-221.",
+      "expected_result": "inspect on the mixed-folder example reports the scanned PDF as needs_ocr (when present) and the boilerplate removed count.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "integration inspect.test.ts: mixed folder with a scanned PDF reports needs_ocr and 10 boilerplate blocks removed; failed item reasons from the latest run"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }

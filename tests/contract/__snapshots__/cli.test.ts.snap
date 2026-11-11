@@ -367,9 +367,9 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > inspect 1
   "envelope": {
     "command": "inspect",
     "error": {
-      "code": "INTERNAL_ERROR",
+      "code": "VALIDATION_FAILED",
       "fix": "pnpm sourced --help",
-      "message": "inspect is not implemented yet. This command is reserved for a later implementation task.",
+      "message": "The command failed. Check its arguments, configuration and database connection.",
     },
     "ok": false,
     "schemaVersion": 1,
@@ -1879,6 +1879,9 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
+    "corpus": {
+      "type": "string",
+    },
     "findings": {
       "items": {
         "properties": {
@@ -1907,7 +1910,83 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
             ],
             "type": "string",
           },
+          "count": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "details": {
+            "properties": {
+              "configuredLanguage": {
+                "type": "string",
+              },
+              "detectedLanguage": {
+                "type": "string",
+              },
+              "items": {
+                "items": {
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                  },
+                  "required": [
+                    "key",
+                    "reason",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "method": {
+                "type": "string",
+              },
+              "note": {
+                "type": "string",
+              },
+              "pairs": {
+                "items": {
+                  "properties": {
+                    "chunkId": {
+                      "type": "string",
+                    },
+                    "otherChunkId": {
+                      "type": "string",
+                    },
+                    "similarity": {
+                      "type": "number",
+                    },
+                  },
+                  "required": [
+                    "chunkId",
+                    "otherChunkId",
+                    "similarity",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "sampledChunks": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "totalChunks": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+            },
+            "type": "object",
+          },
           "fix": {
+            "minLength": 1,
             "type": "string",
           },
           "severity": {
@@ -1916,6 +1995,9 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
               "warn",
               "error",
             ],
+            "type": "string",
+          },
+          "sourceId": {
             "type": "string",
           },
         },
@@ -1929,9 +2011,67 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
       },
       "type": "array",
     },
+    "path": {
+      "type": "string",
+    },
+    "sources": {
+      "items": {
+        "properties": {
+          "chunks": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "documents": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "id": {
+            "type": "string",
+          },
+          "largestChunkTokens": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "smallestChunkTokens": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+        },
+        "required": [
+          "id",
+          "documents",
+          "chunks",
+          "smallestChunkTokens",
+          "largestChunkTokens",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
   },
   "required": [
+    "corpus",
+    "sources",
     "findings",
+    "path",
   ],
   "type": "object",
 }

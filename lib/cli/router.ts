@@ -249,6 +249,8 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     case 'sources list':
     case 'sources remove':
       return { result: await (await import('./commands/sources')).runSources(input) };
+    case 'inspect':
+      return { result: await (await import('./commands/inspect')).runInspect(input) };
     case 'ask': {
       // Prompt and request-schema modules read configuration at import time.
       // Bootstrap from the TS config before importing them, even without a snapshot.

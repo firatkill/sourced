@@ -1,3 +1,4 @@
+import { writeRunReport } from '@/lib/inspect/run-report';
 import { requireSources } from './config-files';
 import postgres from 'postgres';
 import { AppError } from '@/lib/errors';
@@ -149,6 +150,19 @@ export async function runIngest(input: Invocation, context: CommandContext) {
       sql,
       loadDocuments: () => Promise.resolve(loaded),
       configHash: configHash(config),
+      onRunStarted: async (runId) => {
+        const [run] = await sql<
+          { started_at: Date }[]
+        >`SELECT started_at FROM ingest_runs WHERE id=${runId}`;
+        if (!run) throw new AppError('INTERNAL_ERROR', 'Ingest run was not found.');
+        await writeRunReport(process.cwd(), config.corpus.name, run.started_at, {
+          mode: 'run',
+          runId,
+          corpusVersion: null,
+          sources,
+          totals,
+        });
+      },
       restart: input.values.restart === true || input.values.rebuild === true,
       signal: interrupt.signal,
       onProgress: (message) => {

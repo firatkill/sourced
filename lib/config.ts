@@ -21,6 +21,13 @@ export const CHUNKING = {
   TINY_SECTION_TOKENS: 40,
 } as const;
 
+export const INSPECT = {
+  SAMPLE_CHUNKS: 200,
+  TINY_RATIO: 0.2,
+  DUPLICATE_RATIO: 0.02,
+  DUPLICATE_SIMILARITY: 0.98,
+} as const;
+
 export const EMBEDDING = {
   MODEL: 'text-embedding-3-small',
   MOCK_MODEL: 'mock-feature-hash',
