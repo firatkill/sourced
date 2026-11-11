@@ -2,10 +2,15 @@ import 'server-only';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { EMBEDDING } from '@/lib/config';
-import { getConfigEnv } from '@/lib/env';
+import { getCliEnvironment, getConfigEnv } from '@/lib/env';
 import { AppError } from '@/lib/errors';
 import { configHash, SnapshotSchema } from './load-config';
 import type { KitConfig } from './config-schema';
+
+/** Use the same container marker as doctor's host-port check. */
+export function sourcedCommand(): string {
+  return getCliEnvironment().SOURCED_DOCKER === '1' ? './sourced' : 'pnpm sourced';
+}
 
 let cached: KitConfig | undefined;
 export function readSnapshot(filename: string): KitConfig {
@@ -22,7 +27,7 @@ export function readSnapshot(filename: string): KitConfig {
       result.error.issues
         .map(
           (i) =>
-            `${i.path.join('.')}: ${i.message} Fix this field in sourced.config.ts and run pnpm sourced config:snapshot.`,
+            `${i.path.join('.')}: ${i.message} Fix this field in sourced.config.ts and run ${sourcedCommand()} config:snapshot.`,
         )
         .join('\n'),
     );

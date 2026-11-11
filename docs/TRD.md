@@ -3747,6 +3747,8 @@ volumes:
 
 `doctor` itself works without Docker: when `docker` is not on `PATH`, the launcher prints the install link for the platform (Docker Desktop for macOS and Windows, Docker Engine for Linux) and exits 2.
 
+The launchers set `BUILDX_NO_DEFAULT_ATTESTATIONS=1` unless the caller already set it, so a cached CLI image is not exported again on every command.
+
 ### 35.4 First run
 
 ```bash

@@ -1,5 +1,7 @@
 #!/bin/sh
 set -eu
+BUILDX_NO_DEFAULT_ATTESTATIONS=${BUILDX_NO_DEFAULT_ATTESTATIONS-1}
+export BUILDX_NO_DEFAULT_ATTESTATIONS
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 command=${1:-help}
 if [ ! -f .env.local ]; then

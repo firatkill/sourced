@@ -5,7 +5,12 @@ import path from 'node:path';
 import { z } from 'zod';
 import { getCliEnvironment } from '@/lib/env';
 import { loadConfig, configHash } from '@/lib/kit/load-config';
-import { readSnapshot, getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
+import {
+  readSnapshot,
+  getKitConfig,
+  setCliKitConfig,
+  sourcedCommand,
+} from '@/lib/kit/runtime-config';
 import { checkCorpusSchema } from '@/lib/kit/vector-schema';
 import { ftsConfig } from '@/lib/kit/fts';
 import type { KitConfig } from '@/lib/kit/config-schema';
@@ -135,7 +140,7 @@ export async function runDoctor(
   let config: KitConfig | undefined;
   await check(
     'config',
-    'Edit sourced.config.ts and run pnpm sourced config:snapshot.',
+    `Edit sourced.config.ts and run ${sourcedCommand()} config:snapshot.`,
     async () => {
       config = await loadConfig(process.cwd(), { writeSnapshot: false });
       if (deploy && typeof input.values.profile === 'string')

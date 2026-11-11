@@ -210,3 +210,21 @@ test('UT-32 / D-114: omitted and empty sources are valid before add', () => {
   expect(parseKitConfig(config).sources).toEqual([]);
   expect(parseKitConfig({ ...config, sources: [] }).sources).toEqual([]);
 });
+
+// Task 64 / FR-78: snapshot repairs name the active launcher.
+test.each([
+  ['1', './sourced'],
+  [undefined, 'pnpm sourced'],
+])('Task 64: invalid snapshot fix uses %s container setting', async (docker, command) => {
+  vi.stubEnv('SOURCED_DOCKER', docker);
+  const root = await mkdtemp(path.join(tmpdir(), 'sourced-invalid-snapshot-'));
+  try {
+    const filename = path.join(root, 'config.json');
+    await writeFile(filename, JSON.stringify({ schemaVersion: 2 }));
+    expect(() => readSnapshot(filename)).toThrow(
+      `Fix this field in sourced.config.ts and run ${command} config:snapshot.`,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

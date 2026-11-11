@@ -1,5 +1,6 @@
 @echo off
 setlocal DisableDelayedExpansion
+if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1
 cd /d "%~dp0"
 if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" (
   echo Run ./sourced init first. 1>&2

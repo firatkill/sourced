@@ -27,6 +27,7 @@ async function fixture(
   await writeFile(
     path.join(root, 'bin/docker'),
     `#!/bin/sh
+printf '%s\\n' "$BUILDX_NO_DEFAULT_ATTESTATIONS" >> "$DOCKER_ATTESTATION_LOG"
 printf "%s\\n" CALL "$@" >> "$DOCKER_ARGUMENT_LOG"
 printf '%s\\n' "SOURCED_PORT=$SOURCED_PORT" "SOURCED_DB_PORT=$SOURCED_DB_PORT" "UNRELATED=$UNRELATED" > "$DOCKER_ENV_LOG"
 if [ "$2" = '${devFailure}' ]; then
@@ -52,6 +53,7 @@ fi
         NODE_ENV: 'test',
         PATH: path.join(root, 'bin'),
         DOCKER_ARGUMENT_LOG: log,
+        DOCKER_ATTESTATION_LOG: path.join(root, 'attestations'),
         DOCKER_ENV_LOG: path.join(root, 'port-environment'),
         ...variables,
       },
@@ -486,4 +488,29 @@ test('D-135: Windows imports only the two port assignments when absent from the 
     expect(launcher).toContain(`if "%%A"=="${key}" if not defined ${key} set "${key}=%%B"`);
   }
   expect(launcher).not.toContain('set "%%A=%%B"');
+});
+
+// Task 64 / FR-94: cached builds retain a stable image manifest.
+test.each([undefined, '0', ''])(
+  'Task 64: every Compose call receives the attestation setting (caller %j)',
+  async (value) => {
+    const { root, run } = await fixture();
+    await run(
+      ['doctor', '--json'],
+      value === undefined ? {} : { BUILDX_NO_DEFAULT_ATTESTATIONS: value },
+    );
+    expect(await readFile(path.join(root, 'attestations'), 'utf8')).toBe(
+      Array(3)
+        .fill(`${value ?? '1'}\n`)
+        .join(''),
+    );
+  },
+);
+test('Task 64: Windows defaults attestations before Compose or its PowerShell wrapper', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  const setting =
+    'if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1';
+  expect(launcher).toContain(setting);
+  expect(launcher.indexOf(setting)).toBeLessThan(launcher.indexOf('compose'));
+  expect(launcher.indexOf(setting)).toBeLessThan(launcher.indexOf('goto down'));
 });
