@@ -2416,3 +2416,109 @@ Source: PRD FR-65–FR-81, FR-94, NFR-20–NFR-22, NFR-25, §11, §12 (M6); TRD 
   1. Review TC-194 to TC-218 and write qa/m6-report.md.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Any-corpus checks pass; milestone report written.
+
+## M7 Quality on any corpus (v2)
+
+Source: PRD FR-82 to FR-86, §11, §12 (M7); TRD §36, §23 (UT-46, UT-47); implementation plan T-65 to T-68; decisions up to D-124. Designed from the specs before the code.
+
+| TC ID  | AC Reference           | TRD test ID / source | Title                                            | Priority | Automatable | Expected result                                                                                                                                                                                                                                                                                                                             |
+| ------ | ---------------------- | -------------------- | ------------------------------------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-220 | T-65; FR-82            | UT-46                | inspect findings                                 | High     | yes         | inspect reports each TRD §36.4 finding (empty_document, needs_ocr, tiny_chunks, oversized_chunks, near_duplicates, boilerplate_removed, language_mismatch, skipped_files, failed_items) by its rule and severity, each with affects and fix, writes corpus/<name>/inspect.json and a stdout summary.                                        |
+| TC-221 | T-65; FR-82            | T-65 acceptance      | inspect on the mixed folder                      | Medium   | yes         | inspect on the mixed-folder example reports the scanned PDF as needs_ocr (when present) and the boilerplate removed count.                                                                                                                                                                                                                  |
+| TC-222 | T-66; FR-83            | UT-47                | eval:generate sampling and candidate checks      | High     | yes         | Sampling is stratified by source and document, at most 2 per document, prefers 300+ tokens and is deterministic for a corpus_version and seed; candidates have existing anchors, hardRetrieval when the expected chunk is not in the RRF top 20, needsHumanCheck on unanswerables; cost is estimated first and EVAL_MAX_COST_USD guards it. |
+| TC-223 | T-66; FR-83            | TRD §36.2            | eval:review accepts, edits and rejects           | High     | yes         | eval:review --apply appends accepted candidates to golden.jsonl with origin generated and the next free id; needsHumanCheck candidates cannot be accepted with --yes; rejected ones are not appended.                                                                                                                                       |
+| TC-224 | T-66; FR-83; TRD §36.3 | T-66 files           | Built-in injection set                           | High     | yes         | eval/shared/injection.jsonl has the four corpus-independent injections with forbidden_strings and is always part of a kit corpus eval.                                                                                                                                                                                                      |
+| TC-225 | T-66; FR-83; D-123     | T-66 acceptance      | Live candidate generation on the MongoDB example | Medium   | no          | One live eval:generate run on the MongoDB example produces candidates the owner reviews; cost recorded within the approved amount.                                                                                                                                                                                                          |
+| TC-226 | T-67; FR-84; FR-85     | T-67 acceptance      | Golden schema, profiles and comparison           | Critical | yes         | GoldenEntry uses group and origin with the widened anchor regex; the example validates under its profile; kit corpora use the §36.1 rules; --compare prints deltas and exits 1 on regression; below-floor metrics get a likelyCause; /eval still renders.                                                                                   |
+| TC-227 | T-68; PRD §11          | T-68 acceptance      | Quality check on the MongoDB example             | Critical | no          | A reviewed golden set of at least 30 questions for the MongoDB example; sourced eval meets the default floors or the gaps and fixes are recorded for the owner's decision; results in eval/mongodb/results/ with no corpus data.                                                                                                            |
+| TC-228 | T-68; PRD §12          | M7 exit              | M7 exit criteria                                 | High     | no          | Quality check done; milestone report written.                                                                                                                                                                                                                                                                                               |
+
+### TC-220: inspect findings
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-65; FR-82; UT-46.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Run UT-46 on synthetic chunk sets.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: inspect reports each TRD §36.4 finding (empty_document, needs_ocr, tiny_chunks, oversized_chunks, near_duplicates, boilerplate_removed, language_mismatch, skipped_files, failed_items) by its rule and severity, each with affects and fix, writes corpus/<name>/inspect.json and a stdout summary.
+
+### TC-221: inspect on the mixed folder
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-65; FR-82; T-65 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Ingest the mixed folder in mock mode with a scanned PDF and run inspect --json.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: inspect on the mixed-folder example reports the scanned PDF as needs_ocr (when present) and the boilerplate removed count.
+
+### TC-222: eval:generate sampling and candidate checks
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-66; FR-83; UT-47.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Run UT-47 with the mock provider.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Sampling is stratified by source and document, at most 2 per document, prefers 300+ tokens and is deterministic for a corpus_version and seed; candidates have existing anchors, hardRetrieval when the expected chunk is not in the RRF top 20, needsHumanCheck on unanswerables; cost is estimated first and EVAL_MAX_COST_USD guards it.
+
+### TC-223: eval:review accepts, edits and rejects
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-66; FR-83; TRD §36.2.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Contract test on a candidates.jsonl fixture.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: eval:review --apply appends accepted candidates to golden.jsonl with origin generated and the next free id; needsHumanCheck candidates cannot be accepted with --yes; rejected ones are not appended.
+
+### TC-224: Built-in injection set
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-66; FR-83; TRD §36.3; T-66 files.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Unit test on the file and the eval loader.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: eval/shared/injection.jsonl has the four corpus-independent injections with forbidden_strings and is always part of a kit corpus eval.
+
+### TC-225: Live candidate generation on the MongoDB example
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-66; FR-83; D-123; T-66 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Run live; owner reviews candidates.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: One live eval:generate run on the MongoDB example produces candidates the owner reviews; cost recorded within the approved amount.
+
+### TC-226: Golden schema, profiles and comparison
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-67; FR-84; FR-85; T-67 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Unit tests and eval:validate; E2E eval page.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: GoldenEntry uses group and origin with the widened anchor regex; the example validates under its profile; kit corpora use the §36.1 rules; --compare prints deltas and exits 1 on regression; below-floor metrics get a likelyCause; /eval still renders.
+
+### TC-227: Quality check on the MongoDB example
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-68; PRD §11; T-68 acceptance.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Run eval live after owner approval of spend.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: A reviewed golden set of at least 30 questions for the MongoDB example; sourced eval meets the default floors or the gaps and fixes are recorded for the owner's decision; results in eval/mongodb/results/ with no corpus data.
+
+### TC-228: M7 exit criteria
+
+- Milestone: M7 Quality on any corpus
+- Requirement: T-68; PRD §12; M7 exit.
+- Preconditions: the corresponding task implemented on v2/kit; mock mode unless the case says otherwise.
+- Steps:
+  1. Review TC-220 to TC-227 and write qa/m7-report.md.
+  2. Assert the expected outcome and record evidence in the ledger.
+- Expected: Quality check done; milestone report written.
