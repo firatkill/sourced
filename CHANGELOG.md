@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+Changes for v2.0.0, the document chatbot kit. Release checks are still in progress.
+
+### Added
+
+- Validated `sourced.config.ts` for corpus copy, sources, language, models, pricing, retrieval settings and deployment profiles. Separate chat and embedding providers: OpenAI, Google Gemini, Anthropic (chat only) and Ollama.
+- Folder/glob, URL-list, sitemap, same-origin crawl and local Git sources; Markdown/MDX, HTML, PDF, `.docx` and text parsers. Resumable ingestion, boilerplate removal and cost previews without embedding calls.
+- A shared CLI with versioned `--json` results, documented exit codes, prerequisite checks, initialization, source management, ingestion, traced questions and deployment checks. Existing script names remain aliases.
+- Docker path with macOS/Linux and Windows launchers, persistent database data, read-only mounts for external folders and configurable localhost ports.
+- Corpus health reports, generated and user-reviewed golden questions, evaluation and baseline comparisons.
+- Seven portable agent skills and command pointers: setup, add-docs, ingest, check-quality, tune, troubleshoot and deploy.
+- `private` profile with a shared access token, a first-party access cookie and rate-limited failed access attempts; `local` and `public-demo` profiles remain available.
+
+### Changed
+
+- Root `AGENTS.md` now guides kit users. Contributor rules live in `docs/contributing/AGENTS.md`, linked from `CONTRIBUTING.md`.
+- Existing deployments must apply `0003_kit.sql` before using the kit: it adds corpus metadata, source and PDF-page fields, ingestion checkpoints and the CLI query-log source, and scopes chunk hash uniqueness to each document. Embedding dimensions and full-text configuration are managed by the kit; a changed embedding model or dimensions requires re-ingestion. In v2.0, migrate and ingest hosted databases from the Node path with both database URL variables set in `.env.local`; the Docker CLI uses its local database (D-135).
+
+### Notes
+
+- Claude Code and Codex newcomer checks are release-blocking. Cursor and other agents that read `AGENTS.md` and Agent Skills are best effort (NFR-24). The rehearsals in `qa/release-v2/` do not replace the remaining clean-machine release checks.
+- The Windows launcher and container access to host Ollama on each OS are not verified yet. Live provider checks for Google Gemini, Anthropic and Ollama remain pending.
+- Known follow-ups: the first Node CLI command in a fresh folder can fail on missing `CHAT_MODEL`/`PRICE_*` settings before a configuration snapshot exists; MongoDB HTML can retain navigation icon names and produce many tiny chunks; broad full-text queries at scale have not met the search latency target. Source discovery request spacing also needs follow-up. See `docs/PROGRESS.md` for evidence.
+- Mock evaluation cannot write a baseline results file, so a full tuning comparison needs live evaluation. Follow-up conversation, an MCP server, a documented HTTP API/widget and dedicated rerankers are deferred to v2.1.
+
 ## [1.1.0] - 2026-11-09
 
 Chat redesign (D-91, `docs/REDESIGN.md`). Backend, prompts, retrieval and the SSE contract are unchanged.

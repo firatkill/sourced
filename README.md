@@ -10,6 +10,106 @@ A small, production-quality RAG app and starter kit: every claim in the answer c
 
 ![A suggested question gets a checked answer, a citation opens the source viewer with its quote highlighted, and How this was answered expands.](docs/assets/demo.gif)
 
+## Use your own documents
+
+### Docker path (default)
+
+Install Docker with Compose v2: Docker Desktop on macOS or Windows, or Docker Engine with Compose on Linux. Docker is the only runtime prerequisite; you do not need Node or PostgreSQL on the host.
+
+Clone the repository (or download and extract it if you do not have Git):
+
+```sh
+git clone https://github.com/firatkill/sourced.git
+cd sourced
+```
+
+#### With a coding agent
+
+Open the folder in Claude Code or Codex and type `/setup`. Claude Code uses the command pointers; Codex reads `AGENTS.md` and the skills in `.agents/skills/`. In Codex you can also say “Set up a chatbot over my documents.”
+
+| Command          | What it does                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `/setup`         | Checks prerequisites, configures sources and providers, previews cost, ingests after approval and starts the app. |
+| `/add-docs`      | Adds a folder or website from your description and previews ingestion.                                            |
+| `/ingest`        | Runs or resumes ingestion and explains the health report.                                                         |
+| `/check-quality` | Checks corpus health, helps you review golden questions and runs evaluation.                                      |
+| `/tune`          | Tries one configuration change, compares evaluation and keeps or reverts it.                                      |
+| `/troubleshoot`  | Traces a wrong answer or failed step and identifies the likely cause.                                             |
+| `/deploy`        | Prepares Vercel and Supabase settings and runs the pre-deploy check; you deploy manually.                         |
+
+The agent explains which provider receives your text and the estimated cost before asking for approval. Fill keys in `.env.local` yourself; never paste them into chat. Choose Ollama for every model role if you want document text and questions to stay local.
+
+#### Manual first run
+
+Put your files in a `my-docs` folder inside the repository. Run initialization first; it asks for your corpus, providers and profile, writes `sourced.config.ts` and `.env.local`, builds the image and starts and migrates the database. The first image build takes a few minutes.
+
+On macOS or Linux:
+
+```sh
+./sourced init
+```
+
+Open `.env.local` yourself and fill the key line for your chosen provider: `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` or `ANTHROPIC_API_KEY`. Anthropic also needs a separate embedding provider. Ollama needs a running server and the configured models pulled, without an API key.
+
+```sh
+./sourced add ./my-docs
+./sourced ingest --dry-run
+```
+
+The dry run reports documents, chunks, tokens and estimated embedding cost without calling the embedding API. It may fetch configured web sources. If cost is unknown, add the model's prices from its provider to the `pricing` block in `sourced.config.ts` and repeat the dry run. Unknown does not mean free. Review the estimate before continuing; ingestion sends document text to the embedding provider, and asking sends questions and retrieved passages to the configured providers. Answer and evaluation costs are separate from ingestion.
+
+```sh
+./sourced ingest
+./sourced dev
+```
+
+Open http://localhost:3000 and ask about your documents. Stop the app and database while keeping the data:
+
+```sh
+./sourced down
+```
+
+On Windows, use `sourced.cmd` in Command Prompt. Pause after initialization to fill the key line, and after the dry run to review cost:
+
+```bat
+sourced.cmd init
+sourced.cmd add ./my-docs
+sourced.cmd ingest --dry-run
+sourced.cmd ingest
+sourced.cmd dev
+sourced.cmd down
+```
+
+The configuration, environment file, corpus and evaluation files stay in your folder. Database data persists in a Docker volume. After initialization, `docker compose up` also starts the database and app and applies pending migrations. The app and database ports bind to localhost. Set `SOURCED_PORT` or `SOURCED_DB_PORT` if their defaults (3000 and 5433) are occupied.
+
+#### Sources, providers and profiles
+
+Sources can be a folder or file glob, a sitemap, a same-origin crawl, a URL list or a local Git checkout (with its commit recorded). Formats: Markdown/MDX, HTML, PDF, `.docx` and plain text. Scanned PDFs need OCR before ingestion. See the [mixed-format files](examples/mixed-folder/) and [MongoDB configuration](examples/mongodb/sourced.config.ts). Check source licences and web crawling rules before adding a source.
+
+Choose chat and embeddings separately in `sourced.config.ts`: OpenAI, Google Gemini and Ollama support both; Anthropic supports chat only. Changing the embedding model or dimensions requires re-ingestion. With Ollama for every role, text stays on your machine; configured web sources still require web fetches.
+
+| Profile       | Behaviour                                                                                                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `local`       | Default for local development; no access token or demo quotas.                                                                                                                                                     |
+| `private`     | Shared access token required. Initialization generates `SOURCED_ACCESS_TOKEN` in `.env.local`; enter it in the browser. A site-scoped cookie remembers access. Demo quotas and the suggested-answer cache are off. |
+| `public-demo` | Public access with daily quotas, IP hashing, demo controls and cached suggested answers.                                                                                                                           |
+
+### Node path (contributors)
+
+Install Node.js 22 or newer and pnpm 10.18.3. Run `pnpm install --frozen-lockfile`, then use the same CLI commands through pnpm, for example:
+
+```sh
+pnpm sourced init
+pnpm sourced add ./my-docs
+pnpm sourced ingest --dry-run
+pnpm sourced ingest
+pnpm sourced dev
+```
+
+Use the same key and cost review steps as above. A local database still needs Docker or an existing PostgreSQL database with pgvector. See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks.
+
+In v2.0, preparing a hosted database uses this Node path. Set both `MIGRATION_DATABASE_URL` and `DATABASE_URL` in `.env.local` to the hosted connection yourself, run `pnpm db:migrate`, then preview and ingest with the Node CLI. The Docker CLI always targets its local database. Run `pnpm sourced deploy:check --profile private --json` for a private deployment before following the manual hosting steps from `/deploy`.
+
 ## How it works
 
 - Parse the documentation offline into sections, chunk the text, and store embeddings in Postgres with pgvector.
@@ -87,7 +187,7 @@ flowchart TB
 
 ## Run locally without an API key
 
-Requires Node.js 22 or newer, pnpm 10.18.3 and Docker.
+This runs the bundled PostgreSQL example with mock answers. Requires Node.js 22 or newer, pnpm 10.18.3 and Docker.
 
 ```sh
 pnpm install
@@ -100,7 +200,7 @@ pnpm dev:mock
 
 ## Run with OpenAI
 
-In `.env.local`, set `OPENAI_API_KEY`, `LLM_MODE=live`, and the pinned `CHAT_MODEL` and `PRICE_*` values from `.env.example`. With the local database running and migrated:
+For the bundled PostgreSQL example, set `OPENAI_API_KEY` and `LLM_MODE=live` in `.env.local`. Model and price settings live in `sourced.config.ts`. With the local database running and migrated:
 
 ```sh
 pnpm ingest
@@ -112,15 +212,17 @@ These ingestion and cache commands make paid API calls. For readable local JSON 
 
 ## Swap the corpus
 
-Edit `sourced.config.ts`: `sources` (one URL list and group per section, with `html.contentSelector` and `html.removeSelectors`). Check the source license and robots.txt, then run `pnpm corpus:fetch` and `pnpm ingest`. Rewrite `eval/postgres-17/golden.jsonl`, update the suggested questions and corpus copy in `sourced.config.ts`. Rebuild the suggested cache with `pnpm cache:suggested` and run evaluation.
+Follow [Use your own documents](#use-your-own-documents) to configure sources and ingest them. Review golden questions for your corpus with `/check-quality`; update suggested questions and attribution in `sourced.config.ts`.
 
 The pinned PostgreSQL 17 corpus contains 35 pages and produces 201 chunks. Live ingestion with `text-embedding-3-small` was verified on 2026-11-09: 98,555 tokens embedded; an unchanged second run used zero embedding inputs. Raw pages and attribution are in `corpus/postgres-17/`.
 
 ## Swap the provider
 
-Implement `LlmProvider` from `lib/llm/types.ts` in `lib/llm/<name>.ts`, including `embed`, `streamText` and `generateObject`. Register it in `lib/llm/index.ts`, extend the `LLM_PROVIDER` validation in `lib/env.ts`, then set `LLM_PROVIDER` in your environment. The current selector supports OpenAI and the deterministic mock; changing the environment alone does not add a provider. Embedding dimensions must stay 1536, or a migration must change `vector(1536)` and the corpus must be embedded again.
+Choose the chat and embedding providers in `sourced.config.ts`; see [Sources, providers and profiles](#sources-providers-and-profiles). The kit includes OpenAI, Google Gemini, Anthropic (chat only) and Ollama.
 
 ## Cost
+
+These figures describe the hosted PostgreSQL demo. Your corpus and configured models determine kit costs; use the ingestion dry run and evaluation budget guard.
 
 | Item                      | Plan                                            | Expected monthly cost                | Hard limit mechanism                                                                        |
 | ------------------------- | ----------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------- |
@@ -178,20 +280,22 @@ See the [incident and kill-switch runbook](docs/TRD.md#266-incident-and-kill-swi
 
 ## Privacy
 
-Sourced does not store your questions. For each request it keeps a salted hash of the question, its length, timings, token counts, an estimated cost and how many citations passed or failed. Your IP address is turned into a salted hash that changes every day and is used only to count your daily questions; the IP itself is never stored or logged. There are no cookies, no analytics and no third-party scripts. The question is sent to OpenAI to produce the answer; see OpenAI’s API data usage policy.
+By default, Sourced stores a salted question hash, length, timings, token counts, estimated cost and citation counts, not the question text. `STORE_QUESTIONS=true` opts into storing question text. The `public-demo` profile uses a daily-rotating salted IP hash for quotas; raw IP addresses are never stored or logged. The `private` profile sets one first-party access cookie. There are no analytics or third-party scripts.
+
+Document text, passages and questions go only to the configured embedding, chat, rerank and judge providers. The hosted demo uses OpenAI. With Ollama for every role, they stay local; configured web sources still require web fetches.
 
 ## Limits
 
 - Prompt-only defences against injection are not complete.
 - A quote match proves the words exist in the passage, not that the passage fully supports the sentence. That is what the faithfulness judge measures.
-- The corpus is 35 pages, not the full PostgreSQL documentation.
+- The demo corpus is 35 pages, not the full PostgreSQL documentation.
 - The first request after a quiet period can be slow because the database scales to zero.
 
 ## Versions
 
 Dependencies pinned on 2026-10-21. Node.js 22 or newer; pnpm 10.18.3.
 
-Models and prices are pinned in env, as recorded in D-82 and `.env.example`. Chat uses `gpt-6-luna`; the eval-only judge uses `gpt-5.4`. Judge prices retain list prices for the budget guard. Production data sharing is off.
+The hosted demo models and prices are recorded in D-82 and `.env.example`; kit models and prices live in `sourced.config.ts`. The demo chat uses `gpt-6-luna`; the eval-only judge uses `gpt-5.4`. Judge prices retain list prices for the budget guard. Production data sharing is off.
 
 ## License
 

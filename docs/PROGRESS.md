@@ -93,7 +93,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | done | de82d15 |
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | b7fb425 |
 | T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | 466ccd5 |
-| T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | todo | |
+| T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | doing | |
 
 ## Open questions for the owner
 

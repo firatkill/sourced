@@ -12,6 +12,7 @@ describe('TC-162: README sections (FR-57, TRD §27)', () => {
       '# Sourced',
       '## Links',
       '## Demo',
+      '## Use your own documents',
       '## How it works',
       '## Evaluation',
       '## Run locally without an API key',

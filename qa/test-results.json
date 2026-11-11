@@ -5489,6 +5489,27 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-243",
+      "ac_reference": "T-76; FR-57; G-6",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "README Use your own documents",
+      "description": "T-76 files.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-243.",
+      "expected_result": "README has a Use your own documents section that leads with the Docker path (docker compose up, ./sourced or the /setup command) and documents the Node path for contributors; every command shown exists in lib/cli; CHANGELOG has a v2.0.0 entry.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "README 'Use your own documents' leads with the Docker path (agent route with the seven commands, manual route with ./sourced and sourced.cmd), Node path for contributors and hosted databases; CHANGELOG [Unreleased] v2.0.0 entry; tests/unit/readme-commands.test.ts checks every README command and flag against lib/cli/registry.ts, every /command against .claude/commands, and section order."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
