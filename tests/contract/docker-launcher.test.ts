@@ -10,7 +10,13 @@ import { commandSchemas } from '@/lib/cli/schemas/commands';
 
 const execute = promisify(execFile);
 const directories: string[] = [];
-async function fixture(downExitCode = 0, devFailure: 'up' | 'exec' | '' = '') {
+async function fixture(
+  downExitCode = 0,
+  devFailure: 'up' | 'exec' | 'build' | 'run' | '' = '',
+  failureOutput = 'Compose stderr',
+  cliOutput = '',
+  cliExit = 0,
+) {
   const root = await mkdtemp(path.join(tmpdir(), 'sourced-docker-'));
   directories.push(root);
   await copyFile('sourced', path.join(root, 'sourced'));
@@ -22,10 +28,15 @@ async function fixture(downExitCode = 0, devFailure: 'up' | 'exec' | '' = '') {
     path.join(root, 'bin/docker'),
     `#!/bin/sh
 printf "%s\\n" CALL "$@" >> "$DOCKER_ARGUMENT_LOG"
+printf '%s\\n' "SOURCED_PORT=$SOURCED_PORT" "SOURCED_DB_PORT=$SOURCED_DB_PORT" "UNRELATED=$UNRELATED" > "$DOCKER_ENV_LOG"
 if [ "$2" = '${devFailure}' ]; then
   printf '%s\\n' 'Compose stdout'
-  printf '%s\\n' 'Compose stderr' >&2
+  printf '%s\\n' '${failureOutput}' >&2
   exit 17
+fi
+if [ "$2" = run ]; then
+  printf '%s' '${cliOutput}'
+  exit ${String(cliExit)}
 fi
 if [ "$2" = down ]; then
   printf '%s\\n' 'Compose stdout'
@@ -35,12 +46,14 @@ fi
 `,
     { mode: 0o755 },
   );
-  const run = (args: string[]) =>
+  const run = (args: string[], variables: Record<string, string> = {}) =>
     execute('/bin/sh', [path.join(root, 'sourced'), ...args], {
       env: {
         NODE_ENV: 'test',
         PATH: path.join(root, 'bin'),
         DOCKER_ARGUMENT_LOG: log,
+        DOCKER_ENV_LOG: path.join(root, 'port-environment'),
+        ...variables,
       },
       cwd: tmpdir(),
     });
@@ -70,7 +83,14 @@ test('TC-214: first init bootstraps an empty env and preserves flags in a one-of
     'cli',
     'CALL',
     'compose',
+    'up',
+    '-d',
+    '--wait',
+    'db',
+    'CALL',
+    'compose',
     'run',
+    '--no-deps',
     '--rm',
     '-T',
     'cli',
@@ -136,7 +156,7 @@ const devFailures = {
   up: {
     code: 'INTERNAL_ERROR',
     message: 'App container start failed.',
-    fix: 'Check Docker is running and review the start output, then retry ./sourced dev --json.',
+    fix: 'Check Docker is running, then retry',
   },
   exec: {
     code: 'INTERNAL_ERROR',
@@ -219,6 +239,7 @@ test.each(['up', 'exec'] as const)(
       error: devFailures[step],
       warnings: [],
     });
+    // Compose progress stays visible on stderr in JSON mode (reviewer, D-135).
     expect(result.stderr).toBe('Compose stdout\nCompose stderr\n');
     const calls = await readFile(log, 'utf8');
     expect(calls).toContain('compose\nup\n');
@@ -243,9 +264,7 @@ test.each(['up', 'exec'] as const)(
 test('TC-214 / NFR-22: Windows dev has equivalent failure envelopes and exits', async () => {
   const launcher = await readFile('sourced.cmd', 'utf8');
   const branch = launcher.split('\n:dev\n')[1] ?? '';
-  expect(branch).toContain(
-    'docker compose up -d --build --force-recreate app 1>&2\nif errorlevel 1 (',
-  );
+  expect(branch).toContain('"App container start" compose up -d --build --force-recreate app');
   expect(branch).toContain(
     'if "%json%"=="true" (\n  call :healthcheck 1>&2\n) else (\n  call :healthcheck\n)\nif errorlevel 1 (',
   );
@@ -255,7 +274,7 @@ test('TC-214 / NFR-22: Windows dev has equivalent failure envelopes and exits', 
     ...branch.matchAll(/if "%json%"=="true" echo (\{[^\n]+\})\n  exit \/b 1\n\)/g),
   ].map((match) => CliEnvelope.parse(JSON.parse(match[1] ?? '')));
   expect(failures).toEqual(
-    Object.values(devFailures).map((error) => ({
+    [devFailures.exec].map((error) => ({
       schemaVersion: 1,
       command: 'dev',
       ok: false,
@@ -321,4 +340,150 @@ test('TC-214 / TRD §35.2: app refuses to start before init, even though db can 
   await expect(
     execute('/bin/sh', [path.resolve('scripts/docker-entrypoint.sh'), 'app'], { cwd: root }),
   ).rejects.toMatchObject({ code: 2, stderr: 'Run ./sourced init first.\n' });
+});
+
+// D-135 / FR-77: all pre-CLI Compose boundaries preserve the JSON contract.
+test.each(['build', 'up', 'run'] as const)(
+  'D-135: %s failure has one envelope and exit 1',
+  async (step) => {
+    const { run } = await fixture(0, step);
+    const result = await run(['doctor', '--no-network', '--json']).catch((error: unknown) => {
+      expect(error).toMatchObject({ code: 1 });
+      return error as { stdout: string; stderr: string };
+    });
+    expect(result.stdout.trim().split('\n')).toHaveLength(1);
+    expect(CliEnvelope.parse(JSON.parse(result.stdout))).toEqual({
+      schemaVersion: 1,
+      command: 'doctor',
+      ok: false,
+      warnings: [],
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: `${{ build: 'CLI image build', up: 'Database container start', run: 'CLI container start' }[step]} failed.`,
+        fix: 'Check Docker is running, then retry',
+      },
+    });
+    expect(result.stdout).not.toContain('Compose stdout');
+  },
+);
+test.each(['port is already allocated', 'address already in use', 'Ports are not available'])(
+  'D-135: port collision %s gives both variable names',
+  async (message) => {
+    const { run } = await fixture(0, 'up', message);
+    const result = await run(['doctor', '--json']).catch(
+      (error: unknown) => error as { stdout: string },
+    );
+    const envelope = CliEnvelope.parse(JSON.parse(result.stdout));
+    expect(envelope.error?.fix).toContain('SOURCED_DB_PORT');
+    expect(envelope.error?.fix).toContain('SOURCED_PORT');
+    expect(envelope.error?.fix).toBe(
+      'Set SOURCED_DB_PORT (or SOURCED_PORT) to a free port in .env.local, then retry.',
+    );
+  },
+);
+test.each([0, 1, 2, 130])(
+  'D-135: CLI envelope and exit %i are preserved without a second envelope',
+  async (code) => {
+    const envelope = {
+      schemaVersion: 1,
+      command: 'doctor',
+      ok: code === 0,
+      warnings: [],
+      result: { checks: [] },
+    };
+    const { run } = await fixture(0, '', '', JSON.stringify(envelope) + '\n', code);
+    const result = await run(['doctor', '--json']).then(
+      (output) => ({ ...output, code: 0 }),
+      (error: unknown) => error as { stdout: string; code: number },
+    );
+    expect(result.code).toBe(code);
+    expect(result.stdout).toBe(JSON.stringify(envelope) + '\n');
+  },
+);
+test('D-135: Windows covers build, database startup and CLI startup with the JSON boundary', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  const helper = await readFile('scripts/sourced-compose.ps1', 'utf8');
+  for (const step of [
+    'CLI image build',
+    'Database container start',
+    'CLI container start',
+    'App container start',
+  ])
+    expect(launcher).toContain(`"${step}" compose`);
+  expect(launcher).toContain('compose run --no-deps');
+  expect(helper).toContain('ConvertFrom-Json');
+  expect(helper).toContain('exit $status');
+  expect(helper).toContain("code = 'INTERNAL_ERROR'");
+  expect(helper).toContain('exit 1');
+  expect(helper).toContain(
+    'Set SOURCED_DB_PORT (or SOURCED_PORT) to a free port in .env.local, then retry.',
+  );
+});
+test('D-135: Compose database host port is configurable with the existing default', async () => {
+  expect(await readFile('docker-compose.yml', 'utf8')).toContain(
+    '127.0.0.1:${SOURCED_DB_PORT:-5433}:5432',
+  );
+});
+
+test('D-135: CLI progress stays on stderr while the envelope stays on stdout', async () => {
+  const progress = '{"event":"progress","message":"Checking database"}';
+  const envelope = '{"schemaVersion":1,"command":"doctor","ok":true,"warnings":[]}';
+  const { run } = await fixture(0, '', '', `${progress}\n${envelope}\n`);
+  const result = await run(['doctor', '--json']);
+  expect(result.stdout).toBe(`${envelope}\n`);
+  expect(result.stderr).toBe(`${progress}\n`);
+});
+
+// D-135 review: only literal port assignments are imported into the host process.
+test.each(['\n', '\r\n'])(
+  'D-135: ports come from .env.local with %j line endings; other lines stay inert',
+  async (newline) => {
+    const { root, run } = await fixture();
+    await writeFile(
+      path.join(root, '.env.local'),
+      [
+        '# port settings',
+        'SOURCED_PORT=3187',
+        'SOURCED_DB_PORT=5544',
+        'UNRELATED=must-not-be-exported',
+        'UNRELATED=$(touch SHOULD_NOT_EXIST)',
+        'touch SHOULD_NOT_EXIST',
+      ].join(newline),
+    );
+    const result = await run(['dev', '--json']);
+    expect(CliEnvelope.parse(JSON.parse(result.stdout)).result).toEqual({
+      url: 'http://localhost:3187',
+    });
+    expect(await readFile(path.join(root, 'port-environment'), 'utf8')).toBe(
+      'SOURCED_PORT=3187\nSOURCED_DB_PORT=5544\nUNRELATED=\n',
+    );
+    await expect(readFile(path.join(root, 'SHOULD_NOT_EXIST'))).rejects.toMatchObject({
+      code: 'ENOENT',
+    });
+    expect(result.stdout + result.stderr).not.toContain('must-not-be-exported');
+  },
+);
+test('D-135: shell port values win over .env.local and --port wins for dev', async () => {
+  const { root, run } = await fixture();
+  await writeFile(path.join(root, '.env.local'), 'SOURCED_PORT=3187\nSOURCED_DB_PORT=5544');
+  const variables = { SOURCED_PORT: '3188', SOURCED_DB_PORT: '5545' };
+  expect(JSON.parse((await run(['dev', '--json'], variables)).stdout)).toMatchObject({
+    result: { url: 'http://localhost:3188' },
+  });
+  expect(await readFile(path.join(root, 'port-environment'), 'utf8')).toBe(
+    'SOURCED_PORT=3188\nSOURCED_DB_PORT=5545\nUNRELATED=\n',
+  );
+  expect(
+    JSON.parse((await run(['dev', '--port', '3189', '--json'], variables)).stdout),
+  ).toMatchObject({ result: { url: 'http://localhost:3189' } });
+});
+test('D-135: Windows imports only the two port assignments when absent from the shell', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  expect(launcher).toContain(
+    `for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (`,
+  );
+  for (const key of ['SOURCED_PORT', 'SOURCED_DB_PORT']) {
+    expect(launcher).toContain(`if "%%A"=="${key}" if not defined ${key} set "${key}=%%B"`);
+  }
+  expect(launcher).not.toContain('set "%%A=%%B"');
 });

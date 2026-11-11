@@ -307,3 +307,30 @@ test('UT-45: database URLs are removed whole, including encoded passwords', () =
   expect(redact(`Database: ${url}`, [url])).toBe('Database: [REDACTED]');
   expect(redact(`Database: ${url}`, [])).toBe('Database: [REDACTED]');
 });
+
+// D-135 review: an unobservable host check must not block the Docker setup path.
+test('D-135: Docker doctor reports ports as informational', () => {
+  const child = spawnSync(
+    process.execPath,
+    [
+      resolve('node_modules/tsx/dist/cli.mjs'),
+      '--tsconfig',
+      join(root, 'tsconfig.json'),
+      '--conditions=react-server',
+      join(root, 'scripts/sourced.ts'),
+      'doctor',
+      '--no-network',
+      '--json',
+    ],
+    { cwd: directory, env: { ...environment, SOURCED_DOCKER: '1' }, encoding: 'utf8' },
+  );
+  expect(child.error).toBeUndefined();
+  expect(child.signal).toBeNull();
+  const envelope = CliEnvelope.parse(JSON.parse(child.stdout));
+  const ports = commandSchemas.doctor
+    .parse(envelope.result)
+    .checks.find((check) => check.id === 'ports');
+  expect(ports).toMatchSnapshot();
+  expect(ports?.ok).toBe(true);
+  expect(envelope.error?.message).not.toContain('ports:');
+});

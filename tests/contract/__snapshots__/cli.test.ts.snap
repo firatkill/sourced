@@ -1,5 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`D-135: Docker doctor reports ports as informational 1`] = `
+{
+  "detail": "Host ports not checked inside the CLI container; the launcher reports taken ports.",
+  "id": "ports",
+  "ok": true,
+}
+`;
+
 exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > add ./docs --type folder 1`] = `
 {
   "envelope": {
@@ -145,7 +153,7 @@ exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > doctor --
       "code": "CHECKS_FAILED",
       "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
       "message": "config: Edit sourced.config.ts and run pnpm sourced config:snapshot.
-ports: Free port 3000 and the database port, or use the project containers.
+ports: Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.
 database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
 fts: Choose an installed full-text language or use simple.
 corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
@@ -166,7 +174,7 @@ corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatc
         },
         {
           "detail": "ports check failed.",
-          "fix": "Free port 3000 and the database port, or use the project containers.",
+          "fix": "Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.",
           "id": "ports",
           "ok": false,
         },

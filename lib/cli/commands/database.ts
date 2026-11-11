@@ -33,7 +33,12 @@ export async function localDatabaseUrl(): Promise<string> {
   const db = compose.split('  db:')[1]?.split(/\n  [a-z][a-z-]*:/)[0] ?? '';
   const setting = (name: string) =>
     db.match(new RegExp(`^\\s+${name}: ['"]?([^'"\\s]+)`, 'm'))?.[1];
-  const port = db.match(/['"](?:127\.0\.0\.1:)?(\d+):5432['"]/)?.[1];
+  const port =
+    getCliEnvironment().SOURCED_DB_PORT ??
+    db
+      .match(/['"](?:127\.0\.0\.1:)?(?:\$\{SOURCED_DB_PORT:-(\d+)\}|(\d+)):5432['"]/)
+      ?.slice(1)
+      .find(Boolean);
   const user = setting('POSTGRES_USER');
   const password = setting('POSTGRES_PASSWORD');
   const database = setting('POSTGRES_DB');

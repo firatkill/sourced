@@ -16,10 +16,27 @@ if not exist .env.local (
     exit /b 2
   )
 )
+rem Read only the two port keys; never execute or export other env-file lines.
+for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (
+  if "%%A"=="SOURCED_PORT" if not defined SOURCED_PORT set "SOURCED_PORT=%%B"
+  if "%%A"=="SOURCED_DB_PORT" if not defined SOURCED_DB_PORT set "SOURCED_DB_PORT=%%B"
+)
 if "%~1"=="down" goto down
 if "%~1"=="dev" goto dev
 if "%~1"=="init" echo Building the image on first run takes a few minutes. 1>&2
-docker compose build cli 1>&2
+set "json=false"
+for %%A in (%*) do if "%%~A"=="--json" set "json=true"
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "CLI image build" compose build cli
+) else (
+  docker compose build cli 1>&2
+)
+if errorlevel 1 exit /b 1
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "Database container start" compose up -d --wait db
+) else (
+  docker compose up -d --wait db 1>&2
+)
 if errorlevel 1 exit /b 1
 set "mountArgs="
 if exist .sourced\mounts for /f "usebackq delims=" %%P in (".sourced\mounts") do call :mount "%%P"
@@ -27,7 +44,11 @@ set "ttyArgs=-T"
 rem PowerShell is part of Windows; Docker-only installs need no additional tools.
 powershell -NoProfile -Command "if ([Console]::IsInputRedirected) { exit 1 }" >nul 2>nul
 if not errorlevel 1 set "ttyArgs="
-docker compose run --rm %ttyArgs% %mountArgs% cli %*
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "CLI container start" compose run --no-deps --rm %ttyArgs% %mountArgs% cli %*
+) else (
+  docker compose run --no-deps --rm %ttyArgs% %mountArgs% cli %*
+)
 exit /b
 :mount
 set mountArgs=%mountArgs% -v "%~1:%~1:ro"
@@ -80,11 +101,12 @@ if errorlevel 1 (
   echo Port must be an integer from 1 to 65535. 1>&2
   exit /b 2
 )
-docker compose up -d --build --force-recreate app 1>&2
-if errorlevel 1 (
-  if "%json%"=="true" echo {"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App container start failed.","fix":"Check Docker is running and review the start output, then retry sourced.cmd dev --json."},"warnings":[]}
-  exit /b 1
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" dev "App container start" compose up -d --build --force-recreate app
+) else (
+  docker compose up -d --build --force-recreate app 1>&2
 )
+if errorlevel 1 exit /b 1
 if "%json%"=="true" (
   call :healthcheck 1>&2
 ) else (

@@ -258,6 +258,7 @@ export function getCliEnvironment() {
       OLLAMA_BASE_URL: optionalText,
       SOURCED_DOCKER: optionalText,
       SOURCED_PORT: optionalText,
+      SOURCED_DB_PORT: optionalText,
     })
     .safeParse(process.env);
   if (!result.success) throw invalidEnvironment(result.error);

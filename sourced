@@ -17,8 +17,73 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 2
 fi
 [ -f .env.local ] || (umask 077; touch .env.local)
+# Parse only literal port assignments; never source or evaluate the env file.
+carriage_return=$(printf '\r')
+while IFS= read -r line || [ -n "$line" ]; do
+  line=${line%"$carriage_return"}
+  case "$line" in
+    SOURCED_PORT=*)
+      if [ "${SOURCED_PORT+x}" != x ]; then
+        SOURCED_PORT=${line#SOURCED_PORT=}
+        export SOURCED_PORT
+      fi ;;
+    SOURCED_DB_PORT=*)
+      if [ "${SOURCED_DB_PORT+x}" != x ]; then
+        SOURCED_DB_PORT=${line#SOURCED_DB_PORT=}
+        export SOURCED_DB_PORT
+      fi ;;
+  esac
+done < .env.local
 SOURCED_UID=$(id -u)
 export SOURCED_UID
+json=false
+for argument in "$@"; do
+  [ "$argument" != --json ] || json=true
+done
+# Only fixed command names enter launcher-generated JSON.
+case "$command" in
+  *[!a-z:-]*|'') envelope_command=unknown ;;
+  *) envelope_command=$command ;;
+esac
+compose_step() {
+  step=$1
+  shift
+  if [ "$json" = false ]; then docker "$@"; return $?; fi
+  # Stream CLI JSON lines; send the process status through the pipe without files.
+  {
+    status=0
+    docker "$@" 2>&1 || status=$?
+    printf '\n__SOURCED_COMPOSE_EXIT__%s\n' "$status"
+  } | (
+    emitted=false
+    fix='Check Docker is running, then retry'
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      case "$line" in
+        __SOURCED_COMPOSE_EXIT__*)
+          status=${line#__SOURCED_COMPOSE_EXIT__}
+          if [ "$emitted" = true ]; then exit "$status"; fi
+          if [ "$status" -ne 0 ]; then
+            printf '{"schemaVersion":1,"command":"%s","ok":false,"error":{"code":"INTERNAL_ERROR","message":"%s failed.","fix":"%s"},"warnings":[]}\n' "$envelope_command" "$step" "$fix"
+            exit 1
+          fi
+          exit 0 ;;
+        *'port is already allocated'*|*'address already in use'*|*'ports are not available'*|*'Ports are not available'*)
+          fix='Set SOURCED_DB_PORT (or SOURCED_PORT) to a free port in .env.local, then retry.' ;;
+      esac
+      if [ "$step" = 'CLI container start' ]; then
+        case "$line" in
+          '{"schemaVersion":1,'*)
+            if [ "$emitted" = false ]; then printf '%s\n' "$line"; emitted=true; fi ;;
+          *) printf '%s\n' "$line" >&2 ;;
+        esac
+      else
+        # Build and Compose progress stays visible on stderr.
+        printf '%s\n' "$line" >&2
+      fi
+    done
+  )
+}
 case "$command" in
   down)
     json=false
@@ -57,11 +122,10 @@ case "$command" in
       exit 2
     fi
     export SOURCED_PORT
-    if ! docker compose up -d --build --force-recreate app >&2; then
-      if [ "$json" = true ]; then
-        printf '%s\n' '{"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App container start failed.","fix":"Check Docker is running and review the start output, then retry ./sourced dev --json."},"warnings":[]}'
-      fi
-      exit 1
+    if [ "$json" = true ]; then
+      compose_step 'App container start' compose up -d --build --force-recreate app || exit $?
+    else
+      docker compose up -d --build --force-recreate app >&2 || exit 1
     fi
     # Use Node inside the image: the Docker-only host needs neither Node nor curl.
     if ! (
@@ -91,7 +155,8 @@ case "$command" in
     ;;
   init) printf '%s\n' 'Building the image on first run takes a few minutes.' >&2 ;;
 esac
-docker compose build cli >&2
+compose_step 'CLI image build' compose build cli || exit $?
+compose_step 'Database container start' compose up -d --wait db || exit $?
 # Prepend each argument without eval so spaces and shell metacharacters stay literal.
 set -- cli "$@"
 if [ -f .sourced/mounts ]; then
@@ -101,7 +166,7 @@ if [ -f .sourced/mounts ]; then
   done < .sourced/mounts
 fi
 if [ -t 0 ]; then
-  exec docker compose run --rm "$@"
+  compose_step 'CLI container start' compose run --no-deps --rm "$@"
 else
-  exec docker compose run --rm -T "$@"
+  compose_step 'CLI container start' compose run --no-deps --rm -T "$@"
 fi
