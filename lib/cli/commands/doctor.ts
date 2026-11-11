@@ -24,18 +24,98 @@ async function writable(target: string): Promise<void> {
     throw error;
   }
 }
-async function freePort(port: number) {
-  return new Promise<boolean>((resolve) => {
+type PortProbe = (port: number, host: string) => Promise<boolean>;
+async function freePort(port: number, host: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
     const server = createServer();
-    server.once('error', () => {
-      resolve(false);
+    server.once('error', (error: NodeJS.ErrnoException) => {
+      if (error.code === 'EADDRINUSE') resolve(false);
+      // An unavailable address family cannot have a listener.
+      else if (error.code === 'EAFNOSUPPORT' || error.code === 'EADDRNOTAVAIL') resolve(true);
+      else reject(error);
     });
-    server.listen(port, '127.0.0.1', () =>
+    server.listen({ port, host, ipv6Only: host.includes(':') }, () =>
       server.close(() => {
         resolve(true);
       }),
     );
   });
+}
+
+/** FR-78 / D-135: host checks are meaningful only on the Node path. */
+export async function checkPorts(
+  env = getCliEnvironment(),
+  probe: PortProbe = freePort,
+  mapping: (service: string, internal: string) => Promise<string> = async (service, internal) =>
+    (await execute('docker', ['compose', 'port', service, internal], { cwd: repositoryRoot }))
+      .stdout,
+): Promise<Check> {
+  if (env.SOURCED_DOCKER === '1')
+    return {
+      id: 'ports',
+      ok: true,
+      detail: 'Host ports not checked inside the CLI container; the launcher reports taken ports.',
+    };
+  const fix =
+    'Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.';
+  try {
+    const appPort = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .parse(env.SOURCED_PORT ?? 3000);
+    const dbPort = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(65535)
+      .parse(
+        env.DATABASE_URL ? new URL(env.DATABASE_URL).port || 5432 : (env.SOURCED_DB_PORT ?? 5433),
+      );
+    for (const [service, port, internal] of [
+      ['app', appPort, '3000'],
+      ['db', dbPort, '5432'],
+    ] as const) {
+      let owned: string[] | undefined;
+      for (const host of ['127.0.0.1', '0.0.0.0', '::1', '::']) {
+        if (await probe(port, host)) continue;
+        if (!owned) {
+          try {
+            owned = (await mapping(service, internal)).trim().split('\n');
+          } catch {
+            owned = [];
+          }
+        }
+        const ipv6 = host.includes(':');
+        const wildcard = ipv6 ? '::' : '0.0.0.0';
+        const ownedHere = owned.some((line) => {
+          const match = /^(.*):(\d+)$/.exec(line.trim());
+          const address = match?.[1]?.replace(/^\[|\]$/g, '');
+          return (
+            Number(match?.[2]) === port &&
+            address !== undefined &&
+            address.includes(':') === ipv6 &&
+            (address === host || address === wildcard || host === wildcard)
+          );
+        });
+        if (!ownedHere)
+          return {
+            id: 'ports',
+            ok: false,
+            detail: `${service} port ${String(port)} is taken on ${host}.`,
+            fix,
+          };
+      }
+    }
+    return {
+      id: 'ports',
+      ok: true,
+      detail: 'Application and database ports available or owned by project containers.',
+    };
+  } catch {
+    return { id: 'ports', ok: false, detail: 'ports check failed.', fix };
+  }
 }
 export async function runDoctor(
   input: Invocation,
@@ -82,23 +162,7 @@ export async function runDoctor(
         throw new Error();
       return `Node ${process.versions.node}; pnpm ${pnpm}.`;
     });
-    await check(
-      'ports',
-      'Free port 3000 and the database port, or use the project containers.',
-      async () => {
-        const dbPort = env.DATABASE_URL ? Number(new URL(env.DATABASE_URL).port || 5432) : 5433;
-        for (const port of new Set([3000, dbPort])) {
-          if (await freePort(port)) continue;
-          const service = port === dbPort ? 'db' : 'app';
-          const internal = service === 'db' ? '5432' : '3000';
-          const mapping = (
-            await execute('docker', ['compose', 'port', service, internal], { cwd: repositoryRoot })
-          ).stdout.trim();
-          if (!mapping.endsWith(`:${String(port)}`)) throw new Error();
-        }
-        return 'Application and database ports available or owned by project containers.';
-      },
-    );
+    checks.push(await checkPorts(env));
     await check('disk', 'Free at least 2 GB on the repository volume.', async () => {
       const disk = await statfs(process.cwd());
       if (disk.bavail * disk.bsize < 2 * 1024 ** 3) throw new Error();
