@@ -581,12 +581,13 @@ describe('CT-01 / CT-13: successful diagnostics', () => {
     const { cli, dir, env } = context;
     // The real CLI talks to the integration DB. Only the host Docker port probe
     // is a fixture: CI service ports need not belong to this compose project.
+    // Like `docker compose port` for a wildcard binding, it reports IPv4 and IPv6.
     const bin = join(dir, 'bin');
     await mkdir(bin);
     const dbPort = new URL(env.DATABASE_URL).port || '5432';
     await writeFile(
       join(bin, 'docker'),
-      `#!/bin/sh\ncase "$*" in\n  "compose port db 5432") echo '127.0.0.1:${dbPort}' ;;\n  "compose port app 3000") echo '127.0.0.1:3000' ;;\n  *) exit 1 ;;\nesac\n`,
+      `#!/bin/sh\ncase "$*" in\n  "compose port db 5432") printf '0.0.0.0:${dbPort}\\n[::]:${dbPort}\\n' ;;\n  "compose port app 3000") printf '0.0.0.0:3000\\n[::]:3000\\n' ;;\n  *) exit 1 ;;\nesac\n`,
       { mode: 0o755 },
     );
     const result = await cli(['doctor'], 0, { PATH: `${bin}:${env.PATH ?? ''}` });
