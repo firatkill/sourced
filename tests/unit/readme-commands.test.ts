@@ -70,11 +70,11 @@ describe('TC-243: README kit instructions (T-76, FR-57, G-6)', () => {
     expect(section).toContain('Node.js 22');
   });
 
-  it('records the v2.0.0 changes as unreleased', () => {
+  it('records the v2.0.0 release', () => {
     const entry = readFileSync('CHANGELOG.md', 'utf8')
-      .split('## [Unreleased]\n')[1]
+      .split(/^## \[2\.0\.0\] - \d{4}-\d{2}-\d{2}\n/m)[1]
       ?.split('\n## [')[0];
-    expect(entry).toContain('v2.0.0');
+    expect(entry).toBeDefined();
     for (const heading of ['Added', 'Changed', 'Notes']) {
       expect(entry).toContain(`### ${heading}`);
     }
