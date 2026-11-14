@@ -1,0 +1,90 @@
+{
+  "https://www.postgresql.org/docs/17/indexes-intro.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-intro.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "86648b300d5a3ea1c0c313e32a6678ba1e321519dcac1f4fa52f1731b9868523",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.193Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-types.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-types.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "7d91c0ac3a8bb6dd58e08a6977816f7d67b4ce809f0a75d19048939a1a1ab917",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.205Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-multicolumn.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "d621e6887ba814650bdc9551c091d62cc22788bbb466e8c9bc1392829f4e3bde",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.216Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-ordering.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-ordering.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "2d00ba1a61aec7841135abbc51e9b402a46af4ba670a863318441484a9aed628",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.227Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-bitmap-scans.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-bitmap-scans.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "3217dd3f65fc85e47b552c729aadac4aa9bc89c588f984bc7c7d77f8cf815b81",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.238Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-unique.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-unique.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "3eabc5572091cf3296ee7aaee4136337559c6463a6adefca578220f6be92b199",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.249Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-expressional.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-expressional.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "ab9f5623a2c7fd417b550d478f282ecae7635c239116fa7e0fca185084e6a8a4",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.259Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-partial.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-partial.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "bee7f21720679895a55ff84c8767c6879ebba0eed7aeb3c802a872e95e1793d9",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.269Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-index-only-scans.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-index-only-scans.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "9f56822ac0c22ca8a2173964a8ca6876da755796bb02a7ee1bdaff29caac0b37",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.279Z"
+  },
+  "https://www.postgresql.org/docs/17/indexes-examine.html": {
+    "url": "https://www.postgresql.org/docs/17/indexes-examine.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "1ebbc5f454234f9d36b29d4824484a805cde941724d0453da256400609811695",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.289Z"
+  },
+  "https://www.postgresql.org/docs/17/sql-createindex.html": {
+    "url": "https://www.postgresql.org/docs/17/sql-createindex.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "98bc782a29a759d99b3dbf6a962851cf29592d489b63cdd5e8c1ca72a311e958",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.299Z"
+  }
+}

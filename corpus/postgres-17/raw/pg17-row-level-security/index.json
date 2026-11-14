@@ -1,0 +1,18 @@
+{
+  "https://www.postgresql.org/docs/17/ddl-rowsecurity.html": {
+    "url": "https://www.postgresql.org/docs/17/ddl-rowsecurity.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "4cdf084d8e36009d03790c508585bd7c4c237aac4165dbbc9173866dbffc980e",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.487Z"
+  },
+  "https://www.postgresql.org/docs/17/sql-createpolicy.html": {
+    "url": "https://www.postgresql.org/docs/17/sql-createpolicy.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "1772bf6791789204d77a0ed3e35c0ff2f7ea988fb71f64a0b4b3a19908fad6a6",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.498Z"
+  }
+}

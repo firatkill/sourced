@@ -3,7 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { Square } from 'lucide-react';
 import { askStatus, isInFlight, type AskState } from '@/hooks/useAsk';
-import { ASK_COPY, formatAskCopy } from '@/lib/copy';
+import { ASK_COPY, formatAskCopy, type CorpusCopy } from '@/lib/copy';
 import { SourcesPanel } from './SourcesPanel';
 import { HowAnswered } from './HowAnswered';
 import { NotFound } from './states/NotFound';
@@ -19,6 +19,7 @@ const AnswerActions = lazy(async () => ({
 export type ChatTurn = AskState & { id: number };
 export function Turn({
   turn,
+  copy = ASK_COPY,
   limits,
   selected,
   onSelect,
@@ -27,6 +28,7 @@ export function Turn({
   onStop,
 }: {
   turn: ChatTurn;
+  copy?: CorpusCopy;
   limits: { ipDaily: number; globalDaily: number };
   selected: string | null;
   onSelect: (label: string) => void;
@@ -52,7 +54,14 @@ export function Turn({
   function body() {
     switch (phase.kind) {
       case 'notFound':
-        return <NotFound passages={meta?.passages ?? []} onAnother={onAnother} />;
+        return (
+          <NotFound
+            copy={copy}
+            body={copy.notFoundBody}
+            passages={meta?.passages ?? []}
+            onAnother={onAnother}
+          />
+        );
       case 'rateLimited':
         return (
           <RateLimited {...rateLimitCopy(phase.scope, phase.resetAt, limits)} scope={phase.scope} />
@@ -142,7 +151,7 @@ export function Turn({
             {meta && (
               <>
                 <span className="rounded-full border border-[var(--rule)] px-3 py-1">
-                  {ASK_COPY.searched}
+                  {copy.searched}
                 </span>
                 {text !== '' && (
                   <span className="rounded-full border border-[var(--rule)] px-3 py-1">

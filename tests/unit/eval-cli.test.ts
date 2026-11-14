@@ -1,3 +1,5 @@
+import { AppError } from '@/lib/errors';
+import { checkCorpusSchema } from '@/lib/kit/vector-schema';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { afterEach, expect, test, vi } from 'vitest';
@@ -15,6 +17,11 @@ const state = vi.hoisted(() => ({
   calls: 0,
   writes: vi.fn(),
 }));
+vi.mock('@/lib/kit/load-config', async (original) => ({
+  ...(await original<typeof import('@/lib/kit/load-config')>()),
+  loadConfig: vi.fn(async () => {}),
+}));
+vi.mock('@/lib/kit/vector-schema', () => ({ checkCorpusSchema: vi.fn(async () => {}) }));
 vi.mock('node:child_process', () => ({ execFileSync: vi.fn(() => '') }));
 vi.mock('@/lib/db/client', () => ({
   closeSqlForTests: async () => {},
@@ -24,11 +31,12 @@ vi.mock('@/lib/db/client', () => ({
     if (query.includes('FROM ingest_runs'))
       return state.ingest ? [{ corpus_version: 'test', cost_usd_estimate: '0.01' }] : [];
     if (query.includes('embedding_model')) return state.mismatch ? [{ exists: 1 }] : [];
-    const { entries } = parseGolden(await readFile('eval/golden.jsonl', 'utf8'));
+    const { entries } = parseGolden(await readFile('eval/postgres-17/golden.jsonl', 'utf8'));
     return entries.flatMap((entry) => entry.expected_anchors.map((anchor) => ({ anchor })));
   },
 }));
-vi.mock('../../scripts/eval-validate', () => ({
+vi.mock('@/lib/eval/validate', async (original) => ({
+  ...(await original<typeof import('@/lib/eval/validate')>()),
   readGoldenCorpus: (): Promise<GoldenCorpus> => Promise.resolve({ headings: [], identifiers: [] }),
 }));
 vi.mock('@/lib/eval/golden', async (importOriginal) => ({
@@ -160,21 +168,29 @@ test('TC-127: automatic baseline uses committed contents and greatest runId, exc
   const newest = baselineResult('2026-11-09T10:00:00Z');
   vi.mocked(execFileSync).mockImplementation((_cmd, args) => {
     if (args?.[0] === 'ls-tree')
-      return 'eval/results/2026-11-09-2.json\neval/results/2026-11-09-10.json\neval/results/output.json\neval/results/report.md\n';
-    return JSON.stringify(args?.[1] === 'HEAD:eval/results/2026-11-09-10.json' ? newest : older);
+      return 'eval/postgres-17/results/2026-11-09-2.json\neval/postgres-17/results/2026-11-09-10.json\neval/postgres-17/results/output.json\neval/postgres-17/results/report.md\n';
+    return JSON.stringify(
+      args?.[1] === 'HEAD:eval/postgres-17/results/2026-11-09-10.json' ? newest : older,
+    );
   });
-  expect(await loadBaseline(undefined, 'eval/results', './eval/results/output.json')).toEqual({
-    file: 'eval/results/2026-11-09-10.json',
+  expect(
+    await loadBaseline(
+      undefined,
+      'eval/postgres-17/results',
+      './eval/postgres-17/results/output.json',
+    ),
+  ).toEqual({
+    file: 'eval/postgres-17/results/2026-11-09-10.json',
     result: newest,
   });
   expect(execFileSync).toHaveBeenCalledWith(
     'git',
-    ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/results'],
-    { encoding: 'utf8' },
+    ['ls-tree', '-r', '--name-only', 'HEAD', '--', 'eval/postgres-17/results'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
   expect(execFileSync).not.toHaveBeenCalledWith(
     'git',
-    ['show', 'HEAD:eval/results/output.json'],
+    ['show', 'HEAD:eval/postgres-17/results/output.json'],
     expect.anything(),
   );
 });
@@ -185,17 +201,19 @@ test('TC-127: explicit --baseline takes precedence and validates the results sch
   vi.spyOn(fs, 'readFile')
     .mockResolvedValueOnce(JSON.stringify(result))
     .mockResolvedValueOnce('{}');
-  expect(await loadBaseline('chosen.json', 'eval/results', 'output.json')).toEqual({
+  expect(await loadBaseline('chosen.json', 'eval/postgres-17/results', 'output.json')).toEqual({
     file: 'chosen.json',
     result,
   });
   expect(execFileSync).not.toHaveBeenCalled();
-  await expect(loadBaseline('invalid.json', 'eval/results', 'output.json')).rejects.toThrow();
+  await expect(
+    loadBaseline('invalid.json', 'eval/postgres-17/results', 'output.json'),
+  ).rejects.toThrow();
 });
 
 test('TC-127: no committed baseline skips regression and reports No baseline; failures exit 1', async () => {
   logs();
-  expect(await loadBaseline(undefined, 'eval/results', 'output.json')).toBeNull();
+  expect(await loadBaseline(undefined, 'eval/postgres-17/results', 'output.json')).toBeNull();
   expect(await runEval(['--limit', '1', '--no-write'])).toBe(1);
   expect(console.log).toHaveBeenCalledWith('No baseline');
   expect(console.log).toHaveBeenCalledWith(
@@ -220,4 +238,112 @@ test('TC-127: --ci appends Markdown with resolved baseline and failures to step 
     '/tmp/sourced-test-summary',
     expect.stringContaining('Baseline: chosen.json (2026-11-09T10:00:00Z)'),
   );
+});
+
+test('T-47 / FR-61: eval refuses mismatched corpus before provider calls', async () => {
+  const error = logs();
+  const message =
+    'The corpus was indexed with a different embedding model or language. Run ./sourced ingest --rebuild.';
+  vi.mocked(checkCorpusSchema).mockRejectedValueOnce(new AppError('CORPUS_MISMATCH', message));
+  expect(await runEval(['--limit', '1', '--no-write'])).toBe(2);
+  expect(error).toHaveBeenCalledWith(message);
+  expect(state.calls).toBe(0);
+});
+
+test('TC-226 / FR-85: --compare fixture prints deltas and exits 1 on regression', async () => {
+  const write = vi.fn();
+  let result: EvalResult | undefined;
+  expect(
+    await runEval(
+      ['--only', 'q001', '--no-write', '--compare', 'tests/fixtures/eval-results/2026-11-01.json'],
+      {
+        write,
+        result: (value) => {
+          result = value;
+        },
+      },
+    ),
+  ).toBe(1);
+  expect(result?.comparison?.regressions).toContainEqual(
+    expect.objectContaining({ metric: 'recallAt5' }),
+  );
+  expect(write).toHaveBeenCalledWith(expect.stringContaining('| Metric | Delta |'));
+});
+
+test('TC-226 / FR-84 / D-126: kit CLI merges built-ins, does not require fixtures, and reports nullable causes', async () => {
+  const { getKitConfig, setCliKitConfig } = await import('@/lib/kit/runtime-config');
+  const originalConfig = getKitConfig(false);
+  const config = structuredClone(originalConfig);
+  config.corpus.name = 'test-kit';
+  const fs = await import('node:fs/promises');
+  const originalRead = fs.readFile;
+  const golden = await originalRead('eval/postgres-17/golden.jsonl', 'utf8');
+  vi.spyOn(fs, 'readFile').mockImplementation((...args) =>
+    args[0] === 'eval/test-kit/golden.jsonl' ? Promise.resolve(golden) : originalRead(...args),
+  );
+  setCliKitConfig(config);
+  state.fixtures = false;
+  try {
+    const write = vi.fn();
+    let result: EvalResult | undefined;
+    expect(
+      await runEval(['--no-write', '--only', 'shared-inj-01'], {
+        write,
+        result: (value) => {
+          result = value;
+        },
+      }),
+    ).toBe(1);
+    expect(result?.questions.map((q) => q.id)).toEqual(['shared-inj-01']);
+    expect(result?.injectionScope).toBe('question-borne only');
+    expect(result?.failures).toContainEqual(
+      expect.objectContaining({ metric: 'recallAt5', likelyCause: null }),
+    );
+    expect(result?.failures).toContainEqual(
+      expect.objectContaining({
+        metric: 'citationValidity',
+        likelyCause: 'quote fallback rate and model',
+      }),
+    );
+    expect(write).toHaveBeenCalledWith('Injection resistance: question-borne only');
+    expect(state.writes).not.toHaveBeenCalled();
+  } finally {
+    setCliKitConfig(originalConfig);
+  }
+});
+
+// FR-89 rule 5 / TRD §18: unexpected exceptions are not confirmation requests.
+test('eval names the failed stage and preserves INTERNAL_ERROR for an unexpected database failure', async () => {
+  const error = vi.fn();
+  const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  vi.mocked(checkCorpusSchema).mockRejectedValueOnce(new TypeError('sensitive internal detail'));
+  expect(await runEval(['--no-write', '--yes'], { write: vi.fn(), error })).toBe(1);
+  expect(error).toHaveBeenCalledWith(
+    'Eval failed during database preconditions.',
+    'INTERNAL_ERROR',
+  );
+  expect(stderr.mock.calls.map(([line]) => String(line)).join('')).toContain('TypeError');
+  expect(stderr.mock.calls.map(([line]) => String(line)).join('')).not.toContain(
+    'sensitive internal detail',
+  );
+  expect(state.calls).toBe(0);
+});
+
+// D-132: both Git lookups share a single progress warning.
+test('missing Git completes evaluation and warns once', async () => {
+  const error = vi.fn();
+  const write = vi.fn();
+  const result = vi.fn();
+  vi.mocked(execFileSync).mockImplementation(() => {
+    throw Object.assign(new Error('spawnSync git ENOENT'), { code: 'ENOENT' });
+  });
+  expect(await runEval(['--no-write', '--limit', '1'], { write, error, result })).toBe(1);
+  expect(error).not.toHaveBeenCalled();
+  expect(result).toHaveBeenCalledWith(expect.objectContaining({ gitSha: 'none' }));
+  expect(
+    write.mock.calls.filter(
+      ([message]) => message === 'Git not available; baseline taken from files on disk.',
+    ),
+  ).toHaveLength(1);
+  expect(state.calls).toBe(1);
 });

@@ -1,3 +1,4 @@
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { RETRIEVAL } from '@/lib/config';
 import { AppError, RETRIEVAL_ERROR_MESSAGE } from '@/lib/errors';
 import { embedQuery } from './embed-query';
@@ -18,20 +19,29 @@ export async function retrieve(
     searched = await search(embedding.vector, question);
   } catch (cause) {
     signal.throwIfAborted();
-    throw new AppError('RETRIEVAL_ERROR', RETRIEVAL_ERROR_MESSAGE, { cause });
+    if (cause instanceof AppError && cause.code === 'CORPUS_EMPTY')
+      searched = { chunks: [], vectorCandidates: 0, ftsCandidates: 0 };
+    else throw new AppError('RETRIEVAL_ERROR', RETRIEVAL_ERROR_MESSAGE, { cause });
   }
   const candidates = searched.chunks;
   const searchMs = performance.now() - searchStarted;
   const result = await rerank(question, candidates, signal);
-  const passages = result.reranked.slice(0, RETRIEVAL.FINAL_PASSAGES).map((chunk, index) => {
-    const fragment = chunk.anchor.split('#')[1];
-    return {
-      ...chunk,
-      label: `P${String(index + 1)}` as Passage['label'],
-      rerankPosition: index + 1,
-      officialUrl: fragment ? `${chunk.documentUrl}#${fragment}` : chunk.documentUrl,
-    };
-  });
+  const passages = result.reranked
+    .slice(0, getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
+    .map((chunk, index): Passage => {
+      const fragment =
+        chunk.pageFrom !== undefined
+          ? `page=${String(chunk.pageFrom)}`
+          : chunk.anchor.split('#')[1];
+      return {
+        ...chunk,
+        label: `P${String(index + 1)}` as Passage['label'],
+        rerankPosition: index + 1,
+        ...(chunk.sourceKind === 'file'
+          ? { officialUrl: null, filePath: chunk.slug.slice(chunk.slug.indexOf(':') + 1) }
+          : { officialUrl: fragment ? `${chunk.documentUrl}#${fragment}` : chunk.documentUrl }),
+      };
+    });
   return {
     candidates,
     vectorCandidates: searched.vectorCandidates,

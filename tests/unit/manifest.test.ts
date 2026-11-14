@@ -1,12 +1,25 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { load } from 'cheerio';
 import { expect, test } from 'vitest';
-import manifest from '@/corpus/manifest.json';
+import manifest from '@/tests/fixtures/postgres-17-v1-manifest.json';
 import { loadManifest, ManifestSchema } from '@/lib/ingest/manifest';
 
 test('TC-030: UT-29 manifest loads 30–40 unique valid page slugs', async () => {
   const parsed = await loadManifest();
-  expect(parsed).toEqual(manifest);
+  expect(parsed.pages.map(({ slug, section }) => ({ slug, section }))).toEqual(manifest.pages);
+  expect(parsed.fixtures).toEqual(manifest.fixtures);
+  for (const page of parsed.pages) {
+    expect(page.path).toBe(
+      `corpus/postgres-17/raw/pg17-${page.section}/${createHash('sha1').update(page.url!).digest('hex')}.html`,
+    );
+    expect(page.url).toBe(manifest.baseUrl + page.slug);
+    expect(page.html).toEqual({
+      preset: 'postgres-docbook',
+      contentSelector: manifest.contentSelector,
+      removeSelectors: manifest.removeSelectors,
+    });
+  }
   expect(parsed.pages.length).toBeGreaterThanOrEqual(30);
   expect(parsed.pages.length).toBeLessThanOrEqual(40);
   expect(new Set(parsed.pages.map((page) => page.slug)).size).toBe(parsed.pages.length);

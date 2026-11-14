@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAsk } from '@/hooks/useAsk';
 import { QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { AskForm } from './AskForm';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { DemoOff, ReadonlyBanner } from './states/DemoState';
@@ -14,10 +14,11 @@ import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 
 type Props = {
+  publicDemo?: boolean;
   demoMode: 'on' | 'readonly' | 'off';
   limits: { ipDaily: number; globalDaily: number };
-  suggested: readonly { id: SuggestedId; question: string; topic: string }[];
-  copy: { hero: string; lead: string };
+  suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
+  copy: CorpusCopy;
 };
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
@@ -35,6 +36,7 @@ export function AskApp(props: Props) {
   );
 }
 function Conversation({
+  publicDemo = true,
   demoMode,
   limits,
   suggested,
@@ -107,6 +109,7 @@ function Conversation({
   }, [ask.phase.kind, ask.inputRef, active?.id]);
   const composer = (
     <AskForm
+      copy={copy}
       question={draft}
       onChange={setDraft}
       onSubmit={() => {
@@ -115,7 +118,7 @@ function Conversation({
       inputRef={ask.inputRef}
       inFlight={ask.inFlight}
       disabled={effectiveMode !== 'on'}
-      dailyLimit={limits.ipDaily}
+      dailyLimit={publicDemo ? limits.ipDaily : null}
       error={ask.phase.kind === 'validationError' ? ask.phase.message : null}
       hasTurns={turns.length > 0}
     />
@@ -132,6 +135,7 @@ function Conversation({
   return (
     <div className="chat-shell flex h-dvh flex-col md:flex-row">
       <ChatRail
+        copy={copy}
         turns={turns}
         busy={ask.inFlight}
         onNew={() => {
@@ -145,7 +149,7 @@ function Conversation({
       >
         <header className="flex h-[60px] shrink-0 flex-col justify-center border-b border-[var(--rule)] px-5">
           <p className="truncate text-sm font-semibold">{turns[0]?.question ?? copy.hero}</p>
-          <p className="text-xs text-[var(--ink-3)]">{ASK_COPY.headerScope}</p>
+          <p className="text-xs text-[var(--ink-3)]">{copy.headerScope}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
           <div className="mx-auto w-full max-w-[760px] space-y-10">
@@ -167,7 +171,7 @@ function Conversation({
                   {composer}
                   {suggestions}
                   <p className="text-sm text-[var(--ink-3)]">
-                    {ASK_COPY.scope}{' '}
+                    {copy.scope}{' '}
                     <a href="/eval" className="text-[var(--accent)] underline">
                       {ASK_COPY.scopeLink}
                     </a>
@@ -181,6 +185,7 @@ function Conversation({
                   <Turn
                     key={turn.id}
                     turn={turn}
+                    copy={copy}
                     limits={limits}
                     selected={viewer?.turn === turn.id ? viewer.label : null}
                     onSelect={(label) => {
@@ -221,6 +226,7 @@ function Conversation({
       </main>
       {viewer && selectedMeta && selectedTurn?.citations && (
         <SourceViewer
+          copy={copy}
           passages={selectedMeta.passages}
           citations={selectedTurn.citations}
           label={viewer.label}

@@ -1,7 +1,10 @@
+import { EvalComparison } from './compare';
 import { z } from 'zod';
 
 export const EvalResult = z.object({
   schemaVersion: z.literal(1),
+  comparison: EvalComparison.optional(),
+  injectionScope: z.enum(['question-borne only', 'question-borne and passage-borne']).optional(),
   runId: z.string(), // ISO timestamp, e.g. '2026-11-02T14:03:11Z'
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   gitSha: z.string(),
@@ -30,7 +33,11 @@ export const EvalResult = z.object({
     correctRefusal: z.number(),
     injectionResistance: z.number(),
     latencyMs: z.object({ p50: z.number(), p95: z.number() }),
-    cost: z.object({ totalUsd: z.number(), perQuestionUsd: z.number(), ingestUsd: z.number() }),
+    cost: z.object({
+      totalUsd: z.number().nullable(),
+      perQuestionUsd: z.number().nullable(),
+      ingestUsd: z.number(),
+    }),
     errors: z.number().int(),
     counts: z.object({
       total: z.number(),
@@ -48,6 +55,7 @@ export const EvalResult = z.object({
       kind: z.enum(['floor', 'ceiling', 'regression']),
       value: z.number(),
       limit: z.number(),
+      likelyCause: z.string().nullable().optional(),
     }),
   ),
   questions: z.array(
@@ -73,7 +81,7 @@ export const EvalResult = z.object({
       injectionResisted: z.boolean().nullable(),
       pass: z.boolean(), // per-question verdict used by /eval "Result"
       latencyMs: z.number(),
-      costUsd: z.number(),
+      costUsd: z.number().nullable(),
       answer: z.string(),
       citedAnchors: z.array(z.string()), // anchors of passages with a valid citation, in label order; shown in the expanded /eval row
       rerankedTop10Anchors: z.array(z.string()),

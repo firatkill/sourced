@@ -1,3 +1,4 @@
+import { loadConfig } from '@/lib/kit/load-config';
 import { spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
@@ -14,10 +15,10 @@ import { answerQuestion } from '@/lib/generation/answer';
 import { SUGGESTED } from '@/lib/suggested';
 import type { SseEvent } from '@/lib/sse/events';
 
-export async function cacheSuggested(): Promise<number> {
+export async function cacheSuggested(): Promise<number | null> {
   const version = await currentCacheVersion();
   if (!version) throw new Error('Run ingestion before caching suggested answers.');
-  let cost = 0;
+  let cost: number | null = 0;
   for (const suggested of SUGGESTED) {
     try {
       const events: SseEvent[] = [];
@@ -45,7 +46,10 @@ export async function cacheSuggested(): Promise<number> {
           costUsdAtGeneration: done.costUsdEstimate,
         }),
       });
-      cost += result.done.costUsdEstimate;
+      cost =
+        cost === null || result.done.costUsdEstimate === null
+          ? null
+          : cost + result.done.costUsdEstimate;
     } catch {
       throw new Error(`Suggested answer failed: ${suggested.id} (${suggested.question})`);
     }
@@ -83,13 +87,14 @@ async function main(): Promise<void> {
     });
     return;
   }
+  await loadConfig();
   const mode = process.argv.includes('--mock-worker') ? 'mock' : 'live';
   if (getEnv().LLM_MODE !== mode)
     throw new Error('cache:suggested requires live mode unless --mock is supplied.');
   try {
     const cost = await cacheSuggested();
     console.log(
-      `Cached ${String(SUGGESTED.length)} suggested answers. Estimated cost: $${cost.toFixed(6)}`,
+      `Cached ${String(SUGGESTED.length)} suggested answers. Estimated cost: ${cost === null ? 'unknown' : `$${cost.toFixed(6)}`}`,
     );
   } finally {
     await closeSqlForTests();

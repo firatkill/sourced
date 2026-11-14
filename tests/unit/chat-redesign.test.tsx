@@ -7,7 +7,7 @@ import { Turn } from '@/components/ask/Turn';
 import { AnswerView } from '@/components/ask/AnswerView';
 import { quoteSegments } from '@/components/ask/PassageCard';
 import { SseEvent } from '@/lib/sse/events';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY } from '../helpers/runtime-copy';
 import { SUGGESTED } from '@/lib/suggested';
 import { meta, citations, done } from '../fixtures/sse-streams';
 

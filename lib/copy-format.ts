@@ -35,11 +35,11 @@ export function formatCopy(citations: Citations, passages: Passage[]): string {
   const sources = passages
     .filter((passage) => cited.has(passage.label))
     .sort((a, b) => a.label.localeCompare(b.label));
-  const answer = plainText(citations.answer).replace(/\[P([1-6])\]/g, '[$1]');
+  const answer = plainText(citations.answer).replace(/\[P([1-9])\]/g, '[$1]');
   return `${answer}\n\nSources:\n${sources
     .map(
       (passage) =>
-        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl}`,
+        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl ?? `${passage.filePath}${passage.pageFrom !== undefined ? `, page ${String(passage.pageFrom)}` : passage.lineFrom !== undefined ? `, line ${String(passage.lineFrom)}` : ''}`}`,
     )
     .join('\n')}`;
 }

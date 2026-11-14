@@ -3415,12 +3415,16 @@
       "description": "TRD §15.3; D-26.",
       "steps_to_reproduce": "See qa/test-cases.md TC-145.",
       "expected_result": "Loading /, /eval and /how-it-works in both themes logs no console error or React hydration warning (including the theme-script nonce).",
-      "status": "resolved",
-      "environment": "Local, pnpm build && next start, LLM_MODE=mock, Chromium",
+      "status": "open",
+      "environment": "local",
       "attempts": [
         {
           "result": "pass",
           "note": "theme.spec.ts TC-145 passes for 2 schemes x 3 stored themes x 3 pages; nonce hydration warning fixed with suppressHydrationWarning on the theme script only."
+        },
+        {
+          "result": "fail",
+          "note": "Intermittent: React #418 hydration mismatch and an occasional wrong color-scheme read; about 7 failures in 80 repeats of theme.spec.ts alone on v2/kit (2026-11-10); also seen once on production. Predates v2 (v1.1 redesign). Fix proposed as a separate session on main (hydration-418)."
         }
       ],
       "regression_of": null,
@@ -4024,6 +4028,1576 @@
       "clickup_task": null,
       "retraction_reason": null,
       "automatable": false
+    },
+    {
+      "tc_reference": "TC-174",
+      "ac_reference": "T-46; FR-61; FR-72; D-92",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Migration 0003_kit applies on empty and v1 databases",
+      "description": "TRD §30.1; IT-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-174.",
+      "expected_result": "drizzle/0003_kit.sql matches TRD §30.1; pnpm db:migrate succeeds on an empty database and on a database holding the v1 example corpus; corpus_meta, ingest_items and the new columns exist; query_log.source accepts 'cli'.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "migrations.test.ts: empty and v1-populated databases migrate; 0003_kit matches TRD §30.1"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-175",
+      "ac_reference": "T-46; FR-67; D-92",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Same chunk text in two documents is stored twice",
+      "description": "IT-15.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-175.",
+      "expected_result": "Ingesting two documents that share one chunk text stores two chunk rows, one per document, and both are returned by search; the conflict target is (document_id, content_hash).",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-15 chunk-uniqueness.test.ts: shared text stored per document and retrieved"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-176",
+      "ac_reference": "T-46; FR-37; NFR-16",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Re-ingest after the migration is a no-op",
+      "description": "T-46 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-176.",
+      "expected_result": "Re-running pnpm ingest --offline on the example after 0003_kit reports 0 inserted, 0 updated, 0 deleted.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm ingest --offline after 0003_kit: 0 inserted, 0 updated, 201 unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-177",
+      "ac_reference": "T-47; FR-59",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Kit configuration schema and error messages",
+      "description": "UT-32.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-177.",
+      "expected_result": "Every rule in TRD §29.1–29.3 is enforced; an invalid sourced.config.ts stops with CONFIG_INVALID naming the field and the fix; secrets are rejected in the file.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-32 kit-config.test.ts: schema rules, CONFIG_INVALID naming the field, snapshot"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-178",
+      "ac_reference": "T-47; FR-61",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Embedding column follows configured dimensions",
+      "description": "IT-12.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-178.",
+      "expected_result": "ensureCorpusSchema creates vector(768) and halfvec(3072) columns with HNSW indexes, is a no-op on the same hash and raises CORPUS_MISMATCH when the model or dimensions change, unless rebuilt.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-12 kit-schema.test.ts: vector(768) and halfvec(3072) with HNSW, no-op on same hash, CORPUS_MISMATCH, rebuild; D-96 adoption"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-179",
+      "ac_reference": "T-47; FR-62",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Full-text language from configuration",
+      "description": "IT-13.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-179.",
+      "expected_result": "With a Turkish regconfig the keyword search finds hits that english misses; unsupported languages fall back to simple.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-13 kit-schema.test.ts: turkish regconfig finds hits english misses"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-180",
+      "ac_reference": "T-47; FR-60",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Providers resolved per role; v1 example unchanged",
+      "description": "T-47 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-180.",
+      "expected_result": "getProvider no longer exists; getProviders resolves unset roles to chat; the example with a sourced.config.ts mirroring v1 constants passes E2E-01–E2E-25.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "getProvider removed; getProviders resolves roles to chat; E2E 116 passed with the temporary v1-mirroring sourced.config.ts"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-181",
+      "ac_reference": "T-48; FR-63",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Copy rendered from configuration",
+      "description": "UT-33.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-181.",
+      "expected_result": "getCopy applies defaults and overrides; the example configuration reproduces the PRD §9 and REDESIGN §7 strings exactly.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-33 kit-copy.test.ts: defaults, overrides, example reproduces the live v1.1 strings (tests/fixtures/v1-copy.ts)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-182",
+      "ac_reference": "T-48; FR-63; NFR-11",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example system prompt byte-identical to v1",
+      "description": "T-48 step 2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-182.",
+      "expected_result": "The rendered example system prompt equals the v1 prompt byte for byte, so PROMPT_VERSION is unchanged.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "prompt-version.test.ts: example answer and rerank prompts byte-identical to v1; TC-058 hashes unchanged; PROMPT_VERSION unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-183",
+      "ac_reference": "T-48; FR-74",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "No corpus literals outside allowed paths",
+      "description": "T-48 step 4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-183.",
+      "expected_result": "scripts/check-corpus-literals.ts fails on PostgreSQL, postgresql.org or 35 pages outside sourced.config.ts, corpus/, eval/, docs/, tests/ and qa/, and passes on the tree; it runs in the ci.yml static job.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "check:corpus-literals passes on the tree and exits 1 on a temporary violating file (corpus-literals.test.ts); runs in ci.yml lint job"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-184",
+      "ac_reference": "T-48; FR-17",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Citation markers up to P9",
+      "description": "T-48 step 3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-184.",
+      "expected_result": "Markers [P1]–[P9] parse; finalPassages above 9 is rejected by config validation.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "kit-citations.test.ts: P1-P9 through parse, verify, SSE and rendering; finalPassages 10 rejected"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-185",
+      "ac_reference": "T-49; FR-60",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Gemini, Anthropic and Ollama providers with mocked transports",
+      "description": "UT-49.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-185.",
+      "expected_result": "Each provider maps errors like v1, passes options, uses maxRetries 0; a chat-only provider without an embedding provider is rejected with the list of embedding providers; no test makes a network call.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-49 additional-providers.test.ts with mocked transports: options, dimensions, error mapping, maxRetries 0, Claude 5.5 sends no temperature (SDK rejects sampling parameters); chat-only provider rejected with embedding list"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-186",
+      "ac_reference": "T-49; FR-60; A-19; D-94",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Manual live call per provider",
+      "description": "T-49 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-186.",
+      "expected_result": "One live call each to Gemini, Anthropic and a local Ollama succeeds.",
+      "status": "pending_decision",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action (D-94): no Gemini or Anthropic key and no Ollama; commands in docs/PROGRESS.md open questions"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-187",
+      "ac_reference": "T-50; FR-74; NFR-16",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example corpus in the kit layout with identical chunks",
+      "description": "IT-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-187.",
+      "expected_result": "After the move to corpus/postgres-17/ and the postgres-docbook preset, ingestion yields the same chunk hashes and counts as v1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-16 example-corpus.test.ts: chunk hashes and counts identical to the captured v1 baseline (35 documents, 201 chunks); ingest --offline 0 inserted/updated/deleted"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-188",
+      "ac_reference": "T-50; FR-46",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "/eval reads results from the new path",
+      "description": "T-50 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-188.",
+      "expected_result": "/eval renders the committed v1 results from eval/postgres-17/results/.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "/eval renders committed v1 results from eval/postgres-17/results; E2E eval-page spec passed (116 E2E)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-189",
+      "ac_reference": "T-50; FR-41; D-94",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example eval within maxRegression",
+      "description": "T-50 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-189.",
+      "expected_result": "pnpm eval on the example (v1 chat model, judge in the free allowance) stays within maxRegression of the v1.0.0 run; cost recorded against the D-94 budget.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval.yml run 42801799391 on 08cb06b: every metric equal to or better than the v1.0.0 baseline (recallAt5 0.96875, mrr 0.9375, citationValidity 1, faithfulness 1, errors 0); within maxRegression"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-190",
+      "ac_reference": "T-51; FR-64",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Deployment profiles gate quotas, demo mode and cache",
+      "description": "T-51 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-190.",
+      "expected_result": "public-demo keeps FR-26–FR-32; local shows no quota copy and no cache label and skips rate limits; private refuses to start without SOURCED_ACCESS_TOKEN.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "profile.test.ts and profile-ui.test.tsx per profile; E2E ask-local.spec.ts on port 3103 (local profile, DEMO_MODE off): no quota copy, no cache label, asking works; private requires SOURCED_ACCESS_TOKEN >= 24 chars at startup"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-191",
+      "ac_reference": "T-51; FR-64",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Example unchanged in public-demo",
+      "description": "E2E-01–E2E-25.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-191.",
+      "expected_result": "E2E-01–E2E-25 pass with the example's public-demo profile.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E 117 passed with the example public-demo profile, including E2E-01 to E2E-25 unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-192",
+      "ac_reference": "T-52; FR-63; FR-62",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "Second fixture corpus end to end in mock mode",
+      "description": "E2E-26.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-192.",
+      "expected_result": "The Turkish folder fixture with its own sourced.config.ts ingests in mock mode and the ask page renders its configured copy with cited answers.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-26 ask-kit-tr.spec.ts on port 3104 (separate sourced_kit_tr database, turkish regconfig, local profile): Turkish title, hero, placeholder, scope and topic-labelled suggestions render from the fixture config; a mock answer cites a fixture passage; IT-13 kit-tr.test.ts passes on the fixture"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-193",
+      "ac_reference": "T-52; PRD §12",
+      "milestone": "M5 Configuration seams (v2)",
+      "title": "M5 exit criteria",
+      "description": "M5 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-193.",
+      "expected_result": "Example behaves as v1.0.0 within the regression delta; the second fixture corpus runs end to end; milestone report written.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M5 exit: qa/m5-report.md; CI run 42807238685 on 732bb17 green in all six jobs (including E2E-26 with the sourced_kit_tr database); example eval within maxRegression (TC-189); second fixture corpus end to end (TC-192)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-194",
+      "ac_reference": "T-53; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Source keys and folder discovery",
+      "description": "UT-34; UT-35.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-194.",
+      "expected_result": "URLs and paths normalize to stable document keys; folder sources apply include/exclude globs, skip unsupported files with a reason and map extensions to MIME types.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-34 and UT-35 in sources.test.ts: key normalization, folder include/exclude, skips with reasons, MIME mapping on an in-memory filesystem"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-195",
+      "ac_reference": "T-53; FR-65; FR-66",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Sitemap and crawl discovery",
+      "description": "UT-36.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-195.",
+      "expected_result": "Sitemap indexes are followed; crawl stays on the origin, honours include/exclude, depth and page caps.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-36 in sources.test.ts: sitemap index nesting, same-origin and prefix limits, caps; crawl depth and page caps with injected fetch"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-196",
+      "ac_reference": "T-53; FR-66",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Per-host politeness",
+      "description": "UT-37.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-196.",
+      "expected_result": "Each host gets its own limiter at the configured interval (Crawl-delay when larger), robots.txt is fetched once per host and fails closed except 404, User-Agent identifies Sourced.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-37 in sources.test.ts: per-host limiter, Crawl-delay, robots.txt once per host and fail closed except 404, with fake clock"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-197",
+      "ac_reference": "T-53; NFR-16",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Example unchanged after the source drivers",
+      "description": "IT-16.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-197.",
+      "expected_result": "The example still ingests offline with chunk hashes identical to v1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-16 example-corpus.test.ts: 201 chunk hashes and counts identical to v1 after the sha1 raw-cache migration; stored slugs are D-101 document keys; repeat ingest 0 changes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-198",
+      "ac_reference": "T-54; FR-68; NFR-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Generic HTML on five unrelated sites",
+      "description": "UT-38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-198.",
+      "expected_result": "Main content is detected and navigation, headers, footers and sidebars are dropped; sections come from h1-h6; expectations written from the saved pages; a page without text is reported, not ingested; line coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-38 parse-html-generic.test.ts on five saved sites (Python, Kubernetes, MDN, Rust Book, Django; licences in tests/fixtures/sites/LICENSES.md); expectations written from the pages; empty page reported and not stored; 100% line coverage; IT-16 unchanged"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-199",
+      "ac_reference": "T-55; FR-69; NFR-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Markdown and MDX",
+      "description": "UT-39.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-199.",
+      "expected_result": "Title from front matter or first heading; sections from headings; code fences kept with language; MDX imports and JSX removed with child text kept; coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-39 parse-markdown.test.ts: front matter title per D-106 (plain, single, double quoted; block scalar and TOML fall back), first h1, file name, nested and duplicate heading slugs, code fences with lang, GFM tables and task lists, MDX imports/exports/JSX/expressions removed with child text kept; 100% line coverage; kit-tr now ingests through the folder driver and real parsers (E2E-26 passed)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-200",
+      "ac_reference": "T-56; FR-70; NFR-25; A-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "PDF text, headings and pages",
+      "description": "UT-40.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-200.",
+      "expected_result": "Text per page, headings by font size, chunks record page ranges; a scanned PDF is reported needs_ocr and skipped; coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-40 parse-pdf.test.ts on generated fixtures (tests/fixtures/pdf/generate.ts): headings by font size, D-107 title order and levels, one section per page without headings, page ranges on chunks, scanned PDF reported needs_ocr and skipped (pdf-passages integration); web url#page and file path, page N citations; A-21 on Node 22 (unpdf 1.9.1); 100% line coverage"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-201",
+      "ac_reference": "T-57; FR-70; D-70; NFR-25; A-26",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "DOCX headings, lists and tables",
+      "description": "UT-41.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-201.",
+      "expected_result": "Title from properties or first heading; sections from Word heading styles; nested lists and tables kept as blocks; images ignored; coverage >= 90%.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-41 parse-docx.test.ts on generated fixtures (tests/fixtures/docx/generate.ts): dc:title, first-heading and file-name titles, Heading 1-3 nesting, nested numbered and bulleted lists, header table, embedded image ignored, mammoth warnings counted; docx-passages integration with path > heading citations; A-26 (D-108); 100% line coverage"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-202",
+      "ac_reference": "T-58; FR-76; FR-77; NFR-22",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "CLI envelope, exit codes, no secrets",
+      "description": "UT-45.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-202.",
+      "expected_result": "Every command supports --json with a versioned schema and nothing else on stdout; exit codes 0/1/2; no output ever contains a secret or full key.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-45 cli.test.ts: every registered command with --json emits one envelope with schemaVersion on stdout, logs on stderr, exit codes 0/1/2, no key substring in any output (fake env with keys, snapshots); reporter=silent keeps pnpm banners off stdout (D-111)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-203",
+      "ac_reference": "T-58; FR-76",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "v1 script aliases still work",
+      "description": "T-58 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-203.",
+      "expected_result": "pnpm ingest, pnpm eval and the other v1 scripts run through the CLI with unchanged behaviour.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm ingest, pnpm eval (mock, --no-write --limit 1), pnpm eval:validate (40 entries), pnpm corpus:fetch --offline and pnpm db:seed run through the CLI with unchanged behaviour; sourced ingest --dry-run --json reports the D-109 shape"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-204",
+      "ac_reference": "T-59; FR-71",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Boilerplate removal",
+      "description": "UT-42.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-204.",
+      "expected_result": "Blocks repeated on a large share of documents are removed before chunking and counted in the report.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-42 boilerplate.test.ts: per-source max(5, 30%) threshold, skipped under 10 documents, normalization, counts in the D-109 report"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-205",
+      "ac_reference": "T-59; FR-72; NFR-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Resumable ingest",
+      "description": "IT-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-205.",
+      "expected_result": "An interrupted ingest resumes, re-embeds no completed document and ends with the same counts as an uninterrupted run; SIGINT then resume gives the same counts.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-14 resume: injected failure after N documents, resume skips done items and re-embeds none, final counts and hashes equal an uninterrupted run; real CLI SIGINT exits 130, run failed/interrupted, no corpus version; interrupted 3 docs/3 chunks, resumed and uninterrupted 6 docs/7 chunks/177 tokens with identical corpus version"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-206",
+      "ac_reference": "T-59; FR-73",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Dry run and confirmation",
+      "description": "UT-44.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-206.",
+      "expected_result": "--dry-run reports documents, chunks, tokens and cost per source without embedding calls; a run above INGEST_CONFIRM_ABOVE_USD asks or needs --yes; unknown prices follow TRD §31.4.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-44 and CLI integration: dry run reports per-source counts and cost with no writes; confirmation above INGEST_CONFIRM_ABOVE_USD interactive or --yes; unknown prices per D-112; NEEDS_CONFIRMATION exit 2"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-207",
+      "ac_reference": "T-59; FR-65; FR-67",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Mixed folder end to end",
+      "description": "IT-17.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-207.",
+      "expected_result": "A folder with md, mdx, html, pdf, docx and txt ingests in mock mode with anchors per TRD §33.1.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-17 mixed-folder: md, mdx, html, pdf, docx and txt ingest end to end in mock mode with anchors per TRD §33.1; plain text cites path, line N without a link"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-209",
+      "ac_reference": "T-60; FR-75",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Contextual embedding input",
+      "description": "UT-43.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-209.",
+      "expected_result": "Embedding input starts with title and heading path; display and quote check use the chunk text only; the hash version changes so affected chunks re-embed.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-43 contextual-embedding.test.ts: input '{title}\\n{heading path}\\n\\n{content}' with embed_text_version 1 and the versioned hash; switching the flag re-embeds every chunk once, the same flag twice re-embeds none (mixed-folder integration); displayed passage and quote check use the content only; flag off keeps v1 hashes (IT-16)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-208",
+      "ac_reference": "T-59; T-61; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Removing one source",
+      "description": "IT-18.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-208.",
+      "expected_result": "sources remove deletes only that source's documents and chunks.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "IT-18: sources remove deletes only that source's documents and chunks, keeps the others, and may remove the last source (D-114)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-211",
+      "ac_reference": "T-61; FR-78; FR-79; FR-80; FR-81",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "CLI commands contract",
+      "description": "CT-01 to CT-14.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-211.",
+      "expected_result": "Each section 34.1 command runs as a child process with --json against the integration database in mock mode; stdout matches its schema; exit codes match for success and each documented failure.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "CT drafts for doctor, init, add, sources, ask, dev, deploy:check: real CLI as a child process with --json in mock mode, stdout matches each schema, exit codes for success and documented failures including CHECKS_FAILED (D-115); finalized in T-63"
+        },
+        {
+          "result": "pass",
+          "note": "CT-01 to CT-14 final (D-122): every implemented command runs as a child process with --json in mock mode against the integration database; schemas and exit codes for success and documented failures; inspect/eval:generate/eval:review not-implemented contracts; down points to ./sourced down; schema change without schemaVersion bump fails (schema-version.test.ts); 262 contract tests pass"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-212",
+      "ac_reference": "T-61; FR-80",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "ask --trace matches the app",
+      "description": "T-61 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-212.",
+      "expected_result": "sourced ask --trace prints the answer, citations with verification and the retrieval trace equal to the FR-08 data the app shows for the same question in mock mode.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "ask --trace in mock mode matches the /api/ask events for the same question (answer, citations with verification, passage ranks, retrieval metadata, usage, cost); query_log source cli"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-213",
+      "ac_reference": "T-61; FR-65",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "add detects sitemaps",
+      "description": "T-61 step.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-213.",
+      "expected_result": "For a bare site URL, add finds /sitemap.xml or a robots.txt Sitemap line and proposes a sitemap source, else a crawl source.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "add on a bare site URL proposes sitemap from /sitemap.xml or robots.txt Sitemap lines, else crawl (injected fetch)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-210",
+      "ac_reference": "T-60; FR-75; FR-85; D-94",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Contextual embedding decided by eval",
+      "description": "T-60 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-210.",
+      "expected_result": "sourced eval --compare on the example with the flag on and off is committed; the example's setting follows the no-regression rule; a decisions log row records it; cost within the D-94 budget.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Live comparison: flag off eval 42850220081 on bc2cf32 vs flag on eval 42860442548 on bb1deff. Deterministic retrieval without rerank: recallAt5 0.9375 -> 0.90625, mrr 0.8604 -> 0.8586; reranked recallAt5 0.96875 -> 0.9375, mrr 0.9375 -> 0.8899; faithfulness 0.984 -> 1. Retrieval regresses on the example, so FR-75's no-regression rule sets the example's flag off (D-118). Live cost about 0.34 USD at list prices."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-214",
+      "ac_reference": "T-62; FR-94; A-22",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Docker path",
+      "description": "T-62 acceptance; docker CI job.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-214.",
+      "expected_result": "docker compose up builds and starts the database and app; migrations run; ./sourced runs CLI commands in a one-off container with the repo mounted; the docker CI job passes; the TRD §35.4 sequence reaches a cited answer in mock mode.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Docker path from a clean copy (no .env.local, no .sourced): ./sourced init --example --profile local --yes, only LLM_MODE=mock added, ingest 35 documents and 201 chunks, app healthy, ask answered with 2 citations; runtime copy changed without rebuilding the image; non-root UID; image digest pinned (A-22); down keeps the volume. CI docker job runs on the next push."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-215",
+      "ac_reference": "T-62; A-23",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Host Ollama from containers",
+      "description": "T-62 step.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-215.",
+      "expected_result": "host.docker.internal reaches a host Ollama on the platforms checked; platforms recorded.",
+      "status": "pending_decision",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action (D-94): host Ollama reachability from containers on each OS (A-23); no Ollama installed"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-216",
+      "ac_reference": "T-63; NFR-21",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Search at 100,000 chunks",
+      "description": "T-63 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-216.",
+      "expected_result": "Hybrid search p95 warm <= 300 ms on a synthetic 100,000-chunk corpus with mock embeddings; result recorded in qa/.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "fail",
+          "note": "NFR-21 not yet established. Idle run (load 3-4) on the first synthetic generator: p50 28 ms, p95 807 ms (fails; every query term matched about 43% of chunks). Two-profile proving run (load unknown): realistic p95 70 ms (p99 2.1 s, broad FTS matches), worst case p95 1,154 ms (FTS ranks up to 80,000 matches; 698 ms FTS vs 13 ms vector). Official idle measurement pending: the machine has been under heavy load from other projects (load average 12 to 41)."
+        },
+        {
+          "result": "pass",
+          "note": "NFR-21 met on the realistic profile (D-124): 100,000 chunks, 224 golden-set queries, p50 11 ms, p95 70 ms, p99 1.9 s at load average about 10. Worst-case profile p95 3.3 s (broad full-text ranking) recorded as a follow-up needing an eval and an owner decision. qa/t63-bench.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-217",
+      "ac_reference": "T-64; PRD §11; NFR-20; A-25",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Any-corpus check: public docs sitemap",
+      "description": "T-64 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-217.",
+      "expected_result": "On a clean Docker-only setup, a public documentation sitemap (MongoDB if A-25 holds) reaches a cited answer within NFR-20 with live embeddings inside the approved budget.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "MongoDB manual sitemap (A-25 holds), 200 pages, Docker path from a clean copy, live embeddings: 1,278 chunks, cited answer; clone to cited answer about 20 min with cached image, about 29 min with the first image build (NFR-20 at most 30 min, met narrowly); one question not_found because the 200-page cap did not reach the index pages (coverage). qa/t64-any-corpus.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-218",
+      "ac_reference": "T-64; PRD §11; NFR-20",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "Any-corpus check: mixed folder",
+      "description": "T-64 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-218.",
+      "expected_result": "The mixed folder (small licensed files) reaches a cited answer on the Docker path within NFR-20.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "examples/mixed-folder (md, mdx, html, pdf, docx, txt) on the Docker path with live embeddings: 7 documents, 8 chunks, both questions answered with verified file citations, 72 s with cached image. qa/t64-any-corpus.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-219",
+      "ac_reference": "T-64; PRD §12",
+      "milestone": "M6 Sources and CLI (v2)",
+      "title": "M6 exit criteria",
+      "description": "M6 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-219.",
+      "expected_result": "Any-corpus checks pass; milestone report written.",
+      "status": "resolved",
+      "environment": "ci",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M6 exit: qa/m6-report.md; any-corpus checks passed (TC-217, TC-218); CI green on edb03ae; M6 milestone eval run 42979153320 passed every gate"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-220",
+      "ac_reference": "T-65; FR-82",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "inspect findings",
+      "description": "UT-46.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-220.",
+      "expected_result": "inspect reports each TRD §36.4 finding (empty_document, needs_ocr, tiny_chunks, oversized_chunks, near_duplicates, boilerplate_removed, language_mismatch, skipped_files, failed_items) by its rule and severity, each with affects and fix, writes corpus/<name>/inspect.json and a stdout summary.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-46 inspect.test.ts: every TRD §36.4 finding with its rule, severity, affects and fix, including threshold edges; structured D-125 result; inspect.json written; near duplicates by at most 200 sampled nearest-neighbour probes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-221",
+      "ac_reference": "T-65; FR-82",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "inspect on the mixed folder",
+      "description": "T-65 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-221.",
+      "expected_result": "inspect on the mixed-folder example reports the scanned PDF as needs_ocr (when present) and the boilerplate removed count.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "integration inspect.test.ts: mixed folder with a scanned PDF reports needs_ocr and 10 boilerplate blocks removed; failed item reasons from the latest run"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-222",
+      "ac_reference": "T-66; FR-83",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "eval:generate sampling and candidate checks",
+      "description": "UT-47.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-222.",
+      "expected_result": "Sampling is stratified by source and document, at most 2 per document, prefers 300+ tokens and is deterministic for a corpus_version and seed; candidates have existing anchors, hardRetrieval when the expected chunk is not in the RRF top 20, needsHumanCheck on unanswerables; cost is estimated first and EVAL_MAX_COST_USD guards it.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-47 eval-generate.test.ts (mock): stratified, at most 2 per document, 300+ token preference, deterministic for corpus_version and seed; anchors checked; hardRetrieval outside RRF top 20; needsHumanCheck unanswerables; cost estimated first with EVAL_MAX_COST_USD guard; dry run"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-223",
+      "ac_reference": "T-66; FR-83",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "eval:review accepts, edits and rejects",
+      "description": "TRD §36.2.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-223.",
+      "expected_result": "eval:review --apply appends accepted candidates to golden.jsonl with origin generated and the next free id; needsHumanCheck candidates cannot be accepted with --yes; rejected ones are not appended.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval-review.test.ts and contracts: --apply appends accepted candidates with origin generated and the next free id; rejected not appended; needsHumanCheck cannot be accepted with --yes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-224",
+      "ac_reference": "T-66; FR-83; TRD §36.3",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Built-in injection set",
+      "description": "T-66 files.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-224.",
+      "expected_result": "eval/shared/injection.jsonl has the four corpus-independent injections with forbidden_strings and is always part of a kit corpus eval.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "eval/shared/injection.jsonl has the four TRD §36.3 question-borne injections with forbidden_strings, included in candidate output; mandatory merge into kit evals completes in T-67"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-225",
+      "ac_reference": "T-66; FR-83; D-123",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Live candidate generation on the MongoDB example",
+      "description": "T-66 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-225.",
+      "expected_result": "One live eval:generate run on the MongoDB example produces candidates the owner reviews; cost recorded within the approved amount.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Owner action: approve live eval:generate on the MongoDB example and review the candidates"
+        },
+        {
+          "result": "pass",
+          "note": "Live eval:generate on the MongoDB example (after the D-128 slug fix): 53 candidates for 0.0087 USD; review delegated by the owner (D-127); decisions and reasons in eval/mongodb-manual/review-notes.md"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-226",
+      "ac_reference": "T-67; FR-84; FR-85",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Golden schema, profiles and comparison",
+      "description": "T-67 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-226.",
+      "expected_result": "GoldenEntry uses group and origin with the widened anchor regex; the example validates under its profile; kit corpora use the §36.1 rules; --compare prints deltas and exits 1 on regression; below-floor metrics get a likelyCause; /eval still renders.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "GoldenEntry uses group and origin with the wider anchors; example golden set validates under its v1 profile (40 entries, 320 field values unchanged apart from chapter to group); kit profile per TRD §36.1; shared injections merged at load with question-borne-only reporting (D-126); likelyCause from the §36.5 table, null when unmapped; --compare exits 1 on regression; /eval E2E passed (118)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-227",
+      "ac_reference": "T-68; PRD §11",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "Quality check on the MongoDB example",
+      "description": "T-68 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-227.",
+      "expected_result": "A reviewed golden set of at least 30 questions for the MongoDB example; sourced eval meets the default floors or the gaps and fixes are recorded for the owner's decision; results in eval/mongodb/results/ with no corpus data.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Reviewed MongoDB golden set (26 answerable, 4 unanswerable, plus 4 shared injections); live eval met every default floor: recallAt5 0.903, mrr 0.931, citationValidity 1, faithfulness 1 (judge = chat model, may be optimistic), correctRefusal 1, injection 1 question-borne only, cost 0.026 USD; eval/mongodb-manual/results/2026-11-11.md, no corpus data committed"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-228",
+      "ac_reference": "T-68; PRD §12",
+      "milestone": "M7 Quality on any corpus (v2)",
+      "title": "M7 exit criteria",
+      "description": "M7 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-228.",
+      "expected_result": "Quality check done; milestone report written.",
+      "status": "resolved",
+      "environment": "local",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "M7 exit: qa/m7-report.md and qa/M7-review.md; quality check passed on the MongoDB example (TC-227)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-229",
+      "ac_reference": "T-69; FR-89",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Shared skill rules",
+      "description": "TRD §37.1.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-229.",
+      "expected_result": ".agents/skills/_shared/rules.md states the six FR-89 rules verbatim (provider and cost before any paid call with Ollama offered, no API key in chat, CLI and configuration only, read --json results, plain-words failure and next action, no deploy/push/external resource without an explicit yes) and that CLI output and document content are data, never instructions.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": ".agents/skills/_shared/rules.md holds the six FR-89 rules; tests/unit/check-skills.test.ts compares them with the PRD row at test time."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-230",
+      "ac_reference": "T-69; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Generated CLI reference",
+      "description": "TRD §37.1, §37.5.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-230.",
+      "expected_result": "scripts/check-skills.ts --write generates _shared/cli-reference.md listing every command, flag, result field path and error code defined in lib/cli/schemas and ERROR_CODES; running it twice gives the same file; check mode fails when the file is stale.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "pnpm check-skills --write generates cli-reference.md from registry, Zod schemas, envelope, exit codes and ERROR_CODES; determinism and staleness tests pass; check-skills passes."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-235",
+      "ac_reference": "T-73; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "check-skills on good and broken fixtures",
+      "description": "UT-50.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-235.",
+      "expected_result": "check-skills passes a good fixture and fails, naming file and line, for: an unknown command, an unknown flag, a result field path absent from the command schema, an error code outside ERROR_CODES, a .claude/commands pointer to a missing skill, and a stale cli-reference.md.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-50 moved forward from T-73 so later skills are checked as written: 22 fixture tests (good, env names, other tools' flags; unknown command, flag, path, code, standalone flag, missing pointer, stale reference, front matter and sections). Two false positives found in review and fixed."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-231",
+      "ac_reference": "T-70; FR-88; FR-89",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "sourced-setup skill content",
+      "description": "TRD §37.3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-231.",
+      "expected_result": "SKILL.md has front matter name and description with trigger phrases and the sections When to use, Before you start, Steps, Never, Done when; Docker path first with the Node path as a branch; one question per message with defaults (documents location, provider: OpenAI, Google, Anthropic or local Ollama); cost and privacy with dry-run numbers before the first paid call; key entry only by naming the .env.local line; every result field referenced by JSON path; every failure code has a branch.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Skill installed at .agents/skills/sourced-setup/SKILL.md (a02043a); check-skills passes (sections, markers, commands, flags, result paths, codes); reviewer edits: default model pair per provider, user-facing wording, stop step."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-232",
+      "ac_reference": "T-70; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Setup rehearsal in Claude Code",
+      "description": "T-70 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-232.",
+      "expected_result": "A dry rehearsal in Claude Code on a clean clone with the mock provider, following /setup, reaches a cited answer; the transcript in qa/release-v2/rehearsal-setup.md records every prompt and approval and shows no FR-89 rule break.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Claude Code 2.1.322 headless rehearsal on a fresh clone reached a cited answer in 14 turns with no FR-89 rule break (qa/release-v2/rehearsal-setup.md). Findings: launcher has no envelope when the DB port is taken; dry-run cost unknown because init writes no pricing; doctor misses an IPv6 listener on 3000. Launcher down/dev envelope gaps found by Codex fixed in 92261a8."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-233",
+      "ac_reference": "T-71; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "add-docs, ingest and check-quality skills",
+      "description": "T-71 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-233.",
+      "expected_result": "check-skills passes for the three skills; one rehearsal each (mock provider) with transcripts in qa/release-v2/: /add-docs proposes include and exclude rules and shows the dry run; /ingest summarises the report in plain words and resumes; /check-quality runs inspect, eval:generate with a cost question first, and eval, and turns results into concrete suggestions.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "check-skills passes for the three skills (1ac1ec3, pricing guide 6eb201f/ccd3438, D-130). Claude Code rehearsals on one clone: /add-docs (crawl of 30 MongoDB manual pages, dry run explained), /ingest (price lookup, ingest, inspect), /check-quality (generate, review, validate, mock eval explained); transcripts in qa/release-v2/. No FR-89 break. Bugs found and fixed: mock estimates and MOCK_MODE warning (e13d2a7), eval envelopes and eval without Git (ce8f63c, D-131, D-132). Remaining follow-ups in PROGRESS."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-234",
+      "ac_reference": "T-72; FR-85; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "tune, troubleshoot and deploy skills",
+      "description": "T-72 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-234.",
+      "expected_result": "check-skills passes; the /tune rehearsal changes one setting, runs eval --compare and keeps or reverts it by the comparison; /troubleshoot reproduces with ask --trace and names the cause class (sources, chunking, retrieval, prompt); /deploy lists variables by name, sets the profile, runs deploy:check and stops without creating any external resource.",
+      "status": "resolved",
+      "environment": "local macOS, Docker path, live OpenAI (Claude Code 2.1.322)",
+      "attempts": [
+        {
+          "result": "fail",
+          "note": "Skills installed (2d43f15), check-skills passes. Claude Code rehearsals: /troubleshoot classified a wrong answer as sources from the trace and pointed to /add-docs; /deploy changed only profile after a yes, ran deploy:check --profile private, explained failures and stopped with no external action (qa/release-v2/). /tune conversational rehearsal pending: mock eval cannot write a baseline, so it needs a live run (owner approval). Codex scripted /tune command check in qa/release-v2/cli-check-tune.md."
+        },
+        {
+          "result": "pass",
+          "note": "Live /tune on the Flask newcomer clone: one setting (finalPassages 6 to 4), eval --compare against the saved baseline, correctRefusal 0.714 < 0.80, config restored byte for byte; /troubleshoot and /deploy covered by the earlier mock rehearsals. Transcript qa/release-v2/rehearsal-tune-live.md. Found and fixed the per-command image re-export (4cf7d94)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-236",
+      "ac_reference": "T-73; FR-88",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Command pointers, permissions and CI",
+      "description": "TRD §37.1, §37.4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-236.",
+      "expected_result": "Seven .claude/commands files (setup, add-docs, ingest, check-quality, tune, troubleshoot, deploy), 3 to 5 lines each, point to the matching skill; .claude/settings.json allows exactly the §37.4 read-only commands for ./sourced and pnpm sourced and keeps the attribution settings; writing, paid, deleting and deploying commands are not allowlisted; the ci.yml static job runs check-skills.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Seven .claude/commands pointers (3-5 lines each); .claude/settings.json allows exactly the TRD 37.4 read-only commands for ./sourced and pnpm sourced and keeps attribution off; tests/unit/agent-files.test.ts (5 tests) checks both and the CI step; ci.yml lint job runs pnpm check-skills."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-237",
+      "ac_reference": "T-73; A-24",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Agent discovery of commands and skills",
+      "description": "A-24.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-237.",
+      "expected_result": "Current Claude Code lists the /setup family from .claude/commands and current Codex discovers the skills in .agents/skills; the finding is recorded in the decisions log, with the fallback pointer files if not.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "A-24 (D-133): Claude Code 2.1.322 ran /setup, /add-docs, /ingest, /check-quality, /troubleshoot and /deploy from .claude/commands in the rehearsals; Codex CLI 0.166.0 lists all seven .agents/skills skills."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-238",
+      "ac_reference": "T-74; FR-90",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Access cookie derivation and middleware decisions",
+      "description": "UT-48.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-238.",
+      "expected_result": "The cookie value is base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1')) compared in constant time; under private, pages without a valid cookie redirect to /access and /api/ask returns 401 ACCESS_DENIED; /api/health, static assets and /access pass; a rotated token invalidates the old cookie; local and public-demo always pass.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "UT-48 (tests/unit/access.test.ts, access-runtime.test.ts): cookie derivation, constant-time compare, decision table over profiles x paths x cookie states, rotation, runtime-snapshot profile (found in review: the build-time profile left Docker images unprotected; fixed by Node middleware reading the snapshot)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-239",
+      "ac_reference": "T-74; FR-90",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Private profile in the browser",
+      "description": "E2E-27.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-239.",
+      "expected_result": "On a private-profile server: / redirects to /access; a wrong token shows the access page error copy; the right token sets an HttpOnly SameSite=Lax cookie and lands on /; asking works; /api/ask without the cookie returns 401 ACCESS_DENIED.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "E2E-27 in tests/e2e/access.spec.ts on port 3105, server built as local and run with a private runtime snapshot: redirect, wrong-token error, keyboard submit, cookie attributes, asking, 401 without cookie. First run failed on the test's alert locator (Next route announcer also has role alert); locator scoped to main, per spec. E2E-28 (file citations without a link) in tests/e2e/file-citations.spec.ts passes. Full E2E 124/124."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-240",
+      "ac_reference": "T-74; FR-90; FR-81",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Access rate limit, init token and deploy check",
+      "description": "TRD §38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-240.",
+      "expected_result": "Failed access attempts are limited to 10 per hour per visitor hash (bucket access:<hash>) with the PRD copy; init --profile private writes a generated token of at least 24 characters to .env.local without printing it; deploy:check --profile private fails without the token; the ACCESS_DENIED code exists in ERROR_CODES, the TRD error matrix and the client mapping.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Access limiter (D-134): token-derived visitor hash, fixed UTC hour bucket, 10 failures, RATE_LIMITED_IP with Retry-After (integration and route tests); init --profile private writes a generated token without printing it and deploy:check --profile private fails without it (contracts); ACCESS_DENIED in ERROR_CODES, TRD matrix and client mapping."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-241",
+      "ac_reference": "T-74; NFR-12",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "No cookie outside the private profile",
+      "description": "TRD §38.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-241.",
+      "expected_result": "Under local and public-demo no response sets a cookie, including /access and /api/access, which are unavailable or inert there.",
+      "status": "resolved",
+      "environment": "local macOS, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "No Set-Cookie under local and public-demo (route and E2E assertions); /access and /api/access return 404 outside private."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-242",
+      "ac_reference": "T-75; FR-87; D-66",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "User-facing AGENTS.md and moved contributor rules",
+      "description": "T-75 acceptance.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-242.",
+      "expected_result": "Root AGENTS.md has at most 80 lines with the §37.2 content (three-sentence summary, sourced-setup line and one line per skill, FR-89 rules verbatim, how to run commands on the Docker and Node paths, pointer to docs/contributing/AGENTS.md); the old file lives at docs/contributing/AGENTS.md via git mv; CONTRIBUTING.md links it; CLAUDE.md still imports the root file; no spec links a moved section at the old path.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Contributor rules moved with git mv (04404b0) to docs/contributing/AGENTS.md; new root AGENTS.md (26 lines, TRD 37.2 order, FR-89 verbatim, one line per skill, Docker and Node commands, contributor pointer); CONTRIBUTING.md links it; CLAUDE.md still @AGENTS.md; every grep hit in docs/ reviewed; commit-msg hook messages updated; TC-242 literal tests in tests/unit/agent-files.test.ts."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-243",
+      "ac_reference": "T-76; FR-57; G-6",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "README Use your own documents",
+      "description": "T-76 files.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-243.",
+      "expected_result": "README has a Use your own documents section that leads with the Docker path (docker compose up, ./sourced or the /setup command) and documents the Node path for contributors; every command shown exists in lib/cli; CHANGELOG has a v2.0.0 entry.",
+      "status": "resolved",
+      "environment": "local macOS",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "README 'Use your own documents' leads with the Docker path (agent route with the seven commands, manual route with ./sourced and sourced.cmd), Node path for contributors and hosted databases; CHANGELOG [Unreleased] v2.0.0 entry; tests/unit/readme-commands.test.ts checks every README command and flag against lib/cli/registry.ts, every /command against .claude/commands, and section order."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-244",
+      "ac_reference": "T-76; NFR-24; D-71",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Newcomer release check in Claude Code",
+      "description": "PRD §11 newcomer check.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-244.",
+      "expected_result": "On a clean copy with only Docker, a tester who types only the goal, answers questions and fills .env.local reaches a cited answer in Claude Code; the transcript in qa/release-v2/ shows no FR-89 rule break and no step that needs reading code or docs.",
+      "status": "resolved",
+      "environment": "fresh clone of v2/kit c33a664, Docker path, live OpenAI, Claude Code 2.1.322 headless",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Goal typed once; 13 turns; tester only answered and filled OPENAI_API_KEY in .env.local; ask returned outcome answered with 2 citations; no FR-89 break; no step needed reading code or docs. Transcript qa/release-v2/newcomer-claude-code.md. Minor: config fix text named pnpm sourced on the Docker path (fixed in 4cf7d94)."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-245",
+      "ac_reference": "T-76; NFR-24; D-71",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Newcomer release check in Codex",
+      "description": "PRD §11 newcomer check.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-245.",
+      "expected_result": "The same check passes in Codex; transcript in qa/release-v2/.",
+      "status": "resolved",
+      "environment": "fresh clone of v2/kit 9de75a3, Docker path, live OpenAI, Codex CLI 0.166.0 (codex exec, danger-full-access in a throwaway clone with the owner's approval)",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Goal typed once; 7 turns; tester only answered and filled OPENAI_API_KEY in .env.local; ask returned outcome answered with 1 citation; no FR-89 break; key absent from the session log. Transcript qa/release-v2/newcomer-codex.md. Minor: the ingest disclosure mentions contextual summaries that are not sent."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-246",
+      "ac_reference": "T-76; release checklist v2.0.0",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "v2.0.0 release checklist and milestone eval",
+      "description": "Release checklist.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-246.",
+      "expected_result": "Every v2.0.0 release checklist item is checked or carries an owner decision; the M8 milestone eval (D-121) passes all floors; tag v2.0.0 only after the owner's approval.",
+      "status": "pending_decision",
+      "environment": "v2/kit 9de75a3; eval run 43123789256",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "M8 milestone eval passed every floor (recall@5 0.969, MRR 0.938, citation validity 1, faithfulness 0.984, correct refusal 1, injection 1, p95 6.4 s, $0.35). Release checklist in qa/m8-report.md; open for the owner: Docker checks on Windows and Linux, the v2.0.0 tag and the merge to main."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-247",
+      "ac_reference": "PRD §12 (M8)",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "M8 exit criteria",
+      "description": "M8 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-247.",
+      "expected_result": "Newcomer release check passes in Claude Code and Codex; milestone report and review written; v2.0.0 tagged after approval.",
+      "status": "pending_decision",
+      "environment": "v2/kit 9de75a3",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Newcomer check passed in Claude Code (TC-244) and Codex (TC-245); qa/m8-report.md and qa/M8-review.md written; v2.0.0 tag waits for the owner's approval."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }

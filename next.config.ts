@@ -3,12 +3,25 @@ import type { NextConfig } from 'next';
 type BuildConfig = { plugins?: unknown[] };
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  outputFileTracingIncludes: { '/eval': ['./eval/results/**/*.json'] },
+  outputFileTracingIncludes: {
+    '/*': ['./.sourced/config.json'],
+    // Node middleware's trace entry is named middleware (without a leading slash).
+    middleware: ['./.sourced/config.json'],
+    '/eval': ['./eval/postgres-17/results/**/*.json'],
+  },
   outputFileTracingRoot: import.meta.dirname,
-  webpack(config: BuildConfig, { isServer }) {
+  webpack(config: BuildConfig, { isServer, nextRuntime, webpack }) {
+    if (!config.plugins) throw new Error('Missing build plugins');
+    const compiler = webpack as {
+      DefinePlugin: new (definitions: Record<string, string>) => unknown;
+    };
+    config.plugins.push(
+      new compiler.DefinePlugin({
+        SOURCED_NODE_RUNTIME: JSON.stringify(nextRuntime === 'nodejs'),
+      }),
+    );
     if (!isServer) {
       let removed = 0;
-      if (!config.plugins) throw new Error('Missing client build plugins');
       config.plugins = config.plugins.filter((plugin) => {
         const legacy =
           typeof plugin === 'object' &&

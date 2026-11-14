@@ -4,7 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, expect, it, vi } from 'vitest';
 import { AskApp } from '@/components/ask/AskApp';
 import { useAsk, isInFlight, askStatus, type Phase } from '@/hooks/useAsk';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY } from '../helpers/runtime-copy';
 import { meta, citations, done } from '../fixtures/sse-streams';
 
 const loading = vi.hoisted(() => {

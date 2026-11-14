@@ -44,7 +44,7 @@ export function isInFlight(phase: Phase): boolean {
     phase.kind === 'submitting' ||
     phase.kind === 'streaming' ||
     phase.kind === 'verifying' ||
-    (phase.kind === 'notFound' && phase.done === null)
+    (phase.kind === 'notFound' && phase.meta !== null && phase.done === null)
   );
 }
 
@@ -95,7 +95,7 @@ export function askReducer(state: AskState, action: AskAction): AskState {
           action.data,
         );
       case 'done':
-        if (phase.kind === 'notFound' && phase.done === null)
+        if (phase.kind === 'notFound' && phase.meta !== null && phase.done === null)
           return change({ ...phase, done: action.data }, state.citations);
         if (phase.kind === 'verifying' && state.citations !== null)
           return change(
@@ -149,6 +149,15 @@ export function askReducer(state: AskState, action: AskAction): AskState {
     case 'httpError': {
       if (!isInFlight(phase)) return state;
       const { status, body } = action;
+      if (body.code === 'CORPUS_EMPTY')
+        return change({ kind: 'notFound', question: state.question, meta: null, done: null });
+      if (
+        body.code === 'CONFIG_INVALID' ||
+        body.code === 'CORPUS_MISMATCH' ||
+        body.code === 'NEEDS_CONFIRMATION' ||
+        body.code === 'CHECKS_FAILED'
+      )
+        return change({ kind: 'serverError', question: state.question, requestId: body.requestId });
       if (
         status === 429 &&
         body.resetAt !== undefined &&
@@ -362,6 +371,10 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
           onHttpError(status, body) {
             if (ownsRequest()) {
               flush();
+              if (status === 401 && body.code === 'ACCESS_DENIED') {
+                window.location.assign(new URL('/access', window.location.href).href);
+                return;
+              }
               send({ type: 'httpError', status, body });
             }
           },

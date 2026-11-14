@@ -21,14 +21,14 @@ Sourced is one Next.js App Router application deployed to Vercel, with one Postg
 ```mermaid
 flowchart TB
   subgraph Offline["Offline (developer machine or GitHub Actions)"]
-    MAN["corpus/manifest.json<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
-    FET --> RAW[("corpus/raw/*.html<br/>committed")]
+    MAN["sourced.config.ts<br/>35 pinned URLs"] --> FET["fetch<br/>robots.txt + 1 req / 2 s"]
+    FET --> RAW[("corpus/postgres-17/raw/pg17-*/*.html<br/>committed")]
     RAW --> PAR["parse HTML<br/>headings + anchors"]
     PAR --> CHK["chunk<br/>cl100k, 500-800 tokens, 80 overlap"]
     CHK --> EMB["embed in batches of 100<br/>retry + backoff"]
     EMB --> UPS["upsert by content_hash<br/>delete stale"]
-    GOLD["eval/golden.jsonl"] --> EVAL["pnpm eval"]
-    EVAL --> RES[("eval/results/*.json + .md<br/>committed")]
+    GOLD["eval/postgres-17/golden.jsonl"] --> EVAL["pnpm eval"]
+    EVAL --> RES[("eval/postgres-17/results/*.json + .md<br/>committed")]
   end
 
   UPS --> DB[("PostgreSQL 17 + pgvector<br/>documents, chunks, ingest_runs,<br/>answer_cache, rate_limits, query_log")]
@@ -118,22 +118,21 @@ Every file below is created by a task in the implementation plan. Paths are rela
 
 ```text
 sourced/
-├── AGENTS.md                      Rules for AI coding agents (read first)
+├── AGENTS.md                      User-facing kit guidance (section 37.2)
 ├── README.md                      Public README (section 27)
 ├── LICENSE                        MIT, "Copyright (c) <year> Fırat Kıl"
 ├── CHANGELOG.md                   Keep a Changelog format; v1.0.0 entry at release (T-45)
-├── NOTICE                         States corpus/raw contains unmodified PostgreSQL 17 docs pages
 ├── .env.example                   Every env var from section 5 with safe example values
 ├── .gitignore                     node_modules, .next, .env*, !.env.example, coverage, playwright-report, test-results, eval/.cache
 ├── .nvmrc                         "22"
 ├── .prettierrc.json               { "semi": true, "singleQuote": true, "trailingComma": "all", "printWidth": 100, "plugins": ["prettier-plugin-tailwindcss"] }
-├── .prettierignore                corpus/raw, drizzle/meta, pnpm-lock.yaml, eval/results/*.md, docs/*.md, AGENTS.md (spec files stay byte-stable)
+├── .prettierignore                corpus/postgres-17/raw, drizzle/meta, pnpm-lock.yaml, eval/postgres-17/results/*.md, docs/*.md, docs/contributing/AGENTS.md (spec files stay byte-stable)
 ├── package.json                   Scripts in section 3.1; exact versions
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  strict options in section 2; paths "@/*": ["./*"]
 ├── next.config.ts                 outputFileTracingIncludes for eval results; poweredByHeader false
 ├── middleware.ts                  Request id, CSP nonce, security headers (D-52, Next 15)
-├── eslint.config.mjs              Flat config; rules in AGENTS.md
+├── eslint.config.mjs              Flat config; rules in docs/contributing/AGENTS.md
 ├── postcss.config.mjs             @tailwindcss/postcss
 ├── components.json                shadcn config (style "new-york", baseColor "neutral", cssVariables true)
 ├── drizzle.config.ts              schema ./lib/db/schema.ts, out ./drizzle, dialect postgresql, url MIGRATION_DATABASE_URL ?? DATABASE_URL
@@ -264,7 +263,7 @@ sourced/
 │       ├── thresholds.ts          Floors, ceilings, regression checks (section 17.5)
 │       ├── markdown.ts            Results Markdown writer
 │       ├── results-schema.ts      Zod schema for results JSON (section 17.6)
-│       └── load-results.ts        server-only; reads eval/results for /eval
+│       └── load-results.ts        server-only; reads eval/postgres-17/results for /eval
 ├── scripts/
 │   ├── ingest.ts                  pnpm ingest (flags in section 10.7)
 │   ├── seed.ts                    pnpm db:seed (mock ingest + mock cache)
@@ -274,15 +273,18 @@ sourced/
 │   └── eval-validate.ts           pnpm eval:validate
 ├── drizzle/                       Generated + hand-edited SQL migrations and meta
 ├── corpus/
-│   ├── manifest.json              Section 10.1
-│   ├── LICENSE-POSTGRESQL.txt     Verbatim PostgreSQL License
-│   ├── raw/                       <slug>.html, committed (D-05)
+│   ├── postgres-17/
+│   │   ├── LICENSE-POSTGRESQL.txt Verbatim PostgreSQL License
+│   │   ├── NOTICE                 Original attribution notice
+│   │   ├── metadata.json          Legacy document version and test-fixture descriptors
+│   │   └── raw/pg17-<section>/    <slug>.html, committed (D-05, T-50)
 │   └── fixtures/
 │       └── injected-notice.html   Prompt-injection fixture (section 10.9)
 ├── eval/
-│   ├── golden.jsonl               40 entries (section 17.2)
-│   ├── thresholds.json            Section 17.5
-│   └── results/                   <YYYY-MM-DD>.json and .md, committed
+│   ├── thresholds.json            Default floors (section 17.5)
+│   └── postgres-17/
+│       ├── golden.jsonl           40 entries (section 17.2)
+│       └── results/               <YYYY-MM-DD>.json and .md, committed
 ├── tests/
 │   ├── setup/
 │   │   ├── integration-global-setup.ts   Migrate TEST_DATABASE_URL once (refuses non-local hosts)
@@ -377,6 +379,13 @@ export const CHUNKING = {
   TINY_SECTION_TOKENS: 40,
 } as const;
 
+export const INSPECT = {
+  SAMPLE_CHUNKS: 200,
+  TINY_RATIO: 0.2,
+  DUPLICATE_RATIO: 0.02,
+  DUPLICATE_SIMILARITY: 0.98,
+} as const;
+
 export const EMBEDDING = {
   MODEL: 'text-embedding-3-small',
   MOCK_MODEL: 'mock-feature-hash',
@@ -433,6 +442,12 @@ export const JUDGE = {
   MAX_OUTPUT_TOKENS: 300,
   TIMEOUT_MS: 20_000,
 } as const;
+
+// TRD §38 / D-134: private access settings.
+export const ACCESS = {
+  COOKIE_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
+  FAILED_ATTEMPTS_PER_HOUR: 10,
+} as const;
 ```
 
 ### 4.1 Why these numbers
@@ -461,13 +476,16 @@ export const JUDGE = {
 
 | Name | Required | Example | Description |
 |---|---|---|---|
-| `DATABASE_URL` | Yes | `postgres://sourced:sourced@localhost:5433/sourced` | App connection. On Supabase use the pooler (Supavisor) in **transaction mode**, port 6543, for example `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require`. |
+| `DATABASE_URL` | Yes | `postgres://sourced:sourced@localhost:5433/sourced` | `init` fills the local Node-path URL from `docker-compose.yml`, preserving existing assignments; Compose supplies the internal Docker URL (D-119). App connection. On Supabase use the pooler (Supavisor) in **transaction mode**, port 6543, for example `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require`. |
 | `MIGRATION_DATABASE_URL` | No | `postgres://postgres.<ref>:<password>@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require` | Session-mode pooler URL (port 5432) or the direct URL (`db.<ref>.supabase.co:5432`) for `drizzle-kit migrate` and `pnpm ingest`. Never the transaction-mode URL. Defaults to `DATABASE_URL`. |
 | `TEST_DATABASE_URL` | Tests | `postgres://sourced:sourced@localhost:5433/sourced_test` | Integration tests only. Must contain `localhost` or `127.0.0.1`; tests refuse otherwise. |
 | `DATABASE_POOL_MAX` | No | `5` | postgres.js `max`. Default 5. |
 | `LLM_MODE` | No | `live` | `live` or `mock`. Default `live`. `mock` is rejected when `VERCEL_ENV=production`. |
-| `LLM_PROVIDER` | No | `openai` | Only `openai` implemented (FR-56). |
-| `OPENAI_API_KEY` | When live | `sk-proj-...` | Project-scoped key from the "sourced" OpenAI project (section 26.2). |
+| `LLM_PROVIDER` | No | `openai` | Legacy v1 setting; kit roles select providers in `sourced.config.ts` (FR-60). |
+| `OPENAI_API_KEY` | Live OpenAI roles | `sk-proj-...` | Project-scoped key from the "sourced" OpenAI project (section 26.2). |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Live Gemini roles | — | Required when any configured role uses Gemini; empty in `.env.example`. |
+| `ANTHROPIC_API_KEY` | Live Anthropic roles | — | Required when any configured chat role uses Anthropic; empty in `.env.example`. |
+| `OLLAMA_BASE_URL` | No | `http://localhost:11434` | Ollama server origin, default `http://localhost:11434` when unset or empty; Docker uses `http://host.docker.internal:11434`. The adapter appends `/v1`. No key. |
 | `CHAT_MODEL` | When live | `<pin at build time, see section 24>` | Chat model for rerank, answer and quote fallback. Default documented as "the provider's current small, cheap model". In mock mode the effective chat model id is always `mock`, whatever this variable holds (used in the answer cache key, `query_log.chat_model` and eval results). |
 | `JUDGE_MODEL` | Eval | `<pin at build time>` | Judge model for faithfulness. May equal `CHAT_MODEL`. In mock mode the effective judge model id is always `mock`. |
 | `MAX_OUTPUT_TOKENS` | No | `700` | Answer generation cap. Integer 200–2000. |
@@ -476,24 +494,28 @@ export const JUDGE = {
 | `PRICE_EMBED_PER_MTOK` | When live | `0` | USD per 1M tokens for `text-embedding-3-small`. |
 | `PRICE_JUDGE_INPUT_PER_MTOK` | Eval | `0` | USD per 1M input tokens for `JUDGE_MODEL`. |
 | `PRICE_JUDGE_OUTPUT_PER_MTOK` | Eval | `0` | USD per 1M output tokens for `JUDGE_MODEL`. |
+| `SOURCED_ACCESS_TOKEN` | Private profile only | — | At least 24 characters; validated at startup (T-51). Access flow in §38 (T-74). |
+| `SOURCED_PORT` | No | `3000` | Docker path: host port of the app for `./sourced dev`; read from the shell or `.env.local` by the launchers (D-135). |
+| `SOURCED_DB_PORT` | No | `5433` | Docker path: host port of the local database (`docker-compose.yml`). The launchers read it, and `SOURCED_PORT`, from the shell or from that line of `.env.local` (D-135). |
 | `DEMO_MODE` | No | `on` | `on`, `readonly` or `off` (FR-30). Default `on`. |
 | `RATE_LIMIT_IP_DAILY` | No | `10` | Per-visitor live questions per UTC day. |
 | `RATE_LIMIT_GLOBAL_DAILY` | No | `300` | All visitors, live questions per UTC day. |
-| `IP_HASH_SALT` | Yes | 64 hex chars | `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
-| `QUESTION_HASH_SALT` | Yes | 64 hex chars | Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
+| `IP_HASH_SALT` | Public-demo only | 64 hex chars | `init` generates 32 random bytes as 64 hex characters for `public-demo`, preserving existing assignments and never printing the salt (D-119). Otherwise use `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
+| `QUESTION_HASH_SALT` | Yes | 64 hex chars | `init` generates 32 random bytes as 64 hex characters, preserving existing values and never printing the salt (D-119). Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
 | `STORE_QUESTIONS` | No | `false` | `true` stores raw question text in `query_log.question_text` (FR-54). Never `true` in production without a privacy note change. |
 | `LOG_LEVEL` | No | `info` | pino level. |
-| `NEXT_PUBLIC_SITE_URL` | Yes | `https://sourced.firatkil.com` | Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
+| `NEXT_PUBLIC_SITE_URL` | Yes | `https://sourced.firatkil.com` | `init` writes `http://localhost:<port>` (default 3000), preserving existing values (D-119). Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
 | `ALLOWED_ORIGINS` | No | `https://sourced-git-main-firatkill.vercel.app` | Comma-separated extra origins for the origin check (preview URLs). `VERCEL_URL`, `VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are added automatically (as `https://<value>`) when set. |
 | `INGEST_INCLUDE_FIXTURES` | No | `false` | `true` ingests `corpus/fixtures/*` (tests and eval only, FR-39). |
+| `INGEST_CONFIRM_ABOVE_USD` | no | `1.00` | Nonnegative USD threshold for ingest confirmation (§33.8). |
 | `EVAL_MAX_COST_USD` | Eval | `1.00` | Budget guard (FR-44). |
-| `EVAL_RESULTS_DIR` | No | `eval/results` | Directory read by `/eval`. E2E sets `tests/fixtures/eval-results`. |
+| `EVAL_RESULTS_DIR` | No | `eval/postgres-17/results` | Directory read by `/eval`. E2E sets `tests/fixtures/eval-results`. |
 | `MOCK_STREAM_DELAY_MS` | No | `10` | Delay between mock tokens. |
 | `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL` | Set by Vercel | — | Read only. `VERCEL` (any value) makes `pnpm ingest` refuse to run (section 10.7). |
 | `NODE_ENV` | Set by Next.js / Vitest | — | Read only. `development` enables `'unsafe-eval'` in the CSP; anything other than `production` enables SSE event validation in `send()` (section 12.3). |
 | `GITHUB_STEP_SUMMARY` | Set by GitHub Actions | — | Read only; `pnpm eval --ci` appends the Markdown summary to this file when set. |
 
-Zod rules: integer counts, limits, token caps and delays via `z.coerce.number().int().positive()` (`MOCK_STREAM_DELAY_MS` uses `.nonnegative()`); prices (`PRICE_*`) via `z.coerce.number().nonnegative()` (decimals allowed, default 0; the budget guard rejects 0 in live eval, section 17.7); `EVAL_MAX_COST_USD` via `z.coerce.number().positive()`; booleans via `z.enum(['true','false']).transform(v => v === 'true')`; `superRefine` enforces "required when live" (`OPENAI_API_KEY`, `CHAT_MODEL`, `PRICE_CHAT_*`, `PRICE_EMBED_PER_MTOK`) and "mock forbidden in production". `JUDGE_MODEL` and `PRICE_JUDGE_*` are checked by `scripts/eval.ts`, not by `getEnv()`. Error message lists every missing variable by name, never values.
+Zod rules: integer counts, limits, token caps and delays via `z.coerce.number().int().positive()` (`MOCK_STREAM_DELAY_MS` uses `.nonnegative()`); prices (`PRICE_*`) via `z.coerce.number().nonnegative()` (decimals allowed, default 0; the budget guard rejects 0 in live eval, section 17.7); `EVAL_MAX_COST_USD` via `z.coerce.number().positive()`; booleans via `z.enum(['true','false']).transform(v => v === 'true')`; `superRefine` enforces provider keys for configured live roles (`OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `ANTHROPIC_API_KEY`). The public-demo profile additionally requires `CHAT_MODEL`, `PRICE_CHAT_*`, `PRICE_EMBED_PER_MTOK` as in v1; other profiles use configured models and prices (section 29.4). It also enforces "mock forbidden in production". `JUDGE_MODEL` and `PRICE_JUDGE_*` are checked by `scripts/eval.ts`, not by `getEnv()`. Error message lists every missing variable by name, never values.
 
 `.env.example` contains every row above (read-only platform variables as commented lines). It must work unchanged for the no-API-key path (`cp .env.example .env.local && pnpm db:up && pnpm db:migrate && pnpm db:seed && pnpm dev:mock`): `DATABASE_URL` and `TEST_DATABASE_URL` point at the Docker database on port 5433, `NEXT_PUBLIC_SITE_URL=http://localhost:3000`, and `IP_HASH_SALT` / `QUESTION_HASH_SALT` hold obvious development-only placeholders of at least 32 characters (for example `dev-only-ip-salt-change-me-000000000000000`), with a comment that production values come from `openssl rand -hex 32`. `OPENAI_API_KEY` is empty; `CHAT_MODEL` and `JUDGE_MODEL` contain the pinned ids recorded in task T-18, with a comment line `# Pinned on <date> from <url>`.
 
@@ -846,7 +868,7 @@ export const RerankOutput = z.object({
 
 ### 10.1 Corpus manifest (normative)
 
-`corpus/manifest.json`:
+Historical v1 `corpus/manifest.json` (T-50 moves the source list into `sourced.config.ts`; remaining version and fixture descriptors live in `corpus/postgres-17/metadata.json`):
 
 ```json
 {
@@ -906,7 +928,7 @@ export const RerankOutput = z.object({
 
 ### 10.2 Fetching
 
-Raw HTML is committed (D-05): `corpus/raw/<slug>.html`, byte-for-byte as served. `pnpm ingest` reads from cache by default; it fetches only with `--fetch-only` or `--refresh`, or when a page is missing and `--offline` is not set.
+Raw HTML is committed (D-05): `corpus/postgres-17/raw/pg17-<section>/<slug>.html`, byte-for-byte as served. `pnpm ingest` reads from cache by default; it fetches only with `--fetch-only` or `--refresh`, or when a page is missing and `--offline` is not set.
 
 Fetcher rules (`lib/ingest/fetch.ts`):
 
@@ -914,7 +936,7 @@ Fetcher rules (`lib/ingest/fetch.ts`):
 2. Requests are strictly sequential, at least `FETCH.MIN_INTERVAL_MS` (2,000 ms) apart measured start to start. If robots.txt declares `Crawl-delay`, use the larger of the two.
 3. Headers: `User-Agent: SourcedIngest/1.0 (+https://github.com/firatkill/sourced)`, `Accept: text/html`.
 4. Timeout `FETCH.TIMEOUT_MS`; up to `FETCH.MAX_RETRIES` retries on 429 / 5xx / network error with delays 5 s, 15 s, 45 s (or `Retry-After` if larger). Any other non-2xx aborts.
-5. Write the body to `corpus/raw/<slug>.html` only when its sha256 differs from the existing file. Print `fetched`, `unchanged` or `failed` per page.
+5. Write the body to `corpus/postgres-17/raw/pg17-<section>/<slug>.html` only when its sha256 differs from the existing file. Print `fetched`, `unchanged` or `failed` per page.
 6. `--offline` forbids all network access to postgresql.org; a missing raw file is a fatal error. CI and eval always use `--offline`.
 
 ### 10.3 HTML parsing
@@ -1333,7 +1355,7 @@ export const DoneEvent = z.object({
     inputTokens: z.number().int(),    // rerank + answer + quote fallback
     outputTokens: z.number().int(),
   }),
-  costUsdEstimate: z.number(),
+  costUsdEstimate: z.number().nullable(), // v2: unknown price (§31.4)
   latencyMs: z.object({
     total: z.number(),
     firstToken: z.number().nullable(),
@@ -1966,7 +1988,7 @@ Status line text is derived, not stored: `submitting` → "Searching the docs…
 
 Server component reads results through `lib/eval/load-results.ts`: list `EVAL_RESULTS_DIR/*.json` (resolved against `process.cwd()`), parse each with `EvalResult` schema (section 17.6), skip invalid files with a server log warning, sort by `runId` ascending; the last is the latest run and "previous" for deltas is the one before it. The page passes the parsed runs to `components/eval/EvalView.tsx`, a synchronous component that renders the empty state when the array is empty (UT-31 renders `<EvalView runs={[]} />`; async server components cannot be rendered by React Testing Library).
 
-Cell formats: "Recall@5" and "RR" to 2 decimals, "—" for non-answerable rows; "Faithfulness" as `0`, `0.5`, `1` or "—"; "Citations" as `{valid} / {valid + invalid}`; "Latency" as seconds with 1 decimal plus " s"; metric card values to 2 decimals except latency (`{p50} s / {p95} s`, 1 decimal) and cost (`$` + 4 decimals); deltas signed to 2 decimals with a true minus sign (−). `next.config.ts` sets `outputFileTracingIncludes: { '/eval': ['./eval/results/**/*.json'] }` so the files are bundled into the Vercel function. `TrendChart` is a 160 × 40 inline SVG polyline with an accessible `<title>` listing the values; no chart library. Table filter state is client-side.
+Cell formats: "Recall@5" and "RR" to 2 decimals, "—" for non-answerable rows; "Faithfulness" as `0`, `0.5`, `1` or "—"; "Citations" as `{valid} / {valid + invalid}`; "Latency" as seconds with 1 decimal plus " s"; metric card values to 2 decimals except latency (`{p50} s / {p95} s`, 1 decimal) and cost (`$` + 4 decimals); deltas signed to 2 decimals with a true minus sign (−). `next.config.ts` sets `outputFileTracingIncludes: { '/eval': ['./eval/postgres-17/results/**/*.json'] }` so the files are bundled into the Vercel function. `TrendChart` is a 160 × 40 inline SVG polyline with an accessible `<title>` listing the values; no chart library. Table filter state is client-side.
 
 ### 15.8 `/how-it-works` page
 
@@ -2051,7 +2073,7 @@ export const CachedAnswerPayload = z.object({
   answerText: z.string(),               // equals citations.answer
   citations: CitationsEvent,
   usageAtGeneration: DoneEvent.shape.usage,
-  costUsdAtGeneration: z.number(),
+  costUsdAtGeneration: z.number().nullable(), // v2: unknown price (§31.4)
 });
 ```
 
@@ -2075,18 +2097,18 @@ Env changes on Vercel apply to new deployments only; the runbook (section 26.6) 
 
 `pnpm eval [--limit N] [--only q001,q002] [--baseline path] [--no-write] [--ci]`
 
-1. Load and validate `eval/golden.jsonl` (section 17.2), `eval/thresholds.json`, env (requires `LLM_MODE=live`, `JUDGE_MODEL`, prices). `LLM_MODE=mock` is accepted only together with `--no-write`, as a pipeline smoke test; the budget guard is skipped in mock mode.
+1. Load and validate `eval/postgres-17/golden.jsonl` (section 17.2), `eval/thresholds.json`, env (requires `LLM_MODE=live`, `JUDGE_MODEL`, prices). `LLM_MODE=mock` is accepted only together with `--no-write`, as a pipeline smoke test; the budget guard is skipped in mock mode.
 2. Check the database has a succeeded ingest with fixtures included (`SELECT 1 FROM documents WHERE is_fixture LIMIT 1` returns a row) and that every chunk's `embedding_model` equals the current mode's embedding model (section 10.6); otherwise exit 2 with "Run pnpm ingest --include-fixtures first" (or "Re-run pnpm ingest --offline --include-fixtures in the current LLM_MODE" for a model mismatch).
 3. Budget projection (section 17.7). Abort if over.
 4. For each question, sequentially: call `answerQuestion` with a collector and a fresh request id (no rate limiting, no cache). Record candidates (RRF order), reranked list, passages, verification result, usage, timings.
 5. For answerable questions with a non-not-found answer: call the judge.
 6. Compute metrics (section 17.4), compare with thresholds and baseline (section 17.5).
-7. Write `eval/results/<YYYY-MM-DD>.json` and `.md` (suffix `-2`, `-3` if the file exists) unless `--no-write`. With `--ci`, also write the Markdown to `$GITHUB_STEP_SUMMARY` when set.
+7. Write `eval/postgres-17/results/<YYYY-MM-DD>.json` and `.md` (suffix `-2`, `-3` if the file exists) unless `--no-write`. With `--ci`, also write the Markdown to `$GITHUB_STEP_SUMMARY` when set.
 8. Exit 0 if all checks pass, 1 if any fails, 2 on configuration error, 3 on budget abort.
 
 ### 17.2 Golden set
 
-File: `eval/golden.jsonl`, one JSON object per line, UTF-8, LF line endings. Schema **(normative, `lib/eval/golden.ts`)**:
+File: `eval/postgres-17/golden.jsonl`, one JSON object per line, UTF-8, LF line endings. Schema **(normative, `lib/eval/golden.ts`)**:
 
 ```ts
 export const GoldenEntry = z.object({
@@ -2205,7 +2227,7 @@ export const EvalResult = z.object({
     citationValidity: z.number(), faithfulness: z.number(),
     falseRefusal: z.number(), correctRefusal: z.number(), injectionResistance: z.number(),
     latencyMs: z.object({ p50: z.number(), p95: z.number() }),
-    cost: z.object({ totalUsd: z.number(), perQuestionUsd: z.number(), ingestUsd: z.number() }),
+    cost: z.object({ totalUsd: z.number().nullable(), perQuestionUsd: z.number().nullable(), ingestUsd: z.number() }),
     errors: z.number().int(),
     counts: z.object({ total: z.number(), answerable: z.number(), unanswerable: z.number(), injection: z.number() }),
   }),
@@ -2222,13 +2244,15 @@ export const EvalResult = z.object({
     faithfulness: z.object({ score: z.number(), unsupportedClaims: z.array(z.string()), rationale: z.string() }).nullable(),
     refusalCorrect: z.boolean().nullable(), injectionResisted: z.boolean().nullable(),
     pass: z.boolean(),                      // per-question verdict used by /eval "Result"
-    latencyMs: z.number(), costUsd: z.number(),
+    latencyMs: z.number(), costUsd: z.number().nullable(),
     answer: z.string(),
     citedAnchors: z.array(z.string()),       // anchors of passages with a valid citation, in label order; shown in the expanded /eval row
     rerankedTop10Anchors: z.array(z.string()),
   })),
 });
 ```
+
+Unknown eval costs accepted with `--yes` are `null` in the affected question and aggregate cost fields (D-129). The cost ceiling is reported as "Not evaluated", neither PASS nor FAIL; `/eval` renders these costs as "unknown". Budget projection and accrual still enforce the limit on known costs.
 
 Per-question `pass`: answerable → outcome `answered`, recall@10 > 0, no citation removed (`citations.invalid === 0`), faithfulness ≥ 0.5; unanswerable → `refusalCorrect`; injection → `injectionResisted`. Per-question `pass` is informational (the /eval "Result" column and the "Failures only" filter); only the aggregate checks of section 17.5 gate the run.
 
@@ -2249,6 +2273,7 @@ export const ERROR_CODES = [
   'VALIDATION_FAILED', 'ORIGIN_FORBIDDEN', 'PAYLOAD_TOO_LARGE', 'UNSUPPORTED_MEDIA_TYPE',
   'RATE_LIMITED_IP', 'RATE_LIMITED_GLOBAL', 'DEMO_READONLY', 'DEMO_OFF',
   'PROVIDER_ERROR', 'PROVIDER_TIMEOUT', 'RETRIEVAL_ERROR', 'INTERNAL_ERROR',
+  'CONFIG_INVALID', 'CORPUS_MISMATCH', 'CORPUS_EMPTY', 'NEEDS_CONFIRMATION', 'CHECKS_FAILED',
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 export class AppError extends Error {
@@ -2260,10 +2285,19 @@ export class AppError extends Error {
 
 | Failure | Detected in | Code | HTTP / event | Retryable | Quota | User copy (PRD 9.3) | Log level |
 |---|---|---|---|---|---|---|---|
+| CLI confirmation required | CLI | `NEEDS_CONFIRMATION` | exit 2 | no | not used | Confirm interactively or pass `--yes`; app server error fallback | info |
+| Diagnostic checks failed | CLI (`doctor`, `deploy:check`) | `CHECKS_FAILED` | exit 2 (CLI-only) | no | not used | List each failed check id and its fix; app server error fallback | info |
+| Completed eval failed its gates (D-131) | CLI (`eval`) | `CHECKS_FAILED` | exit 1 (CLI-only), `result` kept | no | not used | Name each failed metric with its value and limit | info |
+| Invalid kit configuration | CLI / startup | `CONFIG_INVALID` | exit 1 / 500 | no | not used | Server error; CLI field path and fix | error |
+| Corpus model or language mismatch | search / eval | `CORPUS_MISMATCH` | exit 2 / `RETRIEVAL_ERROR` event | no | refunded | Server error; CLI re-ingest instruction (§30.3) | error |
+| Empty corpus | search / ask / dev | `CORPUS_EMPTY` | exit 2 / not-found state | no | — | Not found; CLI ingest instruction (§30.3) | info |
 | Bad JSON / schema | route | `VALIDATION_FAILED` | 400 JSON | no | not used | Validation error | info |
 | Cross-site origin | route | `ORIGIN_FORBIDDEN` | 403 JSON | no | not used | Server error copy | warn |
 | Body too large | route | `PAYLOAD_TOO_LARGE` | 413 JSON | no | not used | Validation (too long) | info |
 | Wrong content type | route | `UNSUPPORTED_MEDIA_TYPE` | 415 JSON | no | not used | Server error copy | info |
+| Missing or invalid access cookie (`private`) | middleware | `ACCESS_DENIED` | `/api/ask` 401 JSON; pages redirect to `/access` | no | not used | PRD 9.9 page | info |
+| Wrong access token (`private`) | `/api/access` | `ACCESS_DENIED` | 401 JSON; form error | no | counts toward the access limit | "That token is not valid." | info |
+| Access attempts exhausted (`private`, D-134) | `/api/access` limiter | `RATE_LIMITED_IP` | 429 JSON + `Retry-After` | after the hour | — | "Too many attempts. Try again in an hour." | info |
 | Visitor over quota | limiter | `RATE_LIMITED_IP` | 429 JSON + `Retry-After` | after reset | — | Rate-limited (visitor) | info |
 | Global over quota | limiter | `RATE_LIMITED_GLOBAL` | 429 JSON + `Retry-After` | after reset | — | Rate-limited (global) | warn |
 | Readonly, not cached | route | `DEMO_READONLY` | 503 JSON | no | not used | Read-only | info |
@@ -2826,11 +2860,15 @@ on:
       - 'lib/ingest/parse-html.ts'
       - 'lib/ingest/chunk.ts'
       - 'lib/config.ts'
-      - 'corpus/manifest.json'
-      - 'corpus/raw/**'
+      - 'sourced.config.ts'
+      - 'lib/ingest/presets/**'
+      - 'lib/ingest/manifest.ts'
+      - 'lib/ingest/load.ts'
+      - 'corpus/postgres-17/metadata.json'
+      - 'corpus/postgres-17/raw/**'
       - 'eval/**'
       # Committing results must not trigger another paid run.
-      - '!eval/results/**'
+      - '!eval/postgres-17/results/**'
 
 concurrency:
   group: eval-${{ github.ref }}
@@ -2843,7 +2881,8 @@ jobs:
   eval:
     name: Retrieval and answer evaluation
     # Secrets are unavailable to pull requests from forks; skip them instead of failing.
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # D-121: the v2/kit integration branch runs eval by manual dispatch at each milestone end only.
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'v2/kit')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: eval
@@ -2906,7 +2945,7 @@ jobs:
           git fetch --no-tags --depth=1 origin "$BASE_REF"
           DIR="$RUNNER_TEMP/base-results"
           mkdir -p "$DIR"
-          for f in $(git ls-tree --name-only "origin/$BASE_REF" eval/results/ | grep -E '\.json$' || true); do
+          for f in $(git ls-tree -r --name-only "origin/$BASE_REF" -- eval/postgres-17/results/ eval/results/ | grep -E '\.json$' || true); do
             git show "origin/$BASE_REF:$f" > "$DIR/$(basename "$f")"
           done
           # Pick the run with the greatest runId (file names like 2026-11-02-2.json do not sort correctly as text).
@@ -2930,11 +2969,11 @@ jobs:
         if: always()
         with:
           name: eval-results
-          path: eval/results/
+          path: eval/postgres-17/results/
           retention-days: 30
 ```
 
-Results produced in CI are uploaded as an artifact, not committed. The owner commits results by running `pnpm eval` locally against a local database ingested with `pnpm ingest --include-fixtures` (or by downloading the artifact into `eval/results/` and committing it in the PR).
+Results produced in CI are uploaded as an artifact, not committed. The owner commits results by running `pnpm eval` locally against a local database ingested with `pnpm ingest --include-fixtures` (or by downloading the artifact into `eval/postgres-17/results/` and committing it in the PR).
 
 Repository setup for this workflow (T-37): create environment `eval` with secret `OPENAI_API_KEY` (a key from a separate OpenAI project "sourced-eval" with its own budget), and environment variables `CHAT_MODEL`, `JUDGE_MODEL`, `PRICE_*`.
 
@@ -3075,16 +3114,16 @@ The README must contain, in this order:
 2. Links: live demo, `/eval`, `/how-it-works`, docs folder.
 3. Demo GIF (`docs/assets/demo.gif`, ≤ 4 MB, ≤ 20 s, 1200 px wide): click a suggested question → answer streams → click a citation chip → highlighted quote → expand "How this was answered". Recorded in light theme on the production site.
 4. "How it works" in 6 bullets plus the Mermaid architecture diagram (GitHub renders Mermaid).
-5. "Evaluation" with the metrics table from the latest `eval/results/*.md` (value, floor), date and models; link to the full file.
+5. "Evaluation" with the metrics table from the latest `eval/postgres-17/results/*.md` (value, floor), date and models; link to the full file.
 6. "Run locally without an API key" (≤ 6 commands): `pnpm install`, `cp .env.example .env.local`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev:mock`.
 7. "Run with OpenAI": set key and model, `pnpm ingest`, `pnpm cache:suggested`, `pnpm dev`.
-8. "Swap the corpus": edit `corpus/manifest.json` (base URL, selectors, pages), check license and robots, `pnpm corpus:fetch`, `pnpm ingest`, rewrite `eval/golden.jsonl`, update suggested questions in `lib/suggested.ts` and copy in the PRD.
+8. "Swap the corpus": edit `corpus/manifest.json` (base URL, selectors, pages), check license and robots, `pnpm corpus:fetch`, `pnpm ingest`, rewrite `eval/postgres-17/golden.jsonl`, update suggested questions in `lib/suggested.ts` and copy in the PRD.
 9. "Swap the provider": implement `LlmProvider` in `lib/llm/<name>.ts`, register it in `lib/llm/index.ts`, set `LLM_PROVIDER`; note the embedding dimension must stay 1536 or a migration must change `vector(1536)`.
 10. "Cost": the table from section 21.2 with the computed worst-case figure.
 11. "Tests and CI": commands and what each workflow does.
 12. "Privacy" summary.
 13. "Limits" (same points as `/how-it-works`).
-14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/LICENSE-POSTGRESQL.txt`.
+14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/postgres-17/LICENSE-POSTGRESQL.txt`.
 15. Author line with links to firatkil.com and GitHub.
 
 Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.
@@ -3209,7 +3248,7 @@ const SourceBase = z.object({
     preset: z.enum(['generic', 'postgres-docbook']).default('generic'),
     contentSelector: z.string().optional(),
     removeSelectors: z.array(z.string()).default([]),
-  }).default({}),
+  }).prefault({}),
 });
 
 export const SourceSchema = z.discriminatedUnion('type', [
@@ -3231,7 +3270,7 @@ export const KitConfigSchema = z.object({
     attribution: z.string().max(300).optional(),
     linkLabel: z.string().max(40).default('Read the source'),
   }),
-  sources: z.array(SourceSchema).min(1),
+  sources: z.array(SourceSchema).default([]),               // D-114: empty until `sourced add`
   models: z.object({
     chat: RoleModel,
     rerank: RoleModel.optional(),                            // defaults to chat
@@ -3245,13 +3284,27 @@ export const KitConfigSchema = z.object({
     hero: z.string().max(120).optional(),
     lead: z.string().max(300).optional(),
     notFound: z.string().max(120).optional(),
-    suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200) })).max(6).default([]),
-  }).default({}),
+    // D-100: strings added by the v1.1 redesign (REDESIGN §7) and the prompts
+    documentTitle: z.string().max(80).optional(),
+    shortTitle: z.string().max(40).optional(),               // rail subtitle
+    headerScope: z.string().max(120).optional(),
+    scope: z.string().max(300).optional(),
+    placeholder: z.string().max(120).optional(),
+    nextPlaceholder: z.string().max(120).optional(),
+    notFoundBody: z.string().max(200).optional(),
+    searched: z.string().max(60).optional(),
+    viewerLink: z.string().max(40).optional(),
+    sourceDomain: z.string().max(80).optional(),
+    license: z.object({ name: z.string().min(1).max(80), url: z.url() }).optional(),
+    promptSubject: z.string().min(1).max(60).optional(),
+    rerankSubject: z.string().min(1).max(60).optional(),
+    suggested: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]{1,20}$/), text: z.string().min(3).max(200), topic: z.string().min(1).max(24).optional() })).max(6).default([]),
+  }).prefault({}),
   overrides: z.object({                                       // section 29.2
     chunking: z.object({ minTokens: z.number().int(), targetTokens: z.number().int(), maxTokens: z.number().int(), overlapTokens: z.number().int() }).partial().default({}),
     retrieval: z.object({ vectorCandidates: z.number().int(), ftsCandidates: z.number().int(), rerankCandidates: z.number().int(), finalPassages: z.number().int().min(1).max(9) }).partial().default({}),
     contextualEmbedding: z.boolean().default(true),
-  }).default({}),
+  }).prefault({}),
 }).superRefine(validateKitConfig);                          // cross-field rules, section 29.3
 
 export type KitConfig = z.infer<typeof KitConfigSchema>;
@@ -3318,6 +3371,8 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 
 ### 29.5 Copy rendering (FR-63, `lib/kit/copy.ts`)
 
+Corpus copy is resolved from the runtime snapshot by server components and passed to client components as props (section 8). Never embed corpus copy at build time or import generated files. After updating the configuration and snapshot, restarting `next start` shows the new copy without rebuilding the image.
+
 `getCopy(config)` returns the corpus-dependent strings. Defaults when `copy.*` is unset:
 
 | Key | Default |
@@ -3328,7 +3383,22 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 | `notFound` | `I couldn't find this in {corpus.title}.` |
 | Not-found body | `Sourced only answers from the {documentCount} documents it has indexed. These passages came closest:` |
 | Link label | `corpus.linkLabel` |
-| Footer line 2 | `corpus.attribution`, omitted when unset |
+| Footer line 2 | `corpus.attribution`, omitted when unset; followed by a link to `copy.license.url` labelled `copy.license.name` when `license` is set |
+| `documentTitle` (page `<title>` of `/`) | `Sourced: answers from {corpus.title}` |
+| `shortTitle` (rail subtitle) | `corpus.title` |
+| `headerScope` | `Answers only from {corpus.description}` |
+| `scope` (welcome scope line) | `Answers come only from {corpus.description}. If the answer is not there, Sourced says so.` |
+| `placeholder` | `Ask a question about {corpus.title}` |
+| `nextPlaceholder` | `Ask another question about {corpus.title}` |
+| `notFoundBody` | the not-found body above |
+| `searched` | `Searched {documentCount} documents` |
+| `viewerLink` | `Open the source` |
+| `sourceDomain` | omitted (the line that shows it is not rendered) |
+| `promptSubject` (TRD §13.1: "answers questions about {promptSubject}", "excerpts from the {promptSubject} documentation") | `corpus.title` |
+| `rerankSubject` (TRD §13.2: "a question about {rerankSubject}"; also the eval judge prompt, TRD §17: "your own knowledge of {rerankSubject}") | `promptSubject` |
+| Suggested topic label | omitted when `topic` is unset |
+
+The example configuration sets every one of these to the string the app shows in v1.1, so the rendered page and both rendered prompts are byte-identical and `PROMPT_VERSION` does not change. Page titles of `/eval` and `/how-it-works` do not name the corpus and stay constants.
 
 `{documentCount}` comes from `corpus_meta.documents_total`. The example configuration sets values that reproduce PRD §9 byte for byte; E2E-01 to E2E-25 keep asserting the v1 strings against the example. The prompt's not-found sentence (TRD §13.1) is `getCopy().notFound`; changing it bumps `PROMPT_VERSION` like any prompt change.
 
@@ -3375,7 +3445,7 @@ ALTER TABLE ingest_runs ADD COLUMN config_hash text;
 
 Migration notes:
 
-- Dropping `chunks_content_hash_key` is not additive. It is the one exception to the additive-only rule in AGENTS.md and needs the owner's approval in T-46 (checkpoint 4). Reason: in arbitrary corpora the same chunk text (a shared disclaimer, a repeated code sample) appears in several documents; with a global unique key the second document's upsert silently re-parents the chunk (`ON CONFLICT (content_hash)` in `lib/ingest/upsert.ts`). The upsert's conflict target changes to `(document_id, content_hash)` in the same task.
+- Dropping `chunks_content_hash_key` is not additive. It is the one exception to the additive-only rule in docs/contributing/AGENTS.md and needs the owner's approval in T-46 (checkpoint 4). Reason: in arbitrary corpora the same chunk text (a shared disclaimer, a repeated code sample) appears in several documents; with a global unique key the second document's upsert silently re-parents the chunk (`ON CONFLICT (content_hash)` in `lib/ingest/upsert.ts`). The upsert's conflict target changes to `(document_id, content_hash)` in the same task.
 - `documents.slug` keeps its unique constraint; v2 writes `slug = document_key` (section 32.1). The v1 regex check on slugs lives in the manifest schema, not the database, and is replaced by `SourceSchema`.
 
 ### 30.2 Embedding column and full-text column (`lib/kit/vector-schema.ts`)
@@ -3392,8 +3462,9 @@ The embedding column type and the generated `tsv` column depend on the configura
 `ensureCorpusSchema(sql, config)`:
 
 1. Reads `corpus_meta`. If it is empty and `chunks` is empty: `ALTER TABLE chunks ALTER COLUMN embedding TYPE <type>(<n>)`, drop and recreate `chunks_embedding_hnsw_idx` with the operator class, drop and re-add `tsv` as `GENERATED ALWAYS AS (to_tsvector('<fts_config>'::regconfig, content)) STORED`, recreate `chunks_tsv_gin_idx`, insert `corpus_meta`.
+1a. Adoption of a v1 database (D-96). If `corpus_meta` is empty and `chunks` is not: read the stored state from the catalog and the data, without DDL: the embedding column's type and dimensions (`format_type` of `chunks.embedding`), the `regconfig` in the `tsv` generation expression (`pg_get_expr` on its `pg_attrdef` entry), and `SELECT DISTINCT embedding_model FROM chunks`. If the column type and dimensions, the `regconfig` and a single distinct embedding model all equal the configuration's, insert `corpus_meta` from the configuration (`documents_total` from `documents`) and change nothing else. Otherwise return `CORPUS_MISMATCH` with the stored and configured values; step 3 applies. The app's read-only check performs the same comparison without inserting, and caches the result per process.
 2. If `corpus_meta` exists and its `retrieval_hash` equals the configuration's: no-op.
-3. If it differs: return `CORPUS_MISMATCH` with the stored and configured values. Only `sourced ingest --rebuild` (which requires confirmation or `--yes`, section 34.3) truncates `chunks` and `documents`, then runs step 1.
+3. If it differs and `chunks` is empty (D-120): re-run step 1 for the new configuration (no data is lost). If it differs and `chunks` is not empty: return `CORPUS_MISMATCH` with the stored and configured values. Only `sourced ingest --rebuild` (which requires confirmation or `--yes`, section 34.3) truncates `chunks` and `documents`, then runs step 1.
 
 Language map (FR-62), a constant in `lib/kit/fts.ts`: `en→english, de→german, fr→french, es→spanish, it→italian, pt→portuguese, nl→dutch, tr→turkish, ru→russian, sv→swedish, da→danish, no→norwegian, fi→finnish, hu→hungarian, ro→romanian`; any other code → `simple`. `doctor` confirms the configuration exists with `SELECT cfgname FROM pg_ts_config`.
 
@@ -3411,6 +3482,7 @@ Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
 | `SOURCE_FAILED` | ingest | per-document item `failed`; run continues | Listed in the report with the reason |
 | `ACCESS_DENIED` | `/api/ask`, pages | 401 JSON / token prompt | PRD-level copy added in T-74: H2 "This chatbot is private", body "Enter the access token you were given.", button "Continue", error "That token is not valid." |
 | `NEEDS_CONFIRMATION` | CLI | exit 2 | The estimate and the flag to pass (`--yes`) |
+| `CHECKS_FAILED` | CLI (`doctor`, `deploy:check`; `eval` per D-131) | exit 2 (CLI-only); exit 1 for a completed eval that failed its gates | Each failed check id and its fix (D-115), or each failed eval metric (D-131); app server error fallback. |
 
 ## 31. Providers
 
@@ -3428,7 +3500,7 @@ Added to `ERROR_CODES` (TRD §18) in the task that first throws them:
 | `lib/llm/ollama.ts` | AI SDK community Ollama provider, or Ollama's OpenAI-compatible endpoint through `@ai-sdk/openai-compatible` (decided by A-19) | `OLLAMA_BASE_URL` (default `http://localhost:11434`; `http://host.docker.internal:11434` on the Docker path) | No key. Pricing 0. Structured output through JSON mode with Zod validation; if the model cannot produce valid JSON for rerank, the rerank fallback applies as in v1. |
 | `lib/llm/mock.ts` | — | — | Dimensions from config (feature hashing into `n` dimensions). |
 
-Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR` / `PROVIDER_TIMEOUT` exactly as TRD §13.0 describes for OpenAI. Each new runtime package needs the owner's approval in its task (AGENTS.md checkpoint 5).
+Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR` / `PROVIDER_TIMEOUT` exactly as TRD §13.0 describes for OpenAI. Each new runtime package needs the owner's approval in its task (docs/contributing/AGENTS.md checkpoint 5).
 
 ### 31.3 Capability flags
 
@@ -3436,7 +3508,7 @@ Every provider sets `maxRetries: 0` and maps provider errors to `PROVIDER_ERROR`
 
 ### 31.4 Pricing and cost
 
-Cost estimates (TRD §21) read prices from `pricing["<provider>:<model>"]`, with the `PRICE_*` variables overriding for the demo (section 29.4). A role without a price yields `costUsdEstimate: null`, shown as "unknown" in the CLI and in "How this was answered". The eval budget guard (TRD §17.7) and the ingest confirmation (section 33.6) treat an unknown price as follows: Ollama counts as 0; any other unknown price requires `--yes` with the message "Price unknown for <provider>:<model>; add it to pricing in sourced.config.ts to get an estimate."
+Cost estimates (TRD §21) read prices from `pricing["<provider>:<model>"]`, with the `PRICE_*` variables overriding for the demo (section 29.4). A role without a price yields `costUsdEstimate: null`, shown as "unknown" in the CLI and in "How this was answered". The eval budget guard (TRD §17.7) and the ingest confirmation treat an unknown price as follows (D-112: for ingest, section 33.8 governs the threshold and allows interactive confirmation; the rule below applies to the eval budget guard and to non-interactive ingest): Ollama counts as 0; any other unknown price requires `--yes` with the message "Price unknown for <provider>:<model>; add it to pricing in sourced.config.ts to get an estimate."
 
 ## 32. Sources
 
@@ -3474,6 +3546,12 @@ export type SourceContext = {
 
 Key normalization: URLs drop the fragment, sort query parameters, remove a trailing `index.html`; file paths are POSIX, relative to the source root, case preserved.
 
+Location slug (D-101, D-128): the location relative to its source base, without a trailing slash (`urls`: longest common directory of the source's URLs; `sitemap`: the sitemap URL's directory; `crawl`: the root's directory; `folder`/`git`: path relative to the source root); an empty relative path uses `index`. `documents.slug` stores the document key (section 30.1), while the chunk `content_hash` and evaluation anchors (`<location slug>#<anchor>`) use the location slug, as v1 used its slug. For the example this keeps chunk hashes and golden anchors identical to v1 (IT-16). Moving a v1 database to v2 keys re-inserts the example's documents once on the first v2 ingest (about $0.002 of embeddings for the example).
+
+`SourceEvent` (implementation-defined, internal to the CLI): a discriminated union with at least `discovered`, `fetched`, `cached`, `skipped` (with reason) and `failed` (with error code), each carrying the document key. Git sources record `git rev-parse HEAD` per source in the ingest report (`sources[].revision`) and include it in the corpus version input; no schema change.
+
+File-source passage transport (FR-65, §33.1): retrieval preserves `source_kind`. Web passages retain an HTTP(S) `officialUrl` built from the document URL and chunk anchor fragment, independently of the document key. File passages carry `officialUrl: null` and a non-empty `filePath` taken from the source-relative location in the document key. `PassageDto` (§12.2) accepts these two alternatives; a missing file path or a `file://` link is invalid. Source viewers and related-reading cards render `filePath › heading` without a link, and copied citations use the path. For PDF passages (T-56), optional positive-integer `pageFrom` and `pageTo` fields in the SSE `meta` passage preserve `chunks.page_from` / `page_to`. Web PDF links use `url#page=<pageFrom>`; file PDF viewers, related-reading cards and copied citations use `filePath, page <pageFrom>` without a link. Non-PDF passages omit the page fields. Plain-text passages carry optional positive-integer `lineFrom` in the SSE passage, derived from the chunk `l<line>` anchor; file viewers and copied citations display `path, line <n>` without a link. Quote verification continues to use passage labels and content unchanged.
+
 ### 32.2 Drivers
 
 | Type | `discover` | `load` | Raw cache path |
@@ -3508,7 +3586,7 @@ The golden-set anchor regex (TRD §17.2) widens in T-67 to `^[^#\s]+#[^\s]+$` so
 ### 33.2 Generic HTML (`parse-html-generic.ts`, FR-68)
 
 1. If the source sets `contentSelector`, use it (v1 behaviour, including fallback warning).
-2. Else run Mozilla Readability on a DOM built with `linkedom` (A-20) to find the main content; if Readability returns under 200 characters of text, fall back to the largest of `main`, `article`, `[role=main]`, `#content`, `.content` by text length; else `body` minus `nav, header, footer, aside, [role=navigation], script, style, noscript, form`.
+2. Else first remove page chrome from the DOM (D-103): `nav, header, footer, aside, dialog, [hidden], [aria-hidden="true"], [role=navigation], [role=banner], [role=contentinfo], [role=complementary], [role=dialog]` and elements whose `class` or `id` contains, case-insensitively, `footer`, `sidebar`, `breadcrumb`, `popup` or the class `toc`, except `html`, `body` and any element that contains the main-content region (`main`, `article` or `[role=main]`) (D-105). Then run Mozilla Readability on a DOM built with `linkedom` (A-20) to find the main content; if the extracted content has no `h1`, insert the first `h1` found inside the main-content region (`main`, `article` or `[role=main]`; none when there is no such region) at the start of the extracted content so the page title opens the root section; Readability's `charThreshold` is set to the text length of the largest main-content region when one exists, so it does not drop introductory paragraphs; if Readability returns under 200 characters of text, fall back to the largest of `main`, `article`, `[role=main]`, `#content`, `.content` by text length; else `body` minus `nav, header, footer, aside, [role=navigation], script, style, noscript, form`.
 3. Remove `removeSelectors`.
 4. Build sections from `h1`–`h6` in document order: each heading opens a section at its level, closing deeper or equal open sections. Text before the first heading belongs to a root section titled with the page `<title>`.
 5. Blocks: `p`, `li` groups, `pre`/`code` (code), `table` (rows joined with ` | `), `blockquote` and admonition classes (`.note`, `.warning`, `.tip`, `.admonition`, `.callout`) as notes.
@@ -3518,11 +3596,13 @@ The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtm
 
 ### 33.3 Markdown and MDX (`parse-markdown.ts`, FR-69)
 
-`unified` + `remark-parse` + `remark-gfm` + `remark-frontmatter` (+ `remark-mdx` for `.mdx`). Title: front matter `title`, else first `h1`, else file name. MDX: drop `mdxjsEsm` nodes (imports, exports); for `mdxJsxFlowElement`/`mdxJsxTextElement` keep the text of their children; drop expressions. Code fences become code blocks with the language kept in a `lang` field (not embedded). Links keep their text only.
+`unified` + `remark-parse` + `remark-gfm` + `remark-frontmatter` (+ `remark-mdx` for `.mdx`). Title: front matter `title`, else first `h1`, else file name. Front matter is not parsed as full YAML (D-106): the title is the value of a top-level `title:` line in YAML front matter (`---` fences), plain or single- or double-quoted, on one line; any other form (block scalars, flow mappings, TOML `+++` front matter) falls back to the first `h1`. MDX: drop `mdxjsEsm` nodes (imports, exports); for `mdxJsxFlowElement`/`mdxJsxTextElement` keep the text of their children; drop expressions. Code fences become code blocks with the language kept in a `lang` field (not embedded). Links keep their text only.
 
 ### 33.4 PDF (`parse-pdf.ts`, FR-70)
 
 `unpdf` (a `pdfjs-dist` wrapper that runs in Node without a canvas; A-21). Per page: text items with font size. Headings: lines whose font size is at least 1.25× the page's median size and under 120 characters. Sections from detected headings; if none are found, one section per page. Each block records its page. A PDF whose total extracted text is under 20 characters per page on average is reported `needs_ocr` and skipped.
+
+Title and heading levels (D-107): the title is the PDF Info `Title` when present and not empty, else the first detected heading on page 1, else the file name. Distinct heading font sizes, rounded to 0.5 pt, are ranked largest first and map to levels 1 to 6 (sizes beyond the sixth share level 6).
 
 ### 33.5 `.docx` (`parse-docx.ts`, D-70)
 
@@ -3554,13 +3634,13 @@ The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtm
 | Command | Flags | Writes | Result object (`result` in section 34.2) |
 |---|---|---|---|
 | `doctor` | `--no-network` | nothing | `{ checks: { id, ok, detail, fix? }[] }` |
-| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example` | `sourced.config.ts`, `.env.local` (names only), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
+| `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example --source <url-or-path>` | `sourced.config.ts`, `.env.local` (empty provider keys; generated private token per D-113; generated hash salts, local site URL and Node-path local Docker database URL per D-119), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
 | `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
 | `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
-| `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | report (section 34.4) |
+| `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
 | `inspect` | `--source <id>` | `corpus/<name>/inspect.json` | section 36.4 |
 | `ask` | `"<question>" --trace` | `query_log` row (source `cli`) | `{ outcome, answer, citations, trace? }` |
-| `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` |
+| `eval:generate` | `--count <n> --source <id> --dry-run --yes` | `eval/<name>/candidates.jsonl` | `{ written, costUsd }` (`costUsd` is null for unknown generation pricing, §31.4; D-125) |
 | `eval:review` | `--apply` (non-interactive: apply `status` edits made in the file) | moves accepted candidates to `golden.jsonl` | `{ accepted, rejected, edited }` |
 | `eval` | `--compare <results-file|baseline> --validate-only --ci --yes` | `eval/<name>/results/<runId>.json/.md` | v1 results summary + `comparison?` |
 | `dev` | `--port` | — | starts the app; with `--json` prints `{ url }` once ready |
@@ -3569,6 +3649,12 @@ The v1 DocBook logic moves unchanged to `presets/postgres-docbook.ts`; `parseHtm
 | `config:snapshot` | — | `.sourced/config.json` | `{ configHash }` |
 
 `query_log.source` check constraint gains `'cli'` (migration `0003_kit.sql`). v1 script names remain as aliases: `pnpm ingest` → `sourced ingest`, `pnpm eval` → `sourced eval`, `pnpm eval:validate` → `sourced eval --validate-only`, `pnpm cache:suggested` unchanged.
+
+Ingest report (D-109), the `result` of `ingest` with and without `--dry-run`: `{ mode: 'run' | 'dry-run', runId: string | null, corpusVersion: string | null, sources: Array<{ id, revision?: string, documents: { discovered, done, skipped, failed }, chunks: { new, changed, unchanged, deleted }, embeddingTokens, estimatedCostUsd: number | null, boilerplateRemoved, skipped: Array<{ key, reason }>, warnings: number }>, totals: same counters summed, plus estimatedCostUsd (null when any source's price is unknown) }`. A dry run has `runId: null` and `corpusVersion: null` and writes nothing. The human-readable output summarizes the same object; the v1 report lines stay for `pnpm ingest`.
+
+T-58 reserves later-task commands with their flags and result schemas: `doctor`, `init`, `add`, `sources list`, `sources remove`, `inspect`, `ask`, `eval:generate`, `eval:review`, `dev`, `down`, and `deploy:check`. Until their tasks land, they return `INTERNAL_ERROR`, a “not implemented yet” message, and exit 1. Destructive commands still require confirmation first (§34.3). Ingest `--restart` waits for T-59; eval `--compare` waits for T-67. `eval --validate-only` omits `result` and communicates validation through `ok`, the exit code, and progress output.
+
+`init` generates `QUESTION_HASH_SALT` using `crypto.randomBytes(32)` and, for `public-demo`, a separate `IP_HASH_SALT`. It never prints these values or overwrites existing assignments. On the Node path it reads the local database connection settings from `docker-compose.yml`; Docker supplies its internal connection URL. `NEXT_PUBLIC_SITE_URL` uses the launcher port (`SOURCED_PORT`) or 3000. Provider keys remain empty. Before starting a local database container, probe the configured database: a reachable service database needs no Docker command. Connection, container startup and migration failures identify the failed step without exposing connection values. Missing or invalid environment settings name each variable and its fix; missing provider keys exit 2 (D-119).
 
 ### 34.2 JSON envelope (normative, `lib/cli/envelope.ts`)
 
@@ -3587,7 +3673,9 @@ export const CliEnvelope = z.object({
 });
 ```
 
-With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
+The launchers write one envelope (`INTERNAL_ERROR`, the failed step, exit 1) when Compose fails before the CLI runs; a taken port names `SOURCED_DB_PORT` or `SOURCED_PORT` in the fix (D-135). With `--json`, stdout carries exactly one envelope followed by a newline; progress goes to stderr as JSON lines `{ "event": "...", ... }` so agents can stream it. Exit codes: `0` ok, `1` failure, `2` user action needed (`NEEDS_CONFIRMATION`, `CHECKS_FAILED`, missing key, `CORPUS_MISMATCH`, `CORPUS_EMPTY`, robots refusal), `130` interrupted.
+
+When `LLM_MODE=mock`, results from `doctor`, `ingest`, `ask`, `eval:generate` and `eval` include one `MOCK_MODE` warning with the message "Mock mode: no provider is called; embeddings and answers are stand-ins."; the warning is absent outside mock mode. Completed eval runs that fail floors, ceilings or regression checks keep `result`, return `CHECKS_FAILED` naming the failed metrics, and exit 1; `--validate-only` failures return `VALIDATION_FAILED` listing the problems (D-131). Cost estimates in mock mode use the prices of the configured models, so a mock dry run shows what a live run would cost (T-71 rehearsal).
 
 ### 34.3 Interaction rules
 
@@ -3598,7 +3686,7 @@ With `--json`, stdout carries exactly one envelope followed by a newline; progre
 
 ### 34.4 `doctor` checks (FR-78)
 
-`docker` (Docker path: `docker version`, Compose v2), `node` (Node path: ≥ 22, pnpm version from `packageManager`), `ports` (3000 and the DB port free or used by our containers), `disk` (≥ 2 GB free in the Docker data root or repository volume), `database` (connect, `vector` extension and version, migrations applied), `fts` (configured regconfig exists), `config` (valid, snapshot current), `keys` (each configured provider: OpenAI `GET /v1/models`, Gemini model list, Anthropic `GET /v1/models`, Ollama `GET /api/tags` and the configured models pulled), `dimensions` (one embedding call returns the configured length; skipped with a warning when the user passes `--no-network`), `corpus` (ingested? matches configuration?), `writable` (corpus and eval directories). Each failing check has a `fix`.
+`docker` (Docker path: `docker version`, Compose v2), `node` (Node path: ≥ 22, pnpm version from `packageManager`), `ports` (3000 and the DB port free or used by our containers), `disk` (≥ 2 GB free in the Docker data root or repository volume), `database` (connect, `vector` extension and version, migrations applied), `fts` (configured regconfig exists), `config` (valid, snapshot current), `keys` (each configured provider: OpenAI `GET /v1/models`, Gemini model list, Anthropic `GET /v1/models`, Ollama `GET /api/tags` and the configured models pulled), `dimensions` (one embedding call returns the configured length; skipped with a warning when the user passes `--no-network`), `corpus` (ingested? matches configuration?), `writable` (corpus and eval directories). Each failing check has a `fix`. `ports` probes IPv4 and IPv6 wildcard and loopback addresses on the Node path; inside the Docker CLI container host ports are not visible, so the check reports `ok: true` with the detail "not checked inside the CLI container", and the launchers report a taken port when Compose fails (D-135).
 
 ## 35. Docker path (FR-94, D-72)
 
@@ -3619,7 +3707,7 @@ services:
   db:
     image: pgvector/pgvector:pg17
     environment: { POSTGRES_USER: sourced, POSTGRES_PASSWORD: sourced, POSTGRES_DB: sourced }
-    ports: ['127.0.0.1:5433:5432']           # loopback only
+    ports: ['127.0.0.1:${SOURCED_DB_PORT:-5433}:5432']   # loopback only (D-135)
     volumes: [pgdata:/var/lib/postgresql/data, ./docker/initdb:/docker-entrypoint-initdb.d:ro]
     healthcheck: { test: ['CMD-SHELL', 'pg_isready -U sourced -d sourced'], interval: 5s, timeout: 5s, retries: 20 }
   app:
@@ -3658,6 +3746,8 @@ volumes:
 4. `dev` is special-cased: `docker compose up -d app`, wait for `/api/health`, print the URL; `down` runs `docker compose down` (keeps `pgdata`).
 
 `doctor` itself works without Docker: when `docker` is not on `PATH`, the launcher prints the install link for the platform (Docker Desktop for macOS and Windows, Docker Engine for Linux) and exits 2.
+
+The launchers set `BUILDX_NO_DEFAULT_ATTESTATIONS=1` unless the caller already set it, so a cached CLI image is not exported again on every command.
 
 ### 35.4 First run
 
@@ -3709,6 +3799,13 @@ The image build on first run takes a few minutes; `init` prints that before star
 
 Each finding has `affects` (retrieval, citations, cost) and `fix` text. The result is written to `corpus/<name>/inspect.json` and summarized on stdout.
 
+D-125 completes the version-1 result as `{ corpus, sources: [{ id, documents, chunks, smallestChunkTokens, largestChunkTokens }], findings: [{ code, severity, affects, fix, sourceId?, count?, details? }], path }`. Empty sources have null token extrema. `--source` scopes statistics, sampled chunks, comparison neighbours and ingest items to the selected source. Findings are diagnostic results (exit 0, even for `failed_items`); command/configuration/database/write failures retain §34.2 exit codes. A configured corpus with no chunks and no ingest run returns `CORPUS_EMPTY`; an all-skipped run remains inspectable.
+
+Implementation: exact counts and extrema come from database aggregates. Language detection uses up to `INSPECT.SAMPLE_CHUNKS` chunks selected by hashed chunk id, taking the highest stopword/token ratio among the built-in FTS languages; tied scores or no stopword evidence abstain. Near-duplicate detection probes the nearest cross-document neighbour for those same sampled chunks with cosine distance, allowing the HNSW index. It warns when more than `INSPECT.DUPLICATE_RATIO` of sampled chunks have a match at or above `INSPECT.DUPLICATE_SIMILARITY`; `count` is affected sampled chunks, with sample size, total chunks and pairs in `details`. Sampling costs O(N log 200); there are at most 200 nearest-neighbour probes, with an O(200 × N × dimensions) sequential-scan fallback, never an all-pairs join. Approximation can miss duplicates; reported counts are not extrapolated totals.
+
+The CLI saves the ingest run's planned D-109 report before embedding in `.sourced/ingest/<corpus>/<runId>.json`, including the run start timestamp to reject stale files after a database reset. This preserves boilerplate counts even if embedding later fails. Inspect takes item statuses and reasons from the latest run's `ingest_items`, and boilerplate counts from that run's saved report. Historical runs without a saved report report an unknown count (omitted `count`) and a re-ingest fix, not a fabricated zero. No source files are reparsed and no provider is called by inspect.
+
+
 ### 36.5 Eval on kit corpora and comparison (FR-84, FR-85)
 
 `sourced eval` runs the v1 harness (TRD §17) against `eval/<name>/golden.jsonl` with floors from `eval/<name>/thresholds.json` when present, else the v1 `eval/thresholds.json` values as defaults. A below-floor metric gets a `likelyCause` from a fixed table: low recall with `tiny_chunks` or `oversized_chunks` → chunking; low recall with `language_mismatch` → language; low citation validity → quote fallback rate and model; low correct refusal → not-found sentence or model. `--compare <file|baseline>` prints per-metric deltas and the questions whose result changed, and exits 1 if any metric regresses beyond `maxRegression`.
@@ -3730,6 +3827,7 @@ CLAUDE.md                         # "@AGENTS.md" (unchanged)
   sourced-deploy/SKILL.md
   _shared/rules.md                # the FR-89 rules, included by reference from every skill
   _shared/cli-reference.md        # generated from lib/cli/schemas by scripts/check-skills.ts --write
+  _shared/pricing.md              # how an agent resolves an unknown price with the user (D-130)
 .claude/commands/{setup,add-docs,ingest,check-quality,tune,troubleshoot,deploy}.md   # 3–5 lines each: "Follow .agents/skills/sourced-<name>/SKILL.md."
 .claude/settings.json             # permissions allowlist (section 37.4) plus the existing attribution settings
 docs/contributing/AGENTS.md       # today's AGENTS.md, moved
@@ -3760,7 +3858,7 @@ Fails when a skill names a command or flag that `lib/cli` does not define, a res
 
 - Env `SOURCED_ACCESS_TOKEN` (required for `private`, ≥ 24 characters; `init --profile private` generates one with `crypto.randomBytes(24).toString('base64url')` and writes it to `.env.local`, then tells the user where it is without printing it).
 - Middleware (`middleware.ts`) checks every page and `/api/ask` request when `profile === 'private'`: cookie `sourced_access` must equal `base64url(HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-access-v1'))`, compared in constant time. `/api/health`, static assets and `/access` are exempt.
-- `/access` page: one password-type input, POST to `/api/access` which validates the token, sets the cookie (`HttpOnly; Secure` outside localhost; `SameSite=Lax`; `Path=/`; 30 days) and redirects to `/`. Failed attempts are rate-limited per visitor hash with the existing limiter (bucket `access:<hash>`, 10 per hour).
+- `/access` page: one password-type input, POST to `/api/access` which validates the token, sets the cookie (`HttpOnly; Secure` outside localhost; `SameSite=Lax`; `Path=/`; 30 days) and redirects to `/`. Failed attempts are rate-limited per visitor hash with the existing limiter (bucket `access:<hash>:<YYYY-MM-DDTHH>`, 10 per fixed UTC hour; the hash key is `HMAC-SHA256(SOURCED_ACCESS_TOKEN, 'sourced-visitor-v1')`, D-134).
 - Without a valid cookie: pages redirect to `/access`; `/api/ask` returns 401 `ACCESS_DENIED`.
 - Rotating the token invalidates every cookie.
 - The `public-demo` and `local` profiles never set this cookie; PRD NFR-12 holds for them unchanged.
@@ -3805,6 +3903,8 @@ Fails when a skill names a command or flag that `lib/cli` does not define, a res
 
 ### 39.3 Contract tests (`tests/contract`, Vitest project `contract`)
 
+`pnpm test:contract` runs `tests/contract/**/*.test.ts`, including CLI subprocesses, toolchain/import probes, literal checks and launcher tests. The project uses one fork with file parallelism disabled, a 30-second test timeout for child-process startup and command completion, and a 60-second hook timeout for database setup (not UI waits). Unit timeouts are unchanged. Database-backed contracts live in `tests/contract/database/` and reuse the integration database setup; other contract files do not receive database hooks. Coverage includes all three projects, ordered unit → integration → contract so shared-database suites cannot overlap. CI runs `test:contract` in the existing integration job with its service database, then the combined coverage command.
+
 CT-01 to CT-14: one per command in section 34.1, running the real CLI as a child process against the integration database in mock mode with `--json`, validating stdout against the command's schema and checking the exit code for success and for each documented failure. Contract schemas are snapshot-tested; a schema change without a `schemaVersion` bump fails (NFR-22).
 
 ### 39.4 E2E additions
@@ -3817,7 +3917,7 @@ CT-01 to CT-14: one per command in section 34.1, running the real CLI as a child
 
 ### 39.5 Docker smoke test (CI job `docker`, from T-62)
 
-Build the image, `docker compose up -d db`, run `./sourced init --example --profile local --json` with mock providers, `./sourced ingest --offline --yes --json`, `./sourced dev`, `curl /api/health`, `./sourced ask "When should I use a partial index?" --json` and assert `ok: true`, then `./sourced down`. No network except image pulls and the npm registry during build.
+Build the image, `docker compose up -d db`, run `./sourced init --example --profile local --yes --json` with mock providers, `./sourced ingest --offline --yes --json`, `./sourced dev`, `curl /api/health`, `./sourced ask "When should I use a partial index?" --json` and assert `ok: true`, then `./sourced down`. No network except image pulls and the npm registry during build.
 
 ### 39.6 Manual release checks
 
@@ -3840,7 +3940,7 @@ The PRD section 11 checks (any-corpus, newcomer, quality on a new corpus) are ru
 
 Record results in the PRD decisions log with the next free `D-` number.
 
-## 41. New runtime dependencies (owner approval per task, AGENTS.md checkpoint 5)
+## 41. New runtime dependencies (owner approval per task, docs/contributing/AGENTS.md checkpoint 5)
 
 | Package | Purpose | Task |
 |---|---|---|
@@ -3850,8 +3950,8 @@ Record results in the PRD decisions log with the next free `D-` number.
 | `fast-xml-parser` | sitemaps | T-53 |
 | `@mozilla/readability`, `linkedom` | generic HTML | T-54 |
 | `unified`, `remark-parse`, `remark-gfm`, `remark-frontmatter`, `remark-mdx` | Markdown and MDX | T-55 |
-| `unpdf` | PDF | T-56 |
-| `mammoth` | `.docx` | T-57 |
+| `unpdf` 1.9.1 | PDF; Node ≥22 (2.x requires Node ≥24) | T-56 |
+| `mammoth` 1.13.0 | `.docx` | T-57 |
 | `@inquirer/prompts` | interactive CLI prompts | T-58 |
 
 `tsx` moves from dev to runtime dependencies (the CLI runs in the image). Versions are pinned at task time.

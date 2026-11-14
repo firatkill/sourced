@@ -1,3 +1,4 @@
+import { getRuntimeCopy } from '@/lib/kit/copy-server';
 import { z } from 'zod';
 import { renderPassages, sanitize } from './sanitize';
 import type { NumberedPassage } from './sanitize';
@@ -10,7 +11,7 @@ export const JudgeOutput = z.object({
 
 export const JUDGE_SYSTEM_PROMPT = `You grade whether an answer is faithful to the documentation passages it was written from. Be strict and literal.
 
-You receive numbered passages and an answer. The answer contains citation markers such as [P1] that refer to the passages. Judge faithfulness only: whether every factual claim in the answer is stated in, or follows directly from, the passages. Do not use your own knowledge of PostgreSQL. Do not judge style, length, completeness, or helpfulness.
+You receive numbered passages and an answer. The answer contains citation markers such as [P1] that refer to the passages. Judge faithfulness only: whether every factual claim in the answer is stated in, or follows directly from, the passages. Do not use your own knowledge of ${getRuntimeCopy().rerankSubject}. Do not judge style, length, completeness, or helpfulness.
 
 Scoring rubric:
 1 = Every factual claim is supported by the passages. Rewording is fine.

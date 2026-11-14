@@ -74,11 +74,16 @@ export function HowAnswered({
               })}
             </p>
             <p>
-              {formatAskCopy(ASK_COPY.tokens, {
-                in: done.usage.inputTokens,
-                out: done.usage.outputTokens,
-                cost: done.costUsdEstimate.toFixed(4),
-              })}
+              {formatAskCopy(
+                done.costUsdEstimate === null
+                  ? ASK_COPY.tokens.replace('${cost}', '{cost}')
+                  : ASK_COPY.tokens,
+                {
+                  in: done.usage.inputTokens,
+                  out: done.usage.outputTokens,
+                  cost: done.costUsdEstimate === null ? 'unknown' : done.costUsdEstimate.toFixed(4),
+                },
+              )}
             </p>
           </>
         )}

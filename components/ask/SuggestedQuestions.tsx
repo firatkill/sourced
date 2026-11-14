@@ -4,7 +4,7 @@ import { ASK_COPY } from '@/lib/copy';
 import type { SuggestedId } from '@/lib/suggested';
 
 type SuggestedQuestionsProps = {
-  suggested: readonly { id: SuggestedId; question: string; topic: string }[];
+  suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
   disabled: boolean;
   onSelect: (question: string, id: SuggestedId) => void;
 };
@@ -27,7 +27,7 @@ export function SuggestedQuestions({ suggested, disabled, onSelect }: SuggestedQ
             }}
             className="flex min-h-20 max-w-full flex-col items-start justify-center gap-1 rounded-xl border border-[var(--rule-strong)] bg-[var(--surface)] px-4 py-3 text-left whitespace-normal hover:bg-[var(--accent-soft)] disabled:opacity-50"
           >
-            <span className="text-xs text-[var(--ink-3)]">{topic}</span>
+            {topic && <span className="text-xs text-[var(--ink-3)]">{topic}</span>}
             <span className="text-[15px] font-medium">{question}</span>
           </button>
         ))}

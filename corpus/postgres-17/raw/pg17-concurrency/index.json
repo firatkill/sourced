@@ -1,0 +1,50 @@
+{
+  "https://www.postgresql.org/docs/17/mvcc-intro.html": {
+    "url": "https://www.postgresql.org/docs/17/mvcc-intro.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "4e080b3ab978a17bdbf841ef5eee91fa2cad90393c22f8a1ac892ddcb7e00c4e",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.309Z"
+  },
+  "https://www.postgresql.org/docs/17/transaction-iso.html": {
+    "url": "https://www.postgresql.org/docs/17/transaction-iso.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "e3475df0c76b214dbda0bc681015099763b83778e1355e17ee7b908e6fd38a26",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.319Z"
+  },
+  "https://www.postgresql.org/docs/17/explicit-locking.html": {
+    "url": "https://www.postgresql.org/docs/17/explicit-locking.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "cce2f9f92449f15fcb9927c23f164701652ed352470838d5db5a1bd930a77193",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.329Z"
+  },
+  "https://www.postgresql.org/docs/17/applevel-consistency.html": {
+    "url": "https://www.postgresql.org/docs/17/applevel-consistency.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "9123b72b52eab764acc5751fe12b0c738398dcbf69bf5cff963d91c80f078349",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.339Z"
+  },
+  "https://www.postgresql.org/docs/17/mvcc-caveats.html": {
+    "url": "https://www.postgresql.org/docs/17/mvcc-caveats.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "ee393323a2fe0798bfdda94b8d775579ad754668edbbbe527dfa95bae3429afe",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.349Z"
+  },
+  "https://www.postgresql.org/docs/17/locking-indexes.html": {
+    "url": "https://www.postgresql.org/docs/17/locking-indexes.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "b674d44d09d6b6e4dec05518a4341e347f52cff615494a525213195c0d9325ad",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.358Z"
+  }
+}

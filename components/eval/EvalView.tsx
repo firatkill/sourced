@@ -8,9 +8,15 @@ import { EVAL_COPY } from './copy';
 
 const decimal = (value: number) => value.toFixed(2);
 const seconds = (value: number) => `${(value / 1000).toFixed(1)} s`;
-const dollars = (value: number) => `$${value.toFixed(4)}`;
+const dollars = (value: number | null) => (value === null ? 'unknown' : `$${value.toFixed(4)}`);
 
-export function EvalView({ runs }: { runs: Array<EvalResult & { sourceFile?: string }> }) {
+export function EvalView({
+  runs,
+  resultsDirectory,
+}: {
+  runs: Array<EvalResult & { sourceFile?: string }>;
+  resultsDirectory: string;
+}) {
   const latest = runs.at(-1);
   const failures = latest ? checkRun(latest.metrics, thresholds, null).failures : [];
   const metrics: Metric[] = latest
@@ -64,7 +70,10 @@ export function EvalView({ runs }: { runs: Array<EvalResult & { sourceFile?: str
             kind: 'ceiling',
             value: dollars(thresholds.ceilings.costPerQuestionUsd),
             limit: thresholds.ceilings.costPerQuestionUsd,
-            failed: latest.metrics.cost.perQuestionUsd > thresholds.ceilings.costPerQuestionUsd,
+            failed:
+              latest.metrics.cost.perQuestionUsd === null
+                ? null
+                : latest.metrics.cost.perQuestionUsd > thresholds.ceilings.costPerQuestionUsd,
           },
         },
         {
@@ -132,7 +141,7 @@ export function EvalView({ runs }: { runs: Array<EvalResult & { sourceFile?: str
           <p className="text-muted-foreground text-sm">
             <a
               className="text-primary underline"
-              href={`https://github.com/firatkill/sourced/blob/main/eval/results/${encodeURIComponent(latest.sourceFile ?? `${latest.date}.json`)}`}
+              href={`https://github.com/firatkill/sourced/blob/main/${resultsDirectory}/${encodeURIComponent(latest.sourceFile ?? `${latest.date}.json`)}`}
             >
               Full results file
             </a>
@@ -141,7 +150,7 @@ export function EvalView({ runs }: { runs: Array<EvalResult & { sourceFile?: str
       ) : (
         <section>
           <h2>{EVAL_COPY.emptyHeading}</h2>
-          <p>{EVAL_COPY.emptyBody}</p>
+          <p>{EVAL_COPY.emptyBody(resultsDirectory)}</p>
         </section>
       )}
       <section aria-labelledby="eval-methodology">

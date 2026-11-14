@@ -8,8 +8,8 @@ export type EvalRecord = {
   rrfTop20Anchors: string[];
   rerankedTop20Anchors: string[];
   passageLabels: string[];
-  answerCostUsd: number;
-  judgeCostUsd: number;
+  answerCostUsd: number | null;
+  judgeCostUsd: number | null;
   usage: { answer: AnswerUsage | null; judge: TokenUsage | null };
 };
 
@@ -124,11 +124,15 @@ export function aggregateMetrics(records: readonly EvalRecord[], ingestUsd = 0):
       ),
     },
     cost: {
-      totalUsd: records.reduce((sum, r) => sum + r.answerCostUsd + r.judgeCostUsd, 0),
-      perQuestionUsd: ratio(
-        records.reduce((sum, r) => sum + r.answerCostUsd, 0),
-        records.length,
-      ),
+      totalUsd: records.some((r) => r.answerCostUsd === null || r.judgeCostUsd === null)
+        ? null
+        : records.reduce((sum, r) => sum + (r.answerCostUsd ?? 0) + (r.judgeCostUsd ?? 0), 0),
+      perQuestionUsd: records.some((r) => r.answerCostUsd === null)
+        ? null
+        : ratio(
+            records.reduce((sum, r) => sum + (r.answerCostUsd ?? 0), 0),
+            records.length,
+          ),
       ingestUsd,
     },
     errors: records.filter((r) => r.result.outcome === 'error').length,

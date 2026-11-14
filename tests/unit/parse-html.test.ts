@@ -1,12 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, vi } from 'vitest';
-import manifest from '@/corpus/manifest.json';
+import manifest from '@/tests/fixtures/postgres-17-v1-manifest.json';
 import { parseHtml } from '@/lib/ingest/parse-html';
 const page = {
   slug: 'structures.html',
   section: 'test',
-  contentSelector: manifest.contentSelector,
-  removeSelectors: manifest.removeSelectors,
+  html: {
+    preset: 'postgres-docbook' as const,
+    contentSelector: manifest.contentSelector,
+    removeSelectors: manifest.removeSelectors,
+  },
 };
 vi.mock('@/lib/logger', () => ({ createLogger: () => ({ warn: vi.fn() }) }));
 
@@ -64,4 +67,13 @@ test('TC-037: UT-02 D-57 unclassed reference headings and body fallback', () => 
   expect(doc.title).toBe('CREATE TEST');
   expect(doc.root.heading).toBe('CREATE TEST');
   expect(doc.root.children[0]?.heading).toBe('Parameters');
+});
+
+test('T-54 / FR-68: parseHtml dispatches generic HTML', () => {
+  expect(
+    parseHtml('<p>content</p>', {
+      ...page,
+      html: { ...page.html, preset: 'generic', contentSelector: '' },
+    }).root.blocks,
+  ).toEqual([{ kind: 'paragraph', text: 'content' }]);
 });

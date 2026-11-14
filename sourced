@@ -1,0 +1,174 @@
+#!/bin/sh
+set -eu
+BUILDX_NO_DEFAULT_ATTESTATIONS=${BUILDX_NO_DEFAULT_ATTESTATIONS-1}
+export BUILDX_NO_DEFAULT_ATTESTATIONS
+cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+command=${1:-help}
+if [ ! -f .env.local ]; then
+  case "$command" in
+    init|doctor) ;;
+    *) printf '%s\n' 'Run ./sourced init first.' >&2; exit 2 ;;
+  esac
+fi
+if ! command -v docker >/dev/null 2>&1; then
+  case "$(uname -s)" in
+    Darwin) link=https://docs.docker.com/desktop/setup/install/mac-install/ ;;
+    *) link=https://docs.docker.com/engine/install/ ;;
+  esac
+  printf 'Install Docker: %s\n' "$link" >&2
+  exit 2
+fi
+[ -f .env.local ] || (umask 077; touch .env.local)
+# Parse only literal port assignments; never source or evaluate the env file.
+carriage_return=$(printf '\r')
+while IFS= read -r line || [ -n "$line" ]; do
+  line=${line%"$carriage_return"}
+  case "$line" in
+    SOURCED_PORT=*)
+      if [ "${SOURCED_PORT+x}" != x ]; then
+        SOURCED_PORT=${line#SOURCED_PORT=}
+        export SOURCED_PORT
+      fi ;;
+    SOURCED_DB_PORT=*)
+      if [ "${SOURCED_DB_PORT+x}" != x ]; then
+        SOURCED_DB_PORT=${line#SOURCED_DB_PORT=}
+        export SOURCED_DB_PORT
+      fi ;;
+  esac
+done < .env.local
+SOURCED_UID=$(id -u)
+export SOURCED_UID
+json=false
+for argument in "$@"; do
+  [ "$argument" != --json ] || json=true
+done
+# Only fixed command names enter launcher-generated JSON.
+case "$command" in
+  *[!a-z:-]*|'') envelope_command=unknown ;;
+  *) envelope_command=$command ;;
+esac
+compose_step() {
+  step=$1
+  shift
+  if [ "$json" = false ]; then docker "$@"; return $?; fi
+  # Stream CLI JSON lines; send the process status through the pipe without files.
+  {
+    status=0
+    docker "$@" 2>&1 || status=$?
+    printf '\n__SOURCED_COMPOSE_EXIT__%s\n' "$status"
+  } | (
+    emitted=false
+    fix='Check Docker is running, then retry'
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      case "$line" in
+        __SOURCED_COMPOSE_EXIT__*)
+          status=${line#__SOURCED_COMPOSE_EXIT__}
+          if [ "$emitted" = true ]; then exit "$status"; fi
+          if [ "$status" -ne 0 ]; then
+            printf '{"schemaVersion":1,"command":"%s","ok":false,"error":{"code":"INTERNAL_ERROR","message":"%s failed.","fix":"%s"},"warnings":[]}\n' "$envelope_command" "$step" "$fix"
+            exit 1
+          fi
+          exit 0 ;;
+        *'port is already allocated'*|*'address already in use'*|*'ports are not available'*|*'Ports are not available'*)
+          fix='Set SOURCED_DB_PORT (or SOURCED_PORT) to a free port in .env.local, then retry.' ;;
+      esac
+      if [ "$step" = 'CLI container start' ]; then
+        case "$line" in
+          '{"schemaVersion":1,'*)
+            if [ "$emitted" = false ]; then printf '%s\n' "$line"; emitted=true; fi ;;
+          *) printf '%s\n' "$line" >&2 ;;
+        esac
+      else
+        # Build and Compose progress stays visible on stderr.
+        printf '%s\n' "$line" >&2
+      fi
+    done
+  )
+}
+case "$command" in
+  down)
+    json=false
+    for argument in "$@"; do
+      [ "$argument" != --json ] || json=true
+    done
+    if [ "$json" = false ]; then
+      exec docker compose down
+    fi
+    # Down stops the containers, so emit the fixed envelope without starting one.
+    if docker compose down >&2; then
+      printf '%s\n' '{"schemaVersion":1,"command":"down","ok":true,"result":{},"warnings":[]}'
+      exit 0
+    else
+      printf '%s\n' '{"schemaVersion":1,"command":"down","ok":false,"error":{"code":"INTERNAL_ERROR","message":"Docker Compose down failed.","fix":"Check Docker is running, then retry ./sourced down --json."},"warnings":[]}'
+      exit 1
+    fi
+    ;;
+  dev)
+    shift
+    json=false
+    SOURCED_PORT=${SOURCED_PORT:-3000}
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --json) json=true ;;
+        --port) shift; SOURCED_PORT=${1:-} ;;
+        *) printf '%s\n' 'Usage: ./sourced dev [--port <port>] [--json]' >&2; exit 2 ;;
+      esac
+      [ "$#" -eq 0 ] || shift
+    done
+    case "$SOURCED_PORT" in
+      ''|*[!0-9]*) printf '%s\n' 'Port must be an integer from 1 to 65535.' >&2; exit 2 ;;
+    esac
+    if [ "$SOURCED_PORT" -lt 1 ] || [ "$SOURCED_PORT" -gt 65535 ]; then
+      printf '%s\n' 'Port must be an integer from 1 to 65535.' >&2
+      exit 2
+    fi
+    export SOURCED_PORT
+    if [ "$json" = true ]; then
+      compose_step 'App container start' compose up -d --build --force-recreate app || exit $?
+    else
+      docker compose up -d --build --force-recreate app >&2 || exit 1
+    fi
+    # Use Node inside the image: the Docker-only host needs neither Node nor curl.
+    if ! (
+      if [ "$json" = true ]; then exec 1>&2; fi
+      docker compose exec -T app node --input-type=module -e '
+      for (let attempt = 0; attempt < 60; attempt++) {
+        try {
+          const response = await fetch("http://127.0.0.1:3000/api/health", { signal: AbortSignal.timeout(1000) });
+          if (response.ok) process.exit(0);
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      process.exit(1);
+      '
+    ); then
+      if [ "$json" = true ]; then
+        printf '%s\n' '{"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App health check failed.","fix":"Run docker compose logs app to diagnose the health check, then retry ./sourced dev --json."},"warnings":[]}'
+      fi
+      exit 1
+    fi
+    if [ "$json" = true ]; then
+      printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s"},"warnings":[]}\n' "$SOURCED_PORT"
+    else
+      printf 'http://localhost:%s\n' "$SOURCED_PORT"
+    fi
+    exit 0
+    ;;
+  init) printf '%s\n' 'Building the image on first run takes a few minutes.' >&2 ;;
+esac
+compose_step 'CLI image build' compose build cli || exit $?
+compose_step 'Database container start' compose up -d --wait db || exit $?
+# Prepend each argument without eval so spaces and shell metacharacters stay literal.
+set -- cli "$@"
+if [ -f .sourced/mounts ]; then
+  while IFS= read -r mount || [ -n "$mount" ]; do
+    [ -n "$mount" ] || continue
+    set -- -v "$mount:$mount:ro" "$@"
+  done < .sourced/mounts
+fi
+if [ -t 0 ]; then
+  compose_step 'CLI container start' compose run --no-deps --rm "$@"
+else
+  compose_step 'CLI container start' compose run --no-deps --rm -T "$@"
+fi

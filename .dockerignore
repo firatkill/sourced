@@ -1,0 +1,43 @@
+# Only application/build inputs enter the context. Host data and arbitrary local
+# files must never be copied into an image layer.
+**
+!package.json
+!pnpm-lock.yaml
+!.npmrc
+!tsconfig.json
+!next.config.ts
+!next-env.d.ts
+!global.d.ts
+!instrumentation.ts
+!middleware.ts
+!postcss.config.mjs
+!eslint.config.mjs
+!app/
+!app/**
+!components/
+!components/**
+!hooks/
+!hooks/**
+!lib/
+!lib/**
+!scripts/
+!scripts/**
+!drizzle/
+!drizzle/**
+!public/
+!public/**
+!eval/
+!eval/thresholds.json
+# These exclusions also apply inside the allowed directories.
+.env
+.env.*
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+node_modules
+**/node_modules
+.next
+.sourced
+corpus
+sourced.config.ts

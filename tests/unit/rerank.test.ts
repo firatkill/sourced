@@ -11,7 +11,7 @@ import type { RetrievedChunk } from '@/lib/retrieval/types';
 const doubles = vi.hoisted(() => ({ generateObject: vi.fn(), warn: vi.fn() }));
 vi.mock('@/lib/llm', async (original) => ({
   ...(await original<typeof import('@/lib/llm')>()),
-  getProvider: () => ({ generateObject: doubles.generateObject }),
+  getProviders: () => ({ rerank: { generateObject: doubles.generateObject } }),
 }));
 vi.mock('@/lib/logger', () => ({ createLogger: () => ({ warn: doubles.warn }) }));
 
@@ -52,7 +52,7 @@ describe('TC-061 / UT-06 / FR-13 / TRD §9.4', () => {
     expect(result).toMatchObject({ rerankFallback: false, rerankFallbackReason: null, usage });
     expect(result.rerankMs).toBeGreaterThanOrEqual(0);
     expect(doubles.generateObject).toHaveBeenCalledExactlyOnceWith({
-      model: 'chat',
+      model: 'rerank',
       system: RERANK_SYSTEM_PROMPT,
       prompt: buildRerankPrompt('Which index?', candidates),
       schema: RerankOutput,

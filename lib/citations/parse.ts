@@ -59,6 +59,8 @@ export function parseMarkers(answer: string): { answer: string; markers: Marker[
       )
       .replace(/\[p(\d{1,2})\]/g, '[P$1]'),
   );
+  // Valid labels are P1–P9. Also collect out-of-range labels so verification
+  // can remove them with UNKNOWN_PASSAGE (TRD §14.3, FR-21).
   const markers: Marker[] = [];
   const prose = mapProse(canonical, (text, start) => {
     for (const match of text.matchAll(/\[P(\d{1,2})\]/g)) {

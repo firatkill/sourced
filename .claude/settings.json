@@ -4,5 +4,21 @@
     "commit": "",
     "pr": "",
     "sessionUrl": false
+  },
+  "permissions": {
+    "allow": [
+      "Bash(./sourced doctor:*)",
+      "Bash(./sourced sources list:*)",
+      "Bash(./sourced inspect:*)",
+      "Bash(./sourced ingest --dry-run:*)",
+      "Bash(./sourced ask:*)",
+      "Bash(./sourced eval:generate --dry-run:*)",
+      "Bash(pnpm sourced doctor:*)",
+      "Bash(pnpm sourced sources list:*)",
+      "Bash(pnpm sourced inspect:*)",
+      "Bash(pnpm sourced ingest --dry-run:*)",
+      "Bash(pnpm sourced ask:*)",
+      "Bash(pnpm sourced eval:generate --dry-run:*)"
+    ]
   }
 }

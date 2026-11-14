@@ -1,6 +1,9 @@
+import { readAppConfiguration } from '@/lib/kit/app-configuration';
+import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import type { Metadata } from 'next';
 import { EvalView } from '@/components/eval/EvalView';
 import { EVAL_COPY } from '@/components/eval/copy';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { loadResults } from '@/lib/eval/load-results';
 
 export const metadata: Metadata = {
@@ -12,5 +15,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function Evaluation() {
-  return <EvalView runs={await loadResults()} />;
+  const configuration = readAppConfiguration();
+  if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
+  return (
+    <EvalView
+      runs={await loadResults()}
+      resultsDirectory={`eval/${getKitConfig().corpus.name}/results`}
+    />
+  );
 }

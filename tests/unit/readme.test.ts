@@ -12,6 +12,7 @@ describe('TC-162: README sections (FR-57, TRD §27)', () => {
       '# Sourced',
       '## Links',
       '## Demo',
+      '## Use your own documents',
       '## How it works',
       '## Evaluation',
       '## Run locally without an API key',
@@ -31,7 +32,7 @@ describe('TC-162: README sections (FR-57, TRD §27)', () => {
   });
 
   it('copies the recorded metrics and architecture without changes', () => {
-    const results = readFileSync('eval/results/2026-11-09.md', 'utf8');
+    const results = readFileSync('eval/postgres-17/results/2026-11-09.md', 'utf8');
     const table = results.slice(results.indexOf('| Metric'), results.indexOf('\n\n## Failures'));
     expect(readme).toContain(table);
     const trd = readFileSync('docs/TRD.md', 'utf8');

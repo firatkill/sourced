@@ -1,15 +1,20 @@
-corpus/raw
+corpus/postgres-17/raw
 drizzle/meta
 pnpm-lock.yaml
-eval/results/*.md
+eval/*/results/*.md
 docs/*.md
-AGENTS.md
+docs/contributing/AGENTS.md
 .next
 node_modules
 coverage
 playwright-report
 test-results
 next-env.d.ts
-eval/results/
+eval/*/results/
 # Normative, byte-identical to TRD 25.4
 .github/workflows/keepalive.yml
+
+.sourced/
+
+# Saved HTTP fixtures must remain byte-identical.
+tests/fixtures/sites/*.html

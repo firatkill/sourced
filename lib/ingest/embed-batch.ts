@@ -1,19 +1,22 @@
 import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { EMBEDDING } from '@/lib/config';
 import { AppError } from '@/lib/errors';
-import { getProvider } from '@/lib/llm';
+import { getProviders } from '@/lib/llm';
 import type { LlmProvider } from '@/lib/llm/types';
 
-const resultSchema = z.object({
-  vectors: z.array(z.array(z.number()).length(EMBEDDING.DIMENSIONS)),
-  tokens: z.number().int().nonnegative(),
-});
+const resultSchema = () =>
+  z.object({
+    vectors: z.array(z.array(z.number()).length(getKitConfig().models.embed.dimensions)),
+    tokens: z.number().int().nonnegative(),
+  });
 const failureSchema = z.object({
   statusCode: z.number().optional(),
   responseHeaders: z.record(z.string(), z.string()).optional(),
 });
 type Options = {
+  concurrency?: number;
   provider?: Pick<LlmProvider, 'embed'>;
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
@@ -24,7 +27,7 @@ export async function embedBatches(
   inputs: string[],
   options: Options = {},
 ): Promise<{ vectors: number[][]; tokens: number }> {
-  const provider = options.provider ?? getProvider();
+  const provider = options.provider ?? getProviders().embed;
   const sleep = options.sleep ?? ((ms) => setTimeout(ms));
   const random = options.random ?? Math.random;
   const now = options.now ?? Date.now;
@@ -63,7 +66,7 @@ export async function embedBatches(
         await sleep(Math.max(delay, retryAfter));
         continue;
       }
-      const result = resultSchema.safeParse(response);
+      const result = resultSchema().safeParse(response);
       if (!result.success || result.data.vectors.length !== values.length)
         throw new AppError('PROVIDER_ERROR', 'Invalid embedding response.');
       return result.data;
@@ -83,7 +86,10 @@ export async function embedBatches(
     }
   };
   await Promise.all(
-    Array.from({ length: Math.min(EMBEDDING.CONCURRENCY, batches.length) }, worker),
+    Array.from(
+      { length: Math.min(options.concurrency ?? EMBEDDING.CONCURRENCY, batches.length) },
+      worker,
+    ),
   );
   return {
     vectors: results.flatMap((result) => result.vectors),

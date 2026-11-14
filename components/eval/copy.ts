@@ -56,6 +56,6 @@ export const EVAL_COPY = {
   pass: 'Pass',
   fail: 'Fail',
   emptyHeading: 'No evaluation runs yet',
-  emptyBody: 'Run pnpm eval and commit the file it writes to eval/results.',
+  emptyBody: (directory: string) => `Run pnpm eval and commit the file it writes to ${directory}.`,
   methodology: 'How these numbers are computed',
 } as const;

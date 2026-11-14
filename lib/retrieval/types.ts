@@ -1,7 +1,11 @@
 export type RetrievedChunk = {
   chunkId: string;
   documentTitle: string;
-  documentUrl: string; // without anchor
+  documentUrl: string; // web URL or local file path, without anchor
+  sourceKind?: 'web' | 'file'; // absent only for legacy callers
+  lineFrom?: number;
+  pageFrom?: number;
+  pageTo?: number;
   slug: string;
   anchor: string; // 'slug#ID'
   headingPath: string[];
@@ -15,17 +19,16 @@ export type RetrievedChunk = {
 };
 
 export type Passage = RetrievedChunk & {
-  label: `P${1 | 2 | 3 | 4 | 5 | 6}`;
+  label: `P${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
   rerankPosition: number; // 1-based position after rerank
-  officialUrl: string; // documentUrl + '#' + section id
-};
+} & ({ officialUrl: string } | { officialUrl: null; filePath: string });
 
 export type RetrievalResult = {
   vectorCandidates: number; // vector list size before fusion
   ftsCandidates: number; // full-text list size before fusion
   candidates: RetrievedChunk[]; // up to 20, RRF order
   reranked: RetrievedChunk[]; // up to 20, rerank order (or RRF on fallback)
-  passages: Passage[]; // first 6 of reranked
+  passages: Passage[]; // configured final passages of reranked
   rerankFallback: boolean;
   rerankFallbackReason: 'timeout' | 'error' | 'invalid_output' | 'empty_output' | null;
   usage: { embeddingTokens: number; rerankInputTokens: number; rerankOutputTokens: number };

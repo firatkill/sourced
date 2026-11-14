@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: sourced
       POSTGRES_DB: sourced
     ports:
-      - '5433:5432'
+      - '127.0.0.1:${SOURCED_DB_PORT:-5433}:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/initdb:/docker-entrypoint-initdb.d:ro
@@ -15,5 +15,51 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+  app:
+    build:
+      context: .
+      args:
+        UID: '${SOURCED_UID:-1000}'
+    command: app
+    # Resolve lazily so the standalone Node-path db service needs no env file.
+    # The app entrypoint and launchers enforce initialization before app/CLI use.
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
+      MIGRATION_DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
+      OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
+    ports: ['127.0.0.1:${SOURCED_PORT:-3000}:3000']
+    volumes: ['.:/workspace']
+    working_dir: /workspace
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on:
+      db:
+        condition: service_healthy
+  cli:
+    build:
+      context: .
+      args:
+        UID: '${SOURCED_UID:-1000}'
+    profiles: [cli]
+    entrypoint: ['/app/scripts/docker-entrypoint.sh', 'cli']
+    # Resolve lazily so the standalone Node-path db service needs no env file.
+    # The app entrypoint and launchers enforce initialization before app/CLI use.
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
+      MIGRATION_DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
+      SOURCED_DOCKER: '1'
+      SOURCED_PORT: '${SOURCED_PORT:-3000}'
+      OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
+    volumes: ['.:/workspace']
+    working_dir: /workspace
+    extra_hosts: ['host.docker.internal:host-gateway']
+    depends_on:
+      db:
+        condition: service_healthy
 volumes:
   pgdata:

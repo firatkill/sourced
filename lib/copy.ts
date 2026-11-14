@@ -1,29 +1,36 @@
+import type { CorpusCopy } from '@/lib/kit/copy';
+
+import { getCopy } from '@/lib/kit/copy';
+export type { CorpusCopy } from '@/lib/kit/copy';
+
+// Generic fallbacks only. The server passes the mounted corpus's rendered copy as props.
+export const CORPUS_COPY: CorpusCopy = getCopy({
+  corpus: {
+    name: 'documents',
+    title: 'your documents',
+    description: 'your documents',
+    language: 'en',
+    linkLabel: 'Read the source',
+  },
+  copy: { suggested: [] },
+  overrides: { retrieval: {} },
+});
+export const CONFIGURATION_COPY = {
+  heading: 'Sourced needs configuration',
+  body: 'Fix the settings below in .env.local, then restart Sourced.',
+  snapshot: 'Check sourced.config.ts and run ./sourced config:snapshot, then restart Sourced.',
+};
+
 // Corpus-specific UI copy (PRD §9.2–9.3, FR-74).
 export const ASK_COPY = {
-  placeholder: 'e.g. How do I find slow queries with EXPLAIN ANALYZE?',
-  nextPlaceholder: 'Ask another question about PostgreSQL 17',
+  ...CORPUS_COPY,
   limit:
     '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
   suggestions: 'Start with one of these',
-  scope:
-    'Answers come only from 35 pages of the PostgreSQL 17 documentation. If the answer is not there, Sourced says so.',
   scopeLink: 'See how it is measured',
-  headerScope: 'Answers only from 35 pages of the PostgreSQL 17 docs',
-  railSubtitle: 'PostgreSQL 17 docs',
   sessionPrivacy:
     'Kept in this tab only. Reload or close it and the chat is gone; nothing is stored on the server.',
-  searched: 'Searched 35 pages',
-  docsDomain: 'postgresql.org/docs/17',
-  attribution:
-    'Answers are generated from the PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the',
-  viewerLink: 'Open on postgresql.org',
   viewerNote: 'Highlighted: the sentence the answer quotes.',
-  docsLink: 'Read in the PostgreSQL docs',
-  hero: 'Ask the PostgreSQL docs.',
-  lead: 'Get a direct answer with working SQL. Every sentence links to the passage it comes from, and every quote is checked before you see it.',
-  notFoundHeading: 'I couldn’t find this in the PostgreSQL docs.',
-  notFoundBody:
-    'Sourced only answers from the 35 pages it has indexed. These passages came closest:',
   relatedReading: 'Related reading',
   anotherQuestion: 'Ask another question',
   tryAgain: 'Try again',
@@ -87,3 +94,14 @@ export function formatAskCopy(template: string, values: Record<string, string | 
 export function removedCitationsCopy(count: number): string {
   return count === 1 ? ASK_COPY.removedOne : formatAskCopy(ASK_COPY.removedMany, { n: count });
 }
+
+// PRD §9.9 / D-134.
+export const ACCESS_COPY = {
+  title: 'Access · Sourced',
+  heading: 'This chatbot is private',
+  body: 'Enter the access token you were given.',
+  label: 'Access token',
+  button: 'Continue',
+  error: 'That token is not valid.',
+  limited: 'Too many attempts. Try again in an hour.',
+} as const;

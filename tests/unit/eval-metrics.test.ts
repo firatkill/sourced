@@ -18,7 +18,7 @@ export function record(
     golden: GoldenEntry.parse({
       id: 'q001',
       type,
-      chapter: 'indexes',
+      group: 'indexes',
       question: 'When should I create a partial index?',
       expected_anchors: type === 'answerable' ? ['a.html#A', 'b.html#B'] : [],
       reference_answer: '',

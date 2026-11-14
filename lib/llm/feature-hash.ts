@@ -9,14 +9,17 @@ function fnv1a(text: string): number {
   return hash >>> 0;
 }
 
-export function featureHash(text: string): { vector: number[]; tokens: number } {
+export function featureHash(
+  text: string,
+  dimensions: number = EMBEDDING.DIMENSIONS,
+): { vector: number[]; tokens: number } {
   const words = text
     .toLowerCase()
     .split(/[^a-z0-9_]+/)
     .filter(Boolean);
-  const vector = Array<number>(EMBEDDING.DIMENSIONS).fill(0);
+  const vector = Array<number>(dimensions).fill(0);
   const add = (token: string, weight: number) => {
-    const index = fnv1a(token) % EMBEDDING.DIMENSIONS;
+    const index = fnv1a(token) % dimensions;
     const sign = fnv1a(`${token}#`) & 0x80000000 ? -1 : 1;
     vector[index] = (vector[index] ?? 0) + sign * weight;
   };

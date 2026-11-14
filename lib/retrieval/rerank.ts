@@ -1,8 +1,9 @@
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { z } from 'zod';
 import { RETRIEVAL } from '@/lib/config';
 import { AppError } from '@/lib/errors';
 import { decode, encode } from '@/lib/ingest/tokenizer';
-import { getProvider, isInvalidOutput } from '@/lib/llm';
+import { getProviders, isInvalidOutput } from '@/lib/llm';
 import { createLogger } from '@/lib/logger';
 import { buildRerankPrompt, RERANK_SYSTEM_PROMPT } from '@/lib/prompts/rerank';
 import type { RetrievedChunk, RetrievalResult } from './types';
@@ -40,7 +41,10 @@ export async function rerank(
 ): Promise<RerankResult> {
   signal.throwIfAborted();
   const usage = { inputTokens: 0, outputTokens: 0 };
-  if (candidates.length <= RETRIEVAL.FINAL_PASSAGES) {
+  if (
+    candidates.length <=
+    (getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
+  ) {
     return {
       reranked: candidates,
       rerankFallback: false,
@@ -65,8 +69,8 @@ export async function rerank(
   };
 
   try {
-    const result = await getProvider().generateObject({
-      model: 'chat',
+    const result = await getProviders().rerank.generateObject({
+      model: 'rerank',
       system: RERANK_SYSTEM_PROMPT,
       prompt: buildRerankPrompt(
         question,

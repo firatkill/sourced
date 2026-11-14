@@ -1,10 +1,10 @@
 # Progress
 
-Updated: 2026-11-09.
+Updated: 2026-11-10.
 
 ## Repository setup
 
-- Read AGENTS.md, PRD, TRD, IMPLEMENTATION_PLAN and OWNER-DECISIONS from start to finish.
+- Read docs/contributing/AGENTS.md, PRD, TRD, IMPLEMENTATION_PLAN and OWNER-DECISIONS from start to finish.
 - Verified the required local Git identity for author and committer.
 - Initialized `main` and enabled the existing executable `.githooks/commit-msg` hook.
 - Initial documents and authorship controls committed in `0abe745` (`docs: add specs and agent rules`).
@@ -34,37 +34,92 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-14 | M1 Ingestion and search | Idempotent upsert, ingest runs and the ingest CLI | done | 63fea80 |
 | T-15 | M1 Ingestion and search | Hybrid search SQL and reference RRF | done | f443dd4 |
 | T-16 | M1 Ingestion and search | Seed script for development, CI and E2E | done | 1bb38c4 |
-| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | HEAD |
-| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | HEAD |
-| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | HEAD |
-| T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | HEAD |
-| T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | HEAD |
-| T-22 | M2 Ask, stream, citations | Stream splitter | done | HEAD |
-| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | HEAD |
-| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | HEAD |
-| T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | HEAD |
-| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | HEAD |
-| T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | HEAD |
-| T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | HEAD |
-| T-29 | M2 Ask, stream, citations | `GET /api/health` | done | HEAD |
-| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | HEAD |
-| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | HEAD |
-| T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | HEAD |
-| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | HEAD |
-| T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | HEAD |
-| T-35 | M3 Eval and CI | Golden set and validator | done | HEAD |
-| T-36 | M3 Eval and CI | Eval harness | done | HEAD |
+| T-17 | M1 Ingestion and search | Real ingestion dry run against local Postgres | done | ce93307 |
+| T-18 | M2 Ask, stream, citations | Chat provider (live and mock) and model pinning | done | ce93307 |
+| T-19 | M2 Ask, stream, citations | Prompts, sanitization and prompt versioning | done | ce93307 |
+| T-20 | M2 Ask, stream, citations | Reranker with timeout and fallback | done | ce93307 |
+| T-21 | M2 Ask, stream, citations | Retrieval pipeline | done | ce93307 |
+| T-22 | M2 Ask, stream, citations | Stream splitter | done | ce93307 |
+| T-23 | M2 Ask, stream, citations | Citation normalizer, parser and verifier | done | ce93307 |
+| T-24 | M2 Ask, stream, citations | SSE events, encoder and client parser | done | ce93307 |
+| T-25 | M2 Ask, stream, citations | Rate limiter and visitor hashing | done | ce93307 |
+| T-26 | M2 Ask, stream, citations | Answer orchestration, answer cache and `pnpm cache:suggested` | done | ce93307 |
+| T-27 | M2 Ask, stream, citations | Cost estimate and query log | done | ce93307 |
+| T-28 | M2 Ask, stream, citations | `POST /api/ask` | done | ce93307 |
+| T-29 | M2 Ask, stream, citations | `GET /api/health` | done | ce93307 |
+| T-30 | M2 Ask, stream, citations | `useAsk` hook and state machine | done | ce93307 |
+| T-31 | M2 Ask, stream, citations | Ask page: form, counter, chips, status line | done | ce93307 |
+| T-32 | M2 Ask, stream, citations | Answer rendering, citation chips, sources panel, copy | done | ce93307 |
+| T-33 | M2 Ask, stream, citations | "How this was answered" and every non-happy state | done | ce93307 |
+| T-34 | M2 Ask, stream, citations | E2E suite for the ask page | done | ce93307 |
+| T-35 | M3 Eval and CI | Golden set and validator | done | ce93307 |
+| T-36 | M3 Eval and CI | Eval harness | done | ce93307 |
 | T-37 | M3 Eval and CI | Thresholds, regression check and eval workflow | done | b396f38, 398d88c, 41425df |
-| T-38 | M3 Eval and CI | `/eval` page | done | HEAD |
-| T-39 | M3 Eval and CI | `/how-it-works` page | done | HEAD |
+| T-38 | M3 Eval and CI | `/eval` page | done | ce93307 |
+| T-39 | M3 Eval and CI | `/how-it-works` page | done | ce93307 |
 | T-40 | M4 Polish and deploy | Accessibility, keyboard and responsive pass | doing | HEAD |
 | T-41 | M4 Polish and deploy | Security review | done | 7151b26, 99c3c0d |
 | T-42 | M4 Polish and deploy | Supabase, OpenAI project and production data | done | 786499f, 5cd2a5b |
 | T-43 | M4 Polish and deploy | Vercel deployment and DNS | done | 190dafa, HEAD |
 | T-44 | M4 Polish and deploy | README, demo GIF and diagrams | done | 560d5c4 |
 | T-45 | M4 Polish and deploy | Release v1.0.0 | done | ea39e59 (tag v1.0.0) |
+| T-46 | M5 Configuration seams | Migration `0003_kit` and per-document chunk uniqueness | done | ce93307 |
+| T-47 | M5 Configuration seams | Kit configuration, roles and corpus schema management | done | 1bf698f |
+| T-48 | M5 Configuration seams | Copy and prompts from configuration | done | 8b05a91 |
+| T-49 | M5 Configuration seams | Gemini, Anthropic and Ollama providers | done | 762a8a3 |
+| T-50 | M5 Configuration seams | Example corpus in the kit layout | done | 08cb06b |
+| T-51 | M5 Configuration seams | Deployment profiles | done | 0403bde |
+| T-52 | M5 Configuration seams | Second fixture corpus and M5 exit | done | 29d20da |
+| T-53 | M6 Sources and CLI | Source drivers and multi-host fetching | done | 82cc09b |
+| T-54 | M6 Sources and CLI | Generic HTML parser | done | c66a17d |
+| T-55 | M6 Sources and CLI | Markdown and MDX parser | done | d2e66bd |
+| T-56 | M6 Sources and CLI | PDF parser | done | 8ae9b15 |
+| T-57 | M6 Sources and CLI | `.docx` parser | done | f12b559 |
+| T-58 | M6 Sources and CLI | CLI framework | done | 0e313ff |
+| T-59 | M6 Sources and CLI | Ingest command: boilerplate, resume, dry run and confirmation | done | 01e5aae |
+| T-60 | M6 Sources and CLI | Contextual embedding input | doing (code bc2cf32; live comparison pending) | |
+| T-61 | M6 Sources and CLI | `doctor`, `init`, `add`, `sources`, `ask`, `dev`, `deploy:check` | done | 4048d7b |
+| T-62 | M6 Sources and CLI | Docker path | done | e35fe7a |
+| T-63 | M6 Sources and CLI | Contract tests and scale check | done | 704c357 |
+| T-64 | M6 Sources and CLI | Any-corpus check and M6 exit | done | 2356098 |
+| T-65 | M7 Quality on any corpus | `inspect` | done | 26b41aa |
+| T-66 | M7 Quality on any corpus | `eval:generate`, `eval:review` and the built-in injection set | done | 64bfa5d |
+| T-67 | M7 Quality on any corpus | Eval on kit corpora and comparison | done | 73d65e5 |
+| T-68 | M7 Quality on any corpus | Quality check on a new corpus and M7 exit | done | fdaa6f5 |
+| T-69 | M8 Agent guidance and v2.0 | Shared skill rules and CLI reference | done | 2e4207c |
+| T-70 | M8 Agent guidance and v2.0 | `sourced-setup` skill | done | 5b3de7b |
+| T-71 | M8 Agent guidance and v2.0 | `sourced-add-docs`, `sourced-ingest`, `sourced-check-quality` skills | done | 438b338 |
+| T-72 | M8 Agent guidance and v2.0 | `sourced-tune`, `sourced-troubleshoot`, `sourced-deploy` skills | done | 2d43f15 |
+| T-73 | M8 Agent guidance and v2.0 | Command pointers, permissions and skill checks in CI | done | de82d15 |
+| T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | b7fb425 |
+| T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | 466ccd5 |
+| T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | doing (checks passed; tag waits for the owner) | c33a664 |
 
 ## Open questions for the owner
+
+- Hosted database on the Docker path (owner, D-135): in v2.0 a Docker-only user cannot migrate or ingest into a hosted database with `./sourced`, because Compose pins the CLI to the local database (TRD §34.1, §35.2); the `/deploy` skill says to use the Node path for that step. Decide whether v2.1 adds a Docker-path mechanism (for example a launcher option that passes `MIGRATION_DATABASE_URL` and `DATABASE_URL` from `.env.local` to the `cli` service).
+
+- M8 flaky unit test (reviewer): `tests/unit/ask-states.test.tsx` TC-104 ("Unverified draft") failed once in the fresh-worktree run on b7fb425 and once more in a full local run; it passes 5 of 5 alone and on rerun. A timing assumption under load; not raised or skipped.
+
+- M8 live checks (reviewer, 2026-11-12): (h) on the Flask newcomer corpus `gpt-6-luna` answers three of seven out-of-scope golden questions with "The passages do not describe …" followed by a cited answer, so `correctRefusal` is 0.57 (0.71 with `finalPassages` 4, reverted by `/tune`); retrieval is perfect, and the fix is the chat model or the not-found instruction, which `/tune` may not change (`qa/release-v2/rehearsal-tune-live.md`). Decide whether v2.0.0 ships with this as a known limitation or with a prompt change. (i) Resolved 2026-11-14: Codex's `workspace-write` sandbox cannot reach the Docker socket; the owner approved `danger-full-access` in a throwaway clone and TC-245 passed. (j) v2.0.0 release (owner): approve the tag, the merge of v2/kit to main and the production migrate (D-92); decide on the Windows and Linux Docker checks, FR-75's pending live comparison (T-60) and whether (h) ships as a known issue (`qa/m8-report.md` release checklist).
+- M8 rehearsal follow-ups (reviewer, T-70/T-71, `qa/release-v2/`): (a) the database host port is fixed at 5433, so a second checkout (or any service on 5433) stops the Docker launcher before the CLI runs, with no JSON envelope; (b) `doctor`'s `ports` check passes while another process listens on `*:3000` over IPv6; (c) `/add-docs` discovery made about eight quick requests to the docs site, against the skill's spacing rule; (d) MongoDB pages produce 193 tiny chunks of 228 (`inspect`), a chunking item for `/tune`. (e) the generic HTML parser keeps MongoDB navigation icon names (`arrow-right…menu-vertical`) in headings and titles, a likely cause of (d) (`/troubleshoot` rehearsal); (f) `/deploy` tells a Docker-only user to run `pnpm db:migrate` against the hosted database, but the Docker path has no documented way to migrate or ingest into a hosted database; (g) mock eval cannot write a results file, so `/tune` cannot be rehearsed end to end in mock mode (Codex's scripted check in `qa/release-v2/cli-check-tune.md` used a test harness). Fixed during M8: launcher `down`/`dev` envelopes, mock-mode estimates and warning, eval envelopes and eval without Git (the M7 follow-up (2) below).
+
+- M7 follow-ups (reviewer): (1) on the Node path the first CLI command in a fresh folder fails with CHAT_MODEL/PRICE_* errors because the config snapshot does not exist yet (the Docker path is unaffected); (2) `sourced eval` fails outside a git repository with a generic error because it records the commit; it should record no commit instead. Both found in T-68.
+
+- T-63 (reviewer): NFR-21 search p95 is not yet established. Broad full-text queries rank every match before `LIMIT 40`; the worst-case profile (terms in tens of thousands of chunks) has p95 1.15 s, mostly in FTS. A retrieval change to cap or pre-filter FTS ranking needs an eval run and a decision; options are in `qa/t63-bench.md`. On 2026-11-11 this repository's `node_modules` was deleted by a process outside this session (another project's `node_modules` was being removed at the same time); it was reinstalled from the lockfile.
+
+- Eval budget overrun (reviewer, 2026-11-11): 20 completed eval runs on `v2/kit` reported about $6.8 at list prices (about $0.33 each, mostly the judge at the gpt-5.4 list price), against the $5 v2 cap (D-94). The D-110 count of "about 5.5 runs" was not checked against the run list and was wrong. Actual billing may be lower if the eval project's judge calls fall under the free daily allowance; only the OpenAI usage page shows that. Paid runs are paused until the owner decides; the eval on f24640b failed on citation validity (0.967 vs baseline 1) with retrieval unchanged and prompts verified identical, and is unconfirmed.
+
+- T-62 (TC-215, A-23): check that the app and CLI containers reach a host Ollama (`host.docker.internal` with `host-gateway`) on each OS you use, when Ollama is installed. Windows launcher (`sourced.cmd`) is untested.
+- 2026-11-11 incident (reviewer): the Mac's data disk filled up during Docker-heavy T-62 work; Docker's VM disk failed with I/O errors, and restarting Docker Desktop recreated an empty VM disk, which deleted every local Docker image, container and volume, including the `rehearse` and `bidlock` local databases. The sourced local database was rebuilt from migrations and ingest; production was not affected. macOS also purged `~/Library/Caches`, including the Playwright browsers, which were reinstalled.
+
+- T-59 note (reviewer): one unit run out of 14 failed once in a fresh worktree on 2026-11-10 and the test name was not captured; 13 runs passed after it. The fresh-worktree check now prints failing test names. E2E observations in M6: `theme.spec.ts` (TC-145, open, separate fix proposed) and once `a11y.spec.ts` rate-limited (TC-107) under a slow full run, 12 of 12 alone.
+
+- T-57 note (reviewer): `lib/ingest/parse-docx.ts` and the fixture generator use mammoth's internal `mammoth/lib/zipfile` module (typed in `global.d.ts`) to read core properties and write fixtures without another dependency. It is not a public API: re-check it whenever `mammoth` (pinned 1.13.0) is upgraded.
+
+- T-50 note (reviewer): one integration run out of 13 failed once on 2026-11-10 and could not be reproduced (12 consecutive passes); the failing test name was not captured. If it recurs in CI, the log names it. `corpus/postgres-17/metadata.json` keeps the v1 manifest version and the fixture descriptor that the kit schema does not hold.
+
+- T-49 (TC-186, A-19, D-94): one live call each to Gemini, Anthropic and a local Ollama. When you have them, put `GOOGLE_GENERATIVE_AI_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` yourself and run `ollama serve`, then `ollama pull llama3.2` and `ollama pull nomic-embed-text`; the agent then runs the check script from the T-49 notes (`.codex-prompts/runs/32.last.md`) and records the result.
 
 - Release follow-ups (D-90), due 2026-11-16: Lighthouse mobile on production (median of 3), VoiceOver pass, 360 px check on a real phone, runbook test (`DEMO_MODE=readonly` and back in Vercel, then redeploy), rollback test (promote a previous preview deployment), link from firatkil.com. The agent collects NFR-01–NFR-05 from `query_log` on 2026-11-16 and checks on 2026-11-17 that Supabase stayed active with only keepalive traffic.
 

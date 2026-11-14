@@ -1,0 +1,34 @@
+{
+  "https://www.postgresql.org/docs/17/textsearch-intro.html": {
+    "url": "https://www.postgresql.org/docs/17/textsearch-intro.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "f5671321fcef2fecf43c031e00a6fd31f319ace9b9a711e5bd6ac8289c411c8a",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.443Z"
+  },
+  "https://www.postgresql.org/docs/17/textsearch-tables.html": {
+    "url": "https://www.postgresql.org/docs/17/textsearch-tables.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "07fa134f6a97276a498c4fb0cfabb1f63d41d3e2b99d1f9aa4c9c38c8629d129",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.454Z"
+  },
+  "https://www.postgresql.org/docs/17/textsearch-controls.html": {
+    "url": "https://www.postgresql.org/docs/17/textsearch-controls.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "e95ff3bd80e067256baa689794776a64c7735c3e4c44c2abcefe57583ac5b8a5",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.465Z"
+  },
+  "https://www.postgresql.org/docs/17/textsearch-indexes.html": {
+    "url": "https://www.postgresql.org/docs/17/textsearch-indexes.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "874957c412b4e1c0d2449c090d7a6395a357559b2b077eb4cc3385bc868927d6",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.476Z"
+  }
+}

@@ -5,19 +5,19 @@ export type Metric = {
   key: string;
   label: string;
   value: string;
-  values: number[];
+  values: (number | null)[];
   format: (value: number) => string;
   meaning: string;
   withoutRerank?: string;
-  gate?: { kind: 'floor' | 'ceiling'; value: string; limit: number; failed: boolean };
+  gate?: { kind: 'floor' | 'ceiling'; value: string; limit: number; failed: boolean | null };
 };
 
 export function MetricCard({ metric }: { metric: Metric }) {
   const latest = metric.values.at(-1);
   const previous = metric.values.at(-2);
-  const delta = latest !== undefined && previous !== undefined ? latest - previous : null;
+  const delta = latest != null && previous != null ? latest - previous : null;
   const scale =
-    metric.gate && latest !== undefined
+    metric.gate && latest != null
       ? metric.gate.kind === 'floor' || metric.key === 'falseRefusal'
         ? 1
         : Math.max(latest, metric.gate.limit) * 1.2
@@ -26,7 +26,7 @@ export function MetricCard({ metric }: { metric: Metric }) {
     <article aria-label={metric.label} className="border-border bg-card rounded-md border p-5">
       <h3 className="font-sans text-[13px]">{metric.label}</h3>
       <p className="font-sans text-[32px] font-bold tabular-nums">{metric.value}</p>
-      {metric.gate && latest !== undefined && (
+      {metric.gate && latest != null && (
         <svg
           viewBox="0 0 100 8"
           preserveAspectRatio="none"
@@ -53,6 +53,7 @@ export function MetricCard({ metric }: { metric: Metric }) {
           {metric.meaning}
         </p>
       )}
+      {metric.gate?.failed === null && <p className="mono text-muted-foreground">Not evaluated</p>}
       {metric.withoutRerank !== undefined && (
         <p className="mono text-muted-foreground">Without reranking: {metric.withoutRerank}</p>
       )}
@@ -66,12 +67,13 @@ export function MetricCard({ metric }: { metric: Metric }) {
           {metric.gate.kind === 'floor' ? EVAL_COPY.belowFloor : EVAL_COPY.aboveCeiling}
         </p>
       )}
-      {metric.values.length >= 2 && (
-        <div className="border-border mt-4 border-t pt-3">
-          <TrendChart label={metric.label} values={metric.values} format={metric.format} />
-          <p className="small text-muted-foreground">{EVAL_COPY.trendCaption}</p>
-        </div>
-      )}
+      {metric.values.length >= 2 &&
+        metric.values.every((value): value is number => value !== null) && (
+          <div className="border-border mt-4 border-t pt-3">
+            <TrendChart label={metric.label} values={metric.values} format={metric.format} />
+            <p className="small text-muted-foreground">{EVAL_COPY.trendCaption}</p>
+          </div>
+        )}
     </article>
   );
 }

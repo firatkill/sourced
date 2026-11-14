@@ -1,3 +1,4 @@
+import { allowedOrigin } from '@/lib/http/origin';
 import { after } from 'next/server';
 import { z } from 'zod';
 import {
@@ -8,6 +9,7 @@ import {
 import { normalize } from '@/lib/citations/normalize';
 import { EMBEDDING, MAINTENANCE, QUESTION } from '@/lib/config';
 import { getEnv } from '@/lib/env';
+import { isPublicDemo } from '@/lib/kit/profile';
 import {
   AppError,
   INTERNAL_ERROR_MESSAGE,
@@ -32,34 +34,6 @@ import { matchSuggested, SUGGESTED } from '@/lib/suggested';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-function allowedOrigin(request: Request): boolean {
-  if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
-  const origin = request.headers.get('origin');
-  if (origin === null) return true;
-  const env = getEnv();
-  const allowed = new Set([
-    new URL(env.NEXT_PUBLIC_SITE_URL).origin,
-    ...[env.VERCEL_URL, env.VERCEL_BRANCH_URL, env.VERCEL_PROJECT_PRODUCTION_URL]
-      .filter((host): host is string => typeof host === 'string' && host.length > 0)
-      .map((host) => `https://${host}`),
-    ...env.ALLOWED_ORIGINS.split(',')
-      .map((value) => value.trim())
-      .filter(Boolean),
-  ]);
-  if (allowed.has(origin)) return true;
-  if (env.VERCEL_ENV === 'production') return false;
-  try {
-    const url = new URL(origin);
-    return (
-      url.origin === origin &&
-      url.protocol === 'http:' &&
-      (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
-    );
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(request: Request): Promise<Response> {
   const suppliedId = z.uuid().safeParse(request.headers.get('x-request-id'));
@@ -116,7 +90,8 @@ export async function POST(request: Request): Promise<Response> {
       return reject('VALIDATION_FAILED', 400, validationDetails(parsed.error, body));
     if (!allowedOrigin(request)) return reject('ORIGIN_FORBIDDEN', 403);
     const env = getEnv();
-    if (env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
+    const publicDemo = isPublicDemo();
+    if (publicDemo && env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
     const { question, suggestedId: suppliedSuggested } = parsed.data;
     const canonical = SUGGESTED.find((entry) => entry.id === suppliedSuggested);
     const suggestedId =
@@ -134,14 +109,14 @@ export async function POST(request: Request): Promise<Response> {
       embeddingModel: env.LLM_MODE === 'mock' ? EMBEDDING.MOCK_MODEL : EMBEDDING.MODEL,
       promptVersion: PROMPT_VERSION,
     };
-    const cached = suggestedId ? await lookupAnswerCache(suggestedId) : null;
-    if (!cached && env.DEMO_MODE === 'readonly') {
+    const cached = publicDemo && suggestedId ? await lookupAnswerCache(suggestedId) : null;
+    if (publicDemo && !cached && env.DEMO_MODE === 'readonly') {
       row = undefined;
       return reject('DEMO_READONLY', 503);
     }
     scheduleLog();
     const now = new Date();
-    const ipHash = cached ? null : hashVisitor(request.headers, now);
+    const ipHash = !publicDemo || cached ? null : hashVisitor(request.headers, now);
     const quota = ipHash === null ? null : await consume(ipHash, now);
     if (quota && !quota.ok) {
       const code = quota.scope === 'ip' ? 'RATE_LIMITED_IP' : 'RATE_LIMITED_GLOBAL';

@@ -41,3 +41,11 @@ describe('UT-28 / TC-093 — FR-07 plain-text copy', () => {
     );
   });
 });
+
+it('TC-207 / FR-67: plain text citations copy a path and line without a file link', () => {
+  const result = formatCopy(citations, [
+    { ...passage, officialUrl: null, filePath: 'guide.txt', lineFrom: 12 },
+  ]);
+  expect(result).toContain('guide.txt, line 12');
+  expect(result).not.toContain('file://');
+});

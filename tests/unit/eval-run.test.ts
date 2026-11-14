@@ -7,7 +7,7 @@ import { resetEnvForTests } from '@/lib/env';
 const golden = GoldenEntry.parse({
   id: 'q001',
   type: 'answerable',
-  chapter: 'indexes',
+  group: 'indexes',
   question: 'When should I create a partial index?',
   expected_anchors: ['indexes.html#INDEXES'],
   reference_answer: '',
@@ -250,4 +250,75 @@ test('TC-123 / FR-42: records verified citations in passage-label order and both
   expect(record?.passageLabels).toEqual(['P1', 'P2']);
   expect(record?.judgeCostUsd).toBe(0.00015);
   expect(record?.result.costUsd).toBe((record?.answerCostUsd ?? 0) + 0.00015);
+});
+
+test('TC-185 / UT-49 / TRD §31.4: missing role price stops legacy eval before any provider call', async () => {
+  const runtime = await import('@/lib/kit/runtime-config');
+  const config = runtime.getKitConfig(false);
+  config.models.rerank = { provider: 'gemini', model: 'unpriced-rerank' };
+  vi.spyOn(runtime, 'getKitConfig').mockReturnValue(config);
+  const answer = vi.fn().mockResolvedValue(outcome);
+  const judge = vi.fn();
+  await expect(
+    evaluateQuestions([golden], { mode: 'mock', prices, limitUsd: 1, answer, judge }),
+  ).rejects.toThrow(
+    'Price unknown for gemini:unpriced-rerank; add it to pricing in sourced.config.ts to get an estimate.',
+  );
+  expect(answer).not.toHaveBeenCalled();
+  expect(judge).not.toHaveBeenCalled();
+});
+
+test('D-129: confirmed unknown answer costs remain null and known usage still hits budget', async () => {
+  const runtime = await import('@/lib/kit/runtime-config');
+  const config = runtime.getKitConfig(false);
+  config.profile = 'local';
+  config.models.rerank = { provider: 'gemini', model: 'unpriced' };
+  vi.spyOn(runtime, 'getKitConfig').mockReturnValue(config);
+  const answer = vi.fn().mockResolvedValue(outcome);
+  const judge = vi
+    .fn()
+    .mockResolvedValue({ score: 1, unsupported_claims: [], rationale: 'supported' });
+  const [record] = await evaluateQuestions([golden], {
+    mode: 'mock',
+    prices,
+    yes: true,
+    limitUsd: 1,
+    answer,
+    judge,
+  });
+  expect(record?.answerCostUsd).toBeNull();
+  expect(record?.result.costUsd).toBeNull();
+  const { aggregateMetrics } = await import('@/lib/eval/metrics');
+  expect(aggregateMetrics(record ? [record] : []).cost).toMatchObject({
+    totalUsd: null,
+    perQuestionUsd: null,
+  });
+  await expect(
+    evaluateQuestions([golden], { mode: 'live', prices, yes: true, limitUsd: 0, answer, judge }),
+  ).rejects.toThrow('Eval budget exceeded');
+});
+
+test('D-129: unknown judge affects total cost but not the answer-only cost ceiling', async () => {
+  const runtime = await import('@/lib/kit/runtime-config');
+  const config = runtime.getKitConfig(false);
+  config.models.judge = { provider: 'openai', model: 'unpriced-judge' };
+  vi.spyOn(runtime, 'getKitConfig').mockReturnValue(config);
+  const judge: typeof import('@/lib/eval/judge').judgeAnswer = (_answer, _passages, options) => {
+    options?.onUsage?.({ inputTokens: 100, outputTokens: 50 });
+    return Promise.resolve({ score: 1, unsupported_claims: [], rationale: 'supported' });
+  };
+  const [record] = await evaluateQuestions([golden], {
+    mode: 'mock',
+    prices: { ...prices, judgeInput: 0, judgeOutput: 0 },
+    yes: true,
+    limitUsd: 1,
+    answer: vi.fn().mockResolvedValue(outcome),
+    judge,
+  });
+  expect(record?.judgeCostUsd).toBeNull();
+  expect(record?.result.costUsd).toBeNull();
+  const { aggregateMetrics } = await import('@/lib/eval/metrics');
+  const metrics = aggregateMetrics(record ? [record] : []);
+  expect(metrics.cost.totalUsd).toBeNull();
+  expect(metrics.cost.perQuestionUsd).toBeTypeOf('number');
 });

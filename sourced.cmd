@@ -1,0 +1,128 @@
+@echo off
+setlocal DisableDelayedExpansion
+if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1
+cd /d "%~dp0"
+if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" (
+  echo Run ./sourced init first. 1>&2
+  exit /b 2
+)
+where docker >nul 2>nul
+if errorlevel 1 (
+  echo Install Docker: https://docs.docker.com/desktop/setup/install/windows-install/ 1>&2
+  exit /b 2
+)
+if not exist .env.local (
+  if "%~1"=="init" (type nul > .env.local) else if "%~1"=="doctor" (type nul > .env.local) else (
+    echo Run ./sourced init first. 1>&2
+    exit /b 2
+  )
+)
+rem Read only the two port keys; never execute or export other env-file lines.
+for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (
+  if "%%A"=="SOURCED_PORT" if not defined SOURCED_PORT set "SOURCED_PORT=%%B"
+  if "%%A"=="SOURCED_DB_PORT" if not defined SOURCED_DB_PORT set "SOURCED_DB_PORT=%%B"
+)
+if "%~1"=="down" goto down
+if "%~1"=="dev" goto dev
+if "%~1"=="init" echo Building the image on first run takes a few minutes. 1>&2
+set "json=false"
+for %%A in (%*) do if "%%~A"=="--json" set "json=true"
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "CLI image build" compose build cli
+) else (
+  docker compose build cli 1>&2
+)
+if errorlevel 1 exit /b 1
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "Database container start" compose up -d --wait db
+) else (
+  docker compose up -d --wait db 1>&2
+)
+if errorlevel 1 exit /b 1
+set "mountArgs="
+if exist .sourced\mounts for /f "usebackq delims=" %%P in (".sourced\mounts") do call :mount "%%P"
+set "ttyArgs=-T"
+rem PowerShell is part of Windows; Docker-only installs need no additional tools.
+powershell -NoProfile -Command "if ([Console]::IsInputRedirected) { exit 1 }" >nul 2>nul
+if not errorlevel 1 set "ttyArgs="
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "CLI container start" compose run --no-deps --rm %ttyArgs% %mountArgs% cli %*
+) else (
+  docker compose run --no-deps --rm %ttyArgs% %mountArgs% cli %*
+)
+exit /b
+:mount
+set mountArgs=%mountArgs% -v "%~1:%~1:ro"
+exit /b 0
+:down
+set "json=false"
+shift
+:downargs
+if "%~1"=="" goto stopapp
+if "%~1"=="--json" set "json=true"
+shift
+goto downargs
+:stopapp
+if "%json%"=="false" (
+  docker compose down
+  exit /b
+)
+rem Down stops the containers, so emit the fixed envelope without starting one.
+docker compose down 1>&2
+if errorlevel 1 (
+  echo {"schemaVersion":1,"command":"down","ok":false,"error":{"code":"INTERNAL_ERROR","message":"Docker Compose down failed.","fix":"Check Docker is running, then retry sourced.cmd down --json."},"warnings":[]}
+  exit /b 1
+)
+echo {"schemaVersion":1,"command":"down","ok":true,"result":{},"warnings":[]}
+exit /b 0
+:dev
+set "json=false"
+if not defined SOURCED_PORT set SOURCED_PORT=3000
+shift
+:devargs
+if "%~1"=="" goto startapp
+if "%~1"=="--json" (
+  set "json=true"
+  shift
+  goto devargs
+)
+if "%~1"=="--port" (
+  shift
+  goto port
+)
+echo Usage: sourced.cmd dev [--port port] [--json] 1>&2
+exit /b 2
+:port
+set "SOURCED_PORT=%~1"
+shift
+goto devargs
+:startapp
+powershell -NoProfile -Command "$p=0; if (-not [int]::TryParse($env:SOURCED_PORT,[ref]$p) -or $p -lt 1 -or $p -gt 65535) { exit 2 }" >nul 2>nul
+if errorlevel 1 (
+  echo Port must be an integer from 1 to 65535. 1>&2
+  exit /b 2
+)
+if "%json%"=="true" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" dev "App container start" compose up -d --build --force-recreate app
+) else (
+  docker compose up -d --build --force-recreate app 1>&2
+)
+if errorlevel 1 exit /b 1
+if "%json%"=="true" (
+  call :healthcheck 1>&2
+) else (
+  call :healthcheck
+)
+if errorlevel 1 (
+  if "%json%"=="true" echo {"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App health check failed.","fix":"Run docker compose logs app to diagnose the health check, then retry sourced.cmd dev --json."},"warnings":[]}
+  exit /b 1
+)
+if "%json%"=="true" (
+  echo {"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%SOURCED_PORT%"},"warnings":[]}
+) else (
+  echo http://localhost:%SOURCED_PORT%
+)
+exit /b 0
+:healthcheck
+docker compose exec -T app node --input-type=module -e "for(let n=0;n<60;n++){try{const r=await fetch('http://127.0.0.1:3000/api/health',{signal:AbortSignal.timeout(1000)});if(r.ok)process.exit(0)}catch{}await new Promise(r=>setTimeout(r,1000))}process.exit(1)"
+exit /b

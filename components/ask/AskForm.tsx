@@ -1,24 +1,26 @@
 'use client';
 
 import type { Ref } from 'react';
-import { ASK_COPY, formatAskCopy } from '@/lib/copy';
+import { ASK_COPY, formatAskCopy, type CorpusCopy } from '@/lib/copy';
 import { QUESTION } from '@/lib/config';
 import { ChatIcon } from './ChatIcon';
 import { Textarea } from '@/components/ui/textarea';
 
 type AskFormProps = {
+  copy?: Pick<CorpusCopy, 'placeholder' | 'nextPlaceholder'>;
   question: string;
   onChange: (question: string) => void;
   onSubmit: () => void;
   inputRef: Ref<HTMLTextAreaElement>;
   inFlight: boolean;
   disabled: boolean;
-  dailyLimit: number;
+  dailyLimit: number | null;
   error: string | null;
   hasTurns?: boolean;
 };
 
 export function AskForm({
+  copy = ASK_COPY,
   question,
   onChange,
   onSubmit,
@@ -49,8 +51,8 @@ export function AskForm({
             disabled
               ? ASK_COPY.readonlyPlaceholder
               : hasTurns
-                ? ASK_COPY.nextPlaceholder
-                : ASK_COPY.placeholder
+                ? copy.nextPlaceholder
+                : copy.placeholder
           }
           rows={2}
           value={question}
@@ -58,7 +60,7 @@ export function AskForm({
           readOnly={inFlight}
           disabled={disabled}
           aria-invalid={error !== null}
-          aria-describedby={`question-counter question-helper${error === null ? '' : ' question-error'}`}
+          aria-describedby={`question-counter${dailyLimit === null ? '' : ' question-helper'}${error === null ? '' : ' question-error'}`}
           className="focus-visible:outline-ring! min-h-20 min-w-0 flex-1 resize-none border-0! bg-transparent! text-base! leading-7 transition-none! focus-visible:ring-0! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-solid!"
           onChange={(event) => {
             onChange(event.target.value);
@@ -93,13 +95,15 @@ export function AskForm({
           {error}
         </div>
       )}
-      <p id="question-helper" className="text-xs text-[var(--ink-3)]">
-        <span>{formatAskCopy(ASK_COPY.limit, { limit: dailyLimit })}</span> Questions are{' '}
-        <a href="/how-it-works#privacy" className="underline underline-offset-4">
-          not stored
-        </a>
-        .
-      </p>
+      {dailyLimit !== null && (
+        <p id="question-helper" className="text-xs text-[var(--ink-3)]">
+          <span>{formatAskCopy(ASK_COPY.limit, { limit: dailyLimit })}</span> Questions are{' '}
+          <a href="/how-it-works#privacy" className="underline underline-offset-4">
+            not stored
+          </a>
+          .
+        </p>
+      )}
     </form>
   );
 }

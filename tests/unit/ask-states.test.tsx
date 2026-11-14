@@ -7,7 +7,7 @@ import { HowAnswered } from '@/components/ask/HowAnswered';
 import { rateLimitCopy } from '@/components/ask/states/RateLimited';
 import { useAsk, isInFlight, askStatus, type Phase } from '@/hooks/useAsk';
 import { meta, citations, done, passage } from '../fixtures/sse-streams';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY } from '../helpers/runtime-copy';
 
 vi.mock('@/hooks/useAsk', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/useAsk')>()),
@@ -365,4 +365,12 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       expect(document.activeElement).toBe(screen.getByRole('textbox'));
     });
   });
+});
+
+it('TC-185 / UT-49 / TRD §31.4: unknown cost renders without a currency amount', () => {
+  render(
+    <HowAnswered meta={meta} done={{ ...done, costUsdEstimate: null }} citations={citations} />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'How this was answered' }));
+  expect(screen.getByText('Tokens: 8120 in, 402 out · Estimated cost unknown')).toBeTruthy();
 });

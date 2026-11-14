@@ -1,0 +1,42 @@
+{
+  "https://www.postgresql.org/docs/17/using-explain.html": {
+    "url": "https://www.postgresql.org/docs/17/using-explain.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "d415d01f7cffab7b7069d2b4f33afabf6ac063f29677dfa2fc39680db511395e",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.368Z"
+  },
+  "https://www.postgresql.org/docs/17/planner-stats.html": {
+    "url": "https://www.postgresql.org/docs/17/planner-stats.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "8cfbd657d9d8e9cfc1b3555253cedcec38eba4e0f4c4082d9cee05d038cb4733",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.378Z"
+  },
+  "https://www.postgresql.org/docs/17/explicit-joins.html": {
+    "url": "https://www.postgresql.org/docs/17/explicit-joins.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "50c90f14732a58842d77dd264104e7756c4c82503a73222302a5faaef70be4c3",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.388Z"
+  },
+  "https://www.postgresql.org/docs/17/populate.html": {
+    "url": "https://www.postgresql.org/docs/17/populate.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "b0be66e2cec864d23dff94528a2a8373fd1f246e217b5bb815162b4005e57e06",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.398Z"
+  },
+  "https://www.postgresql.org/docs/17/non-durability.html": {
+    "url": "https://www.postgresql.org/docs/17/non-durability.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "70f008ef8391f71686d3c8493d55f2dace78c71e17d2d242175d08d789e6351e",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.408Z"
+  }
+}

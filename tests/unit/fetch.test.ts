@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, test, vi } from 'vitest';
-import manifest from '@/corpus/manifest.json';
+import manifest from '@/tests/fixtures/postgres-17-v1-manifest.json';
 import { FETCH } from '@/lib/config';
 import { fetchRawPages } from '@/lib/ingest/fetch';
 import { ManifestSchema } from '@/lib/ingest/manifest';

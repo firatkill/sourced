@@ -1,0 +1,78 @@
+export const V1_COPY = {
+  placeholder: 'e.g. How do I find slow queries with EXPLAIN ANALYZE?',
+  nextPlaceholder: 'Ask another question about PostgreSQL 17',
+  limit:
+    '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
+  suggestions: 'Start with one of these',
+  scope:
+    'Answers come only from 35 pages of the PostgreSQL 17 documentation. If the answer is not there, Sourced says so.',
+  scopeLink: 'See how it is measured',
+  headerScope: 'Answers only from 35 pages of the PostgreSQL 17 docs',
+  railSubtitle: 'PostgreSQL 17 docs',
+  sessionPrivacy:
+    'Kept in this tab only. Reload or close it and the chat is gone; nothing is stored on the server.',
+  searched: 'Searched 35 pages',
+  docsDomain: 'postgresql.org/docs/17',
+  attribution:
+    'Answers are generated from the PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the',
+  viewerLink: 'Open on postgresql.org',
+  viewerNote: 'Highlighted: the sentence the answer quotes.',
+  docsLink: 'Read in the PostgreSQL docs',
+  hero: 'Ask the PostgreSQL docs.',
+  lead: 'Get a direct answer with working SQL. Every sentence links to the passage it comes from, and every quote is checked before you see it.',
+  notFoundHeading: 'I couldn’t find this in the PostgreSQL docs.',
+  notFoundBody:
+    'Sourced only answers from the 35 pages it has indexed. These passages came closest:',
+  relatedReading: 'Related reading',
+  anotherQuestion: 'Ask another question',
+  tryAgain: 'Try again',
+  notFoundAnnouncement: 'No answer found in the docs. Related reading is listed.',
+  visitorLimitHeading: 'You’ve reached today’s limit',
+  visitorLimitBody:
+    'Each visitor can ask {limit} questions per day so the demo stays free to run. Your limit resets at {time} ({relative}).',
+  suggestedStillWork: 'The suggested questions above still work.',
+  globalLimitHeading: 'The demo has reached its daily limit',
+  globalLimitBody:
+    'Sourced answers up to {limit} questions a day across all visitors. It resets at {time} ({relative}). The suggested questions still work, and you can run Sourced yourself from the GitHub repository.',
+  readonlyBanner:
+    'Live answers are paused. The six suggested questions below were answered in advance and still work.',
+  readonlyPlaceholder: 'Live answers are paused',
+  offlineHeading: 'The demo is offline for maintenance',
+  offlineBody: 'The evaluation results and the write-up are still available.',
+  evaluationLink: 'See evaluation results',
+  howItWorksLink: 'Read how it works',
+  providerHeading: 'The language model didn’t respond',
+  providerBody: 'This is usually temporary.',
+  providerRefundedBody:
+    'This is usually temporary. This question was not counted toward your daily limit.',
+  networkHeading: 'Connection lost',
+  networkBody: 'The answer stopped arriving. Check your connection and try again.',
+  partialLabel: 'Partial answer, not verified',
+  serverHeading: 'Something went wrong on our side',
+  serverBody: 'The error has been logged with reference {requestId}. Try again in a minute.',
+  stoppedLabel: 'Stopped. This partial answer was not verified.',
+  stoppedAnnouncement: 'Stopped',
+  disclosure: 'How this was answered',
+  rankedCaption: 'Passages ranked for this answer',
+  rankColumns: ['Passage', 'Vector rank', 'Keyword rank', 'RRF score', 'After rerank'],
+  emptyRank: '—',
+  reranked: 'Reranked by the language model.',
+  rerankFallback: 'Reranker timed out; passages are in fused search order.',
+  timings:
+    'Retrieval {retrieval} ms · Rerank {rerank} ms · Generation {generation} s · Total {total} s',
+  tokens: 'Tokens: {in} in, {out} out · Estimated cost ${cost}',
+  cached:
+    'This answer was generated in advance on {date} and served from the cache. No language model was called.',
+  quoteFallback:
+    'The model did not include supporting quotes, so they were extracted in a second call.',
+  removedOne: '1 citation was removed because its quote was not found in the passage.',
+  removedMany: '{n} citations were removed because their quotes were not found in the passages.',
+  removedCitation: '{label} removed: {reason}.',
+  removalReasons: {
+    UNKNOWN_PASSAGE: 'it points to a passage that was not retrieved',
+    NO_QUOTE: 'no supporting quote was given',
+    QUOTE_TOO_SHORT: 'the quote was too short to check',
+    QUOTE_TOO_LONG: 'the quote was too long',
+    QUOTE_NOT_FOUND: 'the quote was not found in the passage',
+  },
+} as const;

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const ERROR_CODES = [
+  'ACCESS_DENIED',
   'VALIDATION_FAILED',
   'ORIGIN_FORBIDDEN',
   'PAYLOAD_TOO_LARGE',
@@ -13,6 +14,11 @@ export const ERROR_CODES = [
   'PROVIDER_TIMEOUT',
   'RETRIEVAL_ERROR',
   'INTERNAL_ERROR',
+  'CONFIG_INVALID',
+  'CORPUS_MISMATCH',
+  'CORPUS_EMPTY',
+  'NEEDS_CONFIRMATION',
+  'CHECKS_FAILED',
 ] as const;
 export const PROVIDER_ERROR_MESSAGE = 'The language model did not respond.';
 export const PROVIDER_TIMEOUT_MESSAGE = 'The language model took too long to respond.';

@@ -92,7 +92,7 @@ export function expectedCopy(answer: Awaited<ReturnType<typeof readAnswer>>) {
     .filter((passage) => ['P1', 'P2'].includes(passage.label))
     .map(
       (passage) =>
-        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl}`,
+        `[${passage.label.slice(1)}] ${passage.documentTitle} › ${passage.headingPath.join(' › ')} — ${passage.officialUrl ?? passage.filePath}`,
     )
     .join('\n')}`;
 }

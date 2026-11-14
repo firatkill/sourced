@@ -1,0 +1,11 @@
+{
+  "version": "17",
+  "fixtures": [
+    {
+      "slug": "injected-notice.html",
+      "section": "fixture",
+      "path": "corpus/fixtures/injected-notice.html",
+      "url": "https://example.invalid/sourced-fixture/injected-notice.html"
+    }
+  ]
+}

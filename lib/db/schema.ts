@@ -6,6 +6,7 @@ import {
   check,
   customType,
   date,
+  foreignKey,
   jsonb,
   primaryKey,
   smallint,
@@ -21,6 +22,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { EMBEDDING } from '@/lib/config';
 
+const regconfig = customType<{ data: string }>({ dataType: () => 'regconfig' });
+
 const tsvector = customType<{ data: string }>({ dataType: () => 'tsvector' });
 
 export const documents = pgTable(
@@ -32,6 +35,9 @@ export const documents = pgTable(
     title: text('title').notNull(),
     version: text('version').notNull(),
     section: text('section').notNull(),
+    sourceId: text('source_id'),
+    sourceKind: text('source_kind'),
+    mimeType: text('mime_type'),
     contentHash: text('content_hash').notNull(),
     isFixture: boolean('is_fixture').notNull().default(false),
     fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull(),
@@ -49,6 +55,9 @@ export const chunks = pgTable(
       .notNull()
       .references(() => documents.id, { onDelete: 'cascade' }),
     ordinal: integer('ordinal').notNull(),
+    pageFrom: integer('page_from'),
+    pageTo: integer('page_to'),
+    embedTextVersion: smallint('embed_text_version').notNull().default(0),
     headingPath: text('heading_path').array().notNull(),
     anchor: text('anchor').notNull(),
     content: text('content').notNull(),
@@ -61,7 +70,7 @@ export const chunks = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    unique('chunks_content_hash_key').on(t.contentHash),
+    unique('chunks_document_content_hash_key').on(t.documentId, t.contentHash),
     // Drizzle cannot express deferral: 0001_core.sql adds DEFERRABLE INITIALLY DEFERRED.
     unique('chunks_document_ordinal_key').on(t.documentId, t.ordinal),
     check('chunks_ordinal_check', sql`${t.ordinal} >= 0`),
@@ -85,6 +94,7 @@ export const ingestRuns = pgTable(
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     status: text('status').notNull(),
     corpusVersion: text('corpus_version'),
+    configHash: text('config_hash'),
     includeFixtures: boolean('include_fixtures').notNull(),
     embeddingModel: text('embedding_model').notNull(),
     documentsTotal: integer('documents_total').notNull().default(0),
@@ -172,12 +182,58 @@ export const queryLog = pgTable(
     costUsdEstimate: numeric('cost_usd_estimate', { precision: 10, scale: 6 }),
   },
   (t) => [
-    check('query_log_source_check', sql`${t.source} IN ('live', 'cache')`),
+    check('query_log_source_check', sql`${t.source} IN ('live', 'cache', 'cli')`),
     check(
       'query_log_outcome_check',
       sql`${t.outcome} IN ('answered', 'not_found', 'rate_limited', 'aborted', 'error')`,
     ),
     check('query_log_question_length_check', sql`${t.questionLength} >= 0`),
     index('query_log_created_at_idx').on(t.createdAt.desc().nullsFirst()),
+  ],
+);
+
+export const corpusMeta = pgTable(
+  'corpus_meta',
+  {
+    id: smallint('id').primaryKey().default(1),
+    corpusName: text('corpus_name').notNull(),
+    embedProvider: text('embed_provider').notNull(),
+    embedModel: text('embed_model').notNull(),
+    embedDimensions: integer('embed_dimensions').notNull(),
+    vectorType: text('vector_type').notNull(),
+    ftsConfig: regconfig('fts_config').notNull(),
+    retrievalHash: text('retrieval_hash').notNull(),
+    documentsTotal: integer('documents_total').notNull().default(0),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('corpus_meta_id_check', sql`${t.id} = 1`),
+    check('corpus_meta_embed_dimensions_check', sql`${t.embedDimensions} > 0`),
+    check('corpus_meta_vector_type_check', sql`${t.vectorType} IN ('vector', 'halfvec')`),
+  ],
+);
+
+export const ingestItems = pgTable(
+  'ingest_items',
+  {
+    runId: bigint('run_id', { mode: 'bigint' }).notNull(),
+    documentKey: text('document_key').notNull(),
+    status: text('status').notNull(),
+    chunks: integer('chunks').notNull().default(0),
+    tokens: integer('tokens').notNull().default(0),
+    error: text('error'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: 'ingest_items_run_id_fkey',
+      columns: [t.runId],
+      foreignColumns: [ingestRuns.id],
+    }).onDelete('cascade'),
+    primaryKey({ name: 'ingest_items_pkey', columns: [t.runId, t.documentKey] }),
+    check(
+      'ingest_items_status_check',
+      sql`${t.status} IN ('pending', 'done', 'failed', 'skipped')`,
+    ),
   ],
 );

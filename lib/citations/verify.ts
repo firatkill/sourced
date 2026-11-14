@@ -1,3 +1,5 @@
+import { getCopy } from '@/lib/kit/copy';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import type { Passage } from '@/lib/retrieval/types';
 import { normalize, normalizeWithMap, wordCount } from './normalize';
@@ -21,7 +23,7 @@ export type QuoteFallback = (
 ) => Promise<Map<string, string>>;
 
 export function isNotFoundAnswer(answer: string): boolean {
-  return normalize(answer) === normalize(GENERATION.NOT_FOUND_SENTENCE);
+  return normalize(answer) === normalize(getCopy(getKitConfig()).notFound);
 }
 
 export function indexOfWholeWords(text: string, quote: string): number {
@@ -55,7 +57,11 @@ export async function verifyCitations(
   for (const label of cited) {
     const n = Number(label.slice(1));
     const passage = passages[n - 1];
-    if (n < 1 || n > RETRIEVAL.FINAL_PASSAGES || !passage) {
+    if (
+      n < 1 ||
+      n > (getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES) ||
+      !passage
+    ) {
       invalid.push({ label, reason: 'UNKNOWN_PASSAGE' });
       continue;
     }

@@ -3,7 +3,7 @@ export type SourcePassage = {
   headingPath: readonly string[];
   content: string;
 };
-export type PassageId = 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'P6';
+export type PassageId = 'P1' | 'P2' | 'P3' | 'P4' | 'P5' | 'P6' | 'P7' | 'P8' | 'P9';
 export type NumberedPassage = { id: PassageId; content: string };
 
 export function sanitize(text: string): string {

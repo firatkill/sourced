@@ -59,7 +59,7 @@ describe('TC-068 / UT-13 / FR-23: normative SSE schemas', () => {
   );
   it.each([
     { label: 'P0' },
-    { label: 'P7' },
+    { label: 'P10' },
     { label: 'P11' },
     { chunkId: 812 },
     { headingPath: [] },
@@ -81,7 +81,7 @@ describe('TC-068 / UT-13 / FR-23: normative SSE schemas', () => {
     { requestId: '5b0e…' },
     { cached: 'false' },
     { cachedAt: 'yesterday' },
-    { passages: Array.from({ length: 7 }, () => passage) },
+    { passages: Array.from({ length: 10 }, () => passage) },
     { retrieval: { ...meta.retrieval, vectorCandidates: 1.5 } },
     { retrieval: { ...meta.retrieval, ftsCandidates: '17' } },
     { retrieval: { ...meta.retrieval, rerankFallback: 0 } },
@@ -98,7 +98,7 @@ describe('TC-068 / UT-13 / FR-23: normative SSE schemas', () => {
     { notFound: 'false' },
     { quoteFallbackUsed: null },
     { invalid: [{ label: 'P1', reason: 'other' }] },
-    { valid: [{ label: 'P7', quote: 'a quote', quoteSpan: { start: 0, end: 7 } }] },
+    { valid: [{ label: 'P10', quote: 'a quote', quoteSpan: { start: 0, end: 7 } }] },
     { valid: [{ label: 'P1', quote: 1, quoteSpan: { start: 0, end: 7 } }] },
     ...[
       { start: -1, end: 7 },
@@ -145,4 +145,22 @@ describe('TC-068 / UT-13 / FR-23: normative SSE schemas', () => {
     }
     expect(SseEvent.safeParse({ event: 'done', data: error }).success).toBe(false);
   });
+});
+
+it('TC-185 / UT-49 / TRD §31.4: unknown price is accepted as null at the SSE boundary', () => {
+  expect(DoneEvent.parse({ ...done, costUsdEstimate: null }).costUsdEstimate).toBeNull();
+  expect(DoneEvent.safeParse({ ...done, costUsdEstimate: 'unknown' }).success).toBe(false);
+});
+
+it('T-53 / FR-65 / TRD §33.1: file passages require a display path and cannot expose file URLs', () => {
+  const file = { ...passage, officialUrl: null, filePath: 'manual/olcum.html' };
+  expect(PassageDto.parse(file)).toEqual(file);
+  for (const mutation of [
+    { officialUrl: null },
+    { officialUrl: null, filePath: '' },
+    { officialUrl: 'file:///private/manual.html' },
+    { officialUrl: '/private/manual.html' },
+  ]) {
+    expect(PassageDto.safeParse({ ...passage, ...mutation }).success).toBe(false);
+  }
 });

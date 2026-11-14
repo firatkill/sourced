@@ -15,7 +15,7 @@ let text: string;
 let entries: GoldenEntry[];
 let corpus: GoldenCorpus;
 beforeAll(async () => {
-  text = await readFile('eval/golden.jsonl', 'utf8');
+  text = await readFile('eval/postgres-17/golden.jsonl', 'utf8');
   entries = parseGolden(text).entries;
   corpus = await readGoldenCorpus();
 });
@@ -59,7 +59,7 @@ describe('TC-114 / UT-25 / FR-40: normative GoldenEntry boundary', () => {
     ['only answerable has anchors', { type: 'injection', forbidden_strings: ['PWNED'] }],
     ['injection needs forbidden_strings', { type: 'injection', expected_anchors: [] }],
     ['bad id', { id: 'q01' }],
-    ['malformed anchor', { expected_anchors: ['https://example.test/page#ANCHOR'] }],
+    ['malformed anchor', { expected_anchors: ['page#bad anchor'] }],
     ['anchor missing section', { expected_anchors: ['page.html'] }],
     ['anchor whitespace', { expected_anchors: ['page.html#BAD ID'] }],
   ])('%s', (_, patch) => {
@@ -110,7 +110,7 @@ describe('TC-113 / UT-25 / FR-40: rules reject regressions independently', () =>
       copy[0]!.type = 'unanswerable';
     }, 'answerable: expected 32, got 31');
     check((copy) => {
-      copy[1]!.chapter = 'backup';
+      copy[1]!.group = 'backup';
     }, 'indexes: expected 7, got 6');
   });
   test('multi-section means distinct anchors', () => {
@@ -190,4 +190,23 @@ test('TC-115 / UT-25: missing anchors are all listed, deduplicated, with exact c
   });
   expect(missingGoldenAnchors([sample], ['page.html#a'])).toEqual(['page.html#A', 'page.html#B']);
   expect(missingGoldenAnchors([sample], ['page.html#A', 'page.html#B'])).toEqual([]);
+});
+
+test('T-67 / FR-84: kit groups, origins and file/page anchors follow TRD §36.1', () => {
+  for (const anchor of [
+    'manual/guide.md#setup',
+    'manual.pdf#page-12',
+    'https://example.test/page#section',
+  ]) {
+    const entry = GoldenEntry.parse({
+      ...entries[0],
+      group: 'custom-source',
+      expected_anchors: [anchor],
+      origin: undefined,
+    });
+    expect(entry.group).toBe('custom-source');
+    expect(entry.origin).toBe('handwritten');
+    expect(GoldenEntry.parse({ ...entry, origin: 'generated' }).origin).toBe('generated');
+    expect(GoldenEntry.safeParse({ ...entry, origin: 'unknown' }).success).toBe(false);
+  }
 });

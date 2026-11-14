@@ -1,14 +1,14 @@
 import { expect, test, vi } from 'vitest';
 import { EMBEDDING } from '@/lib/config';
 import { openaiProvider } from '@/lib/llm/openai';
-import { getProvider } from '@/lib/llm';
+import { getProviders } from '@/lib/llm';
 
 const doubles = vi.hoisted(() => ({
   embedMany: vi.fn(),
   env: { LLM_MODE: 'mock', OPENAI_API_KEY: 'test-only-not-a-key' },
 }));
 vi.mock('ai', () => ({ embedMany: doubles.embedMany }));
-vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env }));
+vi.mock('@/lib/env', () => ({ getEnv: () => doubles.env, getConfigEnv: () => doubles.env }));
 
 test('TC-043: OpenAI adapter pins dimensions, disables SDK retries and maps usage', async () => {
   const vectors = [Array<number>(EMBEDDING.DIMENSIONS).fill(0)];
@@ -26,10 +26,10 @@ test('TC-043: OpenAI adapter pins dimensions, disables SDK retries and maps usag
     maxRetries: 0,
     abortSignal: signal,
   });
-  expect(getProvider().name).toBe('mock');
+  expect(getProviders().embed.name).toBe('mock');
   doubles.env.LLM_MODE = 'live';
   try {
-    expect(getProvider()).toBe(openaiProvider);
+    expect(getProviders().embed.name).toBe('openai');
   } finally {
     doubles.env.LLM_MODE = 'mock';
   }

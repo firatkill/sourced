@@ -11,20 +11,20 @@ import { passage, citations } from '../fixtures/sse-streams';
 afterEach(cleanup);
 
 describe('UT-21 / TC-094 — text citations only (FR-05, TRD §15.5)', () => {
-  it('splits adjacent and nested P1–P6 markers, leaves other labels and code unchanged', () => {
+  it('splits adjacent and nested P1–P9 markers, leaves other labels and code unchanged', () => {
     const { container } = render(
       createElement(
         Markdown,
         { remarkPlugins: [remarkCitations] },
-        '[P1][P2] **[P3]** *[P4]*\n\n- [P5]\n- [P6]\n\n[P0] [P7] [P10] `code [P1]`\n\n```sql\n[P2]\n```',
+        '[P1][P2] **[P3]** *[P4]*\n\n- [P5]\n- [P6]\n- [P7]\n- [P8]\n- [P9]\n\n[P0] [P10] `code [P1]`\n\n```sql\n[P2]\n```',
       ),
     );
     expect(
       [...container.querySelectorAll('[data-citation]')].map((node) => node.textContent),
-    ).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6']);
+    ).toEqual(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'P9']);
     expect(container.querySelectorAll('code')[0]?.textContent).toBe('code [P1]');
     expect(container.querySelectorAll('code')[1]?.textContent).toBe('[P2]\n');
-    expect(container.textContent).toContain('[P0] [P7] [P10]');
+    expect(container.textContent).toContain('[P0] [P10]');
   });
 
   it('renders neutral draft chips, then only verified buttons from the replacement answer', () => {

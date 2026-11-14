@@ -1,9 +1,10 @@
+import { CORPUS_COPY } from '../helpers/runtime-copy';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { GENERATION } from '@/lib/config';
 import { getEnv, resetEnvForTests } from '@/lib/env';
 import { countTokens } from '@/lib/ingest/tokenizer';
-import { getProvider } from '@/lib/llm';
+import { getProviders } from '@/lib/llm';
 import { MockDropSignal, mockProvider } from '@/lib/llm/mock';
 
 const contents = [
@@ -59,7 +60,7 @@ test('TC-054: default script, exact citations, 8-character deltas, deterministic
     outputTokens: countTokens(result.text),
   });
   expect(await run()).toEqual(result);
-  expect(getProvider()).toBe(mockProvider);
+  expect(getProviders().embed).toBe(mockProvider);
   expect(getEnv()).toMatchObject({ CHAT_MODEL: 'mock', JUDGE_MODEL: 'mock' });
 });
 
@@ -110,7 +111,7 @@ test.each([
 
 test('TC-054: not-found script', async () => {
   expect((await run('mock:not-found')).text).toBe(
-    GENERATION.NOT_FOUND_SENTENCE + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
+    CORPUS_COPY.notFound + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
   );
 });
 test('TC-054: invalid-citation preserves two valid quotes and adds precisely P3 and P9', async () => {

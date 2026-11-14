@@ -1,5 +1,5 @@
 #!/bin/sh
-# Enforces the authorship rule in AGENTS.md, whichever tool makes the commit:
+# Enforces the authorship rule in docs/contributing/AGENTS.md, whichever tool makes the commit:
 #  1. removes Co-authored-by trailers, "Generated with ..." lines and AI session links
 #  2. rejects the commit unless author and committer are the owner
 # Enable once per clone: git config core.hooksPath .githooks
@@ -17,7 +17,7 @@ check_ident() {
   email=${email%%>*}
   if [ "$name" != "$OWNER_NAME" ] || [ "$email" != "$OWNER_EMAIL" ]; then
     echo "commit-msg: $1 is '$name <$email>', expected '$OWNER_NAME <$OWNER_EMAIL>'." >&2
-    echo "commit-msg: see AGENTS.md, Authorship. Fix the git config or the tool's attribution setting." >&2
+    echo "commit-msg: see docs/contributing/AGENTS.md, Authorship. Fix the git config or the tool's attribution setting." >&2
     exit 1
   fi
 }

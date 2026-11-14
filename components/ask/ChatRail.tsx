@@ -3,12 +3,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { ASK_COPY } from '@/lib/copy';
+import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
 
-type Props = { turns: { id: number; question: string }[]; busy: boolean; onNew: () => void };
-export function ChatRail({ turns, busy, onNew }: Props) {
+type Props = {
+  copy?: CorpusCopy;
+  turns: { id: number; question: string }[];
+  busy: boolean;
+  onNew: () => void;
+};
+export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
   const [selection, setSelection] = useState<{ id: number; count: number } | null>(null);
   const currentId = selection?.count === turns.length ? selection.id : turns.at(-1)?.id;
   const [open, setOpen] = useState(false);
@@ -46,7 +51,7 @@ export function ChatRail({ turns, busy, onNew }: Props) {
           <span>
             Sourced
             <span className="block text-xs font-normal text-[var(--ink-3)]">
-              {ASK_COPY.railSubtitle}
+              {copy.railSubtitle}
             </span>
           </span>
         </Link>
@@ -127,10 +132,17 @@ export function ChatRail({ turns, busy, onNew }: Props) {
           Built by Fırat Kıl · <a href="https://firatkil.com">firatkil.com</a> ·{' '}
           <a href="https://github.com/firatkill/sourced">Source on GitHub (MIT)</a>
         </p>
-        <p>
-          {ASK_COPY.attribution}{' '}
-          <a href="https://www.postgresql.org/about/licence/">PostgreSQL License</a>.
-        </p>
+        {(copy.attribution || copy.license) && (
+          <p>
+            {copy.attribution}
+            {copy.license && (
+              <>
+                {copy.attribution ? ' ' : ''}
+                <a href={copy.license.url}>{copy.license.name}</a>.
+              </>
+            )}
+          </p>
+        )}
         <p>
           Privacy: questions are not stored.{' '}
           <a href="/how-it-works#privacy">Read how this works.</a>

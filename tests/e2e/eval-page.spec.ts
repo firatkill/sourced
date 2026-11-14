@@ -119,7 +119,7 @@ test('TC-133 / E2E-21: exact copy, grouped cards, floors, D-84 deltas and access
   await expect(page.getByRole('article').getByRole('img')).toHaveCount(10);
   await expect(page.getByRole('link', { name: 'Full results file' })).toHaveAttribute(
     'href',
-    'https://github.com/firatkill/sourced/blob/main/eval/results/2026-11-02.json',
+    'https://github.com/firatkill/sourced/blob/main/eval/postgres-17/results/2026-11-02.json',
   );
   const chartTitles = [
     'Recall@5: 1.00, 0.50',

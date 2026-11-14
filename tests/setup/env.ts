@@ -1,7 +1,7 @@
 import { beforeAll } from 'vitest';
 
 process.env.LLM_MODE = 'mock';
-process.env.DATABASE_URL ??= 'postgres://sourced:sourced@localhost:5433/sourced';
+process.env.DATABASE_URL ||= 'postgres://sourced:sourced@localhost:5433/sourced';
 process.env.IP_HASH_SALT ??= 'test-only-ip-salt-00000000000000000000000';
 process.env.QUESTION_HASH_SALT ??= 'test-only-question-salt-0000000000000000';
 process.env.NEXT_PUBLIC_SITE_URL ??= 'http://localhost:3000';

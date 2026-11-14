@@ -1,0 +1,2601 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`D-135: Docker doctor reports ports as informational 1`] = `
+{
+  "detail": "Host ports not checked inside the CLI container; the launcher reports taken ports.",
+  "id": "ports",
+  "ok": true,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > add ./docs --type folder 1`] = `
+{
+  "envelope": {
+    "command": "add",
+    "ok": true,
+    "result": {
+      "detected": {
+        "type": "folder",
+      },
+      "source": {
+        "commitRaw": false,
+        "exclude": [],
+        "html": {
+          "preset": "generic",
+          "removeSelectors": [],
+        },
+        "id": "docs",
+        "include": [],
+        "path": "./docs",
+        "type": "folder",
+      },
+    },
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 0,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > ask What is a transaction? --trace 1`] = `
+{
+  "envelope": {
+    "command": "ask",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > config:snapshot 1`] = `
+{
+  "envelope": {
+    "command": "config:snapshot",
+    "ok": true,
+    "result": {
+      "configHash": "<configHash>",
+    },
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 0,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > deploy:check --profile local 1`] = `
+{
+  "envelope": {
+    "command": "deploy:check",
+    "error": {
+      "code": "CHECKS_FAILED",
+      "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+      "message": "database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
+fts: Choose an installed full-text language or use simple.
+corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
+    },
+    "ok": false,
+    "result": {
+      "checks": [
+        {
+          "detail": "Configuration valid; snapshot current.",
+          "id": "config",
+          "ok": true,
+        },
+        {
+          "detail": "local",
+          "id": "profile",
+          "ok": true,
+        },
+        {
+          "detail": "DATABASE_URL, QUESTION_HASH_SALT, NEXT_PUBLIC_SITE_URL",
+          "id": "variables",
+          "ok": true,
+        },
+        {
+          "detail": "database check failed.",
+          "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+          "id": "database",
+          "ok": false,
+        },
+        {
+          "detail": "fts check failed.",
+          "fix": "Choose an installed full-text language or use simple.",
+          "id": "fts",
+          "ok": false,
+        },
+        {
+          "detail": "corpus check failed.",
+          "fix": "Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
+          "id": "corpus",
+          "ok": false,
+        },
+      ],
+    },
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > dev --port 3000 1`] = `
+{
+  "envelope": {
+    "command": "dev",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > doctor --no-network 1`] = `
+{
+  "envelope": {
+    "command": "doctor",
+    "error": {
+      "code": "CHECKS_FAILED",
+      "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
+      "message": "config: Edit sourced.config.ts and run pnpm sourced config:snapshot.
+ports: Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.
+database: Set DATABASE_URL, enable vector and run pnpm db:migrate.
+fts: Choose an installed full-text language or use simple.
+corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
+    },
+    "ok": false,
+    "result": {
+      "checks": [
+        {
+          "detail": "config check failed.",
+          "fix": "Edit sourced.config.ts and run pnpm sourced config:snapshot.",
+          "id": "config",
+          "ok": false,
+        },
+        {
+          "detail": "Node <version>; pnpm <version>.",
+          "id": "node",
+          "ok": true,
+        },
+        {
+          "detail": "ports check failed.",
+          "fix": "Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.",
+          "id": "ports",
+          "ok": false,
+        },
+        {
+          "detail": "At least 2 GB free on the repository volume.",
+          "id": "disk",
+          "ok": true,
+        },
+        {
+          "detail": "database check failed.",
+          "fix": "Set DATABASE_URL, enable vector and run pnpm db:migrate.",
+          "id": "database",
+          "ok": false,
+        },
+        {
+          "detail": "fts check failed.",
+          "fix": "Choose an installed full-text language or use simple.",
+          "id": "fts",
+          "ok": false,
+        },
+        {
+          "detail": "corpus check failed.",
+          "fix": "Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatch).",
+          "id": "corpus",
+          "ok": false,
+        },
+        {
+          "detail": "Mock mode; no provider network requests.",
+          "id": "keys",
+          "ok": true,
+        },
+        {
+          "detail": "Skipped (--no-network).",
+          "id": "dimensions",
+          "ok": true,
+        },
+        {
+          "detail": "Corpus and eval directories writable.",
+          "id": "writable",
+          "ok": true,
+        },
+      ],
+    },
+    "schemaVersion": 1,
+    "warnings": [
+      {
+        "code": "NETWORK_SKIPPED",
+        "message": "Provider authentication and embedding dimensions skipped (--no-network).",
+      },
+      {
+        "code": "MOCK_MODE",
+        "message": "Mock mode: no provider is called; embeddings and answers are stand-ins.",
+      },
+    ],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > down 1`] = `
+{
+  "envelope": {
+    "command": "down",
+    "error": {
+      "code": "INTERNAL_ERROR",
+      "fix": "pnpm sourced --help",
+      "message": "Use ./sourced down to stop containers on the Docker path.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval --no-write 1`] = `
+{
+  "envelope": {
+    "command": "eval",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval:generate --count 5 1`] = `
+{
+  "envelope": {
+    "command": "eval:generate",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > eval:review --apply 1`] = `
+{
+  "envelope": {
+    "command": "eval:review",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "fix": "pnpm sourced --help",
+      "message": "The command failed. Check its arguments, configuration and database connection.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > ingest --offline 1`] = `
+{
+  "envelope": {
+    "command": "ingest",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local. Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local. Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+      "message": "QUESTION_HASH_SALT: Set QUESTION_HASH_SALT to a random value of at least 32 characters in .env.local.
+NEXT_PUBLIC_SITE_URL: Set NEXT_PUBLIC_SITE_URL to the app URL in .env.local.
+IP_HASH_SALT: Set IP_HASH_SALT to a random value of at least 32 characters in .env.local.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example --yes --embed openai:text-embedding-3-small 1`] = `
+{
+  "envelope": {
+    "command": "init",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "pnpm sourced --help",
+      "message": "models.embed.dimensions: --embed requires provider:model:dims with numeric dimensions. Use --embed openai:text-embedding-3-small:1536.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example --yes --embed openai:text-embedding-3-small:not-a-number 1`] = `
+{
+  "envelope": {
+    "command": "init",
+    "error": {
+      "code": "CONFIG_INVALID",
+      "fix": "pnpm sourced --help",
+      "message": "models.embed.dimensions: --embed requires provider:model:dims with numeric dimensions. Use --embed openai:text-embedding-3-small:1536.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > init --example 1`] = `
+{
+  "envelope": {
+    "command": "init",
+    "error": {
+      "code": "NEEDS_CONFIRMATION",
+      "fix": "pnpm sourced init --help",
+      "message": "Confirmation is required. Run again with --yes.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 2,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > inspect 1`] = `
+{
+  "envelope": {
+    "command": "inspect",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "fix": "pnpm sourced --help",
+      "message": "The command failed. Check its arguments, configuration and database connection.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > sources list 1`] = `
+{
+  "envelope": {
+    "command": "sources list",
+    "ok": true,
+    "result": {
+      "sources": [
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "indexes",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-indexes",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/indexes-intro.html",
+            "https://www.postgresql.org/docs/17/indexes-types.html",
+            "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+            "https://www.postgresql.org/docs/17/indexes-ordering.html",
+            "https://www.postgresql.org/docs/17/indexes-bitmap-scans.html",
+            "https://www.postgresql.org/docs/17/indexes-unique.html",
+            "https://www.postgresql.org/docs/17/indexes-expressional.html",
+            "https://www.postgresql.org/docs/17/indexes-partial.html",
+            "https://www.postgresql.org/docs/17/indexes-index-only-scans.html",
+            "https://www.postgresql.org/docs/17/indexes-examine.html",
+            "https://www.postgresql.org/docs/17/sql-createindex.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "concurrency",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-concurrency",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/mvcc-intro.html",
+            "https://www.postgresql.org/docs/17/transaction-iso.html",
+            "https://www.postgresql.org/docs/17/explicit-locking.html",
+            "https://www.postgresql.org/docs/17/applevel-consistency.html",
+            "https://www.postgresql.org/docs/17/mvcc-caveats.html",
+            "https://www.postgresql.org/docs/17/locking-indexes.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "performance",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-performance",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/using-explain.html",
+            "https://www.postgresql.org/docs/17/planner-stats.html",
+            "https://www.postgresql.org/docs/17/explicit-joins.html",
+            "https://www.postgresql.org/docs/17/populate.html",
+            "https://www.postgresql.org/docs/17/non-durability.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "json",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-json",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/datatype-json.html",
+            "https://www.postgresql.org/docs/17/functions-json.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "full-text-search",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-full-text-search",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/textsearch-intro.html",
+            "https://www.postgresql.org/docs/17/textsearch-tables.html",
+            "https://www.postgresql.org/docs/17/textsearch-controls.html",
+            "https://www.postgresql.org/docs/17/textsearch-indexes.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "row-level-security",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-row-level-security",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/ddl-rowsecurity.html",
+            "https://www.postgresql.org/docs/17/sql-createpolicy.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "maintenance",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-maintenance",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/routine-vacuuming.html",
+            "https://www.postgresql.org/docs/17/routine-reindex.html",
+          ],
+        },
+        {
+          "commitRaw": true,
+          "exclude": [],
+          "group": "backup",
+          "html": {
+            "contentSelector": "#docContent",
+            "preset": "postgres-docbook",
+            "removeSelectors": [
+              ".navheader",
+              ".navfooter",
+              ".toc",
+              "script",
+              "style",
+              "img",
+              "a.id_link",
+            ],
+          },
+          "id": "pg17-backup",
+          "include": [],
+          "type": "urls",
+          "urls": [
+            "https://www.postgresql.org/docs/17/backup.html",
+            "https://www.postgresql.org/docs/17/backup-dump.html",
+            "https://www.postgresql.org/docs/17/backup-file.html",
+          ],
+        },
+        {
+          "commitRaw": false,
+          "exclude": [],
+          "html": {
+            "preset": "generic",
+            "removeSelectors": [],
+          },
+          "id": "docs",
+          "include": [],
+          "path": "./docs",
+          "type": "folder",
+        },
+      ],
+    },
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 0,
+}
+`;
+
+exports[`TC-202 / UT-45 / FR-77: real CLI output contains no secrets > sources remove example --yes 1`] = `
+{
+  "envelope": {
+    "command": "sources remove",
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "fix": "pnpm sourced --help",
+      "message": "Unknown source. Run pnpm sourced sources list.",
+    },
+    "ok": false,
+    "schemaVersion": 1,
+    "warnings": [],
+  },
+  "exit": 1,
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > add 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "detected": {
+      "properties": {
+        "sitemapUrl": {
+          "format": "uri",
+          "type": "string",
+        },
+        "type": {
+          "enum": [
+            "folder",
+            "urls",
+            "sitemap",
+            "crawl",
+            "git",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "type",
+      ],
+      "type": "object",
+    },
+    "source": {
+      "oneOf": [
+        {
+          "properties": {
+            "commitRaw": {
+              "default": false,
+              "type": "boolean",
+            },
+            "exclude": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "group": {
+              "pattern": "^[a-z0-9-]{1,40}$",
+              "type": "string",
+            },
+            "html": {
+              "default": {},
+              "properties": {
+                "contentSelector": {
+                  "type": "string",
+                },
+                "preset": {
+                  "default": "generic",
+                  "enum": [
+                    "generic",
+                    "postgres-docbook",
+                  ],
+                  "type": "string",
+                },
+                "removeSelectors": {
+                  "default": [],
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+              },
+              "type": "object",
+            },
+            "id": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+              "type": "string",
+            },
+            "include": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "path": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "type": {
+              "const": "folder",
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+            "type",
+            "path",
+          ],
+          "type": "object",
+        },
+        {
+          "properties": {
+            "commitRaw": {
+              "default": false,
+              "type": "boolean",
+            },
+            "exclude": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "group": {
+              "pattern": "^[a-z0-9-]{1,40}$",
+              "type": "string",
+            },
+            "html": {
+              "default": {},
+              "properties": {
+                "contentSelector": {
+                  "type": "string",
+                },
+                "preset": {
+                  "default": "generic",
+                  "enum": [
+                    "generic",
+                    "postgres-docbook",
+                  ],
+                  "type": "string",
+                },
+                "removeSelectors": {
+                  "default": [],
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+              },
+              "type": "object",
+            },
+            "id": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+              "type": "string",
+            },
+            "include": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "type": {
+              "const": "urls",
+              "type": "string",
+            },
+            "urls": {
+              "items": {
+                "format": "uri",
+                "type": "string",
+              },
+              "minItems": 1,
+              "type": "array",
+            },
+          },
+          "required": [
+            "id",
+            "type",
+            "urls",
+          ],
+          "type": "object",
+        },
+        {
+          "properties": {
+            "commitRaw": {
+              "default": false,
+              "type": "boolean",
+            },
+            "exclude": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "group": {
+              "pattern": "^[a-z0-9-]{1,40}$",
+              "type": "string",
+            },
+            "html": {
+              "default": {},
+              "properties": {
+                "contentSelector": {
+                  "type": "string",
+                },
+                "preset": {
+                  "default": "generic",
+                  "enum": [
+                    "generic",
+                    "postgres-docbook",
+                  ],
+                  "type": "string",
+                },
+                "removeSelectors": {
+                  "default": [],
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+              },
+              "type": "object",
+            },
+            "id": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+              "type": "string",
+            },
+            "include": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "maxPages": {
+              "default": 5000,
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer",
+            },
+            "type": {
+              "const": "sitemap",
+              "type": "string",
+            },
+            "url": {
+              "format": "uri",
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+            "type",
+            "url",
+          ],
+          "type": "object",
+        },
+        {
+          "properties": {
+            "commitRaw": {
+              "default": false,
+              "type": "boolean",
+            },
+            "exclude": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "group": {
+              "pattern": "^[a-z0-9-]{1,40}$",
+              "type": "string",
+            },
+            "html": {
+              "default": {},
+              "properties": {
+                "contentSelector": {
+                  "type": "string",
+                },
+                "preset": {
+                  "default": "generic",
+                  "enum": [
+                    "generic",
+                    "postgres-docbook",
+                  ],
+                  "type": "string",
+                },
+                "removeSelectors": {
+                  "default": [],
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+              },
+              "type": "object",
+            },
+            "id": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+              "type": "string",
+            },
+            "include": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "maxDepth": {
+              "default": 3,
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "maxPages": {
+              "default": 1000,
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer",
+            },
+            "root": {
+              "format": "uri",
+              "type": "string",
+            },
+            "type": {
+              "const": "crawl",
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+            "type",
+            "root",
+          ],
+          "type": "object",
+        },
+        {
+          "properties": {
+            "exclude": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "group": {
+              "pattern": "^[a-z0-9-]{1,40}$",
+              "type": "string",
+            },
+            "html": {
+              "default": {},
+              "properties": {
+                "contentSelector": {
+                  "type": "string",
+                },
+                "preset": {
+                  "default": "generic",
+                  "enum": [
+                    "generic",
+                    "postgres-docbook",
+                  ],
+                  "type": "string",
+                },
+                "removeSelectors": {
+                  "default": [],
+                  "items": {
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+              },
+              "type": "object",
+            },
+            "id": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+              "type": "string",
+            },
+            "include": {
+              "default": [],
+              "items": {
+                "type": "string",
+              },
+              "type": "array",
+            },
+            "path": {
+              "minLength": 1,
+              "type": "string",
+            },
+            "subdir": {
+              "default": "",
+              "type": "string",
+            },
+            "type": {
+              "const": "git",
+              "type": "string",
+            },
+          },
+          "required": [
+            "id",
+            "type",
+            "path",
+          ],
+          "type": "object",
+        },
+      ],
+    },
+  },
+  "required": [
+    "source",
+    "detected",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > ask 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "answer": {
+      "type": "string",
+    },
+    "citations": {
+      "items": {
+        "properties": {
+          "label": {
+            "pattern": "^P[1-9]$",
+            "type": "string",
+          },
+          "quote": {
+            "type": "string",
+          },
+          "quoteSpan": {
+            "properties": {
+              "end": {
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer",
+              },
+              "start": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "start",
+              "end",
+            ],
+            "type": "object",
+          },
+        },
+        "required": [
+          "label",
+          "quote",
+          "quoteSpan",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "outcome": {
+      "enum": [
+        "answered",
+        "not_found",
+        "error",
+      ],
+      "type": "string",
+    },
+    "trace": {
+      "additionalProperties": {},
+      "propertyNames": {
+        "type": "string",
+      },
+      "type": "object",
+    },
+  },
+  "required": [
+    "outcome",
+    "answer",
+    "citations",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > config:snapshot 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "configHash": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string",
+    },
+  },
+  "required": [
+    "configHash",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > deploy:check 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "checks": {
+      "items": {
+        "properties": {
+          "detail": {
+            "type": "string",
+          },
+          "fix": {
+            "type": "string",
+          },
+          "id": {
+            "type": "string",
+          },
+          "ok": {
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "id",
+          "ok",
+          "detail",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "checks",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > dev 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "url": {
+      "format": "uri",
+      "type": "string",
+    },
+  },
+  "required": [
+    "url",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > doctor 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "checks": {
+      "items": {
+        "properties": {
+          "detail": {
+            "type": "string",
+          },
+          "fix": {
+            "type": "string",
+          },
+          "id": {
+            "type": "string",
+          },
+          "ok": {
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "id",
+          "ok",
+          "detail",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "checks",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > down 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {},
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > eval 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "baseline": {
+      "anyOf": [
+        {
+          "properties": {
+            "file": {
+              "type": "string",
+            },
+            "runId": {
+              "type": "string",
+            },
+          },
+          "required": [
+            "runId",
+            "file",
+          ],
+          "type": "object",
+        },
+        {
+          "type": "null",
+        },
+      ],
+    },
+    "comparison": {
+      "additionalProperties": {},
+      "propertyNames": {
+        "type": "string",
+      },
+      "type": "object",
+    },
+    "config": {
+      "properties": {
+        "chatModel": {
+          "type": "string",
+        },
+        "corpusVersion": {
+          "type": "string",
+        },
+        "embeddingModel": {
+          "type": "string",
+        },
+        "judgeModel": {
+          "type": "string",
+        },
+        "promptVersion": {
+          "type": "string",
+        },
+        "retrieval": {
+          "properties": {
+            "finalPassages": {
+              "type": "number",
+            },
+            "ftsCandidates": {
+              "type": "number",
+            },
+            "rerankCandidates": {
+              "type": "number",
+            },
+            "rrfK": {
+              "type": "number",
+            },
+            "vectorCandidates": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "vectorCandidates",
+            "ftsCandidates",
+            "rrfK",
+            "rerankCandidates",
+            "finalPassages",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "chatModel",
+        "judgeModel",
+        "embeddingModel",
+        "promptVersion",
+        "corpusVersion",
+        "retrieval",
+      ],
+      "type": "object",
+    },
+    "date": {
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "type": "string",
+    },
+    "failures": {
+      "items": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "floor",
+              "ceiling",
+              "regression",
+            ],
+            "type": "string",
+          },
+          "likelyCause": {
+            "type": [
+              "string",
+              "null",
+            ],
+          },
+          "limit": {
+            "type": "number",
+          },
+          "metric": {
+            "type": "string",
+          },
+          "value": {
+            "type": "number",
+          },
+        },
+        "required": [
+          "metric",
+          "kind",
+          "value",
+          "limit",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "gitSha": {
+      "type": "string",
+    },
+    "injectionScope": {
+      "enum": [
+        "question-borne only",
+        "question-borne and passage-borne",
+      ],
+      "type": "string",
+    },
+    "metrics": {
+      "properties": {
+        "citationValidity": {
+          "type": "number",
+        },
+        "correctRefusal": {
+          "type": "number",
+        },
+        "cost": {
+          "properties": {
+            "ingestUsd": {
+              "type": "number",
+            },
+            "perQuestionUsd": {
+              "type": [
+                "number",
+                "null",
+              ],
+            },
+            "totalUsd": {
+              "type": [
+                "number",
+                "null",
+              ],
+            },
+          },
+          "required": [
+            "totalUsd",
+            "perQuestionUsd",
+            "ingestUsd",
+          ],
+          "type": "object",
+        },
+        "counts": {
+          "properties": {
+            "answerable": {
+              "type": "number",
+            },
+            "injection": {
+              "type": "number",
+            },
+            "total": {
+              "type": "number",
+            },
+            "unanswerable": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "total",
+            "answerable",
+            "unanswerable",
+            "injection",
+          ],
+          "type": "object",
+        },
+        "errors": {
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "type": "integer",
+        },
+        "faithfulness": {
+          "type": "number",
+        },
+        "falseRefusal": {
+          "type": "number",
+        },
+        "injectionResistance": {
+          "type": "number",
+        },
+        "latencyMs": {
+          "properties": {
+            "p50": {
+              "type": "number",
+            },
+            "p95": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "p50",
+            "p95",
+          ],
+          "type": "object",
+        },
+        "mrr": {
+          "type": "number",
+        },
+        "recallAt10": {
+          "type": "number",
+        },
+        "recallAt5": {
+          "type": "number",
+        },
+        "withoutRerank": {
+          "properties": {
+            "mrr": {
+              "type": "number",
+            },
+            "recallAt10": {
+              "type": "number",
+            },
+            "recallAt5": {
+              "type": "number",
+            },
+          },
+          "required": [
+            "recallAt5",
+            "recallAt10",
+            "mrr",
+          ],
+          "type": "object",
+        },
+      },
+      "required": [
+        "recallAt5",
+        "recallAt10",
+        "mrr",
+        "withoutRerank",
+        "citationValidity",
+        "faithfulness",
+        "falseRefusal",
+        "correctRefusal",
+        "injectionResistance",
+        "latencyMs",
+        "cost",
+        "errors",
+        "counts",
+      ],
+      "type": "object",
+    },
+    "pass": {
+      "type": "boolean",
+    },
+    "runId": {
+      "type": "string",
+    },
+    "schemaVersion": {
+      "const": 1,
+      "type": "number",
+    },
+    "thresholds": {},
+  },
+  "required": [
+    "schemaVersion",
+    "runId",
+    "date",
+    "gitSha",
+    "config",
+    "metrics",
+    "thresholds",
+    "baseline",
+    "pass",
+    "failures",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > eval:generate 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "costUsd": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number",
+        },
+        {
+          "type": "null",
+        },
+      ],
+    },
+    "written": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+  },
+  "required": [
+    "written",
+    "costUsd",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > eval:review 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "accepted": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+    "edited": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+    "rejected": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+  },
+  "required": [
+    "accepted",
+    "rejected",
+    "edited",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > ingest 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "corpusVersion": {
+      "type": [
+        "string",
+        "null",
+      ],
+    },
+    "mode": {
+      "enum": [
+        "run",
+        "dry-run",
+      ],
+      "type": "string",
+    },
+    "runId": {
+      "type": [
+        "string",
+        "null",
+      ],
+    },
+    "sources": {
+      "items": {
+        "properties": {
+          "boilerplateRemoved": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "chunks": {
+            "properties": {
+              "changed": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "deleted": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "new": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "unchanged": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "new",
+              "changed",
+              "unchanged",
+              "deleted",
+            ],
+            "type": "object",
+          },
+          "documents": {
+            "properties": {
+              "discovered": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "done": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "failed": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "skipped": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+            },
+            "required": [
+              "discovered",
+              "done",
+              "skipped",
+              "failed",
+            ],
+            "type": "object",
+          },
+          "embeddingTokens": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "estimatedCostUsd": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "id": {
+            "type": "string",
+          },
+          "revision": {
+            "type": "string",
+          },
+          "skipped": {
+            "items": {
+              "properties": {
+                "key": {
+                  "type": "string",
+                },
+                "reason": {
+                  "type": "string",
+                },
+              },
+              "required": [
+                "key",
+                "reason",
+              ],
+              "type": "object",
+            },
+            "type": "array",
+          },
+          "warnings": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+        },
+        "required": [
+          "documents",
+          "chunks",
+          "embeddingTokens",
+          "estimatedCostUsd",
+          "boilerplateRemoved",
+          "skipped",
+          "warnings",
+          "id",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "totals": {
+      "properties": {
+        "boilerplateRemoved": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "chunks": {
+          "properties": {
+            "changed": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "deleted": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "new": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "unchanged": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "new",
+            "changed",
+            "unchanged",
+            "deleted",
+          ],
+          "type": "object",
+        },
+        "documents": {
+          "properties": {
+            "discovered": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "done": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "failed": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "skipped": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "required": [
+            "discovered",
+            "done",
+            "skipped",
+            "failed",
+          ],
+          "type": "object",
+        },
+        "embeddingTokens": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "estimatedCostUsd": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "skipped": {
+          "items": {
+            "properties": {
+              "key": {
+                "type": "string",
+              },
+              "reason": {
+                "type": "string",
+              },
+            },
+            "required": [
+              "key",
+              "reason",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+        "warnings": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+      },
+      "required": [
+        "documents",
+        "chunks",
+        "embeddingTokens",
+        "estimatedCostUsd",
+        "boilerplateRemoved",
+        "skipped",
+        "warnings",
+      ],
+      "type": "object",
+    },
+  },
+  "required": [
+    "mode",
+    "runId",
+    "corpusVersion",
+    "sources",
+    "totals",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > init 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "configPath": {
+      "type": "string",
+    },
+    "database": {
+      "enum": [
+        "started",
+        "running",
+        "external",
+      ],
+      "type": "string",
+    },
+    "envVarsToFill": {
+      "items": {
+        "type": "string",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "configPath",
+    "envVarsToFill",
+    "database",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > inspect 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "corpus": {
+      "type": "string",
+    },
+    "findings": {
+      "items": {
+        "properties": {
+          "affects": {
+            "items": {
+              "enum": [
+                "retrieval",
+                "citations",
+                "cost",
+              ],
+              "type": "string",
+            },
+            "type": "array",
+          },
+          "code": {
+            "enum": [
+              "empty_document",
+              "needs_ocr",
+              "tiny_chunks",
+              "oversized_chunks",
+              "near_duplicates",
+              "boilerplate_removed",
+              "language_mismatch",
+              "skipped_files",
+              "failed_items",
+            ],
+            "type": "string",
+          },
+          "count": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "details": {
+            "properties": {
+              "configuredLanguage": {
+                "type": "string",
+              },
+              "detectedLanguage": {
+                "type": "string",
+              },
+              "items": {
+                "items": {
+                  "properties": {
+                    "key": {
+                      "type": "string",
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null",
+                      ],
+                    },
+                  },
+                  "required": [
+                    "key",
+                    "reason",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "method": {
+                "type": "string",
+              },
+              "note": {
+                "type": "string",
+              },
+              "pairs": {
+                "items": {
+                  "properties": {
+                    "chunkId": {
+                      "type": "string",
+                    },
+                    "otherChunkId": {
+                      "type": "string",
+                    },
+                    "similarity": {
+                      "type": "number",
+                    },
+                  },
+                  "required": [
+                    "chunkId",
+                    "otherChunkId",
+                    "similarity",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "sampledChunks": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "totalChunks": {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+            },
+            "type": "object",
+          },
+          "fix": {
+            "minLength": 1,
+            "type": "string",
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "warn",
+              "error",
+            ],
+            "type": "string",
+          },
+          "sourceId": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "code",
+          "severity",
+          "affects",
+          "fix",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "path": {
+      "type": "string",
+    },
+    "sources": {
+      "items": {
+        "properties": {
+          "chunks": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "documents": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "id": {
+            "type": "string",
+          },
+          "largestChunkTokens": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+          "smallestChunkTokens": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              {
+                "type": "null",
+              },
+            ],
+          },
+        },
+        "required": [
+          "id",
+          "documents",
+          "chunks",
+          "smallestChunkTokens",
+          "largestChunkTokens",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "corpus",
+    "sources",
+    "findings",
+    "path",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > sources list 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "sources": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "commitRaw": {
+                "default": false,
+                "type": "boolean",
+              },
+              "exclude": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "group": {
+                "pattern": "^[a-z0-9-]{1,40}$",
+                "type": "string",
+              },
+              "html": {
+                "default": {},
+                "properties": {
+                  "contentSelector": {
+                    "type": "string",
+                  },
+                  "preset": {
+                    "default": "generic",
+                    "enum": [
+                      "generic",
+                      "postgres-docbook",
+                    ],
+                    "type": "string",
+                  },
+                  "removeSelectors": {
+                    "default": [],
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "type": "object",
+              },
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                "type": "string",
+              },
+              "include": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "path": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "type": {
+                "const": "folder",
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "type",
+              "path",
+            ],
+            "type": "object",
+          },
+          {
+            "properties": {
+              "commitRaw": {
+                "default": false,
+                "type": "boolean",
+              },
+              "exclude": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "group": {
+                "pattern": "^[a-z0-9-]{1,40}$",
+                "type": "string",
+              },
+              "html": {
+                "default": {},
+                "properties": {
+                  "contentSelector": {
+                    "type": "string",
+                  },
+                  "preset": {
+                    "default": "generic",
+                    "enum": [
+                      "generic",
+                      "postgres-docbook",
+                    ],
+                    "type": "string",
+                  },
+                  "removeSelectors": {
+                    "default": [],
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "type": "object",
+              },
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                "type": "string",
+              },
+              "include": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "type": {
+                "const": "urls",
+                "type": "string",
+              },
+              "urls": {
+                "items": {
+                  "format": "uri",
+                  "type": "string",
+                },
+                "minItems": 1,
+                "type": "array",
+              },
+            },
+            "required": [
+              "id",
+              "type",
+              "urls",
+            ],
+            "type": "object",
+          },
+          {
+            "properties": {
+              "commitRaw": {
+                "default": false,
+                "type": "boolean",
+              },
+              "exclude": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "group": {
+                "pattern": "^[a-z0-9-]{1,40}$",
+                "type": "string",
+              },
+              "html": {
+                "default": {},
+                "properties": {
+                  "contentSelector": {
+                    "type": "string",
+                  },
+                  "preset": {
+                    "default": "generic",
+                    "enum": [
+                      "generic",
+                      "postgres-docbook",
+                    ],
+                    "type": "string",
+                  },
+                  "removeSelectors": {
+                    "default": [],
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "type": "object",
+              },
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                "type": "string",
+              },
+              "include": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "maxPages": {
+                "default": 5000,
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer",
+              },
+              "type": {
+                "const": "sitemap",
+                "type": "string",
+              },
+              "url": {
+                "format": "uri",
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "type",
+              "url",
+            ],
+            "type": "object",
+          },
+          {
+            "properties": {
+              "commitRaw": {
+                "default": false,
+                "type": "boolean",
+              },
+              "exclude": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "group": {
+                "pattern": "^[a-z0-9-]{1,40}$",
+                "type": "string",
+              },
+              "html": {
+                "default": {},
+                "properties": {
+                  "contentSelector": {
+                    "type": "string",
+                  },
+                  "preset": {
+                    "default": "generic",
+                    "enum": [
+                      "generic",
+                      "postgres-docbook",
+                    ],
+                    "type": "string",
+                  },
+                  "removeSelectors": {
+                    "default": [],
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "type": "object",
+              },
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                "type": "string",
+              },
+              "include": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "maxDepth": {
+                "default": 3,
+                "maximum": 10,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "maxPages": {
+                "default": 1000,
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer",
+              },
+              "root": {
+                "format": "uri",
+                "type": "string",
+              },
+              "type": {
+                "const": "crawl",
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "type",
+              "root",
+            ],
+            "type": "object",
+          },
+          {
+            "properties": {
+              "exclude": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "group": {
+                "pattern": "^[a-z0-9-]{1,40}$",
+                "type": "string",
+              },
+              "html": {
+                "default": {},
+                "properties": {
+                  "contentSelector": {
+                    "type": "string",
+                  },
+                  "preset": {
+                    "default": "generic",
+                    "enum": [
+                      "generic",
+                      "postgres-docbook",
+                    ],
+                    "type": "string",
+                  },
+                  "removeSelectors": {
+                    "default": [],
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                },
+                "type": "object",
+              },
+              "id": {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,39}$",
+                "type": "string",
+              },
+              "include": {
+                "default": [],
+                "items": {
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "path": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "subdir": {
+                "default": "",
+                "type": "string",
+              },
+              "type": {
+                "const": "git",
+                "type": "string",
+              },
+            },
+            "required": [
+              "id",
+              "type",
+              "path",
+            ],
+            "type": "object",
+          },
+        ],
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "sources",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > sources remove 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "removedDocuments": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+  },
+  "required": [
+    "removedDocuments",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "command": {
+      "type": "string",
+    },
+    "error": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": [
+            "VALIDATION_FAILED",
+            "ORIGIN_FORBIDDEN",
+            "PAYLOAD_TOO_LARGE",
+            "UNSUPPORTED_MEDIA_TYPE",
+            "RATE_LIMITED_IP",
+            "RATE_LIMITED_GLOBAL",
+            "DEMO_READONLY",
+            "DEMO_OFF",
+            "PROVIDER_ERROR",
+            "PROVIDER_TIMEOUT",
+            "RETRIEVAL_ERROR",
+            "INTERNAL_ERROR",
+            "CONFIG_INVALID",
+            "CORPUS_MISMATCH",
+            "CORPUS_EMPTY",
+            "NEEDS_CONFIRMATION",
+            "CHECKS_FAILED",
+          ],
+          "type": "string",
+        },
+        "fix": {
+          "type": "string",
+        },
+        "message": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "code",
+        "message",
+      ],
+      "type": "object",
+    },
+    "ok": {
+      "type": "boolean",
+    },
+    "result": {},
+    "schemaVersion": {
+      "const": 1,
+      "type": "number",
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+          },
+          "message": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "code",
+          "message",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+  },
+  "required": [
+    "schemaVersion",
+    "command",
+    "ok",
+    "warnings",
+  ],
+  "type": "object",
+}
+`;

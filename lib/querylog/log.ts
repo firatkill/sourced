@@ -9,7 +9,7 @@ import { hmacSha256Hex } from '@/lib/hash';
 const QueryLogInput = z.object({
   requestId: z.uuid(),
   question: z.string(),
-  source: z.enum(['live', 'cache']),
+  source: z.enum(['live', 'cache', 'cli']),
   outcome: z.enum(['answered', 'not_found', 'rate_limited', 'aborted', 'error']),
   errorCode: ErrorCodeSchema.nullish(),
   suggestedId: z.string().nullish(),

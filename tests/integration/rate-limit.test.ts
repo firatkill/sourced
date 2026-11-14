@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
 import { getSql } from '@/lib/db/client';
 import { resetEnvForTests } from '@/lib/env';
 import { hashVisitor } from '@/lib/ratelimit/ip';
-import { consume, refund } from '@/lib/ratelimit/limiter';
+import { consume, consumeAccess, refund } from '@/lib/ratelimit/limiter';
 
 const now = new Date('2026-11-09T23:59:59Z');
 const day = '2026-11-09';
@@ -152,4 +152,25 @@ describe('IT-06: daily quotas and refund (FR-26, FR-27, FR-32)', () => {
     expect(stdout).not.toHaveBeenCalled();
     expect(stderr).not.toHaveBeenCalled();
   });
+});
+
+test('TC-240 / D-134: concurrent hourly access buckets are independent of daily quotas', async () => {
+  const instant = new Date('2026-11-11T12:59:59Z');
+  const results = await Promise.all(
+    Array.from({ length: 20 }, () => consumeAccess('visitor', instant)),
+  );
+  expect(results.filter((result) => result.ok)).toHaveLength(10);
+  expect(results[0]?.resetAt).toEqual(new Date('2026-11-11T13:00:00Z'));
+  expect(await counts('2026-11-11')).toEqual([
+    { bucket: 'access:visitor:2026-11-11T12', count: 10 },
+  ]);
+  expect((await consumeAccess('visitor', new Date('2026-11-11T13:00:00Z'))).ok).toBe(true);
+  expect((await consumeAccess('rotated-visitor', instant)).ok).toBe(true);
+  expect(await consume('visitor', instant)).toEqual({ ok: true, day: '2026-11-11' });
+  expect(await counts('2026-11-11')).toEqual(
+    expect.arrayContaining([
+      { bucket: 'ip:visitor', count: 1 },
+      { bucket: 'global', count: 1 },
+    ]),
+  );
 });

@@ -1,4 +1,6 @@
-import { getEnv } from '@/lib/env';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import type { KitConfig } from '@/lib/kit/config-schema';
+import type { Role } from '@/lib/llm/types';
 
 export type TokenUsage = {
   inputTokens: number;
@@ -26,14 +28,29 @@ export function totalUsage(usage: AnswerUsage) {
   };
 }
 
-/** TRD §21.1: provider usage, with conservative undiscounted env prices. */
-export function estimateCost(usage: AnswerUsage): number {
-  const env = getEnv();
-  const total = totalUsage(usage);
+/** TRD §31.4: prices follow each role; the runtime config applies demo overrides. */
+export function rolePrice(role: Role, config: KitConfig = getKitConfig(false)) {
+  const model = config.models[role] ?? config.models.chat;
+  if (model.provider === 'ollama') return { inputPerMTok: 0, outputPerMTok: 0 };
+  return config.pricing[`${model.provider}:${model.model}`] ?? null;
+}
+
+export function estimateCost(
+  usage: AnswerUsage,
+  config: KitConfig = getKitConfig(false),
+): number | null {
+  const embed = rolePrice('embed', config);
+  const chat = rolePrice('chat', config);
+  const rerank = rolePrice('rerank', config);
+  if (!embed || !chat || !rerank) return null;
+  const cost = (tokens: TokenUsage, price: NonNullable<ReturnType<typeof rolePrice>>) =>
+    tokens.inputTokens * price.inputPerMTok +
+    (tokens.outputTokens + (tokens.reasoningTokens ?? 0)) * price.outputPerMTok;
   return (
-    (total.embeddingTokens * env.PRICE_EMBED_PER_MTOK +
-      total.inputTokens * env.PRICE_CHAT_INPUT_PER_MTOK +
-      total.outputTokens * env.PRICE_CHAT_OUTPUT_PER_MTOK) /
+    (usage.embeddingTokens * embed.inputPerMTok +
+      cost(usage.rerank, rerank) +
+      cost(usage.generation, chat) +
+      cost(usage.fallback, chat)) /
     1_000_000
   );
 }

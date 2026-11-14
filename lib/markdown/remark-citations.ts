@@ -27,7 +27,7 @@ export function remarkCitations() {
         }
         const parts: PhrasingContent[] = [];
         let offset = 0;
-        for (const match of child.value.matchAll(/\[P([1-6])\]/g)) {
+        for (const match of child.value.matchAll(/\[P([1-9])\]/g)) {
           if (match.index > offset)
             parts.push({ type: 'text', value: child.value.slice(offset, match.index) });
           const label = `P${match[1] ?? ''}`;

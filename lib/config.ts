@@ -21,6 +21,13 @@ export const CHUNKING = {
   TINY_SECTION_TOKENS: 40,
 } as const;
 
+export const INSPECT = {
+  SAMPLE_CHUNKS: 200,
+  TINY_RATIO: 0.2,
+  DUPLICATE_RATIO: 0.02,
+  DUPLICATE_SIMILARITY: 0.98,
+} as const;
+
 export const EMBEDDING = {
   MODEL: 'text-embedding-3-small',
   MOCK_MODEL: 'mock-feature-hash',
@@ -44,7 +51,6 @@ export const GENERATION = {
   QUOTE_MAX_WORDS: 40,
   QUOTE_FALLBACK_TIMEOUT_MS: 6_000,
   QUOTE_FALLBACK_MAX_OUTPUT_TOKENS: 400,
-  NOT_FOUND_SENTENCE: "I couldn't find this in the PostgreSQL docs.",
 } as const;
 
 export const QUESTION = {
@@ -76,4 +82,10 @@ export const MAINTENANCE = {
 export const JUDGE = {
   MAX_OUTPUT_TOKENS: 300,
   TIMEOUT_MS: 20_000,
+} as const;
+
+// TRD §38 / D-134: private access settings.
+export const ACCESS = {
+  COOKIE_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
+  FAILED_ATTEMPTS_PER_HOUR: 10,
 } as const;

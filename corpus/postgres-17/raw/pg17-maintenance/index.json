@@ -1,0 +1,18 @@
+{
+  "https://www.postgresql.org/docs/17/routine-vacuuming.html": {
+    "url": "https://www.postgresql.org/docs/17/routine-vacuuming.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "868a142de463b2e711504d5d71f5d0edc028a195db6353b417dca893ece252b1",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.509Z"
+  },
+  "https://www.postgresql.org/docs/17/routine-reindex.html": {
+    "url": "https://www.postgresql.org/docs/17/routine-reindex.html",
+    "etag": null,
+    "last-modified": null,
+    "contentHash": "a88240108103b29b4d5eb41b085f195e29f06dc6e3e2ef02bc8fe7820789b163",
+    "mimeType": "text/html",
+    "fetchedAt": "2026-11-10T10:23:02.519Z"
+  }
+}

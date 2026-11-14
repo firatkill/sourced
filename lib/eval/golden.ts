@@ -4,19 +4,10 @@ export const GoldenEntry = z
   .object({
     id: z.string().regex(/^q\d{3}$/),
     type: z.enum(['answerable', 'unanswerable', 'injection']),
-    chapter: z.enum([
-      'indexes',
-      'concurrency',
-      'performance',
-      'json',
-      'full-text-search',
-      'row-level-security',
-      'maintenance',
-      'backup',
-      'none',
-    ]),
+    group: z.string(),
+    origin: z.enum(['handwritten', 'generated']).default('handwritten'),
     question: z.string().min(3).max(500),
-    expected_anchors: z.array(z.string().regex(/^[a-z0-9-]+\.html#[A-Za-z0-9._-]+$/)), // ids as they appear in the HTML; some reference-page ids are lowercase with dots
+    expected_anchors: z.array(z.string().regex(/^[^#\s]+#[^\s]+$/)), // ids as they appear in the HTML; some reference-page ids are lowercase with dots
     reference_answer: z.string(), // what a correct answer says; documentation for reviewers, shown on /eval
     forbidden_strings: z.array(z.string()).default([]), // injection only
     notes: z.string().default(''),
@@ -29,6 +20,14 @@ export const GoldenEntry = z
     if (e.type === 'injection' && e.forbidden_strings.length === 0)
       ctx.addIssue({ code: 'custom', message: 'injection needs forbidden_strings' });
   });
+
+// D-126: reserved IDs are accepted only at the built-in injection boundary.
+export const BuiltInGoldenEntry = GoldenEntry.safeExtend({
+  id: z.enum(['shared-inj-01', 'shared-inj-02', 'shared-inj-03', 'shared-inj-04']),
+  type: z.literal('injection'),
+  group: z.literal('none'),
+  origin: z.literal('handwritten').default('handwritten'),
+});
 
 export type GoldenEntry = z.infer<typeof GoldenEntry>;
 
@@ -53,7 +52,10 @@ export type GoldenCorpus = {
   identifiers: readonly string[];
 };
 
-export function parseGolden(text: string): { entries: GoldenEntry[]; errors: string[] } {
+export function parseGolden(
+  text: string,
+  builtIn = false,
+): { entries: GoldenEntry[]; errors: string[] } {
   const entries: GoldenEntry[] = [];
   const errors: string[] = [];
   if (text.includes('\r')) errors.push('Golden JSONL must use LF line endings.');
@@ -67,7 +69,7 @@ export function parseGolden(text: string): { entries: GoldenEntry[]; errors: str
       errors.push(`Line ${String(index + 1)}: invalid JSON.`);
       continue;
     }
-    const result = GoldenEntry.safeParse(value);
+    const result = (builtIn ? BuiltInGoldenEntry : GoldenEntry).safeParse(value);
     if (result.success) entries.push(result.data);
     else
       errors.push(
@@ -110,7 +112,7 @@ export function goldenDistribution(entries: readonly GoldenEntry[], corpus: Gold
     chapters: Object.fromEntries(
       Object.keys(GOLDEN_CHAPTERS).map((chapter) => [
         chapter,
-        answerable.filter((e) => e.chapter === chapter).length,
+        answerable.filter((e) => e.group === chapter).length,
       ]),
     ),
     multiAnchor: answerable.filter((e) => new Set(e.expected_anchors).size >= 2).length,

@@ -1,3 +1,5 @@
+import { getCopy } from '@/lib/kit/copy';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import 'server-only';
 import { GENERATION, RETRIEVAL } from '@/lib/config';
 import { getEnv } from '@/lib/env';
@@ -32,7 +34,7 @@ function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
 function passagesFrom(prompt: string) {
   return Array.from(
-    prompt.matchAll(/<<<PASSAGE (P[1-6])\r?\n([\s\S]*?)\r?\nPASSAGE \1>>>/g),
+    prompt.matchAll(/<<<PASSAGE (P[1-9])\r?\n([\s\S]*?)\r?\nPASSAGE \1>>>/g),
     (match) => ({
       id: match[1] ?? '',
       content: (match[2] ?? '').replace(/^Source: [^\n]*\n/, '').trim(),
@@ -70,14 +72,14 @@ function scriptFor(prompt: string) {
   if (trigger === 'not-found') {
     return {
       trigger,
-      text: GENERATION.NOT_FOUND_SENTENCE + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
+      text: getCopy(getKitConfig()).notFound + GENERATION.CITATIONS_DELIMITER + '{"citations":[]}',
     };
   }
   if (trigger === 'echo-injection') {
     return {
       trigger,
       text: passages
-        .slice(0, RETRIEVAL.FINAL_PASSAGES)
+        .slice(0, getKitConfig().overrides.retrieval.finalPassages ?? RETRIEVAL.FINAL_PASSAGES)
         .map((p) => p.content)
         .join('\n'),
     };
@@ -110,7 +112,7 @@ export const mockProvider: LlmProvider = {
   name: 'mock',
   embed(values, opts) {
     opts?.abortSignal?.throwIfAborted();
-    const results = values.map(featureHash);
+    const results = values.map((value) => featureHash(value));
     return Promise.resolve({
       vectors: results.map((result) => result.vector),
       tokens: results.reduce((sum, result) => sum + result.tokens, 0),
@@ -149,7 +151,22 @@ export const mockProvider: LlmProvider = {
   generateObject(args) {
     args.abortSignal?.throwIfAborted();
     let output: unknown;
-    if (args.model === 'judge') {
+    if (args.model === 'generate') {
+      const anchor = /^Anchor: (.+)$/m.exec(args.prompt)?.[1];
+      output = anchor
+        ? {
+            question: 'How does the documented feature work in practice?',
+            reference_answer:
+              /^Content:\n([\s\S]*?)\nTARGET>>>/m
+                .exec(args.prompt)?.[1]
+                ?.trim()
+                .split(/\s+/)
+                .slice(0, 80)
+                .join(' ') ?? '',
+            expected_anchors: [anchor],
+          }
+        : { questions: ['What are the subscription fees for this service?'] };
+    } else if (args.model === 'judge') {
       output = { score: 1, unsupported_claims: [], rationale: 'mock' };
     } else if (/^Cited ids:/m.test(args.prompt)) {
       const ids =
@@ -177,3 +194,17 @@ export const mockProvider: LlmProvider = {
     });
   },
 };
+
+export function createMockProvider(dimensions: number): LlmProvider {
+  return {
+    ...mockProvider,
+    embed(values, opts) {
+      opts?.abortSignal?.throwIfAborted();
+      const results = values.map((value) => featureHash(value, dimensions));
+      return Promise.resolve({
+        vectors: results.map((r) => r.vector),
+        tokens: results.reduce((sum, r) => sum + r.tokens, 0),
+      });
+    },
+  };
+}

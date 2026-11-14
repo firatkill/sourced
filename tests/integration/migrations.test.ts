@@ -1,3 +1,11 @@
+import { randomUUID } from 'node:crypto';
+import { mkdtemp, mkdir, readFile, writeFile, copyFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import { requireLocalDatabase } from '../helpers/local-database';
 import { expect, test } from 'vitest';
 import { EMBEDDING } from '@/lib/config';
 import { getSql } from '@/lib/db/client';
@@ -115,7 +123,7 @@ test('TC-027: IT-03 core checks, deferred ordinal uniqueness and cascading delet
   expect(remaining?.count).toBe(0);
 });
 
-test('TC-029: IT-03 all six tables, primary keys and operational constraints match the DDL', async () => {
+test('TC-029: IT-03 all tables, primary keys and operational constraints match the DDL', async () => {
   const sql = getSql();
   const keys = await sql<{ name: string; columns: string[] }[]>`
     SELECT t.relname AS name, array_agg(a.attname ORDER BY k.ordinality) AS columns
@@ -125,6 +133,8 @@ test('TC-029: IT-03 all six tables, primary keys and operational constraints mat
     JOIN pg_attribute a ON a.attrelid=t.oid AND a.attnum=k.attnum
     WHERE c.contype='p' AND n.nspname='public' GROUP BY t.relname`;
   expect(Object.fromEntries(keys.map((row) => [row.name, row.columns]))).toEqual({
+    corpus_meta: ['id'],
+    ingest_items: ['run_id', 'document_key'],
     documents: ['id'],
     chunks: ['id'],
     ingest_runs: ['id'],
@@ -182,3 +192,109 @@ test('TC-029: IT-03 all six tables, primary keys and operational constraints mat
     sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length) VALUES ('00000000-0000-4000-8000-000000000001','live','error','hash',0)`,
   ).rejects.toMatchObject({ code: '23505' });
 });
+
+// T-46 / FR-61, FR-67, FR-72 / TRD §30.1: run the actual journal on isolated databases.
+test.each(['empty', 'v1'] as const)(
+  'TC-174: migration 0003 applies to a %s database',
+  async (state) => {
+    const url = requireLocalDatabase(process.env.TEST_DATABASE_URL);
+    const admin = postgres(url, { max: 1, prepare: false });
+    const name = `migration_${randomUUID().replaceAll('-', '')}`;
+    const folder = await mkdtemp(join(tmpdir(), 'sourced-migrations-'));
+    let database: postgres.Sql | undefined;
+    let created = false;
+    try {
+      await admin`CREATE DATABASE ${admin(name)}`;
+      created = true;
+      const target = new URL(url);
+      target.pathname = `/${name}`;
+      database = postgres(target.toString(), { max: 1, prepare: false });
+      const sql = database;
+      const db = drizzle(sql);
+      let before: unknown;
+      if (state === 'v1') {
+        const journal = JSON.parse(await readFile('drizzle/meta/_journal.json', 'utf8')) as {
+          entries: { tag: string }[];
+        };
+        journal.entries = journal.entries.slice(0, 3);
+        await mkdir(join(folder, 'meta'));
+        await writeFile(join(folder, 'meta/_journal.json'), JSON.stringify(journal));
+        for (const entry of journal.entries) {
+          await copyFile(`drizzle/${entry.tag}.sql`, join(folder, `${entry.tag}.sql`));
+        }
+        await migrate(db, { migrationsFolder: folder });
+        await sql`INSERT INTO documents (slug,url,title,version,section,content_hash,fetched_at)
+        VALUES ('v1.html','https://example.test/v1','V1 document','17','indexes',${'a'.repeat(64)},now())`;
+        await sql`INSERT INTO chunks (document_id,ordinal,heading_path,anchor,content,token_count,content_hash,embedding_model,embedding)
+        SELECT id,0,ARRAY['V1'],'v1.html#ROOT','Partial indexes improve queries.',5,${'b'.repeat(64)},'mock-feature-hash',${vector}::vector FROM documents`;
+        await sql`INSERT INTO ingest_runs (status,include_fixtures,embedding_model) VALUES ('succeeded',false,'mock-feature-hash')`;
+        await sql`INSERT INTO answer_cache (cache_key,suggested_id,question,corpus_version,prompt_version,chat_model,payload)
+        VALUES ('v1','v1','Question','corpus','prompt','mock','{}')`;
+        await sql`INSERT INTO rate_limits (bucket,window_start,count) VALUES ('global',current_date,1)`;
+        await sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length)
+        VALUES (${randomUUID()},'live','answered','hash',1)`;
+        before = await sql`SELECT to_jsonb(d) AS document, to_jsonb(c) AS chunk, to_jsonb(r) AS run,
+        to_jsonb(a) AS cache, to_jsonb(l) AS limits, to_jsonb(q) AS query
+        FROM documents d, chunks c, ingest_runs r, answer_cache a, rate_limits l, query_log q`;
+        const old = await sql`SELECT 1 FROM pg_constraint WHERE conname='chunks_content_hash_key'`;
+        expect(old).toHaveLength(1);
+      }
+      await migrate(db, { migrationsFolder: './drizzle' });
+      if (state === 'v1') {
+        expect(
+          await sql`SELECT to_jsonb(d) - ARRAY['source_id','source_kind','mime_type'] AS document,
+        to_jsonb(c) - ARRAY['page_from','page_to','embed_text_version'] AS chunk,
+        to_jsonb(r) - 'config_hash' AS run, to_jsonb(a) AS cache, to_jsonb(l) AS limits, to_jsonb(q) AS query
+        FROM documents d, chunks c, ingest_runs r, answer_cache a, rate_limits l, query_log q`,
+        ).toEqual(before);
+        expect(
+          (
+            await sql`SELECT source_id,source_kind,mime_type,page_from,page_to,embed_text_version,config_hash
+        FROM documents, chunks, ingest_runs`
+          )[0],
+        ).toEqual({
+          source_id: null,
+          source_kind: null,
+          mime_type: null,
+          page_from: null,
+          page_to: null,
+          embed_text_version: 0,
+          config_hash: null,
+        });
+      }
+      const constraints = await sql<{ conname: string; definition: string }[]>`
+      SELECT conname, pg_get_constraintdef(oid) AS definition FROM pg_constraint WHERE conrelid='chunks'::regclass`;
+      expect(
+        constraints.find((row) => row.conname === 'chunks_document_content_hash_key')?.definition,
+      ).toBe('UNIQUE (document_id, content_hash)');
+      expect(constraints.some((row) => row.conname === 'chunks_content_hash_key')).toBe(false);
+      expect(await sql`SELECT 1 FROM corpus_meta`).toHaveLength(0);
+      expect(await sql`SELECT 1 FROM ingest_items`).toHaveLength(0);
+      const columns = await sql<{ table_name: string; column_name: string; udt_name: string }[]>`
+      SELECT table_name,column_name,udt_name FROM information_schema.columns WHERE table_schema='public'`;
+      for (const [table, column, type] of [
+        ['corpus_meta', 'fts_config', 'regconfig'],
+        ['documents', 'source_id', 'text'],
+        ['documents', 'source_kind', 'text'],
+        ['documents', 'mime_type', 'text'],
+        ['chunks', 'page_from', 'int4'],
+        ['chunks', 'page_to', 'int4'],
+        ['chunks', 'embed_text_version', 'int2'],
+        ['ingest_runs', 'config_hash', 'text'],
+      ]) {
+        expect(
+          columns.find((row) => row.table_name === table && row.column_name === column)?.udt_name,
+        ).toBe(type);
+      }
+      const cli =
+        await sql`INSERT INTO query_log (request_id,source,outcome,question_hash,question_length)
+      VALUES (${randomUUID()},'cli','answered','hash',1) RETURNING source`;
+      expect(cli[0]?.source).toBe('cli');
+    } finally {
+      await database?.end();
+      if (created) await admin`DROP DATABASE ${admin(name)}`;
+      await admin.end();
+      await rm(folder, { recursive: true, force: true });
+    }
+  },
+);

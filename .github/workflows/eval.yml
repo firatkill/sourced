@@ -16,11 +16,15 @@ on:
       - 'lib/ingest/parse-html.ts'
       - 'lib/ingest/chunk.ts'
       - 'lib/config.ts'
-      - 'corpus/manifest.json'
-      - 'corpus/raw/**'
+      - 'sourced.config.ts'
+      - 'lib/ingest/presets/**'
+      - 'lib/ingest/manifest.ts'
+      - 'lib/ingest/load.ts'
+      - 'corpus/postgres-17/metadata.json'
+      - 'corpus/postgres-17/raw/**'
       - 'eval/**'
       # Committing results must not trigger another paid run.
-      - '!eval/results/**'
+      - '!eval/postgres-17/results/**'
 
 concurrency:
   group: eval-${{ github.ref }}
@@ -33,7 +37,8 @@ jobs:
   eval:
     name: Retrieval and answer evaluation
     # Secrets are unavailable to pull requests from forks; skip them instead of failing.
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    # D-121: the v2/kit integration branch runs eval by manual dispatch at each milestone end only.
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref != 'v2/kit')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: eval
@@ -96,7 +101,7 @@ jobs:
           git fetch --no-tags --depth=1 origin "$BASE_REF"
           DIR="$RUNNER_TEMP/base-results"
           mkdir -p "$DIR"
-          for f in $(git ls-tree --name-only "origin/$BASE_REF" eval/results/ | grep -E '\.json$' || true); do
+          for f in $(git ls-tree -r --name-only "origin/$BASE_REF" -- eval/postgres-17/results/ eval/results/ | grep -E '\.json$' || true); do
             git show "origin/$BASE_REF:$f" > "$DIR/$(basename "$f")"
           done
           # Pick the run with the greatest runId (file names like 2026-11-02-2.json do not sort correctly as text).
@@ -120,5 +125,5 @@ jobs:
         if: always()
         with:
           name: eval-results
-          path: eval/results/
+          path: eval/postgres-17/results/
           retention-days: 30

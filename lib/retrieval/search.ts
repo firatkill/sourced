@@ -1,5 +1,8 @@
 import type postgres from 'postgres';
+import { AppError } from '@/lib/errors';
 import { RETRIEVAL } from '@/lib/config';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { checkCorpusSchema, type CorpusSchema } from '@/lib/kit/vector-schema';
 import { getSql } from '@/lib/db/client';
 import type { RetrievedChunk } from './types';
 
@@ -22,6 +25,10 @@ type SearchRow = {
   token_count: number;
   document_title: string;
   document_url: string;
+  source_kind: 'web' | 'file' | null;
+  mime_type: string | null;
+  page_from: number | null;
+  page_to: number | null;
   slug: string;
 };
 
@@ -30,7 +37,9 @@ export async function searchInTransaction(
   vector: number[],
   question: string,
   limits: SearchLimits = {},
+  schema?: CorpusSchema,
 ): Promise<SearchResult> {
+  const active = schema ?? (await checkCorpusSchema(tx, getKitConfig())).schema;
   await tx.unsafe(`SET LOCAL hnsw.ef_search = ${String(RETRIEVAL.HNSW_EF_SEARCH)}`);
   const rows = await tx<SearchRow[]>`WITH vector_hits AS (
   SELECT v.id,
@@ -38,9 +47,9 @@ export async function searchInTransaction(
          ROW_NUMBER() OVER (ORDER BY v.distance ASC, v.id ASC) AS rank
   FROM (
     SELECT c.id,
-           c.embedding <=> ${JSON.stringify(vector)}::vector AS distance
+           c.embedding <=> ${JSON.stringify(vector)}::${tx(active.vector_type)} AS distance
     FROM chunks c
-    ORDER BY c.embedding <=> ${JSON.stringify(vector)}::vector
+    ORDER BY c.embedding <=> ${JSON.stringify(vector)}::${tx(active.vector_type)}
     LIMIT ${limits.vectorCandidates ?? RETRIEVAL.VECTOR_CANDIDATES}::int
   ) AS v
 ),
@@ -52,7 +61,7 @@ fts_hits AS (
     SELECT c.id,
            ts_rank_cd(c.tsv, q.query, 32) AS score
     FROM chunks c,
-         websearch_to_tsquery('english'::regconfig, ${question}::text) AS q(query)
+         websearch_to_tsquery(${active.fts_config}::regconfig, ${question}::text) AS q(query)
     WHERE c.tsv @@ q.query
     ORDER BY score DESC, c.id ASC
     LIMIT ${limits.ftsCandidates ?? RETRIEVAL.FTS_CANDIDATES}::int
@@ -79,9 +88,13 @@ SELECT fu.id::text                 AS chunk_id,
        c.anchor,
        c.content,
        c.token_count,
+       d.mime_type,
+       c.page_from,
+       c.page_to,
        d.title                     AS document_title,
        d.url                       AS document_url,
-       d.slug
+       d.slug,
+       d.source_kind
 FROM fused fu
 JOIN chunks c    ON c.id = fu.id
 JOIN documents d ON d.id = c.document_id
@@ -95,7 +108,7 @@ LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
   const [ftsCount] = await tx<{ count: number }[]>`
     SELECT count(*)::int AS count FROM (
       SELECT 1 FROM chunks c
-      WHERE c.tsv @@ websearch_to_tsquery('english'::regconfig, ${question}::text)
+      WHERE c.tsv @@ websearch_to_tsquery(${active.fts_config}::regconfig, ${question}::text)
       LIMIT ${limits.ftsCandidates ?? RETRIEVAL.FTS_CANDIDATES}::int
     ) AS fts_candidates`;
   return {
@@ -112,8 +125,14 @@ LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
       anchor: row.anchor,
       content: row.content,
       tokenCount: row.token_count,
+      ...(row.mime_type === 'text/plain' && /#l[1-9]\d*$/.test(row.anchor)
+        ? { lineFrom: Number(row.anchor.split('#l')[1]) }
+        : {}),
+      ...(row.page_from != null ? { pageFrom: row.page_from } : {}),
+      ...(row.page_to != null ? { pageTo: row.page_to } : {}),
       documentTitle: row.document_title,
       documentUrl: row.document_url,
+      sourceKind: row.source_kind ?? 'web',
       slug: row.slug,
     })),
   };
@@ -124,5 +143,11 @@ export async function search(
   question: string,
   limits: SearchLimits = {},
 ): Promise<SearchResult> {
-  return getSql().begin((tx) => searchInTransaction(tx, vector, question, limits));
+  return getSql().begin(async (tx) => {
+    const state = await checkCorpusSchema(tx, getKitConfig());
+    const [row] = await tx<{ present: boolean }[]>`SELECT EXISTS (SELECT 1 FROM chunks) AS present`;
+    if (!row?.present)
+      throw new AppError('CORPUS_EMPTY', 'Nothing is indexed yet. Run ./sourced ingest.');
+    return searchInTransaction(tx, vector, question, limits, state.schema);
+  });
 }

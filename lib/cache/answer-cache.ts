@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SSE } from '@/lib/config';
 import { getSql } from '@/lib/db/client';
 import { getEnv } from '@/lib/env';
+import { isPublicDemo } from '@/lib/kit/profile';
 import { sha256Hex } from '@/lib/hash';
 import { PROMPT_VERSION } from '@/lib/prompts/version';
 import { MetaEvent, CitationsEvent, DoneEvent, type SseEvent } from '@/lib/sse/events';
@@ -13,7 +14,7 @@ export const CachedAnswerPayload = z.object({
   answerText: z.string(),
   citations: CitationsEvent,
   usageAtGeneration: DoneEvent.shape.usage,
-  costUsdAtGeneration: z.number(),
+  costUsdAtGeneration: z.number().nullable(),
 });
 
 export type CacheVersion = { corpusVersion: string; promptVersion: string; chatModel: string };
@@ -56,6 +57,7 @@ export async function currentCacheVersion(): Promise<CacheVersion | null> {
 }
 
 export async function lookupAnswerCache(suggestedId: SuggestedId): Promise<CachedAnswer | null> {
+  if (!isPublicDemo()) return null;
   const env = getEnv();
   if (env.DEMO_MODE === 'off') return null;
   const sql = getSql();
