@@ -4,10 +4,10 @@ Milestone: M8 (v2), tasks T-69 to T-76, branch `v2/kit`. Test cases: TC-229 to T
 
 ## Summary
 
-| Status           | Count | Cases                              |
-| ---------------- | ----: | ---------------------------------- |
-| Resolved         |    17 | TC-229 to TC-245                   |
-| Pending decision |     2 | TC-246, TC-247 (owner: tag, merge) |
+| Status   | Count | Cases            |
+| -------- | ----: | ---------------- |
+| Resolved |    19 | TC-229 to TC-247 |
+| Pending  |     0 | —                |
 
 Final local run at 9de75a3: unit 1,385 and contract 302 passing at default concurrency, integration passing, E2E 124 passing (including the private-profile spec on port 3105), `check-skills` passing; the fresh-worktree gate passed before each push.
 
@@ -75,7 +75,7 @@ No metric regressed beyond `maxRegression` against the M7 baseline.
 | `check-skills`, contract tests and the `docker` job green on `main`   | Green on v2/kit; checked again on `main` after the merge                                                                    |
 | No secret printed (UT-45) and none in transcripts                     | Done (UT-45 passing; transcripts and session logs checked for the key)                                                      |
 | README, AGENTS.md, CONTRIBUTING.md                                    | Done (TC-242, TC-243)                                                                                                       |
-| CHANGELOG v2.0.0; tag after approval; release notes with known issues | Entry done; tag, merge and release notes wait for the owner                                                                 |
+| CHANGELOG v2.0.0; tag after approval; release notes with known issues | Done 2026-11-14 (owner approved; migration 43612677273, merge de13131, tag v2.0.0)                                          |
 
 ## Open follow-ups
 

@@ -4,7 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
-Changes for v2.0.0, the document chatbot kit. Release checks are still in progress.
+## [2.0.0] - 2026-11-14
+
+The document chatbot kit. Live at https://sourced.firatkil.com (the example corpus).
 
 ### Added
 
@@ -23,9 +25,10 @@ Changes for v2.0.0, the document chatbot kit. Release checks are still in progre
 
 ### Notes
 
-- Claude Code and Codex newcomer checks are release-blocking. Cursor and other agents that read `AGENTS.md` and Agent Skills are best effort (NFR-24). The rehearsals in `qa/release-v2/` do not replace the remaining clean-machine release checks.
-- The Windows launcher and container access to host Ollama on each OS are not verified yet. Live provider checks for Google Gemini, Anthropic and Ollama remain pending.
+- The newcomer release check passed in Claude Code 2.1.322 and Codex CLI 0.166.0 on fresh clones with only Docker (`qa/release-v2/`). Cursor and other agents that read `AGENTS.md` and Agent Skills are best effort (NFR-24). Codex's default sandbox cannot reach the Docker socket; Codex asks to run `./sourced` outside it.
+- The Docker path is verified on macOS only; the Windows launcher, Linux and container access to host Ollama are not verified yet. Live provider checks for Google Gemini, Anthropic and Ollama remain pending.
 - Known follow-ups: the first Node CLI command in a fresh folder can fail on missing `CHAT_MODEL`/`PRICE_*` settings before a configuration snapshot exists; MongoDB HTML can retain navigation icon names and produce many tiny chunks; broad full-text queries at scale have not met the search latency target. Source discovery request spacing also needs follow-up. See `docs/PROGRESS.md` for evidence.
+- Known issue: on some corpora the default chat model (`gpt-6-luna`) answers out-of-scope questions with "The passages do not describe …" followed by a cited answer instead of refusing (correct refusal 0.57 on the Flask docs; 1.0 on the example corpus). A stronger chat model is the configuration-level workaround. The live evaluation comparison for contextual embedding (FR-75) has not been run.
 - Mock evaluation cannot write a baseline results file, so a full tuning comparison needs live evaluation. Follow-up conversation, an MCP server, a documented HTTP API/widget and dedicated rerankers are deferred to v2.1.
 
 ## [1.1.0] - 2026-11-09
