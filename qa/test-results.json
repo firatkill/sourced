@@ -5535,6 +5535,69 @@
       "root_cause_group": null,
       "clickup_task": null,
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-245",
+      "ac_reference": "T-76; NFR-24; D-71",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "Newcomer release check in Codex",
+      "description": "PRD §11 newcomer check.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-245.",
+      "expected_result": "The same check passes in Codex; transcript in qa/release-v2/.",
+      "status": "resolved",
+      "environment": "fresh clone of v2/kit 9de75a3, Docker path, live OpenAI, Codex CLI 0.166.0 (codex exec, danger-full-access in a throwaway clone with the owner's approval)",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "Goal typed once; 7 turns; tester only answered and filled OPENAI_API_KEY in .env.local; ask returned outcome answered with 1 citation; no FR-89 break; key absent from the session log. Transcript qa/release-v2/newcomer-codex.md. Minor: the ingest disclosure mentions contextual summaries that are not sent."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-246",
+      "ac_reference": "T-76; release checklist v2.0.0",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "v2.0.0 release checklist and milestone eval",
+      "description": "Release checklist.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-246.",
+      "expected_result": "Every v2.0.0 release checklist item is checked or carries an owner decision; the M8 milestone eval (D-121) passes all floors; tag v2.0.0 only after the owner's approval.",
+      "status": "pending_decision",
+      "environment": "v2/kit 9de75a3; eval run 43123789256",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "M8 milestone eval passed every floor (recall@5 0.969, MRR 0.938, citation validity 1, faithfulness 0.984, correct refusal 1, injection 1, p95 6.4 s, $0.35). Release checklist in qa/m8-report.md; open for the owner: Docker checks on Windows and Linux, the v2.0.0 tag and the merge to main."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-247",
+      "ac_reference": "PRD §12 (M8)",
+      "milestone": "M8 Agent guidance and v2.0 release (v2)",
+      "title": "M8 exit criteria",
+      "description": "M8 exit.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-247.",
+      "expected_result": "Newcomer release check passes in Claude Code and Codex; milestone report and review written; v2.0.0 tagged after approval.",
+      "status": "pending_decision",
+      "environment": "v2/kit 9de75a3",
+      "attempts": [
+        {
+          "result": "pending",
+          "note": "Newcomer check passed in Claude Code (TC-244) and Codex (TC-245); qa/m8-report.md and qa/M8-review.md written; v2.0.0 tag waits for the owner's approval."
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
+      "retraction_reason": null
     }
   ]
 }
