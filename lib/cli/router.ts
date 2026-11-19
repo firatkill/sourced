@@ -111,7 +111,7 @@ export async function dispatch(
         }),
         exitCode: 0,
       };
-    if (input.values.rebuild || command === 'sources remove') {
+    if (input.values.rebuild || command === 'sources remove' || command === 'reset') {
       await confirmAction({
         yes: input.values.yes === true,
         json: input.json,
@@ -119,7 +119,9 @@ export async function dispatch(
         message:
           command === 'sources remove'
             ? 'Remove this source and its documents?'
-            : 'Rebuild the corpus and replace its indexed documents?',
+            : command === 'reset'
+              ? 'Remove the example configuration and everything indexed? Your document files are not deleted.'
+              : 'Rebuild the corpus and replace its indexed documents?',
         ...(context.prompt ? { prompt: context.prompt } : {}),
       });
       input.values.yes = true;
@@ -238,7 +240,9 @@ export function errorEnvelope(
                   ? 'pnpm sourced init --help'
                   : command === 'ingest'
                     ? 'pnpm sourced ingest --yes'
-                    : 'pnpm sourced sources remove <id> --yes'
+                    : command === 'reset'
+                      ? 'pnpm sourced reset --yes'
+                      : 'pnpm sourced sources remove <id> --yes'
           : error.code === 'CORPUS_MISMATCH'
             ? 'pnpm sourced ingest --rebuild'
             : error.code === 'CORPUS_EMPTY'
@@ -274,6 +278,8 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     case 'sources list':
     case 'sources remove':
       return { result: await (await import('./commands/sources')).runSources(input) };
+    case 'reset':
+      return { result: await (await import('./commands/reset')).runReset() };
     case 'eval:generate':
       return {
         result: await (await import('./commands/eval-generate')).runEvalGenerate(input, context),

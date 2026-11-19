@@ -497,14 +497,15 @@ export const ACCESS = {
 | `SOURCED_ACCESS_TOKEN` | Private profile only | — | At least 24 characters; validated at startup (T-51). Access flow in §38 (T-74). |
 | `SOURCED_PORT` | No | `3000` | Docker path: host port of the app for `./sourced dev`; read from the shell or `.env.local` by the launchers (D-135). |
 | `SOURCED_DB_PORT` | No | `5433` | Docker path: host port of the local database (`docker-compose.yml`). The launchers read it, and `SOURCED_PORT`, from the shell or from that line of `.env.local` (D-135). |
+| `SOURCED_PROFILE` | No | (unset) | Runs the checked-in `sourced.config.ts` under another profile (`local`, `private`, `public-demo`) without editing it (D-138). The repository ships `local`; the hosted example sets `public-demo`. |
 | `DEMO_MODE` | No | `on` | `on`, `readonly` or `off` (FR-30). Default `on`. |
 | `RATE_LIMIT_IP_DAILY` | No | `10` | Per-visitor live questions per UTC day. |
 | `RATE_LIMIT_GLOBAL_DAILY` | No | `300` | All visitors, live questions per UTC day. |
 | `IP_HASH_SALT` | Public-demo only | 64 hex chars | `init` generates 32 random bytes as 64 hex characters for `public-demo`, preserving existing assignments and never printing the salt (D-119). Otherwise use `openssl rand -hex 32`. Min length 32. Rotating it resets all visitor quotas for the day. |
-| `QUESTION_HASH_SALT` | Yes | 64 hex chars | `init` generates 32 random bytes as 64 hex characters, preserving existing values and never printing the salt (D-119). Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
+| `QUESTION_HASH_SALT` | Yes (except `local`) | 64 hex chars | Under the `local` profile it defaults to a fixed, non-secret value when unset (D-138). `init` generates 32 random bytes as 64 hex characters, preserving existing values and never printing the salt (D-119). Salt for question hashes in `query_log`. Different from `IP_HASH_SALT`. |
 | `STORE_QUESTIONS` | No | `false` | `true` stores raw question text in `query_log.question_text` (FR-54). Never `true` in production without a privacy note change. |
 | `LOG_LEVEL` | No | `info` | pino level. |
-| `NEXT_PUBLIC_SITE_URL` | Yes | `https://sourced.firatkil.com` | `init` writes `http://localhost:<port>` (default 3000), preserving existing values (D-119). Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
+| `NEXT_PUBLIC_SITE_URL` | Yes (except `local`) | `https://sourced.firatkil.com` | Under the `local` profile it defaults to `http://localhost:<SOURCED_PORT or 3000>` when unset (D-138). `init` writes `http://localhost:<port>` (default 3000), preserving existing values (D-119). Canonical origin; used for origin check and metadata. Local: `http://localhost:3000`. Server code reads it only through `getEnv()` (which parses the whole `process.env` object), never as a literal `process.env.NEXT_PUBLIC_SITE_URL` expression, because Next.js inlines such expressions at build time and the E2E servers set a different value per port on one build. |
 | `ALLOWED_ORIGINS` | No | `https://sourced-git-main-firatkill.vercel.app` | Comma-separated extra origins for the origin check (preview URLs). `VERCEL_URL`, `VERCEL_BRANCH_URL` and `VERCEL_PROJECT_PRODUCTION_URL` are added automatically (as `https://<value>`) when set. |
 | `INGEST_INCLUDE_FIXTURES` | No | `false` | `true` ingests `corpus/fixtures/*` (tests and eval only, FR-39). |
 | `INGEST_CONFIRM_ABOVE_USD` | no | `1.00` | Nonnegative USD threshold for ingest confirmation (§33.8). |
@@ -3108,23 +3109,17 @@ Supabase pauses free projects after about 7 days without activity (A-07). Every 
 
 ## 27. README plan
 
-The README must contain, in this order:
+D-139 (v2.1) replaces the v1 plan: the README is short and local-first; everything else moves to `docs/GUIDE.md`. The README contains, in this order:
 
 1. Title "Sourced" and one sentence: "A small, production-quality RAG app and starter kit: every claim in the answer cites a passage, and every citation is checked on the server before you see it."
-2. Links: live demo, `/eval`, `/how-it-works`, docs folder.
+2. Links: live demo, `/eval`, `/how-it-works`, `docs/GUIDE.md`.
 3. Demo GIF (`docs/assets/demo.gif`, ≤ 4 MB, ≤ 20 s, 1200 px wide): click a suggested question → answer streams → click a citation chip → highlighted quote → expand "How this was answered". Recorded in light theme on the production site.
-4. "How it works" in 6 bullets plus the Mermaid architecture diagram (GitHub renders Mermaid).
-5. "Evaluation" with the metrics table from the latest `eval/postgres-17/results/*.md` (value, floor), date and models; link to the full file.
-6. "Run locally without an API key" (≤ 6 commands): `pnpm install`, `cp .env.example .env.local`, `pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev:mock`.
-7. "Run with OpenAI": set key and model, `pnpm ingest`, `pnpm cache:suggested`, `pnpm dev`.
-8. "Swap the corpus": edit `corpus/manifest.json` (base URL, selectors, pages), check license and robots, `pnpm corpus:fetch`, `pnpm ingest`, rewrite `eval/postgres-17/golden.jsonl`, update suggested questions in `lib/suggested.ts` and copy in the PRD.
-9. "Swap the provider": implement `LlmProvider` in `lib/llm/<name>.ts`, register it in `lib/llm/index.ts`, set `LLM_PROVIDER`; note the embedding dimension must stay 1536 or a migration must change `vector(1536)`.
-10. "Cost": the table from section 21.2 with the computed worst-case figure.
-11. "Tests and CI": commands and what each workflow does.
-12. "Privacy" summary.
-13. "Limits" (same points as `/how-it-works`).
-14. "Versions": pin date. "License": MIT for code; corpus attribution and link to `corpus/postgres-17/LICENSE-POSTGRESQL.txt`.
-15. Author line with links to firatkil.com and GitHub.
+4. "Quick start": the two prerequisites (Docker, which runs the database too, and an OpenAI key), then exactly three blocks: clone; `cp .env.example .env.local` with the one line to fill; and "Try the example": `./sourced ingest`, `./sourced dev`.
+5. "Use your own documents": `./sourced reset`, then `./sourced add ./my-docs`, `./sourced ingest`, `./sourced dev`; the cost behaviour of `ingest`; how to go back to the example; `down`; Windows. Subsections: the agent commands table, other providers (including mock mode), and "If something goes wrong" (ports, an incompatible index, an app that does not start).
+6. "How it works" in one paragraph with a link to the guide.
+7. "License": MIT for code; corpus attribution and link to `corpus/postgres-17/LICENSE-POSTGRESQL.txt`; the author line with links to firatkil.com and GitHub.
+
+The README does not describe hosting, Vercel or Supabase. `docs/GUIDE.md` holds the former sections 4–13 of this plan (architecture and Mermaid diagram, evaluation table, profiles, the Node path including the six mock commands, the example corpus, the hosted example's cost and operation, tests and CI, privacy, limits and versions).
 
 Implementation compatibility note (T-05): Vitest 5 expresses the single-fork integration runner using `pool: forks`, `maxWorkers: 1` and `fileParallelism: false`; this preserves the specified single-worker execution. Coverage global thresholds begin in T-17 and critical-file thresholds are added with their implementations, as staged by IMPLEMENTATION_PLAN T-05.
 
@@ -3757,15 +3752,17 @@ The launchers set `BUILDX_NO_DEFAULT_ATTESTATIONS=1` unless the caller already s
 ### 35.4 First run
 
 ```bash
-./sourced init        # asks a few questions, writes config and .env.local, builds the image, starts the database
-# the user fills the API key line in .env.local
-./sourced add https://www.mongodb.com/docs/sitemap.xml
-./sourced ingest --dry-run
+cp .env.example .env.local   # the user pastes the API key after OPENAI_API_KEY=
+./sourced ingest             # the bundled example; the database starts empty
+./sourced dev                # http://localhost:3000
+# or, for the user's own documents:
+./sourced reset              # removes the example and everything indexed (asks first)
+./sourced add ./my-docs
 ./sourced ingest
-./sourced dev         # http://localhost:3000
+./sourced dev
 ```
 
-The image build on first run takes a few minutes; `init` prints that before starting it.
+The first command builds the image, which takes a few minutes. The shipped `sourced.config.ts` uses the `local` profile (D-138), under which `.env.local` needs only the provider key. `init` remains for choosing other providers or models with flags.
 
 ## 36. Quality on any corpus
 
@@ -3829,11 +3826,10 @@ CLAUDE.md                         # "@AGENTS.md" (unchanged)
   sourced-check-quality/SKILL.md
   sourced-tune/SKILL.md
   sourced-troubleshoot/SKILL.md
-  sourced-deploy/SKILL.md
   _shared/rules.md                # the FR-89 rules, included by reference from every skill
   _shared/cli-reference.md        # generated from lib/cli/schemas by scripts/check-skills.ts --write
   _shared/pricing.md              # how an agent resolves an unknown price with the user (D-130)
-.claude/commands/{setup,add-docs,ingest,check-quality,tune,troubleshoot,deploy}.md   # 3–5 lines each: "Follow .agents/skills/sourced-<name>/SKILL.md."
+.claude/commands/{setup,add-docs,ingest,check-quality,tune,troubleshoot}.md   # 3–5 lines each: "Follow .agents/skills/sourced-<name>/SKILL.md."
 .claude/settings.json             # permissions allowlist (section 37.4) plus the existing attribution settings
 docs/contributing/AGENTS.md       # today's AGENTS.md, moved
 CONTRIBUTING.md                   # how to contribute; links docs/contributing/AGENTS.md

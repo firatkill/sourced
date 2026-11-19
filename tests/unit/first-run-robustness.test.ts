@@ -226,3 +226,24 @@ test('D-137: app startup writes the failure for dev and prints one startup.faile
   stderr.mockRestore();
   init.mockRestore();
 });
+
+test('D-138: the local profile needs only the provider key', async () => {
+  const { withLocalDefaults, LOCAL_QUESTION_HASH_SALT } = await import('@/lib/env');
+  expect(withLocalDefaults({ OPENAI_API_KEY: 'k' }, 'local')).toEqual({
+    OPENAI_API_KEY: 'k',
+    QUESTION_HASH_SALT: LOCAL_QUESTION_HASH_SALT,
+    NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+  });
+  expect(withLocalDefaults({ SOURCED_PORT: '3200' }, 'local').NEXT_PUBLIC_SITE_URL).toBe(
+    'http://localhost:3200',
+  );
+  expect(
+    withLocalDefaults(
+      { QUESTION_HASH_SALT: 'mine', NEXT_PUBLIC_SITE_URL: 'http://x.test' },
+      'local',
+    ),
+  ).toMatchObject({ QUESTION_HASH_SALT: 'mine', NEXT_PUBLIC_SITE_URL: 'http://x.test' });
+  expect(withLocalDefaults({}, 'public-demo')).toEqual({});
+  expect(withLocalDefaults({}, 'private')).toEqual({});
+  expect(LOCAL_QUESTION_HASH_SALT.length).toBeGreaterThanOrEqual(32);
+});

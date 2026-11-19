@@ -239,6 +239,8 @@ test('FR-78 / FR-77: human diagnostics include every failing check and its fix',
 });
 
 test('FR-79 / D-117: init --example retains the complete example, requires --yes to overwrite', async () => {
+  // The shipped file's own profile, not the hosted example's override (D-138).
+  vi.stubEnv('SOURCED_PROFILE', '');
   const { loadConfig } = await import('@/lib/kit/load-config');
   const { repositoryRoot } = await import('@/lib/cli/commands/database');
   const example = await loadConfig(repositoryRoot, { writeSnapshot: false });

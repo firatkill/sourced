@@ -105,7 +105,7 @@ test('TC-214: missing environment stops ordinary commands with the exact setup i
   const { run, log } = await fixture();
   await expect(run(['ask', 'What is an index?'])).rejects.toMatchObject({
     code: 2,
-    stderr: 'Run ./sourced init first.\n',
+    stderr: 'Create .env.local first: cp .env.example .env.local, then add your API key to it.\n',
   });
   await expect(readFile(log)).rejects.toMatchObject({ code: 'ENOENT' });
 });

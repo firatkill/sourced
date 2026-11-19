@@ -4,15 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-const commandNames = [
-  'setup',
-  'add-docs',
-  'ingest',
-  'check-quality',
-  'tune',
-  'troubleshoot',
-  'deploy',
-];
+const commandNames = ['setup', 'add-docs', 'ingest', 'check-quality', 'tune', 'troubleshoot'];
 const launchers = ['./sourced', 'pnpm sourced'];
 const settingsSchema = z.object({
   includeCoAuthoredBy: z.boolean(),
@@ -78,6 +70,7 @@ describe('TC-236: agent command files (FR-88; TRD §37.1, §37.4, §37.5)', () =
       'eval',
       'eval:review',
       'sources remove',
+      'reset',
       'dev',
       'down',
       'deploy:check',
@@ -93,7 +86,7 @@ describe('TC-236: agent command files (FR-88; TRD §37.1, §37.4, §37.5)', () =
     }
   });
 
-  it('has exactly seven thin pointers and covers every skill folder', () => {
+  it('has exactly six thin pointers and covers every skill folder (D-139)', () => {
     const files = readdirSync('.claude/commands').filter((file) => file.endsWith('.md'));
     expect(files.toSorted()).toEqual(commandNames.map((name) => `${name}.md`).toSorted());
     for (const name of commandNames) {

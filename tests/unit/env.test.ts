@@ -3,7 +3,10 @@ import { parseEnv } from 'node:util';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getEnv, resetEnvForTests } from '@/lib/env';
 
-const example = parseEnv(readFileSync('.env.example', 'utf8'));
+// D-138: optional settings ship commented out; their documented values must still be valid.
+const example = parseEnv(
+  readFileSync('.env.example', 'utf8').replace(/^# ?([A-Z][A-Z0-9_]*=)/gm, '$1'),
+);
 const original = { ...process.env };
 beforeEach(() => {
   process.env = { ...example, NODE_ENV: 'test', LLM_MODE: 'mock' };

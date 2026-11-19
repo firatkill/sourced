@@ -15,6 +15,7 @@ Embedding example: --embed openai:text-embedding-3-small:1536
   add <value> --type <value> --id <value> --group <value> --include <value> --exclude <value> --max-pages <value> --max-depth <value>
   sources list
   sources remove <value>
+  reset
   ingest --dry-run --offline --refresh --rebuild --restart --include-fixtures --fetch-only --source <value>
   inspect --source <value>
   ask <value> --trace
@@ -128,6 +129,12 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 
 - `result`: object
 - `result.removedDocuments`: integer
+
+## reset result
+
+- `result`: object
+- `result.removedDocuments`: integer
+- `result.removedSources`: integer
 
 ## ingest result
 

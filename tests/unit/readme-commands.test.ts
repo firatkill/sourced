@@ -17,11 +17,14 @@ function commandProblems(markdown: string) {
 }
 
 describe('TC-243: README kit instructions (T-76, FR-57, G-6)', () => {
-  it('names only registered CLI commands and flags for all three launchers', () => {
-    for (const launcher of ['./sourced', 'sourced.cmd', 'pnpm sourced']) {
-      expect(readme).toContain(`${launcher} init`);
+  it('names only registered CLI commands and flags in the README and the guide', () => {
+    const guide = readFileSync('docs/GUIDE.md', 'utf8');
+    for (const launcher of ['./sourced', 'pnpm sourced']) {
+      expect(readme + guide).toContain(`${launcher} ingest`);
     }
+    expect(readme).toContain('`sourced.cmd`');
     expect(commandProblems(readme)).toEqual([]);
+    expect(commandProblems(guide)).toEqual([]);
   });
 
   it.each(['./sourced', 'sourced.cmd', 'pnpm sourced'])(
@@ -41,33 +44,23 @@ describe('TC-243: README kit instructions (T-76, FR-57, G-6)', () => {
     },
   );
 
-  it('lists the seven agent commands and each has a command pointer', () => {
+  it('lists the six agent commands and each has a command pointer', () => {
     const names = [...readme.matchAll(/^\|\s*`\/([\w-]+)`\s*\|/gm)].map((match) => match[1] ?? '');
-    expect(names).toEqual([
-      'setup',
-      'add-docs',
-      'ingest',
-      'check-quality',
-      'tune',
-      'troubleshoot',
-      'deploy',
-    ]);
+    expect(names).toEqual(['setup', 'add-docs', 'ingest', 'check-quality', 'tune', 'troubleshoot']);
     for (const name of names) {
       expect(existsSync(`.claude/commands/${name}.md`), `Missing pointer for /${name}`).toBe(true);
     }
   });
 
-  it('puts Docker-led kit setup before the mock example and includes the Node path', () => {
-    const kit = readme.indexOf('## Use your own documents\n');
-    const example = readme.indexOf('## Run locally without an API key\n');
-    expect(kit).toBeGreaterThan(readme.indexOf('## Demo\n'));
-    expect(example).toBeGreaterThan(kit);
-    const section = readme.slice(kit, readme.indexOf('\n## ', kit + 1));
-    expect(section).toContain('### Docker path (default)');
-    expect(section).toContain('### Node path (contributors)');
-    expect(section.indexOf('### Docker path')).toBeLessThan(section.indexOf('### Node path'));
-    expect(section).toContain('Docker is the only runtime prerequisite');
-    expect(section).toContain('Node.js 22');
+  it('leads with the Docker path and keeps the Node path in the guide', () => {
+    const quick = readme.indexOf('## Quick start\n');
+    const own = readme.indexOf('## Use your own documents\n');
+    expect(quick).toBeGreaterThan(readme.indexOf('## Demo\n'));
+    expect(own).toBeGreaterThan(quick);
+    expect(readme).toContain('Docker is the only runtime prerequisite');
+    const guide = readFileSync('docs/GUIDE.md', 'utf8');
+    expect(guide).toContain('## Node path (contributors)');
+    expect(guide).toContain('Node.js 22');
   });
 
   it('records the v2.0.0 release', () => {

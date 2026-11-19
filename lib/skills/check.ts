@@ -175,7 +175,11 @@ export function knownSkillWords(): Set<string> {
     if (ts.isFunctionDeclaration(statement) && statement.name?.text === 'requiredVariables')
       strings(statement);
   }
-  for (const name of Object.keys(parseEnv(source('../../.env.example')))) words.add(name);
+  // Optional settings ship commented out (D-138); they are still documented names.
+  for (const name of Object.keys(
+    parseEnv(source('../../.env.example').replace(/^# ?([A-Z][A-Z0-9_]*=)/gm, '$1')),
+  ))
+    words.add(name);
   for (const text of [source('../../sourced'), source('../../scripts/docker-entrypoint.sh')]) {
     for (const match of text.matchAll(/^\s*(?:#\s*)?(?:export\s+)?([A-Z][A-Z0-9_]*)=/gm)) {
       if (match[1]) words.add(match[1]);

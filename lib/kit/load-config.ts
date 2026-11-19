@@ -44,6 +44,22 @@ export const SnapshotSchema = z.object({
   config: KitConfigSchema,
 });
 
+/**
+ * D-138: a deployment may set SOURCED_PROFILE (local | private | public-demo) to run the
+ * checked-in configuration under another profile, so the repository can ship `local`
+ * while the hosted example keeps `public-demo`. Unset or empty leaves the file's profile.
+ */
+export function withProfileOverride(config: KitConfig, value = process.env.SOURCED_PROFILE) {
+  if (!value) return config;
+  const profile = z.enum(['local', 'private', 'public-demo']).safeParse(value);
+  if (!profile.success)
+    throw new AppError(
+      'CONFIG_INVALID',
+      'SOURCED_PROFILE: Use local, private or public-demo, or remove the variable.',
+    );
+  return parseKitConfig({ ...config, profile: profile.data });
+}
+
 /** Executed through tsx by CLI scripts, never imported as a TS config by Next. */
 export async function loadConfig(
   root = process.cwd(),
@@ -62,7 +78,9 @@ export async function loadConfig(
       { cause },
     );
   }
-  const config = parseKitConfig(z.object({ default: z.unknown() }).parse(loaded).default);
+  const config = withProfileOverride(
+    parseKitConfig(z.object({ default: z.unknown() }).parse(loaded).default),
+  );
   if (options.writeSnapshot === false) return config;
   await writeConfigSnapshot(config, root);
   return config;

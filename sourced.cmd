@@ -3,7 +3,7 @@ setlocal DisableDelayedExpansion
 if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1
 cd /d "%~dp0"
 if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" (
-  echo Run ./sourced init first. 1>&2
+  echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
   exit /b 2
 )
 where docker >nul 2>nul
@@ -13,7 +13,7 @@ if errorlevel 1 (
 )
 if not exist .env.local (
   if "%~1"=="init" (type nul > .env.local) else if "%~1"=="doctor" (type nul > .env.local) else (
-    echo Run ./sourced init first. 1>&2
+    echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
     exit /b 2
   )
 )

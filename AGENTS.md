@@ -1,6 +1,6 @@
 # Sourced
 
-Sourced is a kit for building a chatbot over your documents. It finds relevant passages and answers with citations checked against those passages. Its command-line tools help you add documents, check answer quality and prepare a deployment.
+Sourced is a kit for building a chatbot over your documents. It finds relevant passages and answers with citations checked against those passages. Its command-line tools help you add documents, check answer quality and run the chatbot on your own machine.
 
 Skills live in `.agents/skills/`.
 
@@ -10,7 +10,6 @@ If the user wants to run or resume ingestion, refresh documents or rebuild an in
 If the user wants to check answer quality, corpus health or golden questions, use the `sourced-check-quality` skill.
 If the user wants better answer quality through a configuration change, use the `sourced-tune` skill.
 If the user says “this answer is wrong” or “this step failed”, use the `sourced-troubleshoot` skill.
-If the user wants to prepare a deployment on Vercel and Supabase, use the `sourced-deploy` skill.
 
 (1) Before anything is sent to a provider, say which provider receives the documents or questions and what the estimate costs, and wait for a yes; offer Ollama when the user wants documents to stay local.
 (2) Never ask for an API key in the chat; tell the user which line of `.env.local` to fill and wait.

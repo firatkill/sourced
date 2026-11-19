@@ -13,7 +13,7 @@ type Execute = (file: string, args: string[]) => Promise<{ stdout: string }>;
 export async function ensureComposeProject(
   root: string,
   execute: Execute,
-  environment: NodeJS.ProcessEnv = process.env,
+  environment: Record<string, string | undefined> = process.env,
 ): Promise<string | undefined> {
   if (environment.COMPOSE_PROJECT_NAME) return environment.COMPOSE_PROJECT_NAME;
   const file = path.join(root, '.env');

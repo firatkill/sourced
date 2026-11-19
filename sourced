@@ -7,7 +7,7 @@ command=${1:-help}
 if [ ! -f .env.local ]; then
   case "$command" in
     init|doctor) ;;
-    *) printf '%s\n' 'Run ./sourced init first.' >&2; exit 2 ;;
+    *) printf '%s\n' 'Create .env.local first: cp .env.example .env.local, then add your API key to it.' >&2; exit 2 ;;
   esac
 fi
 if ! command -v docker >/dev/null 2>&1; then
