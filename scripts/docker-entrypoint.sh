@@ -10,17 +10,13 @@ case "$mode" in
     ;;
   app)
     if [ ! -f .env.local ]; then
-      printf '%s\n' 'Run ./sourced init first.' >&2
+      printf '%s\n' 'Create .env.local first: copy .env.example to .env.local and add your API key.' >&2
       exit 2
     fi
+    # D-137: on failure this writes .sourced/startup-error.* for ./sourced dev and
+    # prints one startup.failed line instead of a stack trace.
     node --import /app/node_modules/tsx/dist/loader.mjs --conditions=react-server \
-      --env-file-if-exists=.env.local /app/scripts/sourced.ts config:snapshot >&2
-    node --import /app/node_modules/tsx/dist/loader.mjs --conditions=react-server \
-      --env-file-if-exists=.env.local --input-type=module <<'JS'
-import { initializeDatabase } from '/app/lib/cli/commands/database.ts';
-import { getKitConfig } from '/app/lib/kit/runtime-config.ts';
-await initializeDatabase(getKitConfig());
-JS
+      --env-file-if-exists=.env.local /app/scripts/app-startup.ts || exit 1
     exec node /app/node_modules/next/dist/bin/next start /app --hostname 0.0.0.0 --port 3000
     ;;
   *) printf '%s\n' 'Expected app or cli.' >&2; exit 2 ;;

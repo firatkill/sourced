@@ -29,6 +29,7 @@ services:
     environment:
       DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
       MIGRATION_DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
+      SOURCED_LAUNCHER: '${SOURCED_LAUNCHER:-./sourced}'
       OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
     ports: ['127.0.0.1:${SOURCED_PORT:-3000}:3000']
     volumes: ['.:/workspace']
@@ -53,6 +54,7 @@ services:
       DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
       MIGRATION_DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
       SOURCED_DOCKER: '1'
+      SOURCED_LAUNCHER: '${SOURCED_LAUNCHER:-./sourced}'
       SOURCED_PORT: '${SOURCED_PORT:-3000}'
       OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
     volumes: ['.:/workspace']

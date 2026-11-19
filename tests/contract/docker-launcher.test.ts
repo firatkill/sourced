@@ -1,5 +1,5 @@
 // TC-214 / FR-94; TRD §35.3: exercise the POSIX launcher without a Docker daemon.
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -21,8 +21,24 @@ async function fixture(
   directories.push(root);
   await copyFile('sourced', path.join(root, 'sourced'));
   await mkdir(path.join(root, 'bin'));
-  for (const command of ['dirname', 'uname', 'id', 'touch'])
-    await symlink(`/usr/bin/${command}`, path.join(root, 'bin', command));
+  for (const command of [
+    'dirname',
+    'uname',
+    'id',
+    'touch',
+    'sed',
+    'tail',
+    'tr',
+    'od',
+    'cat',
+    'sleep',
+    'rm',
+    'mkdir',
+  ])
+    await symlink(
+      execFileSync('/bin/sh', ['-c', `command -v ${command}`], { encoding: 'utf8' }).trim(),
+      path.join(root, 'bin', command),
+    );
   const log = path.join(root, 'arguments');
   await writeFile(
     path.join(root, 'bin/docker'),
@@ -30,6 +46,22 @@ async function fixture(
 printf '%s\\n' "$BUILDX_NO_DEFAULT_ATTESTATIONS" >> "$DOCKER_ATTESTATION_LOG"
 printf "%s\\n" CALL "$@" >> "$DOCKER_ARGUMENT_LOG"
 printf '%s\\n' "SOURCED_PORT=$SOURCED_PORT" "SOURCED_DB_PORT=$SOURCED_DB_PORT" "UNRELATED=$UNRELATED" > "$DOCKER_ENV_LOG"
+printf '%s\\n' "$COMPOSE_PROJECT_NAME" >> "$DOCKER_PROJECT_LOG"
+if [ "$1" = ps ]; then
+  printf '%s' "$FAKE_DOCKER_PS"
+  exit 0
+fi
+if [ "$2" = ps ]; then
+  case "$*" in
+    *running*) [ "$FAKE_APP_STATE" = exited ] || printf '%s\\n' app-id ;;
+    *exited*) [ "$FAKE_APP_STATE" != exited ] || printf '%s\\n' app-id ;;
+  esac
+  exit 0
+fi
+if [ "$2" = logs ]; then
+  printf '%s\\n' 'app-1  | last log line'
+  exit 0
+fi
 if [ "$2" = '${devFailure}' ]; then
   printf '%s\\n' 'Compose stdout'
   printf '%s\\n' '${failureOutput}' >&2
@@ -55,6 +87,11 @@ fi
         DOCKER_ARGUMENT_LOG: log,
         DOCKER_ATTESTATION_LOG: path.join(root, 'attestations'),
         DOCKER_ENV_LOG: path.join(root, 'port-environment'),
+        DOCKER_PROJECT_LOG: path.join(root, 'projects'),
+        // Most tests pin the project; the D-136 tests below clear it.
+        COMPOSE_PROJECT_NAME: 'sourced-test',
+        SOURCED_DEV_ATTEMPTS: '3',
+        SOURCED_DEV_INTERVAL: '0',
         ...variables,
       },
       cwd: tmpdir(),
@@ -162,8 +199,8 @@ const devFailures = {
   },
   exec: {
     code: 'INTERNAL_ERROR',
-    message: 'App health check failed.',
-    fix: 'Run docker compose logs app to diagnose the health check, then retry ./sourced dev --json.',
+    message: 'The app did not start.',
+    fix: 'Run docker compose logs app to see why, then retry ./sourced dev --json.',
   },
 };
 
@@ -242,7 +279,7 @@ test.each(['up', 'exec'] as const)(
       warnings: [],
     });
     // Compose progress stays visible on stderr in JSON mode (reviewer, D-135).
-    expect(result.stderr).toBe('Compose stdout\nCompose stderr\n');
+    expect(result.stderr).toBe(step === 'up' ? 'Compose stdout\nCompose stderr\n' : '');
     const calls = await readFile(log, 'utf8');
     expect(calls).toContain('compose\nup\n');
     if (step === 'up') expect(calls).not.toContain('compose\nexec\n');
@@ -257,24 +294,29 @@ test.each(['up', 'exec'] as const)(
     await writeFile(path.join(root, '.env.local'), '');
     await expect(run(['dev'])).rejects.toMatchObject({
       code: 1,
-      stdout: step === 'up' ? '' : 'Compose stdout\n',
-      stderr: step === 'up' ? 'Compose stdout\nCompose stderr\n' : 'Compose stderr\n',
+      stdout: '',
+      stderr:
+        step === 'up'
+          ? 'Compose stdout\nCompose stderr\n'
+          : 'The app did not start. Its last log lines:\napp-1  | last log line\nNext: docker compose logs app\n',
     });
   },
 );
 
-test('TC-214 / NFR-22: Windows dev has equivalent failure envelopes and exits', async () => {
+test('TC-214 / NFR-22 / D-137: Windows dev has equivalent failure envelopes and exits', async () => {
   const launcher = await readFile('sourced.cmd', 'utf8');
   const branch = launcher.split('\n:dev\n')[1] ?? '';
   expect(branch).toContain('"App container start" compose up -d --build --force-recreate app');
-  expect(branch).toContain(
-    'if "%json%"=="true" (\n  call :healthcheck 1>&2\n) else (\n  call :healthcheck\n)\nif errorlevel 1 (',
+  expect(branch).toContain('del /q .sourced\\startup-error.json');
+  expect(branch).toContain('scripts\\sourced-dev.ps1" "%json%" "%SOURCED_PORT%"');
+  const helper = await readFile('scripts/sourced-dev.ps1', 'utf8');
+  expect(helper).toContain('/api/health');
+  expect(helper).toContain('--status exited app');
+  expect(helper).toContain('.sourced\\startup-error.json');
+  expect(helper).toContain('Stop it with sourced.cmd down');
+  const failures = [...helper.matchAll(/Write-Output '(\{[^\n]+\})'/g)].map((match) =>
+    CliEnvelope.parse(JSON.parse(match[1] ?? '')),
   );
-  expect(branch).toContain(':healthcheck\ndocker compose exec -T app node');
-  expect(branch).toContain('/api/health');
-  const failures = [
-    ...branch.matchAll(/if "%json%"=="true" echo (\{[^\n]+\})\n  exit \/b 1\n\)/g),
-  ].map((match) => CliEnvelope.parse(JSON.parse(match[1] ?? '')));
   expect(failures).toEqual(
     [devFailures.exec].map((error) => ({
       schemaVersion: 1,
@@ -288,7 +330,9 @@ test('TC-214 / NFR-22: Windows dev has equivalent failure envelopes and exits', 
 test('TC-214: dev recreates the app, waits for health inside Docker, then prints its URL', async () => {
   const { root, run, log } = await fixture();
   await writeFile(path.join(root, '.env.local'), '');
-  expect((await run(['dev'])).stdout).toBe('http://localhost:3000\n');
+  expect((await run(['dev'])).stdout).toBe(
+    'Sourced is running at http://localhost:3000\nStop it with ./sourced down\n',
+  );
   const calls = await readFile(log, 'utf8');
   expect(calls).toContain('compose\nup\n-d\n--build\n--force-recreate\napp');
   expect(calls).toContain('compose\nexec\n-T\napp\nnode');
@@ -341,7 +385,10 @@ test('TC-214 / TRD §35.2: app refuses to start before init, even though db can 
   const { root } = await fixture();
   await expect(
     execute('/bin/sh', [path.resolve('scripts/docker-entrypoint.sh'), 'app'], { cwd: root }),
-  ).rejects.toMatchObject({ code: 2, stderr: 'Run ./sourced init first.\n' });
+  ).rejects.toMatchObject({
+    code: 2,
+    stderr: 'Create .env.local first: copy .env.example to .env.local and add your API key.\n',
+  });
 });
 
 // D-135 / FR-77: all pre-CLI Compose boundaries preserve the JSON contract.
@@ -513,4 +560,131 @@ test('Task 64: Windows defaults attestations before Compose or its PowerShell wr
   expect(launcher).toContain(setting);
   expect(launcher.indexOf(setting)).toBeLessThan(launcher.indexOf('compose'));
   expect(launcher.indexOf(setting)).toBeLessThan(launcher.indexOf('goto down'));
+});
+
+// D-137: the app's own startup failure reaches the user in both modes, without waiting.
+const startupFailure = {
+  schemaVersion: 1,
+  command: 'dev',
+  ok: false,
+  error: {
+    code: 'CORPUS_MISMATCH',
+    message: 'The existing index was built with mock:mock-feature-hash.',
+    fix: './sourced ingest --rebuild',
+  },
+  warnings: [],
+};
+async function failingApp(json: boolean) {
+  const { root, run, log } = await fixture();
+  await writeFile(path.join(root, '.env.local'), '');
+  // The fake container "writes" its startup failure as soon as Compose starts it.
+  await writeFile(
+    path.join(root, 'bin/docker'),
+    (await readFile(path.join(root, 'bin/docker'), 'utf8')).replace(
+      'if [ "$2" = ps ]; then',
+      `if [ "$2" = up ]; then
+  mkdir -p .sourced
+  printf '%s\\n' '${JSON.stringify(startupFailure)}' > .sourced/startup-error.json
+  printf '%s\\n' 'The app did not start: ${startupFailure.error.message}' 'Next: ${startupFailure.error.fix}' > .sourced/startup-error.txt
+  exit 0
+fi
+if [ "$2" = ps ]; then`,
+    ),
+  );
+  const started = Date.now();
+  const result = await run(json ? ['dev', '--json'] : ['dev'], {
+    FAKE_APP_STATE: 'exited',
+    SOURCED_DEV_ATTEMPTS: '60',
+    SOURCED_DEV_INTERVAL: '1',
+  }).then(
+    () => {
+      throw new Error('Expected dev to fail');
+    },
+    (error: unknown) => error as { code: number; stdout: string; stderr: string },
+  );
+  return { result, elapsed: Date.now() - started, calls: await readFile(log, 'utf8') };
+}
+test('D-137: dev --json returns the app startup failure at once', async () => {
+  const { result, elapsed, calls } = await failingApp(true);
+  expect(result.code).toBe(1);
+  expect(CliEnvelope.parse(JSON.parse(result.stdout))).toEqual(startupFailure);
+  expect(elapsed).toBeLessThan(5000);
+  expect(calls).not.toContain('/api/health');
+});
+test('D-137: dev in a terminal prints the startup reason and next command', async () => {
+  const { result, elapsed } = await failingApp(false);
+  expect(result).toMatchObject({
+    code: 1,
+    stdout: '',
+    stderr:
+      'The app did not start: The existing index was built with mock:mock-feature-hash.\nNext: ./sourced ingest --rebuild\n',
+  });
+  expect(elapsed).toBeLessThan(5000);
+});
+test('D-137: an exited app without a startup file stops the wait early and shows its logs', async () => {
+  const { root, run, log } = await fixture();
+  await writeFile(path.join(root, '.env.local'), '');
+  const started = Date.now();
+  await expect(
+    run(['dev'], {
+      FAKE_APP_STATE: 'exited',
+      SOURCED_DEV_ATTEMPTS: '60',
+      SOURCED_DEV_INTERVAL: '1',
+    }),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr:
+      'The app did not start. Its last log lines:\napp-1  | last log line\nNext: docker compose logs app\n',
+  });
+  expect(Date.now() - started).toBeLessThan(5000);
+  expect(await readFile(log, 'utf8')).not.toContain('/api/health');
+});
+
+// D-136: one Compose project per checkout.
+test('D-136: a new checkout records a random project in .env and every Compose call uses it', async () => {
+  const { root, run } = await fixture();
+  await writeFile(path.join(root, '.env.local'), '');
+  await writeFile(path.join(root, '.env'), 'KEEP=1');
+  await run(['doctor', '--json'], { COMPOSE_PROJECT_NAME: '' });
+  const recorded = await readFile(path.join(root, '.env'), 'utf8');
+  expect(recorded).toMatch(/^KEEP=1\nCOMPOSE_PROJECT_NAME=sourced-[0-9a-f]{8}\n$/);
+  const project = recorded.split('=').at(-1)?.trim() ?? '';
+  const projects = (await readFile(path.join(root, 'projects'), 'utf8')).split('\n');
+  // The first call is the project lookup itself, before a name exists.
+  expect(projects).toEqual(['', project, project, project, '']);
+  await run(['doctor', '--json'], { COMPOSE_PROJECT_NAME: '' });
+  expect(await readFile(path.join(root, '.env'), 'utf8')).toBe(recorded);
+});
+test('D-136: an upgraded checkout keeps the project its containers already use', async () => {
+  const { root, run } = await fixture();
+  await writeFile(path.join(root, '.env.local'), '');
+  const { realpath } = await import('node:fs/promises');
+  const here = (await realpath(root)).toUpperCase();
+  await run(['doctor', '--json'], {
+    COMPOSE_PROJECT_NAME: '',
+    FAKE_DOCKER_PS: `/elsewhere/sourced|sourced\n${here}|legacy-project\n`,
+  });
+  expect(await readFile(path.join(root, '.env'), 'utf8')).toBe(
+    'COMPOSE_PROJECT_NAME=legacy-project\n',
+  );
+});
+test('D-136: a project set by the user wins and nothing is written', async () => {
+  const { root, run } = await fixture();
+  await writeFile(path.join(root, '.env.local'), '');
+  await run(['doctor', '--json'], { COMPOSE_PROJECT_NAME: 'mine' });
+  await expect(readFile(path.join(root, '.env'))).rejects.toMatchObject({ code: 'ENOENT' });
+  expect((await readFile(path.join(root, 'projects'), 'utf8')).trim().split('\n')).toEqual(
+    Array(3).fill('mine'),
+  );
+});
+test('D-136: Windows records the project before any Compose call', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  const call = 'scripts\\sourced-project.ps1"';
+  expect(launcher).toContain(call);
+  expect(launcher.indexOf(call)).toBeLessThan(launcher.indexOf('docker compose'));
+  expect(launcher).toContain('set "SOURCED_LAUNCHER=sourced.cmd"');
+  const helper = await readFile('scripts/sourced-project.ps1', 'utf8');
+  expect(helper).toContain('com.docker.compose.project.working_dir');
+  expect(helper).toContain("'sourced-'");
+  expect(helper).toContain('COMPOSE_PROJECT_NAME=');
 });

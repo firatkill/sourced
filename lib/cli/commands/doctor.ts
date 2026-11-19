@@ -12,6 +12,7 @@ import {
   sourcedCommand,
 } from '@/lib/kit/runtime-config';
 import { checkCorpusSchema } from '@/lib/kit/vector-schema';
+import { ensureComposeProject } from '@/lib/kit/compose-project';
 import { ftsConfig } from '@/lib/kit/fts';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import type { Invocation, CommandResult } from '../router';
@@ -51,9 +52,12 @@ async function freePort(port: number, host: string): Promise<boolean> {
 export async function checkPorts(
   env = getCliEnvironment(),
   probe: PortProbe = freePort,
-  mapping: (service: string, internal: string) => Promise<string> = async (service, internal) =>
-    (await execute('docker', ['compose', 'port', service, internal], { cwd: repositoryRoot }))
-      .stdout,
+  mapping: (service: string, internal: string) => Promise<string> = async (service, internal) => {
+    await ensureComposeProject(repositoryRoot, (file, args) => execute(file, args));
+    return (
+      await execute('docker', ['compose', 'port', service, internal], { cwd: repositoryRoot })
+    ).stdout;
+  },
 ): Promise<Check> {
   if (env.SOURCED_DOCKER === '1')
     return {

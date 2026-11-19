@@ -28,12 +28,28 @@ export function corpusSchema(config: KitConfig): CorpusSchema {
     retrieval_hash: configHash(retrieval),
   };
 }
+function describe(stored: unknown): string | undefined {
+  if (typeof stored !== 'object' || stored === null || !('embed_provider' in stored)) return;
+  const meta = stored as CorpusSchema;
+  return `${meta.embed_provider}:${meta.embed_model} (${String(meta.embed_dimensions)} dimensions, ${meta.fts_config})`;
+}
+/** Plain-words explanation shared by ingest dry runs, ingest and app startup (D-137). */
+export function mismatchMessage(stored: unknown, configured: CorpusSchema): string {
+  const built = describe(stored) ?? 'a different embedding model or language';
+  const wanted = describe(configured) ?? '';
+  const example =
+    typeof stored === 'object' &&
+    stored !== null &&
+    (stored as { embed_provider?: unknown }).embed_provider === 'mock' &&
+    configured.embed_provider !== 'mock'
+      ? ' The database holds the bundled mock example, not your documents.'
+      : '';
+  return `The existing index was built with ${built}. Your configuration uses ${wanted}.${example} Ingest needs --rebuild, which deletes the existing index and embeds every document again.`;
+}
 function mismatch(stored: unknown, configured: CorpusSchema): never {
-  createLogger().error({ event: 'corpus.mismatch', stored, configured });
-  throw new AppError(
-    'CORPUS_MISMATCH',
-    `The corpus was indexed with a different embedding model or language. Run ./sourced ingest --rebuild. Stored: ${JSON.stringify(stored)}; configured: ${JSON.stringify(configured)}`,
-  );
+  // Debug only: the error message already carries both sides in plain words.
+  createLogger().debug({ event: 'corpus.mismatch', stored, configured });
+  throw new AppError('CORPUS_MISMATCH', mismatchMessage(stored, configured));
 }
 export async function checkCorpusSchema(
   tx: postgres.Sql | postgres.TransactionSql,
@@ -68,6 +84,26 @@ export async function checkCorpusSchema(
   )
     mismatch({ type, expression, models }, configured);
   return { schema: configured, initialized: false, empty: false };
+}
+
+/**
+ * Read-only check used by ingest before it plans work: an incompatible index that
+ * still holds chunks needs a rebuild. An empty index is reconfigured in place.
+ */
+export async function corpusRebuildRequired(
+  sql: postgres.Sql,
+  config: KitConfig,
+): Promise<{ required: boolean; message?: string }> {
+  try {
+    await checkCorpusSchema(sql, config);
+    return { required: false };
+  } catch (error) {
+    if (!(error instanceof AppError) || error.code !== 'CORPUS_MISMATCH') throw error;
+    const [row] = await sql<
+      { present: boolean }[]
+    >`SELECT EXISTS (SELECT 1 FROM chunks) AS present`;
+    return row?.present ? { required: true, message: error.message } : { required: false };
+  }
 }
 
 /** Mutations are ingest-only; app/search call checkCorpusSchema instead. */

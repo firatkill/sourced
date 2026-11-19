@@ -10,6 +10,7 @@ import { getCliEnvironment } from '@/lib/env';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import { ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { AppError } from '@/lib/errors';
+import { ensureComposeProject } from '@/lib/kit/compose-project';
 
 export const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url));
 export const execute = promisify(execFile);
@@ -82,6 +83,7 @@ export async function initializeDatabase(
         'Database connection failed. Check DATABASE_URL or MIGRATION_DATABASE_URL and database availability.',
       );
     try {
+      await ensureComposeProject(repositoryRoot, (file, args) => execute(file, args));
       await execute('docker', ['compose', 'up', '-d', '--wait', 'db'], { cwd: repositoryRoot });
       status = 'started';
     } catch (cause) {

@@ -51,6 +51,8 @@ async function fixture() {
   const url = requireLocalDatabase(process.env.TEST_DATABASE_URL);
   const env = {
     PATH: process.env.PATH,
+    // D-136: a pinned project keeps the Node CLI from recording one in the repository's .env.
+    COMPOSE_PROJECT_NAME: 'sourced-test',
     TSX_TSCONFIG_PATH: resolve('tsconfig.json'),
     NODE_ENV: 'test' as const,
     QUESTION_HASH_SALT: 'test-only-question-salt-0000000000000000',

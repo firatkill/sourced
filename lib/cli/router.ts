@@ -169,91 +169,98 @@ export async function dispatch(
       });
     return { envelope, exitCode };
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.name === 'ExitPromptError' || error.name === 'AbortPromptError')
-    )
-      return {
-        envelope: failure(
-          command,
-          'INTERNAL_ERROR',
-          'The command was interrupted.',
-          command === 'ingest' ? 'pnpm sourced ingest' : 'pnpm sourced --help',
-        ),
-        exitCode: 130,
-      };
-    if (error instanceof RobotsDisallowedError)
-      return {
-        envelope: failure(
-          command,
-          'VALIDATION_FAILED',
-          'The site robots policy refuses this request.',
-          'Edit sourced.config.ts to use an allowed source.',
-        ),
-        exitCode: 2,
-      };
-    if (error instanceof EnvironmentError)
-      return {
-        envelope: failure(
-          command,
-          'CONFIG_INVALID',
-          error.message,
-          error.issues.map((issue) => issue.fix).join(' '),
-        ),
-        exitCode: 2,
-      };
-    if (error instanceof AppError) {
-      const action = [
-        'NEEDS_CONFIRMATION',
-        'CHECKS_FAILED',
-        'CORPUS_MISMATCH',
-        'CORPUS_EMPTY',
-      ].includes(error.code);
-      const messages = {
-        NEEDS_CONFIRMATION: error.message,
-        CORPUS_MISMATCH: 'The corpus was indexed with a different embedding model or language.',
-        CORPUS_EMPTY: error.message === NO_SOURCES ? NO_SOURCES : 'Nothing is indexed yet.',
-      };
-      const message =
-        error.code in messages ? messages[error.code as keyof typeof messages] : error.message;
-      const fix =
-        error.message === NO_SOURCES
-          ? 'sourced add <url or path>'
-          : error.code === 'NEEDS_CONFIRMATION'
-            ? command === 'eval'
-              ? 'Add missing pricing in sourced.config.ts or run pnpm sourced eval --yes.'
-              : command === 'eval:generate'
-                ? 'pnpm sourced eval:generate --help'
-                : command === 'eval:review'
-                  ? 'pnpm sourced eval:review --apply'
-                  : command === 'init'
-                    ? 'pnpm sourced init --help'
-                    : command === 'ingest'
-                      ? 'pnpm sourced ingest --yes'
-                      : 'pnpm sourced sources remove <id> --yes'
-            : error.code === 'CORPUS_MISMATCH'
-              ? 'pnpm sourced ingest --rebuild'
-              : error.code === 'CORPUS_EMPTY'
-                ? 'pnpm sourced ingest'
-                : 'pnpm sourced --help';
-      return { envelope: failure(command, error.code, message, fix), exitCode: action ? 2 : 1 };
-    }
-    const missingEnv =
-      error instanceof Error && error.message.startsWith('Invalid environment variables:');
+    return errorEnvelope(command, error);
+  }
+}
+/** Map a thrown error to the failure envelope and exit code (shared with app startup). */
+export function errorEnvelope(
+  command: string,
+  error: unknown,
+): { envelope: CliEnvelope; exitCode: ExitCode } {
+  if (
+    error instanceof Error &&
+    (error.name === 'ExitPromptError' || error.name === 'AbortPromptError')
+  )
     return {
       envelope: failure(
         command,
-        missingEnv ? 'CONFIG_INVALID' : 'VALIDATION_FAILED',
-        missingEnv
-          ? 'Required environment settings are missing or invalid.'
-          : 'The command failed. Check its arguments, configuration and database connection.',
-        missingEnv
-          ? 'Edit .env.local using the variable names in .env.example, then retry.'
-          : 'pnpm sourced --help',
+        'INTERNAL_ERROR',
+        'The command was interrupted.',
+        command === 'ingest' ? 'pnpm sourced ingest' : 'pnpm sourced --help',
       ),
-      exitCode: missingEnv ? 2 : 1,
+      exitCode: 130,
     };
+  if (error instanceof RobotsDisallowedError)
+    return {
+      envelope: failure(
+        command,
+        'VALIDATION_FAILED',
+        'The site robots policy refuses this request.',
+        'Edit sourced.config.ts to use an allowed source.',
+      ),
+      exitCode: 2,
+    };
+  if (error instanceof EnvironmentError)
+    return {
+      envelope: failure(
+        command,
+        'CONFIG_INVALID',
+        error.message,
+        error.issues.map((issue) => issue.fix).join(' '),
+      ),
+      exitCode: 2,
+    };
+  if (error instanceof AppError) {
+    const action = [
+      'NEEDS_CONFIRMATION',
+      'CHECKS_FAILED',
+      'CORPUS_MISMATCH',
+      'CORPUS_EMPTY',
+    ].includes(error.code);
+    const messages = {
+      NEEDS_CONFIRMATION: error.message,
+      CORPUS_MISMATCH: error.message,
+      CORPUS_EMPTY: error.message === NO_SOURCES ? NO_SOURCES : 'Nothing is indexed yet.',
+    };
+    const message =
+      error.code in messages ? messages[error.code as keyof typeof messages] : error.message;
+    const fix =
+      error.message === NO_SOURCES
+        ? 'pnpm sourced add <url or path>'
+        : error.code === 'NEEDS_CONFIRMATION'
+          ? command === 'eval'
+            ? 'Add missing pricing in sourced.config.ts or run pnpm sourced eval --yes.'
+            : command === 'eval:generate'
+              ? 'pnpm sourced eval:generate --help'
+              : command === 'eval:review'
+                ? 'pnpm sourced eval:review --apply'
+                : command === 'init'
+                  ? 'pnpm sourced init --help'
+                  : command === 'ingest'
+                    ? 'pnpm sourced ingest --yes'
+                    : 'pnpm sourced sources remove <id> --yes'
+          : error.code === 'CORPUS_MISMATCH'
+            ? 'pnpm sourced ingest --rebuild'
+            : error.code === 'CORPUS_EMPTY'
+              ? 'pnpm sourced ingest'
+              : 'pnpm sourced --help';
+    return { envelope: failure(command, error.code, message, fix), exitCode: action ? 2 : 1 };
   }
+  const missingEnv =
+    error instanceof Error && error.message.startsWith('Invalid environment variables:');
+  return {
+    envelope: failure(
+      command,
+      missingEnv ? 'CONFIG_INVALID' : 'VALIDATION_FAILED',
+      missingEnv
+        ? 'Required environment settings are missing or invalid.'
+        : 'The command failed. Check its arguments, configuration and database connection.',
+      missingEnv
+        ? 'Edit .env.local using the variable names in .env.example, then retry.'
+        : 'pnpm sourced --help',
+    ),
+    exitCode: missingEnv ? 2 : 1,
+  };
 }
 async function runCommand(input: Invocation, context: CommandContext): Promise<CommandResult> {
   switch (input.command) {
@@ -301,7 +308,8 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     }
     case 'ingest': {
       const { runIngest } = await import('./commands/ingest');
-      return { result: await runIngest(input, context) };
+      const { warnings, ...result } = await runIngest(input, context);
+      return { result, warnings: warnings ?? [] };
     }
     case 'eval': {
       // Resolve the current file before importing prompts or validating provider env.

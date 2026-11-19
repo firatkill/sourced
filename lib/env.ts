@@ -257,6 +257,7 @@ export function getCliEnvironment() {
       LLM_MODE: z.enum(['live', 'mock']).default('live'),
       OLLAMA_BASE_URL: optionalText,
       SOURCED_DOCKER: optionalText,
+      SOURCED_LAUNCHER: z.enum(['./sourced', 'sourced.cmd']).optional().catch(undefined),
       SOURCED_PORT: optionalText,
       SOURCED_DB_PORT: optionalText,
     })

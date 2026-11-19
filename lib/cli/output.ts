@@ -41,5 +41,7 @@ export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   }
   if (envelope.error)
     return `${envelope.error.message}\nNext: ${envelope.error.fix ?? 'pnpm sourced --help'}\n`;
-  return `${envelope.command} completed successfully.\n${envelope.result === undefined ? '' : JSON.stringify(envelope.result, null, 2) + '\n'}Next: pnpm sourced --help\n`;
+  // Warnings are part of the outcome; human output must show them too (D-137).
+  const warnings = envelope.warnings.map((warning) => `Warning: ${warning.message}\n`).join('');
+  return `${warnings}${envelope.command} completed successfully.\n${envelope.result === undefined ? '' : JSON.stringify(envelope.result, null, 2) + '\n'}Next: pnpm sourced --help\n`;
 }

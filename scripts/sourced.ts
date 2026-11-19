@@ -4,13 +4,15 @@ import { dispatch, failure } from '@/lib/cli/router';
 import { formatEnvelope, redact } from '@/lib/cli/output';
 import { createConfirmPrompt } from '@/lib/cli/prompts';
 import { helpText } from '@/lib/cli/registry';
+import { forLauncher } from '@/lib/kit/runtime-config';
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
 const stdout = process.stdout.write.bind(process.stdout);
 const stderr = process.stderr.write.bind(process.stderr);
 const secrets = getCliSecrets();
-const safe = (message: string) => redact(message, secrets);
+// D-137: every hint names the command for the launcher in use.
+const safe = (message: string) => forLauncher(redact(message, secrets));
 let finished = false;
 const progress = (message: string) => {
   if (json) stderr(`${JSON.stringify({ event: 'progress', message: safe(message) })}\n`);
@@ -60,8 +62,9 @@ function finish(envelope: Parameters<typeof formatEnvelope>[0], exitCode: number
   const parsed = CliEnvelope.parse(sanitized);
   // The command is a registry-owned literal, never environment or user input.
   parsed.command = envelope.command;
-  if (!json && (parsed.command === 'help' || args.includes('--help'))) stdout(`${helpText()}\n`);
-  else stdout(formatEnvelope(parsed, json));
+  if (!json && (parsed.command === 'help' || args.includes('--help')))
+    stdout(`${forLauncher(helpText())}\n`);
+  else stdout(forLauncher(formatEnvelope(parsed, json)));
   process.exitCode = exitCode;
 }
 import { CliEnvelope } from '@/lib/cli/envelope';

@@ -19,6 +19,34 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 2
 fi
 [ -f .env.local ] || (umask 077; touch .env.local)
+# D-136: one Compose project per checkout, so two clones never share a database.
+# Compose reads COMPOSE_PROJECT_NAME from .env in this folder, so the launchers,
+# the Node CLI and a plain `docker compose` all use the same project.
+if [ -z "${COMPOSE_PROJECT_NAME:-}" ]; then
+  project=
+  if [ -f .env ]; then
+    project=$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env | tail -n 1 | tr -d '\r')
+  fi
+  if [ -z "$project" ]; then
+    # Upgrades keep the project (and data) their containers already use.
+    if listing=$(docker ps -a --format '{{.Label "com.docker.compose.project.working_dir"}}|{{.Label "com.docker.compose.project"}}' 2>/dev/null); then
+      here=$(pwd -P | tr '[:upper:]' '[:lower:]')
+      project=$(printf '%s\n' "$listing" | while IFS='|' read -r dir name; do
+        if [ -n "$name" ] && [ "$(printf '%s' "$dir" | tr '[:upper:]' '[:lower:]')" = "$here" ]; then
+          printf '%s\n' "$name"
+          break
+        fi
+      done)
+      [ -n "$project" ] || project="sourced-$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')"
+      if [ -s .env ] && [ -n "$(tail -c 1 .env)" ]; then printf '\n' >> .env; fi
+      printf 'COMPOSE_PROJECT_NAME=%s\n' "$project" >> .env
+    fi
+  fi
+  if [ -n "$project" ]; then
+    COMPOSE_PROJECT_NAME=$project
+    export COMPOSE_PROJECT_NAME
+  fi
+fi
 # Parse only literal port assignments; never source or evaluate the env file.
 carriage_return=$(printf '\r')
 while IFS= read -r line || [ -n "$line" ]; do
@@ -124,34 +152,51 @@ case "$command" in
       exit 2
     fi
     export SOURCED_PORT
+    # The app writes its startup failure here (D-137); clear any earlier one first.
+    rm -f .sourced/startup-error.json .sourced/startup-error.txt
     if [ "$json" = true ]; then
       compose_step 'App container start' compose up -d --build --force-recreate app || exit $?
     else
       docker compose up -d --build --force-recreate app >&2 || exit 1
     fi
-    # Use Node inside the image: the Docker-only host needs neither Node nor curl.
-    if ! (
-      if [ "$json" = true ]; then exec 1>&2; fi
-      docker compose exec -T app node --input-type=module -e '
-      for (let attempt = 0; attempt < 60; attempt++) {
-        try {
-          const response = await fetch("http://127.0.0.1:3000/api/health", { signal: AbortSignal.timeout(1000) });
-          if (response.ok) process.exit(0);
-        } catch {}
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      process.exit(1);
-      '
-    ); then
-      if [ "$json" = true ]; then
-        printf '%s\n' '{"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App health check failed.","fix":"Run docker compose logs app to diagnose the health check, then retry ./sourced dev --json."},"warnings":[]}'
+    attempts=${SOURCED_DEV_ATTEMPTS:-60}
+    attempt=0
+    started=false
+    while [ "$attempt" -lt "$attempts" ]; do
+      attempt=$((attempt + 1))
+      [ ! -f .sourced/startup-error.json ] || break
+      if [ -z "$(docker compose ps -q --status running app 2>/dev/null)" ]; then
+        # The container stopped: stop waiting at once instead of polling for a minute.
+        [ -z "$(docker compose ps -a -q --status exited app 2>/dev/null)" ] || break
+      elif docker compose exec -T app node --input-type=module -e '
+        const response = await fetch("http://127.0.0.1:3000/api/health", { signal: AbortSignal.timeout(1000) }).catch(() => null);
+        process.exit(response?.ok ? 0 : 1);
+        ' >/dev/null 2>&1; then
+        started=true
+        break
+      fi
+      sleep "${SOURCED_DEV_INTERVAL:-1}"
+    done
+    if [ "$started" = false ]; then
+      if [ -f .sourced/startup-error.json ]; then
+        if [ "$json" = true ]; then
+          cat .sourced/startup-error.json
+        else
+          cat .sourced/startup-error.txt >&2
+        fi
+      elif [ "$json" = true ]; then
+        printf '%s\n' '{"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"The app did not start.","fix":"Run docker compose logs app to see why, then retry ./sourced dev --json."},"warnings":[]}'
+      else
+        printf '%s\n' 'The app did not start. Its last log lines:' >&2
+        docker compose logs --no-color --tail 5 app >&2 || true
+        printf '%s\n' 'Next: docker compose logs app' >&2
       fi
       exit 1
     fi
     if [ "$json" = true ]; then
       printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s"},"warnings":[]}\n' "$SOURCED_PORT"
     else
-      printf 'http://localhost:%s\n' "$SOURCED_PORT"
+      printf 'Sourced is running at http://localhost:%s\nStop it with ./sourced down\n' "$SOURCED_PORT"
     fi
     exit 0
     ;;

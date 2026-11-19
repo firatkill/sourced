@@ -13,6 +13,11 @@ vi.mock('@/lib/kit/load-config', async (original) => ({
   loadConfig: vi.fn(),
 }));
 vi.mock('postgres', () => ({ default: Object.assign(() => ({ end: vi.fn() }), { BigInt: {} }) }));
+// D-137: ingest checks index compatibility first; this test is about pricing only.
+vi.mock('@/lib/kit/vector-schema', async (original) => ({
+  ...(await original<typeof import('@/lib/kit/vector-schema')>()),
+  corpusRebuildRequired: vi.fn(() => Promise.resolve({ required: false })),
+}));
 vi.mock('@/lib/ingest/load', () => ({
   assertIngestAllowed: vi.fn(),
   loadCorpus: vi.fn(() => Promise.resolve({})),
