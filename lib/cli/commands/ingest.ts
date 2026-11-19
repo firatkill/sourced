@@ -198,18 +198,21 @@ export async function runIngest(input: Invocation, context: CommandContext) {
       pricePerMillion: price ?? 0,
     });
     await sql`UPDATE corpus_meta SET documents_total=(SELECT count(*) FROM documents), updated_at=now() WHERE id=1`;
-    context.progress(
-      formatIngestReport(report, new Date()).replace(
-        /est\. \$[0-9.]+/,
-        totals.estimatedCostUsd === null
-          ? 'est. unknown'
-          : `est. $${report.costUsdEstimate.toFixed(4)}`,
-      ),
-    );
-    for (const source of sources)
+    // D-137: a terminal gets the short summary from the output formatter instead.
+    if (input.json)
       context.progress(
-        `${source.id}: ${String(source.documents.done)} documents, ${String(source.boilerplateRemoved)} boilerplate blocks removed; ${String(source.embeddingTokens)} embedding tokens; cost ${source.estimatedCostUsd === null ? 'unknown' : `$${source.estimatedCostUsd.toFixed(4)}`}${config.models.embed.provider === 'openai' ? '' : ' (approximate)'}`,
+        formatIngestReport(report, new Date()).replace(
+          /est\. \$[0-9.]+/,
+          totals.estimatedCostUsd === null
+            ? 'est. unknown'
+            : `est. $${report.costUsdEstimate.toFixed(4)}`,
+        ),
       );
+    if (input.json)
+      for (const source of sources)
+        context.progress(
+          `${source.id}: ${String(source.documents.done)} documents, ${String(source.boilerplateRemoved)} boilerplate blocks removed; ${String(source.embeddingTokens)} embedding tokens; cost ${source.estimatedCostUsd === null ? 'unknown' : `$${source.estimatedCostUsd.toFixed(4)}`}${config.models.embed.provider === 'openai' ? '' : ' (approximate)'}`,
+        );
     return {
       mode: 'run' as const,
       runId: report.runId ?? null,

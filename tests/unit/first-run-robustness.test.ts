@@ -279,3 +279,36 @@ test('D-137: ingest prints a short summary in a terminal and the next command', 
   );
   expect(envelope('run')).toMatch(/^Indexed 35 documents: 201 new[\s\S]*Next: pnpm sourced dev\n$/);
 });
+
+test('D-138: before any snapshot, a local CLI configuration asks only for the provider key', async () => {
+  const { setCliKitConfig } = await import('@/lib/kit/runtime-config');
+  const { getEnv } = await import('@/lib/env');
+  for (const name of [
+    'QUESTION_HASH_SALT',
+    'IP_HASH_SALT',
+    'NEXT_PUBLIC_SITE_URL',
+    'OPENAI_API_KEY',
+    'CHAT_MODEL',
+    'PRICE_CHAT_INPUT_PER_MTOK',
+    'PRICE_CHAT_OUTPUT_PER_MTOK',
+    'PRICE_EMBED_PER_MTOK',
+  ])
+    vi.stubEnv(name, '');
+  vi.stubEnv('LLM_MODE', 'live');
+  setCliKitConfig({ ...parseKitConfig(mongo), profile: 'local' });
+  let message = '';
+  try {
+    getEnv();
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error);
+  }
+  expect(message).toContain('OPENAI_API_KEY');
+  for (const name of [
+    'QUESTION_HASH_SALT',
+    'IP_HASH_SALT',
+    'NEXT_PUBLIC_SITE_URL',
+    'CHAT_MODEL',
+    'PRICE_',
+  ])
+    expect(message).not.toContain(name);
+});

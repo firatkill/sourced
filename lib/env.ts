@@ -57,6 +57,8 @@ const providerConfigSchema = z.object({
   }),
 });
 function providerConfig() {
+  // D-138: the CLI's loaded configuration wins; a dry run writes no snapshot.
+  if (cliConfig) return cliConfig;
   // No generated imports: snapshot creation itself imports this module.
   // Edge and fresh clones retain the example's strict live-mode requirements.
   if (typeof SOURCED_NODE_RUNTIME !== 'undefined' && !SOURCED_NODE_RUNTIME) return;
@@ -168,17 +170,14 @@ let cached: Env | undefined;
  * local port, so both get defaults; explicit values always win.
  */
 export const LOCAL_QUESTION_HASH_SALT = 'sourced-local-profile-question-hash-salt-v1';
-let cliProfile: string | undefined;
+let cliConfig: z.infer<typeof providerConfigSchema>['config'] | undefined;
 /** The CLI's loaded configuration, which a dry run does not write to disk as a snapshot. */
-export function setEnvProfile(profile: string | undefined): void {
-  cliProfile = profile;
+export function setEnvConfig(config: unknown): void {
+  cliConfig = config === undefined ? undefined : providerConfigSchema.parse({ config }).config;
   cached = undefined;
 }
 type EnvInput = Record<string, string | undefined>;
-export function withLocalDefaults(
-  env: EnvInput,
-  profile = cliProfile ?? providerConfig()?.profile,
-): EnvInput {
+export function withLocalDefaults(env: EnvInput, profile = providerConfig()?.profile): EnvInput {
   if (profile !== 'local') return env;
   return {
     ...env,

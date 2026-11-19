@@ -3762,7 +3762,7 @@ cp .env.example .env.local   # the user pastes the API key after OPENAI_API_KEY=
 ./sourced dev
 ```
 
-The first command builds the image, which takes a few minutes. The shipped `sourced.config.ts` uses the `local` profile (D-138), under which `.env.local` needs only the provider key. `init` remains for choosing other providers or models with flags.
+The first command builds the image, which takes a few minutes. The shipped `sourced.config.ts` uses the `local` profile (D-138), under which `.env.local` needs only the provider key. `init` remains for choosing other providers or models with flags. Because the quick start runs no `init`, the Docker CLI applies pending migrations to its local database before every command that reads or writes it (`ingest`, `inspect`, `ask`, `sources remove`, `reset`, `eval`, `eval:generate`, `eval:review`; `migrateDockerDatabase` in `lib/cli/commands/database.ts`). The Node CLI never migrates on its own, because its `DATABASE_URL` may point at a hosted database. Without `--json`, `ingest` prints a short summary (documents, passages to embed or indexed, tokens, estimated cost, skipped and failed counts) and the next command instead of the raw result, and omits progress lines for unchanged cached pages.
 
 ## 36. Quality on any corpus
 

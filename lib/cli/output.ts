@@ -12,6 +12,20 @@ export function redact(text: string, secrets: readonly string[]): string {
 }
 export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   if (json) return `${JSON.stringify(envelope)}\n`;
+  if (envelope.command === 'reset' && envelope.ok) {
+    const reset = commandSchemas.reset.parse(envelope.result);
+    return `Removed ${String(reset.removedSources)} sources and ${String(reset.removedDocuments)} indexed documents. Your files were not touched.\nNext: pnpm sourced add <folder or URL>\n`;
+  }
+  if (envelope.command === 'add' && envelope.ok) {
+    const added = commandSchemas.add.parse(envelope.result);
+    const where =
+      'path' in added.source
+        ? added.source.path
+        : 'url' in added.source
+          ? added.source.url
+          : added.source.id;
+    return `Added ${added.detected.type} source ${added.source.id} (${where}).\nNext: pnpm sourced ingest\n`;
+  }
   if (envelope.command === 'ingest' && envelope.ok) {
     const ingest = commandSchemas.ingest.safeParse(envelope.result);
     if (ingest.success) return formatIngest(ingest.data, envelope.warnings);

@@ -2,7 +2,7 @@ import 'server-only';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { EMBEDDING } from '@/lib/config';
-import { getCliEnvironment, getConfigEnv, setEnvProfile } from '@/lib/env';
+import { getCliEnvironment, getConfigEnv, setEnvConfig } from '@/lib/env';
 import { AppError } from '@/lib/errors';
 import { configHash, SnapshotSchema } from './load-config';
 import type { KitConfig } from './config-schema';
@@ -100,12 +100,17 @@ export function getKitConfig(applyMock = true): KitConfig {
 }
 export function resetKitConfigForTests(): void {
   cached = undefined;
-  setEnvProfile(undefined);
+  setEnvConfig(undefined);
 }
 
 /** CLI can use validated configuration without writing a snapshot during a dry run. */
 export function setCliKitConfig(config: KitConfig): void {
   cached = structuredClone(config);
   // D-138: local defaults apply before the first snapshot exists (dry runs write none).
-  setEnvProfile(config.profile);
+  setEnvConfig({
+    profile: config.profile,
+    models: Object.fromEntries(
+      Object.entries(config.models).filter((entry) => entry[1] !== undefined),
+    ),
+  });
 }
