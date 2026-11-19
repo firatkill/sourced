@@ -247,3 +247,35 @@ test('D-138: the local profile needs only the provider key', async () => {
   expect(withLocalDefaults({}, 'private')).toEqual({});
   expect(LOCAL_QUESTION_HASH_SALT.length).toBeGreaterThanOrEqual(32);
 });
+
+test('D-137: ingest prints a short summary in a terminal and the next command', async () => {
+  const { formatEnvelope } = await import('@/lib/cli/output');
+  const totals = {
+    ...emptyCounters(),
+    documents: { discovered: 35, done: 35, skipped: 1, failed: 0 },
+    chunks: { new: 201, changed: 0, unchanged: 0, deleted: 0 },
+    embeddingTokens: 71033,
+    estimatedCostUsd: 0.0014,
+  };
+  const envelope = (mode: 'run' | 'dry-run', warnings: { code: string; message: string }[] = []) =>
+    formatEnvelope(
+      {
+        schemaVersion: 1,
+        command: 'ingest',
+        ok: true,
+        result: { mode, runId: null, corpusVersion: null, sources: [], totals },
+        warnings,
+      },
+      false,
+    );
+  expect(envelope('dry-run')).toBe(
+    'Dry run: 35 documents, 201 passages to embed (71033 tokens), 0 unchanged, 0 to remove.\n' +
+      'Estimated embedding cost: $0.0014. Nothing was sent to a provider.\n' +
+      '1 skipped and 0 failed documents; pnpm sourced inspect explains why.\n' +
+      'Next: pnpm sourced ingest\n',
+  );
+  expect(envelope('dry-run', [{ code: 'CORPUS_MISMATCH', message: 'Built with mock.' }])).toMatch(
+    /^Warning: Built with mock\.\n[\s\S]*Next: pnpm sourced ingest --rebuild\n$/,
+  );
+  expect(envelope('run')).toMatch(/^Indexed 35 documents: 201 new[\s\S]*Next: pnpm sourced dev\n$/);
+});

@@ -2738,3 +2738,64 @@ Source: PRD FR-87 to FR-90, NFR-12 (amended), NFR-24, §11, §12 (M8); TRD §37,
   1. Review TC-229 to TC-246 and write qa/m8-report.md.
   2. Assert the expected outcome and record evidence in the ledger.
 - Expected: Newcomer release check passes in Claude Code and Codex; milestone report and review written; v2.0.0 tagged after approval.
+
+## v2.1 First run
+
+Source: owner report of 2026-11-19 (fresh clone in a folder named `sourced`); PRD D-136 to D-139; TRD §27, §33.8, §35.3, §35.4.
+
+| TC ID  | AC Reference | TRD test ID / source | Title                                       | Priority | Automatable | Expected result                                                                                                                                                                                                                                                  |
+| ------ | ------------ | -------------------- | ------------------------------------------- | -------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TC-248 | T-77; D-136  | TRD §35.3            | Each checkout has its own database          | Critical | yes         | A new checkout records `COMPOSE_PROJECT_NAME=sourced-<8 hex>` in `.env` and every Compose call uses it; an upgraded checkout keeps the project its containers use; a user-set name wins.                                                                         |
+| TC-249 | T-77; D-137  | TRD §33.8            | Incompatible index caught before ingest     | Critical | yes         | `ingest --dry-run` warns `CORPUS_MISMATCH` in plain words (naming the bundled mock example when it applies) and estimates a full rebuild; `ingest` asks in a terminal and refuses with `<launcher> ingest --rebuild` otherwise; `--yes` never deletes the index. |
+| TC-250 | T-77; D-137  | TRD §35.3            | `dev` never fails silently                  | Critical | yes         | When the app cannot start, `./sourced dev` prints the reason and the next command within seconds (JSON: the startup error envelope); no Docker-path hint says `pnpm sourced`.                                                                                    |
+| TC-251 | T-78; D-138  | TRD §35.4            | One-key first run and reset                 | Critical | yes         | `.env.example` has one uncommented line (`OPENAI_API_KEY=`); with only that key filled, the example ingests and the app starts; `reset` asks, then empties the source list and the index without touching files.                                                 |
+| TC-252 | T-78; D-139  | TRD §27              | Short local-first README; no deploy command | High     | yes         | README headings and quick-start blocks match TRD §27, mention no hosting; the guide holds the moved sections; six command pointers and skills, no `/deploy`.                                                                                                     |
+| TC-253 | T-77, T-78   | owner report         | Fresh-clone rehearsal of the README         | Critical | no          | Following the README on a clean clone in a folder named `sourced` (Docker, mock mode) reaches a running app and a cited answer for the example and for own documents, with every failure explained.                                                              |
+
+### TC-248: Each checkout has its own database
+
+- Milestone: v2.1 First run
+- Requirement: T-77; D-136.
+- Steps:
+  1. `tests/contract/docker-launcher.test.ts` D-136 cases and `tests/unit/first-run-robustness.test.ts`.
+- Expected: As in the table.
+
+### TC-249: Incompatible index caught before ingest
+
+- Milestone: v2.1 First run
+- Requirement: T-77; D-137.
+- Steps:
+  1. `tests/unit/first-run-robustness.test.ts` mismatch cases.
+- Expected: As in the table.
+
+### TC-250: `dev` never fails silently
+
+- Milestone: v2.1 First run
+- Requirement: T-77; D-137.
+- Steps:
+  1. `tests/contract/docker-launcher.test.ts` D-137 cases and the startup unit test.
+- Expected: As in the table.
+
+### TC-251: One-key first run and reset
+
+- Milestone: v2.1 First run
+- Requirement: T-78; D-138.
+- Steps:
+  1. `tests/unit/readme.test.ts`, `tests/unit/first-run-robustness.test.ts`, the `reset` contract test in `tests/contract/database/t61.ts` and the CI Docker smoke.
+- Expected: As in the table.
+
+### TC-252: Short local-first README; no deploy command
+
+- Milestone: v2.1 First run
+- Requirement: T-78; D-139.
+- Steps:
+  1. `tests/unit/readme.test.ts`, `tests/unit/readme-commands.test.ts`, `tests/unit/agent-files.test.ts`.
+- Expected: As in the table.
+
+### TC-253: Fresh-clone rehearsal of the README
+
+- Milestone: v2.1 First run
+- Requirement: T-77, T-78.
+- Steps:
+  1. Clone into a folder named `sourced` while another checkout's containers run; follow the README Docker path in mock mode; record the log in `qa/release-v2/first-run-v2.1.md`.
+- Expected: As in the table.

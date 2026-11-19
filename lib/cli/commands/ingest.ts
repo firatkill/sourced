@@ -79,7 +79,8 @@ export async function runIngest(input: Invocation, context: CommandContext) {
         if (event.type === 'skipped') context.progress(`${event.reason} ${event.key}`);
       },
       onStatus: (slug, status) => {
-        context.progress(`${status} ${slug}`);
+        // A terminal shows work being done; unchanged cached pages are only noise there.
+        if (input.json || status !== 'unchanged') context.progress(`${status} ${slug}`);
       },
     });
   if (input.values['fetch-only']) {

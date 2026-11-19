@@ -168,8 +168,17 @@ let cached: Env | undefined;
  * local port, so both get defaults; explicit values always win.
  */
 export const LOCAL_QUESTION_HASH_SALT = 'sourced-local-profile-question-hash-salt-v1';
+let cliProfile: string | undefined;
+/** The CLI's loaded configuration, which a dry run does not write to disk as a snapshot. */
+export function setEnvProfile(profile: string | undefined): void {
+  cliProfile = profile;
+  cached = undefined;
+}
 type EnvInput = Record<string, string | undefined>;
-export function withLocalDefaults(env: EnvInput, profile = providerConfig()?.profile): EnvInput {
+export function withLocalDefaults(
+  env: EnvInput,
+  profile = cliProfile ?? providerConfig()?.profile,
+): EnvInput {
   if (profile !== 'local') return env;
   return {
     ...env,

@@ -67,6 +67,17 @@ export function parseInvocation(args: string[]): Invocation {
       );
   return { command: key, values, positionals, json: values.json === true };
 }
+/** Commands that read or write the corpus database (D-138: migrated first on Docker). */
+const DATABASE_COMMANDS = new Set<string>([
+  'ingest',
+  'inspect',
+  'ask',
+  'sources remove',
+  'reset',
+  'eval',
+  'eval:generate',
+  'eval:review',
+]);
 export function failure(
   command: string,
   code: AppError['code'],
@@ -126,6 +137,8 @@ export async function dispatch(
       });
       input.values.yes = true;
     }
+    if (DATABASE_COMMANDS.has(command))
+      await (await import('./commands/database')).migrateDockerDatabase();
     const outcome = await handler(input, context);
     const result = commandSchemas[input.command].parse(outcome.result);
     const failedChecks =
@@ -247,7 +260,9 @@ export function errorEnvelope(
             ? 'pnpm sourced ingest --rebuild'
             : error.code === 'CORPUS_EMPTY'
               ? 'pnpm sourced ingest'
-              : 'pnpm sourced --help';
+              : error.code === 'PROVIDER_ERROR' || error.code === 'PROVIDER_TIMEOUT'
+                ? 'Check the provider key in .env.local and the provider status, then retry; pnpm sourced doctor checks the key.'
+                : 'pnpm sourced --help';
     return { envelope: failure(command, error.code, message, fix), exitCode: action ? 2 : 1 };
   }
   const missingEnv =
