@@ -19,6 +19,9 @@ async function cli(args: string[], expected: number) {
       {
         env: {
           PATH: process.env.PATH,
+          // D-138: this child runs in the repository root and rewrites its shared
+          // .sourced/config.json; keep it public-demo like the rest of the suite.
+          SOURCED_PROFILE: 'public-demo',
           LLM_MODE: 'mock',
           NODE_ENV: 'test',
           DATABASE_URL: url,
