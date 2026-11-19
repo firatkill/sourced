@@ -95,7 +95,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | 466ccd5 |
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | done | de13131 |
 | T-77 | v2.1 First run | Per-checkout Compose project and clear first-run failures (D-136, D-137) | done | 583ff35 |
-| T-78 | v2.1 First run | One-key local first run, `reset`, short README, `/deploy` removed (D-138, D-139) | review | 7141b85 |
+| T-78 | v2.1 First run | One-key local first run, `reset`, short README, `/deploy` removed (D-138, D-139) | done | 7141b85, 97552bb, ab365d3 |
 
 ## Open questions for the owner
 

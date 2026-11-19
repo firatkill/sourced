@@ -5606,6 +5606,132 @@
       "root_cause_group": null,
       "clickup_task": "Owner action listed in docs/PROGRESS.md (open questions); no ClickUp in this repository",
       "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-248",
+      "ac_reference": "T-77; D-136",
+      "milestone": "v2.1 First run",
+      "title": "Each checkout has its own database",
+      "description": "TRD §35.3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-248.",
+      "expected_result": "A new checkout records `COMPOSE_PROJECT_NAME=sourced-<8 hex>` in `.env` and every Compose call uses it; an upgraded checkout keeps the project its containers use; a user-set name wins.",
+      "status": "resolved",
+      "environment": "local macOS, Vitest contract + unit",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "D-136 launcher and Node helper tests pass; fresh clone got sourced-c74e9ea3 beside another checkout (qa/release-v2/first-run-v2.1.md)"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-249",
+      "ac_reference": "T-77; D-137",
+      "milestone": "v2.1 First run",
+      "title": "Incompatible index caught before ingest",
+      "description": "TRD §33.8.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-249.",
+      "expected_result": "`ingest --dry-run` warns `CORPUS_MISMATCH` in plain words (naming the bundled mock example when it applies) and estimates a full rebuild; `ingest` asks in a terminal and refuses with `<launcher> ingest --rebuild` otherwise; `--yes` never deletes the index.",
+      "status": "resolved",
+      "environment": "local macOS, Vitest + Docker rehearsal",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "dry-run warning, interactive/JSON branches tested; rehearsal shows plain mismatch text and ./sourced ingest --rebuild"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-250",
+      "ac_reference": "T-77; D-137",
+      "milestone": "v2.1 First run",
+      "title": "`dev` never fails silently",
+      "description": "TRD §35.3.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-250.",
+      "expected_result": "When the app cannot start, `./sourced dev` prints the reason and the next command within seconds (JSON: the startup error envelope); no Docker-path hint says `pnpm sourced`.",
+      "status": "resolved",
+      "environment": "local macOS, Vitest + Docker rehearsal",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "startup.failed files; dev explains CORPUS_MISMATCH within seconds in both modes"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-251",
+      "ac_reference": "T-78; D-138",
+      "milestone": "v2.1 First run",
+      "title": "One-key first run and reset",
+      "description": "TRD §35.4.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-251.",
+      "expected_result": "`.env.example` has one uncommented line (`OPENAI_API_KEY=`); with only that key filled, the example ingests and the app starts; `reset` asks, then empties the source list and the index without touching files.",
+      "status": "resolved",
+      "environment": "local macOS, Vitest + Docker rehearsal",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "one-line .env.example; only OPENAI_API_KEY requested; reset contract test and rehearsal pass"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-252",
+      "ac_reference": "T-78; D-139",
+      "milestone": "v2.1 First run",
+      "title": "Short local-first README; no deploy command",
+      "description": "TRD §27.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-252.",
+      "expected_result": "README headings and quick-start blocks match TRD §27, mention no hosting; the guide holds the moved sections; six command pointers and skills, no `/deploy`.",
+      "status": "resolved",
+      "environment": "local macOS, Vitest",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "README/guide/agent-file tests pass; six commands, no deploy"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
+    },
+    {
+      "tc_reference": "TC-253",
+      "ac_reference": "T-77, T-78",
+      "milestone": "v2.1 First run",
+      "title": "Fresh-clone rehearsal of the README",
+      "description": "owner report.",
+      "steps_to_reproduce": "See qa/test-cases.md TC-253.",
+      "expected_result": "Following the README on a clean clone in a folder named `sourced` (Docker, mock mode) reaches a running app and a cited answer for the example and for own documents, with every failure explained.",
+      "status": "resolved",
+      "environment": "local macOS, Docker Desktop, mock mode",
+      "attempts": [
+        {
+          "result": "pass",
+          "note": "third run passed end to end; first build hit the known next/font fetch flake once; live run left to the owner"
+        }
+      ],
+      "regression_of": null,
+      "root_cause_group": null,
+      "clickup_task": null,
+      "retraction_reason": null
     }
   ]
 }
