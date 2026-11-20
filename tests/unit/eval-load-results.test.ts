@@ -65,8 +65,9 @@ test('T-50: default /eval loader reads the committed v1 results from the example
   resetEnvForTests();
   const runs = await loadResults();
   expect(runs.length).toBeGreaterThan(0);
-  // T-85: the latest committed run includes the six follow-up cases.
-  expect(runs.at(-1)).toMatchObject({ date: '2026-11-20', sourceFile: '2026-11-20.json' });
+  // T-85: the latest committed run (v2.3's final eval) includes the six follow-up cases.
+  expect(runs.at(-1)).toMatchObject({ date: '2026-11-20', sourceFile: '2026-11-20-2.json' });
+  expect(runs.map((run) => run.sourceFile)).toContain('2026-11-20.json');
   expect(runs.at(-1)?.questions).toHaveLength(46);
   expect(runs.map((run) => run.sourceFile)).toContain('2026-11-09.json');
 });

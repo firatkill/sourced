@@ -173,7 +173,7 @@ corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatc
           "ok": true,
         },
         {
-          "detail": "app port 3000 is taken on 127.0.0.1.",
+          "detail": "ports check failed.",
           "fix": "Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.",
           "id": "ports",
           "ok": false,
