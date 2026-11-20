@@ -186,22 +186,24 @@ const paraphrases: Record<string, string> = {
 export function realisticQueries(text: string) {
   const parsed = parseGolden(text);
   if (parsed.errors.length) throw new Error('Invalid committed golden set.');
-  return parsed.entries
-    // D-143: follow-up cases (with history) are not standalone search queries.
-    .filter((entry) => entry.type === 'answerable' && !entry.history)
-    .flatMap((entry) => {
-      const paraphrase = paraphrases[entry.id];
-      if (!paraphrase) throw new Error('Add a reviewed paraphrase for the new golden question.');
-      return [
-        entry.question,
-        paraphrase,
-        `In ${corpusSubject}, ${entry.question}`,
-        `Explain the following: ${paraphrase}`,
-        `Please clarify: ${entry.question}`,
-        `Using the ${corpusSubject} documentation, answer this: ${paraphrase}`,
-        `For a database administrator: ${paraphrase}`,
-      ].map((question, variant) => ({ id: `${entry.id}-${String(variant)}`, question }));
-    });
+  return (
+    parsed.entries
+      // D-143: follow-up cases (with history) are not standalone search queries.
+      .filter((entry) => entry.type === 'answerable' && !entry.history)
+      .flatMap((entry) => {
+        const paraphrase = paraphrases[entry.id];
+        if (!paraphrase) throw new Error('Add a reviewed paraphrase for the new golden question.');
+        return [
+          entry.question,
+          paraphrase,
+          `In ${corpusSubject}, ${entry.question}`,
+          `Explain the following: ${paraphrase}`,
+          `Please clarify: ${entry.question}`,
+          `Using the ${corpusSubject} documentation, answer this: ${paraphrase}`,
+          `For a database administrator: ${paraphrase}`,
+        ].map((question, variant) => ({ id: `${entry.id}-${String(variant)}`, question }));
+      })
+  );
 }
 export function realisticChunk(chunks: Chunk[], index: number): Chunk {
   const chunk = chunks[index % chunks.length];
