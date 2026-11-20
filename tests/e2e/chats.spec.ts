@@ -128,3 +128,70 @@ test('T-83: the hosted demo keeps the tab-only session list', async ({ page }, i
   await expect(sidebar(page).getByRole('button', { name: 'New project' })).toHaveCount(0);
   expect((await page.request.get('http://localhost:3100/api/chats')).status()).toBe(404);
 });
+
+test('T-84: a saved chat reopens with its answer and sources', async ({ page }, info) => {
+  const question = await newChat(page, info);
+  const url = page.url();
+  const answer = await page
+    .getByRole('article', { name: 'Answer', exact: true })
+    .last()
+    .innerText();
+  await page.goto('http://localhost:3103/');
+  await page.goto(url);
+  await expect(page.getByText(question, { exact: true }).first()).toBeVisible();
+  const restored = page.getByRole('article', { name: 'Answer', exact: true }).last();
+  await expect(restored).toBeVisible();
+  expect(await restored.innerText()).toBe(answer);
+  await restored
+    .getByRole('button', { name: /^Source P1:/ })
+    .first()
+    .click();
+  await expect(page.getByRole('complementary', { name: 'Source viewer' })).toBeVisible();
+});
+
+test('T-84: a cited file that left the library shows the saved copy note', async ({
+  page,
+}, info) => {
+  const { meta, citations, done, passage } = await import('../fixtures/sse-streams');
+  const content = 'A partial index is an index built over a subset of a table.';
+  await page.route('**/api/ask', async (route) => {
+    const events = [
+      {
+        event: 'meta',
+        data: {
+          ...meta,
+          passages: [
+            {
+              ...passage,
+              chunkId: '987654321',
+              officialUrl: null,
+              filePath: 'gone.pdf',
+              pageFrom: 3,
+              pageTo: 3,
+              content,
+            },
+          ],
+        },
+      },
+      { event: 'token', data: { delta: citations.answer } },
+      { event: 'citations', data: citations },
+      { event: 'done', data: done },
+    ];
+    await route.fulfill({
+      status: 200,
+      headers: { 'Content-Type': 'text/event-stream' },
+      body: events.map((e) => `event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n\n`).join(''),
+    });
+  });
+  await openAsk(page, info, 3103);
+  await page.getByRole('textbox', { name: 'Your question' }).fill(`File question ${randomUUID()}`);
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
+  await page
+    .getByRole('button', { name: /^Source P1:/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('note').filter({ hasText: 'no longer in your library' }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Open at page 3/ })).toHaveCount(0);
+});

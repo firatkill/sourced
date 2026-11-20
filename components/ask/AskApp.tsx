@@ -13,6 +13,7 @@ import { ChatRail } from './ChatRail';
 import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 import { ExampleBanner } from './ExampleBanner';
+import { restoreTurn } from './restore';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
 import { announceChatsChanged, chatApi } from '@/lib/chats/client';
 import type { SavedTurn } from '@/lib/chats/store';
@@ -72,7 +73,10 @@ function Conversation({
   const ask = useAsk(demoMode);
   const [chatId, setChatId] = useState(saved?.chat?.id);
   const chatIdRef = useRef(saved?.chat?.id);
-  const [history, setHistory] = useState<ChatTurn[]>([]);
+  // T-84: a saved chat opens with its turns restored from the server's snapshot.
+  const [history, setHistory] = useState<ChatTurn[]>(
+    () => saved?.chat?.turns.map((turn, index) => restoreTurn(turn, index + 1)) ?? [],
+  );
   const [active, setActive] = useState<{ id: number; question: string } | null>(null);
   const [draft, setDraft] = useState('');
   const [viewer, setViewer] = useState<{ turn: number; label: string } | null>(null);
@@ -191,7 +195,9 @@ function Conversation({
         className="chat-main flex min-h-0 min-w-0 flex-1 flex-col p-0"
       >
         <header className="flex h-[60px] shrink-0 flex-col justify-center border-b border-[var(--rule)] px-5">
-          <p className="truncate text-sm font-semibold">{turns[0]?.question ?? copy.hero}</p>
+          <p className="truncate text-sm font-semibold">
+            {saved?.chat?.title ?? turns[0]?.question ?? copy.hero}
+          </p>
           <p className="text-xs text-[var(--ink-3)]">{library?.pill ?? copy.headerScope}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
@@ -274,6 +280,7 @@ function Conversation({
       {viewer && selectedMeta && selectedTurn?.citations && (
         <SourceViewer
           copy={copy}
+          fileLinks={saved !== undefined}
           passages={selectedMeta.passages}
           citations={selectedTurn.citations}
           label={viewer.label}

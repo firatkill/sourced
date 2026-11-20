@@ -28,6 +28,10 @@ export const ASK_COPY = {
   limit:
     '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
   suggestions: 'Start with one of these',
+  // T-84: opening a cited file in saved-chat mode.
+  openFile: 'Open the file',
+  openAtPage: 'Open at page',
+  fileMissing: 'This document is no longer in your library. The passage below is the saved copy.',
   // REDESIGN-v2 §3.2 example banner (local profile only).
   exampleBannerLabel: 'About the example',
   exampleBannerBefore: 'To use your own documents, run',

@@ -6,6 +6,7 @@ import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
 import { PassageCard } from './PassageCard';
+import { FileSourceLink } from './FileSourceLink';
 
 type Meta = Extract<SseEvent, { event: 'meta' }>['data'];
 type Citations = Extract<SseEvent, { event: 'citations' }>['data'];
@@ -23,8 +24,11 @@ export function SourceViewer({
   label,
   onSelect,
   onClose,
+  fileLinks = false,
 }: {
   copy?: Pick<CorpusCopy, 'viewerLink'>;
+  /** T-84: saved-chat mode serves original files; the hosted demo never does. */
+  fileLinks?: boolean;
   passages: Meta['passages'];
   citations: Citations;
   label: string;
@@ -85,6 +89,9 @@ export function SourceViewer({
         <h2 className="text-xl! font-semibold">
           {passage.headingPath.at(-1) ?? passage.documentTitle}
         </h2>
+        {passage.officialUrl === null && fileLinks && (
+          <FileSourceLink chunkId={passage.chunkId} pageFrom={passage.pageFrom} />
+        )}
         {passage.officialUrl === null ? (
           <p className="text-sm text-[var(--ink-3)]">
             {passage.filePath}
