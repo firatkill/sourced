@@ -397,7 +397,7 @@ test('T-92 data: export a chat as Markdown, delete all chats, remove a source an
       citations: null,
       done: null,
     },
-  } as Parameters<typeof appendTurn>[1]);
+  });
   const exported = await (
     await import('@/app/api/chats/[id]/export/route')
   ).GET(call('GET', `/api/chats/${chat.id}/export`), { params: Promise.resolve({ id: chat.id }) });
@@ -431,8 +431,9 @@ test('T-92 data: export a chat as Markdown, delete all chats, remove a source an
   });
   const sources = await import('@/app/api/settings/sources/route');
   expect((await sources.DELETE(call('DELETE', '/api/settings/sources?id=nope'))).status).toBe(404);
-  const [{ count: before = 0 } = {}] = await getSql()<{ count: number }[]>`
+  const [counted] = await getSql()<{ count: number }[]>`
     SELECT count(*)::int AS count FROM documents WHERE source_id = 'my-docs'`;
+  const before = counted?.count ?? 0;
   expect(before).toBeGreaterThan(0);
   expect(
     await (await sources.DELETE(call('DELETE', '/api/settings/sources?id=my-docs'))).json(),
