@@ -64,8 +64,7 @@ export const chatApi = {
   updateProject: (
     id: string,
     input: { name?: string; description?: string | null; sourceIds?: string[] | null },
-  ) =>
-    call<{ project: ProjectItem }>('PATCH', `/api/projects/${id}`, input).then((r) => r.project),
+  ) => call<{ project: ProjectItem }>('PATCH', `/api/projects/${id}`, input).then((r) => r.project),
   deleteProject: (id: string) => call<undefined>('DELETE', `/api/projects/${id}`),
 };
 

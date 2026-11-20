@@ -9,12 +9,7 @@ import { getPageCopy } from '@/lib/kit/copy-server';
 import { isPublicDemo } from '@/lib/kit/profile';
 import { getKitConfig } from '@/lib/kit/runtime-config';
 import { getLibraryFacts, listLibrarySources } from '@/lib/library/facts';
-import {
-  libraryPill,
-  scopeLabels,
-  scopedSearchingLine,
-  searchingLine,
-} from '@/lib/library/format';
+import { libraryPill, scopeLabels, scopedSearchingLine, searchingLine } from '@/lib/library/format';
 import type { SavedTurn } from '@/lib/chats/store';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
 
