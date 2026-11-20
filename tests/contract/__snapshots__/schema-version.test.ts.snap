@@ -1427,6 +1427,11 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
     "reset": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "properties": {
+        "removedChats": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
         "removedDocuments": {
           "maximum": 9007199254740991,
           "minimum": 0,
@@ -1441,6 +1446,7 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
       "required": [
         "removedSources",
         "removedDocuments",
+        "removedChats",
       ],
       "type": "object",
     },

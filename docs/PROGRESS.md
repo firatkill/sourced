@@ -98,7 +98,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-78 | v2.1 First run | One-key local first run, `reset`, short README, `/deploy` removed (D-138, D-139) | done | 7141b85, 97552bb, ab365d3 |
 | T-79 | M10 Chat app | Themes and Settings › Appearance | done | HEAD |
 | T-80 | M10 Chat app | Copy rules and library facts | done | HEAD |
-| T-81 | M10 Chat app | Chats, projects and turns in the database | todo | |
+| T-81 | M10 Chat app | Chats, projects and turns in the database | done | HEAD |
 | T-82 | M10 Chat app | Chat and project APIs; saved turns | todo | |
 | T-83 | M10 Chat app | App shell and sidebar | todo | |
 | T-84 | M10 Chat app | Thread restore and sources that open the file | todo | |

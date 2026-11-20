@@ -2121,6 +2121,11 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
+    "removedChats": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
     "removedDocuments": {
       "maximum": 9007199254740991,
       "minimum": 0,
@@ -2135,6 +2140,7 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
   "required": [
     "removedSources",
     "removedDocuments",
+    "removedChats",
   ],
   "type": "object",
 }

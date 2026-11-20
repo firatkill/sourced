@@ -26,7 +26,7 @@ export const commandSchemas = {
   }),
   'sources list': z.object({ sources: z.array(SourceSchema) }),
   'sources remove': z.object({ removedDocuments: count }),
-  reset: z.object({ removedSources: count, removedDocuments: count }),
+  reset: z.object({ removedSources: count, removedDocuments: count, removedChats: count }),
   ingest: IngestResult,
   inspect: InspectResult,
   ask: z.object({
