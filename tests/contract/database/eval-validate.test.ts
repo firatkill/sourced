@@ -163,6 +163,9 @@ test('CT-10 / FR-77: eval validation succeeds and reports documented failure env
         ],
         {
           env: {
+            // D-138: this child runs in the repository root and rewrites its shared
+            // .sourced/config.json; keep it public-demo like the rest of the suite.
+            SOURCED_PROFILE: 'public-demo',
             PATH: process.env.PATH,
             LLM_MODE: 'mock',
             NODE_ENV: 'test',

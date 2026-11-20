@@ -7,7 +7,7 @@ Read [shared rules](../_shared/rules.md) and [CLI reference](../_shared/cli-refe
 
 ## When to use
 
-Use for a first local setup over the user's documents. Guide one step at a time; do not assume programming knowledge. Existing installations with data need their configuration preserved, not an automatic fresh initialization.
+Use for a first local setup over the user's documents or the bundled example. Guide one step at a time; do not assume programming knowledge. The quick start needs only Docker, one key line in `.env.local` and a few commands (README, D-138); keep it that short. Existing installations with their own data need their configuration preserved: never reset without the user's yes.
 
 ## Before you start
 
@@ -29,7 +29,7 @@ Apply these failure branches to **every** step, including commands mentioned as 
 - `NEEDS_CONFIRMATION`: use the step-specific branch below; never automatically append approval flags.
 - `CHECKS_FAILED`: read doctor checks, explain each failed check and its fix, and rerun after the prerequisite is fixed.
 - `CORPUS_EMPTY`: add a source if absent, then dry-run and ingest after approval.
-- `CORPUS_MISMATCH`: stop; explain the indexed model, dimensions or language differs. Ask the user whether to restore the matching configuration or rebuild the index (a rebuild re-embeds every document and costs again); do not rebuild during this setup script.
+- `CORPUS_MISMATCH` (an error, or a dry-run warning in `$.warnings[].code`): explain in plain words that the stored index was built with another embedding model or language (the message names both). Offer restoring the matching configuration or a rebuild; a rebuild deletes the index and embeds every document again, so include it in the cost approval. After a yes run `./sourced ingest --rebuild --yes --json`.
 - `PROVIDER_ERROR` or `PROVIDER_TIMEOUT`: explain the model service failed or timed out; check provider availability and key presence through doctor, then offer a retry after approval for any further paid call.
 - `RETRIEVAL_ERROR`: explain document search failed; check the database with doctor, then inspect the corpus before retrying.
 - `INTERNAL_ERROR`: stop, explain the failed operation, and tell the user this looks like a bug in Sourced; suggest opening an issue with the command, exit code and error code (no secrets). Never patch application code.
@@ -47,42 +47,47 @@ The last four bullets cover defensive handling of shared error codes if surfaced
 
    Read `result.checks[].id`, `result.checks[].ok`, `result.checks[].detail` and `result.checks[].fix`. Base path selection on this evidence, not assumptions. For Docker startup failure without JSON, explain that Docker could not start the check; ask the user to install/start Docker Desktop on macOS/Windows or Docker Engine with Compose v2 on Linux (default: keep the Docker path). The Node branch is available only on the conditions above; a failed Docker daemon also prevents Node's local database setup.
 
-   On `CHECKS_FAILED`, distinguish first-run configuration/snapshot, missing-key, database and empty-corpus checks from installation, port, disk or write-access problems. Initialization addresses the former; fix the latter before proceeding. Do not call a partially failed doctor “passed.” `CONFIG_INVALID` or `VALIDATION_FAILED` uses the common branches; `INTERNAL_ERROR` stops. All exits use the common handling.
+   On `CHECKS_FAILED`, distinguish first-run configuration/snapshot, missing-key, database and empty-corpus checks from installation, port, disk or write-access problems. Steps 2 to 6 (the key file and indexing) address the former; fix the latter before proceeding. Do not call a partially failed doctor “passed.” `CONFIG_INVALID` or `VALIDATION_FAILED` uses the common branches; `INTERNAL_ERROR` stops. All exits use the common handling.
 
-2. **Collect documents and provider choices.** No command in this step. First ask: “Where are your documents—a folder path, a documentation site URL, or a sitemap? Default: try `examples/mixed-folder`.” Then, in a separate message: “Which provider do you have a key for: OpenAI, Google, Anthropic, or local with Ollama? Default: OpenAI if you already have its key; otherwise local with Ollama.” Never ask for the key itself.
+2. **Make sure the key file exists.** Check only whether `.env.local` exists (for example `test -f .env.local`); never read it. If it is missing, say: “I’ll copy the settings template to `.env.local`; it contains no secrets.” After a yes run `cp .env.example .env.local` (`copy .env.example .env.local` on Windows).
 
-   Use `gemini` as Google's provider identifier. Anthropic has no embedding provider: if selected for chat, ask separately which of OpenAI, Google or Ollama should embed documents (default: Ollama for local embeddings). Explain that Anthropic still receives retrieved passages and questions. If documents must stay local, offer Ollama for **all** roles; web sources still require web requests.
+   Then ask which provider the user has a key for: “OpenAI, Google, Anthropic, or local with Ollama? Default: OpenAI.” Never ask for the key itself. For OpenAI tell the user to open `.env.local` and paste their key after `OPENAI_API_KEY=`; that is the only line to fill. For another provider see step 4. Ask: “Tell me when the key is in the file. Default: I’ll wait.”
 
-   Then propose the models for that provider in one message, as a default the user can accept with a yes (one question): chat writes the answers, embeddings make the documents searchable.
+   <!-- sourced-command: doctor -->
+
+   After their confirmation say: “I’ll check the settings without sending document text or making a paid model call.” Run `./sourced doctor --no-network --json`. Read `result.checks[].id`, `result.checks[].ok` and `result.checks[].fix`. Explain that this confirms key presence, **not authentication or dimensions**. A corpus-only failure is expected before ingestion; unresolved key, database, configuration or filesystem checks block ingestion. Use the common branches for `CHECKS_FAILED`, `CONFIG_INVALID`, `VALIDATION_FAILED` and `INTERNAL_ERROR`.
+
+3. **Example or own documents.** Ask one question: “Do you want to try the bundled example (35 pages of the PostgreSQL 17 docs), or use your own documents? Default: your own documents.”
+
+   For the example, skip to step 6: its source is already configured.
+
+   <!-- sourced-command: reset -->
+
+   For their own documents, explain that `reset` removes the example from the configuration and deletes everything indexed in this checkout's database, and never deletes document files. Ask for a yes (default: wait). Then run `./sourced reset --yes --json`. Read `result.removedSources` and `result.removedDocuments` and say what was removed. If the user already has their own sources configured, do not reset; continue with step 5.
+
+   Then ask: “Where are your documents—a folder path, a documentation site URL, or a sitemap? Default: try `examples/mixed-folder`.”
+
+4. **Other providers (only if the user did not choose OpenAI).** Use `gemini` as Google's provider identifier. Anthropic has no embedding provider: if selected for chat, ask separately which of OpenAI, Google or Ollama should embed documents (default: Ollama for local embeddings). Explain that Anthropic still receives retrieved passages and questions. If documents must stay local, offer Ollama for **all** roles; web sources still require web requests.
+
+   Propose the models for that provider in one message, as a default the user can accept with a yes (one question): chat writes the answers, embeddings make the documents searchable.
 
    | Provider       | Chat model                   | Embedding model                                                                             |
    | -------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-   | OpenAI         | `openai:gpt-6-luna`          | `openai:text-embedding-3-small:1536`                                                        |
    | Google         | `gemini:gemini-2.5-flash`    | `gemini:gemini-embedding-001:768`                                                           |
    | Anthropic      | `anthropic:claude-haiku-5-5` | ask which of OpenAI, Google or Ollama embeds (default Ollama `ollama:nomic-embed-text:768`) |
    | Ollama (local) | `ollama:llama3.2`            | `ollama:nomic-embed-text:768`                                                               |
 
-   If the user names other models, use them as given. Ollama models must already be pulled on the user's machine (`ollama pull llama3.2` and `ollama pull nomic-embed-text`); say so before init.
-
-   Use `local` without another profile question. Only if the user mentions sharing/deploying, ask separately: “Which profile should the configuration use: local, private, or public-demo? Default: local; this setup will still run locally.” No deployment follows. Propose a corpus name, title and description based on the documents, and their two-letter language (default: `en` if English). Include these in the next approval message; do not guess an unknown document language.
-
-3. **Initialize through flags.** Tell the user the proposed metadata, models, dimensions and profile, that existing configuration will be replaced, and that this creates configuration/environment placeholders and starts/migrates the local database. Ask for approval (default: wait). If a customized configuration or an indexed corpus already exists, stop and ask the user before replacing it.
+   If the user names other models, use them as given. Ollama models must already be pulled on the user's machine (`ollama pull llama3.2` and `ollama pull nomic-embed-text`); say so first. Propose a corpus name, title, description and two-letter language (default: `en` if English) based on the documents, then ask for approval to write the configuration (default: wait).
 
    <!-- sourced-command: init -->
 
    Substitute the confirmed values and quote each argument safely; angle-bracket text below is a placeholder, not a literal value:
 
    ```sh
-   ./sourced init --corpus-name "<name>" --title "<title>" --description "<description>" --language "<language>" --chat "<provider:model>" --embed "<provider:model:dims>" --profile "<profile>" --yes --json
+   ./sourced init --corpus-name "<name>" --title "<title>" --description "<description>" --language "<language>" --chat "<provider:model>" --embed "<provider:model:dims>" --profile local --yes --json
    ```
 
-   Never invoke interactive `init` from an agent. Read `result.configPath`, `result.database` and `result.envVarsToFill[]`. Explain whether the database started, was already running, or is external; on Docker the managed database at host `db` is reported as `external`, which does not mean it is hosted elsewhere. If the user did not expect an external database, stop and ask. On `NEEDS_CONFIRMATION`, supply a missing flag from the confirmed choices, or have the user fix the database setting; do not rerun with guesses. `CONFIG_INVALID`, `VALIDATION_FAILED`, `CORPUS_MISMATCH` and `INTERNAL_ERROR` use the common branches. Initialization may have written files before a database failure: report partial completion and do not claim it succeeded.
-
-4. **Wait for private key entry.** From `result.envVarsToFill[]` in the preceding init envelope, display each exact assignment name followed by `=` and an explanatory placeholder, for example `OPENAI_API_KEY=<your key, entered only in the file>`. Do this for every returned name, not a hard-coded provider list. Tell the user to edit those lines in `.env.local` on their own machine; never read or display the file. Ask: “Tell me when those lines are filled. Default: I’ll wait.” If the array is empty, explain that no manual values were requested and continue. Never ask for a private access token in chat either.
-
-   <!-- sourced-command: doctor -->
-
-   After their confirmation say: “I’ll check the settings without sending document text or making a paid model call.” Run `./sourced doctor --no-network --json`. Read `result.checks[].id`, `result.checks[].ok` and `result.checks[].fix`. Explain that this confirms key presence, **not authentication or dimensions**. A corpus-only failure is expected before ingestion; unresolved key, database, configuration or filesystem checks block ingestion. Use the common branches for `CHECKS_FAILED`, `CONFIG_INVALID`, `VALIDATION_FAILED` and `INTERNAL_ERROR`. Defer the network-enabled doctor until step 6's cost disclosure and explicit approval.
+   Never invoke interactive `init` from an agent. Read `result.configPath`, `result.database` and `result.envVarsToFill[]`. For each name in `result.envVarsToFill[]` that the user has not filled yet, show the assignment name followed by `=` and a placeholder, for example `GOOGLE_GENERATIVE_AI_API_KEY=<your key, entered only in the file>`, and wait until the user has filled them; all other values have local defaults. `CONFIG_INVALID`, `VALIDATION_FAILED`, `CORPUS_MISMATCH` and `INTERNAL_ERROR` use the common branches.
 
 5. **Register each source.** Say what path/URL will be registered and that a site may be contacted to discover its sitemap. Ask approval for adding the listed sources (default: wait). Run the appropriate exact form for each approved source:
 
@@ -100,7 +105,7 @@ The last four bullets cover defensive handling of shared error codes if surfaced
 
    <!-- sourced-command: ingest -->
 
-   Require `result.mode` to be `dry-run`. Read `result.totals.documents.discovered`, `result.totals.documents.done`, `result.totals.documents.skipped`, `result.totals.documents.failed`, `result.totals.chunks.new`, `result.totals.chunks.changed`, `result.totals.chunks.unchanged`, `result.totals.chunks.deleted`, `result.totals.embeddingTokens`, `result.totals.estimatedCostUsd` and `result.totals.skipped[].reason`. Summarize the counts; if nothing usable remains, fix the source before proceeding. Null cost means **unknown**, never free; follow [unknown prices](../_shared/pricing.md) before the approval question. Non-OpenAI token estimates are approximate. Ollama has zero provider API cost, but uses the user's machine.
+   Require `result.mode` to be `dry-run`. If `$.warnings[].code` contains `CORPUS_MISMATCH`, the database holds an index built with another model: explain the warning in plain words, say the estimate already covers re-embedding everything, and include the rebuild in the approval below (then use `--rebuild` as in the common branch). Read `result.totals.documents.discovered`, `result.totals.documents.done`, `result.totals.documents.skipped`, `result.totals.documents.failed`, `result.totals.chunks.new`, `result.totals.chunks.changed`, `result.totals.chunks.unchanged`, `result.totals.chunks.deleted`, `result.totals.embeddingTokens`, `result.totals.estimatedCostUsd` and `result.totals.skipped[].reason`. Summarize the counts; if nothing usable remains, fix the source before proceeding. Null cost means **unknown**, never free; follow [unknown prices](../_shared/pricing.md) before the approval question. Non-OpenAI token estimates are approximate. Ollama has zero provider API cost, but uses the user's machine.
 
    Name the configured embedding provider receiving document text and questions, and the chat/rerank provider receiving questions and retrieved passages. Explain the dry-run embedding estimate is not a total cost for future questions. Offer all-local Ollama if privacy requires it. Say that network-enabled doctor also sends the literal test string to the embedding provider and checks provider authentication; disclose its separately estimated cost using configured pricing, or “unknown” if unavailable. Ask one question: “May I run that provider check and then index these documents at the stated estimate? Default: wait.” Wait for an explicit yes.
 

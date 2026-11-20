@@ -51,6 +51,8 @@ async function fixture() {
   const url = requireLocalDatabase(process.env.TEST_DATABASE_URL);
   const env = {
     PATH: process.env.PATH,
+    // D-136: a pinned project keeps the Node CLI from recording one in the repository's .env.
+    COMPOSE_PROJECT_NAME: 'sourced-test',
     TSX_TSCONFIG_PATH: resolve('tsconfig.json'),
     NODE_ENV: 'test' as const,
     QUESTION_HASH_SALT: 'test-only-question-salt-0000000000000000',
@@ -259,6 +261,35 @@ describe('CT-03 / CT-04: source commands', () => {
     expect((await cli(['ask', 'What is an index?'], 2)).error?.message).toBe(
       'No sources configured. Next: sourced add <url or path>',
     );
+  });
+  test('D-138 reset: confirmation, empty local configuration and an empty index', async () => {
+    const { cli, dir } = context;
+    expect((await cli(['reset'], 2)).error).toMatchObject({
+      code: 'NEEDS_CONFIRMATION',
+      fix: 'pnpm sourced reset --yes',
+    });
+    expect(
+      (await getSql()<{ count: number }[]>`SELECT count(*)::int AS count FROM chunks`)[0]?.count,
+    ).toBeGreaterThan(0);
+    expect(commandSchemas.reset.parse((await cli(['reset', '--yes'])).result)).toEqual({
+      removedSources: 2,
+      removedDocuments: 2,
+    });
+    for (const table of ['documents', 'chunks', 'corpus_meta', 'ingest_runs', 'answer_cache'])
+      expect(
+        (
+          await getSql().unsafe<{ count: number }[]>(`SELECT count(*)::int AS count FROM ${table}`)
+        )[0]?.count,
+      ).toBe(0);
+    expect(
+      commandSchemas['sources list'].parse((await cli(['sources', 'list'])).result).sources,
+    ).toEqual([]);
+    const written = await readFile(join(dir, 'sourced.config.ts'), 'utf8');
+    expect(written).toContain('"profile": "local"');
+    expect(written).toContain('"name": "my-docs"');
+    // The document files themselves are never deleted.
+    await expect(readFile(join(dir, 'alpha.md'), 'utf8')).resolves.toContain('partial index');
+    expect((await cli(['ingest', '--dry-run'], 2)).error?.code).toBe('CORPUS_EMPTY');
   });
 });
 describe('CT-07 ask / FR-80', () => {

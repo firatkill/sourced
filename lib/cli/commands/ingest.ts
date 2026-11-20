@@ -4,7 +4,7 @@ import postgres from 'postgres';
 import { AppError } from '@/lib/errors';
 import { configHash, loadConfig } from '@/lib/kit/load-config';
 import { getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
-import { ensureCorpusSchema } from '@/lib/kit/vector-schema';
+import { corpusRebuildRequired, ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { getEnv } from '@/lib/env';
 import { getProviders } from '@/lib/llm';
 import { assertIngestAllowed, loadCorpus } from '@/lib/ingest/load';
@@ -79,7 +79,8 @@ export async function runIngest(input: Invocation, context: CommandContext) {
         if (event.type === 'skipped') context.progress(`${event.reason} ${event.key}`);
       },
       onStatus: (slug, status) => {
-        context.progress(`${status} ${slug}`);
+        // A terminal shows work being done; unchanged cached pages are only noise there.
+        if (input.json || status !== 'unchanged') context.progress(`${status} ${slug}`);
       },
     });
   if (input.values['fetch-only']) {
@@ -107,17 +108,18 @@ export async function runIngest(input: Invocation, context: CommandContext) {
       pricedModel.provider === 'ollama'
         ? 0
         : priceConfig.pricing[`${pricedModel.provider}:${pricedModel.model}`]?.inputPerMTok;
+    // D-137: find an incompatible index before planning, so the dry run says so and
+    // estimates the full rebuild instead of reporting success.
+    const requested = input.values.rebuild === true;
+    const mismatch = requested ? { required: false } : await corpusRebuildRequired(sql, config);
+    let rebuild = requested || mismatch.required;
+    const warnings = mismatch.message
+      ? [{ code: 'CORPUS_MISMATCH', message: mismatch.message }]
+      : [];
     let sources: IngestSource[] = [];
     const loadAndPlan = async () => {
       const loaded = await loadDocuments();
-      sources = await planIngest(
-        sql,
-        loaded,
-        events,
-        config.models.embed.model,
-        price,
-        input.values.rebuild === true,
-      );
+      sources = await planIngest(sql, loaded, events, config.models.embed.model, price, rebuild);
       return loaded;
     };
     const loaded = await loadAndPlan();
@@ -128,7 +130,26 @@ export async function runIngest(input: Invocation, context: CommandContext) {
         corpusVersion: null,
         sources,
         totals: sumCounters(sources),
+        // D-137: agents read $.warnings[].code === 'CORPUS_MISMATCH' (no schema change).
+        warnings,
       };
+    }
+    if (mismatch.required) {
+      // --yes approves cost only; deleting the index needs its own answer or --rebuild.
+      try {
+        await confirmAction({
+          yes: false,
+          json: input.json,
+          isTTY: context.isTTY,
+          message: `${mismatch.message ?? ''} Rebuild the index now?`,
+          ...(context.prompt ? { prompt: context.prompt } : {}),
+        });
+      } catch (error) {
+        if (error instanceof AppError && error.code === 'NEEDS_CONFIRMATION')
+          throw new AppError('CORPUS_MISMATCH', mismatch.message ?? 'Rebuild the index.');
+        throw error;
+      }
+      rebuild = true;
     }
     const totals = sumCounters(sources);
     await confirmIngest(
@@ -144,8 +165,8 @@ export async function runIngest(input: Invocation, context: CommandContext) {
       context,
     );
     await ensureCorpusSchema(sql, config, {
-      rebuild: input.values.rebuild === true,
-      confirmed: input.values.yes === true,
+      rebuild,
+      confirmed: input.values.yes === true || mismatch.required,
     });
     const report = await ingestCorpus({
       sql,
@@ -164,7 +185,7 @@ export async function runIngest(input: Invocation, context: CommandContext) {
           totals,
         });
       },
-      restart: input.values.restart === true || input.values.rebuild === true,
+      restart: input.values.restart === true || rebuild,
       signal: interrupt.signal,
       onProgress: (message) => {
         context.progress(
@@ -177,24 +198,28 @@ export async function runIngest(input: Invocation, context: CommandContext) {
       pricePerMillion: price ?? 0,
     });
     await sql`UPDATE corpus_meta SET documents_total=(SELECT count(*) FROM documents), updated_at=now() WHERE id=1`;
-    context.progress(
-      formatIngestReport(report, new Date()).replace(
-        /est\. \$[0-9.]+/,
-        totals.estimatedCostUsd === null
-          ? 'est. unknown'
-          : `est. $${report.costUsdEstimate.toFixed(4)}`,
-      ),
-    );
-    for (const source of sources)
+    // D-137: a terminal gets the short summary from the output formatter instead.
+    if (input.json)
       context.progress(
-        `${source.id}: ${String(source.documents.done)} documents, ${String(source.boilerplateRemoved)} boilerplate blocks removed; ${String(source.embeddingTokens)} embedding tokens; cost ${source.estimatedCostUsd === null ? 'unknown' : `$${source.estimatedCostUsd.toFixed(4)}`}${config.models.embed.provider === 'openai' ? '' : ' (approximate)'}`,
+        formatIngestReport(report, new Date()).replace(
+          /est\. \$[0-9.]+/,
+          totals.estimatedCostUsd === null
+            ? 'est. unknown'
+            : `est. $${report.costUsdEstimate.toFixed(4)}`,
+        ),
       );
+    if (input.json)
+      for (const source of sources)
+        context.progress(
+          `${source.id}: ${String(source.documents.done)} documents, ${String(source.boilerplateRemoved)} boilerplate blocks removed; ${String(source.embeddingTokens)} embedding tokens; cost ${source.estimatedCostUsd === null ? 'unknown' : `$${source.estimatedCostUsd.toFixed(4)}`}${config.models.embed.provider === 'openai' ? '' : ' (approximate)'}`,
+        );
     return {
       mode: 'run' as const,
       runId: report.runId ?? null,
       corpusVersion: report.corpusVersion,
       sources,
       totals: sumCounters(sources),
+      warnings: [] as { code: string; message: string }[],
     };
   } catch (error) {
     if (interrupt.signal.aborted)

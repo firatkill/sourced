@@ -12,6 +12,24 @@ export function redact(text: string, secrets: readonly string[]): string {
 }
 export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   if (json) return `${JSON.stringify(envelope)}\n`;
+  if (envelope.command === 'reset' && envelope.ok) {
+    const reset = commandSchemas.reset.parse(envelope.result);
+    return `Removed ${String(reset.removedSources)} sources and ${String(reset.removedDocuments)} indexed documents. Your files were not touched.\nNext: pnpm sourced add <folder or URL>\n`;
+  }
+  if (envelope.command === 'add' && envelope.ok) {
+    const added = commandSchemas.add.parse(envelope.result);
+    const where =
+      'path' in added.source
+        ? added.source.path
+        : 'url' in added.source
+          ? added.source.url
+          : added.source.id;
+    return `Added ${added.detected.type} source ${added.source.id} (${where}).\nNext: pnpm sourced ingest\n`;
+  }
+  if (envelope.command === 'ingest' && envelope.ok) {
+    const ingest = commandSchemas.ingest.safeParse(envelope.result);
+    if (ingest.success) return formatIngest(ingest.data, envelope.warnings);
+  }
   if (envelope.command === 'inspect' && envelope.ok) {
     const report = commandSchemas.inspect.parse(envelope.result);
     return [
@@ -41,5 +59,39 @@ export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   }
   if (envelope.error)
     return `${envelope.error.message}\nNext: ${envelope.error.fix ?? 'pnpm sourced --help'}\n`;
-  return `${envelope.command} completed successfully.\n${envelope.result === undefined ? '' : JSON.stringify(envelope.result, null, 2) + '\n'}Next: pnpm sourced --help\n`;
+  // Warnings are part of the outcome; human output must show them too (D-137).
+  const warnings = envelope.warnings.map((warning) => `Warning: ${warning.message}\n`).join('');
+  return `${warnings}${envelope.command} completed successfully.\n${envelope.result === undefined ? '' : JSON.stringify(envelope.result, null, 2) + '\n'}Next: pnpm sourced --help\n`;
+}
+
+/** D-137: a short human summary of an ingest result instead of the raw JSON. */
+function formatIngest(
+  result: ReturnType<typeof commandSchemas.ingest.parse>,
+  warnings: CliEnvelope['warnings'],
+): string {
+  const { documents, chunks, embeddingTokens, estimatedCostUsd } = result.totals;
+  const cost = estimatedCostUsd === null ? 'unknown' : `$${estimatedCostUsd.toFixed(4)}`;
+  const lines = warnings.map((warning) => `Warning: ${warning.message}`);
+  const embed = chunks.new + chunks.changed;
+  if (result.mode === 'dry-run')
+    lines.push(
+      `Dry run: ${String(documents.done)} documents, ${String(embed)} passages to embed (${String(embeddingTokens)} tokens), ${String(chunks.unchanged)} unchanged, ${String(chunks.deleted)} to remove.`,
+      `Estimated embedding cost: ${cost}. Nothing was sent to a provider.`,
+    );
+  else
+    lines.push(
+      `Indexed ${String(documents.done)} documents: ${String(chunks.new)} new, ${String(chunks.changed)} changed, ${String(chunks.unchanged)} unchanged and ${String(chunks.deleted)} removed passages.`,
+      `Estimated embedding cost: ${cost}.`,
+    );
+  if (documents.skipped + documents.failed > 0)
+    lines.push(
+      `${String(documents.skipped)} skipped and ${String(documents.failed)} failed documents; pnpm sourced inspect explains why.`,
+    );
+  const next =
+    result.mode === 'dry-run'
+      ? warnings.some((warning) => warning.code === 'CORPUS_MISMATCH')
+        ? 'pnpm sourced ingest --rebuild'
+        : 'pnpm sourced ingest'
+      : 'pnpm sourced dev';
+  return `${lines.join('\n')}\nNext: ${next}\n`;
 }

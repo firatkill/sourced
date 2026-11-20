@@ -94,8 +94,12 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-74 | M8 Agent guidance and v2.0 | `private` profile access | done | b7fb425 |
 | T-75 | M8 Agent guidance and v2.0 | Agent files for users; contributor rules moved | done | 466ccd5 |
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | done | de13131 |
+| T-77 | v2.1 First run | Per-checkout Compose project and clear first-run failures (D-136, D-137) | done | 583ff35 |
+| T-78 | v2.1 First run | One-key local first run, `reset`, short README, `/deploy` removed (D-138, D-139) | done | 7141b85, 97552bb, ab365d3 |
 
 ## Open questions for the owner
+
+- v2.1 first run (reviewer, 2026-11-19): (k) before `v2.1/first-run` is merged, the hosted example needs `SOURCED_PROFILE=public-demo` in Vercel (production and preview); without it the next deploy runs the shipped `local` profile with no quotas. Setting it is an external change that needs the owner's yes. (l) The owner's earlier test clone in `~/Desktop/sourced/sourced` shares the volume `sourced_pgdata` with the reviewer's checkout (the D-136 bug itself); delete that clone after `./sourced down` and clone again.
 
 - Hosted database on the Docker path (owner, D-135): in v2.0 a Docker-only user cannot migrate or ingest into a hosted database with `./sourced`, because Compose pins the CLI to the local database (TRD §34.1, §35.2); the `/deploy` skill says to use the Node path for that step. Decide whether v2.1 adds a Docker-path mechanism (for example a launcher option that passes `MIGRATION_DATABASE_URL` and `DATABASE_URL` from `.env.local` to the `cli` service).
 

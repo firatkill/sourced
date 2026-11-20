@@ -227,7 +227,7 @@ export default defineConfig({
     'openai:gpt-5.4': { inputPerMTok: 2.5, outputPerMTok: 15 },
     [`openai:${EMBEDDING.MODEL}`]: { inputPerMTok: 0.02 },
   },
-  profile: 'public-demo',
+  profile: 'local',
   copy: {
     hero: 'Ask the PostgreSQL docs.',
     lead: 'Get a direct answer with working SQL. Every sentence links to the passage it comes from, and every quote is checked before you see it.',

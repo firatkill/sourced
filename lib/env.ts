@@ -57,6 +57,8 @@ const providerConfigSchema = z.object({
   }),
 });
 function providerConfig() {
+  // D-138: the CLI's loaded configuration wins; a dry run writes no snapshot.
+  if (cliConfig) return cliConfig;
   // No generated imports: snapshot creation itself imports this module.
   // Edge and fresh clones retain the example's strict live-mode requirements.
   if (typeof SOURCED_NODE_RUNTIME !== 'undefined' && !SOURCED_NODE_RUNTIME) return;
@@ -162,6 +164,29 @@ export function getConfigEnv(): z.infer<typeof configEnvSchema> {
 type Env = z.infer<typeof schema>;
 let cached: Env | undefined;
 
+/**
+ * D-138: under the `local` profile the only value a user must supply is the provider key.
+ * The question-hash salt protects nothing on a single machine and the site URL is the
+ * local port, so both get defaults; explicit values always win.
+ */
+export const LOCAL_QUESTION_HASH_SALT = 'sourced-local-profile-question-hash-salt-v1';
+let cliConfig: z.infer<typeof providerConfigSchema>['config'] | undefined;
+/** The CLI's loaded configuration, which a dry run does not write to disk as a snapshot. */
+export function setEnvConfig(config: unknown): void {
+  cliConfig = config === undefined ? undefined : providerConfigSchema.parse({ config }).config;
+  cached = undefined;
+}
+type EnvInput = Record<string, string | undefined>;
+export function withLocalDefaults(env: EnvInput, profile = providerConfig()?.profile): EnvInput {
+  if (profile !== 'local') return env;
+  return {
+    ...env,
+    QUESTION_HASH_SALT: env.QUESTION_HASH_SALT || LOCAL_QUESTION_HASH_SALT,
+    NEXT_PUBLIC_SITE_URL:
+      env.NEXT_PUBLIC_SITE_URL || `http://localhost:${env.SOURCED_PORT || '3000'}`,
+  };
+}
+
 export function getEnv(): Env {
   if (cached) return cached;
   const result = schema
@@ -207,7 +232,7 @@ export function getEnv(): Env {
         });
       }
     })
-    .safeParse(process.env);
+    .safeParse(withLocalDefaults(process.env));
   if (!result.success) {
     throw invalidEnvironment(result.error);
   }
@@ -257,6 +282,7 @@ export function getCliEnvironment() {
       LLM_MODE: z.enum(['live', 'mock']).default('live'),
       OLLAMA_BASE_URL: optionalText,
       SOURCED_DOCKER: optionalText,
+      SOURCED_LAUNCHER: z.enum(['./sourced', 'sourced.cmd']).optional().catch(undefined),
       SOURCED_PORT: optionalText,
       SOURCED_DB_PORT: optionalText,
     })

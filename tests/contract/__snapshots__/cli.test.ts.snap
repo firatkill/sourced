@@ -2117,6 +2117,29 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
 }
 `;
 
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > reset 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "removedDocuments": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+    "removedSources": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer",
+    },
+  },
+  "required": [
+    "removedSources",
+    "removedDocuments",
+  ],
+  "type": "object",
+}
+`;
+
 exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > sources list 1`] = `
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",

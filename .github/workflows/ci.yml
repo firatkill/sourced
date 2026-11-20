@@ -125,6 +125,8 @@ jobs:
           --health-retries 20
     env:
       DATABASE_URL: postgres://sourced:sourced@localhost:5433/sourced
+      # D-138: the E2E suite covers the hosted example, which runs the shipped config as public-demo.
+      SOURCED_PROFILE: public-demo
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -184,7 +186,8 @@ jobs:
         run: echo "SOURCED_UID=$(id -u)" >> "$GITHUB_ENV"
       - run: docker compose build app cli
       - run: docker compose up -d --wait db
-      - run: ./sourced init --example --profile local --yes --json
+      # The README quick start (D-138): copy the template, nothing else to configure.
+      - run: cp .env.example .env.local
       - name: Require actionable missing-key error
         run: |
           set +e
@@ -215,6 +218,12 @@ jobs:
           done
           grep -qF 'Ask the runtime docs.' /tmp/sourced-page.html
           test "$before" = "$(docker compose images -q app)"
+      - name: Reset removes the example and everything indexed (D-138)
+        run: |
+          ./sourced reset --yes --json > /tmp/sourced-reset.json
+          jq -e '.ok == true and .result.removedSources > 0 and .result.removedDocuments > 0' /tmp/sourced-reset.json
+          ./sourced sources list --json | jq -e '.result.sources == []'
+          git checkout -- sourced.config.ts
       - name: Require private access without rebuilding
         run: |
           before=$(docker compose images -q app)

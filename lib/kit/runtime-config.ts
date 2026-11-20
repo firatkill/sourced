@@ -2,14 +2,28 @@ import 'server-only';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { EMBEDDING } from '@/lib/config';
-import { getCliEnvironment, getConfigEnv } from '@/lib/env';
+import { getCliEnvironment, getConfigEnv, setEnvConfig } from '@/lib/env';
 import { AppError } from '@/lib/errors';
 import { configHash, SnapshotSchema } from './load-config';
 import type { KitConfig } from './config-schema';
 
-/** Use the same container marker as doctor's host-port check. */
+/**
+ * The command a user types in this checkout (D-137). The Docker launchers pass
+ * SOURCED_LAUNCHER (`./sourced` or `sourced.cmd`); SOURCED_DOCKER is the older marker.
+ */
 export function sourcedCommand(): string {
-  return getCliEnvironment().SOURCED_DOCKER === '1' ? './sourced' : 'pnpm sourced';
+  const env = getCliEnvironment();
+  if (env.SOURCED_LAUNCHER) return env.SOURCED_LAUNCHER;
+  return env.SOURCED_DOCKER === '1' ? './sourced' : 'pnpm sourced';
+}
+
+/**
+ * Messages name commands canonically as `pnpm sourced …`; rewrite them for the
+ * launcher in use so no hint on the Docker path says `pnpm sourced`.
+ */
+export function forLauncher(text: string): string {
+  const command = sourcedCommand();
+  return command === 'pnpm sourced' ? text : text.replace(/\bpnpm sourced\b/g, command);
 }
 
 let cached: KitConfig | undefined;
@@ -86,9 +100,17 @@ export function getKitConfig(applyMock = true): KitConfig {
 }
 export function resetKitConfigForTests(): void {
   cached = undefined;
+  setEnvConfig(undefined);
 }
 
 /** CLI can use validated configuration without writing a snapshot during a dry run. */
 export function setCliKitConfig(config: KitConfig): void {
   cached = structuredClone(config);
+  // D-138: local defaults apply before the first snapshot exists (dry runs write none).
+  setEnvConfig({
+    profile: config.profile,
+    models: Object.fromEntries(
+      Object.entries(config.models).filter((entry) => entry[1] !== undefined),
+    ),
+  });
 }

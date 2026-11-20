@@ -109,7 +109,7 @@ export function buildFindings(input: FindingInput): InspectFinding[] {
       code: 'language_mismatch',
       severity: 'warn',
       affects: ['retrieval'],
-      fix: 'Set corpus.language to the document language in sourced.config.ts, then run sourced ingest --rebuild.',
+      fix: 'Set corpus.language to the document language in sourced.config.ts, then run pnpm sourced ingest --rebuild.',
       details: {
         configuredLanguage: input.language,
         detectedLanguage: language,

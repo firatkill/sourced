@@ -111,8 +111,11 @@ test('CT-05 / TC-202/TC-203, D-109: real CLI ingest, idempotency and dry-run con
     });
     expect(await timestamps(directory)).toEqual(before);
     const second = await execute(process.execPath, [...args, 'ingest', '--offline'], options);
-    expect(second.stdout).toContain('Sourced ingest');
-    expect(second.stdout).toContain('0 inserted');
+    // D-137: the terminal summary replaces the v1 report; an unchanged rerun embeds nothing.
+    expect(second.stdout).toContain(
+      `0 new, 0 changed, ${String(run.totals.chunks.new)} unchanged and 0 removed passages.`,
+    );
+    expect(second.stdout).toContain('Next: pnpm sourced dev');
     expect(await readFile(join(directory, '.sourced/config.json'), 'utf8')).toContain('configHash');
     config.models.embed.dimensions = 768;
     await writeFile(

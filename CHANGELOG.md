@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Simpler first run: copy `.env.example` to `.env.local`, paste one API key, then `./sourced ingest` and `./sourced dev`. The shipped configuration uses the `local` profile, and every other setting has a default.
+- The PostgreSQL example stays the default source, but the database starts empty; `./sourced reset` removes the example and everything indexed so you can add your own documents.
+- The README is short and covers running locally; architecture, evaluation, the Node path and the hosted example's operation moved to `docs/GUIDE.md`.
+
+### Removed
+
+- The `/deploy` agent command and its skill. Hosting is left to the user; the `deploy:check` command remains.
+
+### Fixed
+
+- Two checkouts on one machine no longer share a database: each checkout records its own Docker Compose project in `.env` (an upgraded checkout keeps its existing data).
+- `ingest --dry-run` warns when the existing index was built with a different embedding model and estimates the rebuild; `ingest` asks before rebuilding instead of stopping with raw JSON.
+- `./sourced dev` reports why the app did not start and what to run next, instead of exiting with no output.
+- Hints on the Docker path name `./sourced` (or `sourced.cmd`), never `pnpm sourced`.
+
 ## [2.0.0] - 2026-11-14
 
 The document chatbot kit. Live at https://sourced.firatkil.com (the example corpus).

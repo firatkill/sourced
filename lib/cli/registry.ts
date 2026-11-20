@@ -24,6 +24,7 @@ export const commands: Record<
   },
   'sources list': {},
   'sources remove': { positional: 1 },
+  reset: {},
   ingest: {
     boolean: [
       'dry-run',

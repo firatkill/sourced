@@ -10,6 +10,7 @@ import { getCliEnvironment } from '@/lib/env';
 import type { KitConfig } from '@/lib/kit/config-schema';
 import { ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { AppError } from '@/lib/errors';
+import { ensureComposeProject } from '@/lib/kit/compose-project';
 
 export const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url));
 export const execute = promisify(execFile);
@@ -20,6 +21,8 @@ export function connectDatabase(url = getCliEnvironment().DATABASE_URL) {
     max: 1,
     connect_timeout: 5,
     types: { bigint: postgres.BigInt },
+    // Migrations re-check existing schemas; their NOTICEs are not for users.
+    onnotice: () => undefined,
   });
 }
 export async function migrationStatus(sql: postgres.Sql) {
@@ -48,6 +51,27 @@ export async function localDatabaseUrl(): Promise<string> {
       'Could not read the local database settings from docker-compose.yml. Check the db service.',
     );
   return `postgres://${encodeURIComponent(user)}:${encodeURIComponent(password)}@localhost:${port}/${encodeURIComponent(database)}`;
+}
+/**
+ * D-138: the Docker quick start runs no `init`, so the CLI applies pending migrations to
+ * its own local database before a command that reads or writes it. Only the Docker CLI
+ * does this: its database is always the checkout's local container, never a hosted one.
+ */
+export async function migrateDockerDatabase(): Promise<void> {
+  const env = getCliEnvironment();
+  if (env.SOURCED_DOCKER !== '1') return;
+  const sql = connectDatabase(env.MIGRATION_DATABASE_URL ?? env.DATABASE_URL);
+  try {
+    await migrate(drizzle(sql), { migrationsFolder: `${repositoryRoot}/drizzle` });
+  } catch (cause) {
+    throw new AppError(
+      'INTERNAL_ERROR',
+      'Database migrations failed. Check that the database container is running (docker compose ps), then retry.',
+      { cause },
+    );
+  } finally {
+    await sql.end();
+  }
 }
 export async function initializeDatabase(
   config: KitConfig,
@@ -82,6 +106,7 @@ export async function initializeDatabase(
         'Database connection failed. Check DATABASE_URL or MIGRATION_DATABASE_URL and database availability.',
       );
     try {
+      await ensureComposeProject(repositoryRoot, (file, args) => execute(file, args));
       await execute('docker', ['compose', 'up', '-d', '--wait', 'db'], { cwd: repositoryRoot });
       status = 'started';
     } catch (cause) {

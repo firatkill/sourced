@@ -172,6 +172,7 @@ test('UT-32 / A-17: model bounds and unknown chat capabilities', () => {
 });
 
 test('UT-32: loader writes a validated snapshot and outside mounts', async () => {
+  vi.stubEnv('SOURCED_PROFILE', '');
   const root = await mkdtemp(path.join(tmpdir(), 'sourced-loader-'));
   try {
     const value = minimal();
@@ -227,4 +228,14 @@ test.each([
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('D-138: SOURCED_PROFILE runs a configuration under another profile', async () => {
+  const { withProfileOverride } = await import('@/lib/kit/load-config');
+  const config = parseKitConfig(minimal());
+  expect(withProfileOverride(config, '').profile).toBe(config.profile);
+  expect(withProfileOverride(config, 'private').profile).toBe('private');
+  expect(() => withProfileOverride(config, 'staging')).toThrow(
+    'SOURCED_PROFILE: Use local, private or public-demo, or remove the variable.',
+  );
 });

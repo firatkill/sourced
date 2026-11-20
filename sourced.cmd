@@ -3,7 +3,7 @@ setlocal DisableDelayedExpansion
 if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1
 cd /d "%~dp0"
 if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" (
-  echo Run ./sourced init first. 1>&2
+  echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
   exit /b 2
 )
 where docker >nul 2>nul
@@ -13,10 +13,13 @@ if errorlevel 1 (
 )
 if not exist .env.local (
   if "%~1"=="init" (type nul > .env.local) else if "%~1"=="doctor" (type nul > .env.local) else (
-    echo Run ./sourced init first. 1>&2
+    echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
     exit /b 2
   )
 )
+set "SOURCED_LAUNCHER=sourced.cmd"
+rem D-136: one Compose project per checkout, recorded in .env for Compose to read.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-project.ps1"
 rem Read only the two port keys; never execute or export other env-file lines.
 for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (
   if "%%A"=="SOURCED_PORT" if not defined SOURCED_PORT set "SOURCED_PORT=%%B"
@@ -97,6 +100,8 @@ set "SOURCED_PORT=%~1"
 shift
 goto devargs
 :startapp
+if exist .sourced\startup-error.json del /q .sourced\startup-error.json
+if exist .sourced\startup-error.txt del /q .sourced\startup-error.txt
 powershell -NoProfile -Command "$p=0; if (-not [int]::TryParse($env:SOURCED_PORT,[ref]$p) -or $p -lt 1 -or $p -gt 65535) { exit 2 }" >nul 2>nul
 if errorlevel 1 (
   echo Port must be an integer from 1 to 65535. 1>&2
@@ -108,21 +113,5 @@ if "%json%"=="true" (
   docker compose up -d --build --force-recreate app 1>&2
 )
 if errorlevel 1 exit /b 1
-if "%json%"=="true" (
-  call :healthcheck 1>&2
-) else (
-  call :healthcheck
-)
-if errorlevel 1 (
-  if "%json%"=="true" echo {"schemaVersion":1,"command":"dev","ok":false,"error":{"code":"INTERNAL_ERROR","message":"App health check failed.","fix":"Run docker compose logs app to diagnose the health check, then retry sourced.cmd dev --json."},"warnings":[]}
-  exit /b 1
-)
-if "%json%"=="true" (
-  echo {"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%SOURCED_PORT%"},"warnings":[]}
-) else (
-  echo http://localhost:%SOURCED_PORT%
-)
-exit /b 0
-:healthcheck
-docker compose exec -T app node --input-type=module -e "for(let n=0;n<60;n++){try{const r=await fetch('http://127.0.0.1:3000/api/health',{signal:AbortSignal.timeout(1000)});if(r.ok)process.exit(0)}catch{}await new Promise(r=>setTimeout(r,1000))}process.exit(1)"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-dev.ps1" "%json%" "%SOURCED_PORT%"
 exit /b

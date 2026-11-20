@@ -37,11 +37,12 @@ const environment: NodeJS.ProcessEnv = {
 beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), 'sourced-cli-unit-'));
   const snapshot = z
-    .object({ config: z.unknown() })
+    .object({ config: z.record(z.string(), z.unknown()) })
     .parse(JSON.parse(await readFile('.sourced/config.json', 'utf8')));
+  // The hosted example's profile (D-138): the shared snapshot may be rewritten concurrently.
   await writeFile(
     join(directory, 'sourced.config.ts'),
-    `export default ${JSON.stringify(snapshot.config)};\n`,
+    `export default ${JSON.stringify({ ...snapshot.config, profile: 'public-demo' })};\n`,
   );
 });
 afterAll(async () => {
