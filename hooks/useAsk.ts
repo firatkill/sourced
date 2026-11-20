@@ -228,7 +228,7 @@ export function askStatus(phase: Phase): string {
   return '';
 }
 
-type AskRequest = { question: string; suggestedId?: SuggestedId };
+type AskRequest = { question: string; suggestedId?: SuggestedId; chatId?: string };
 type StreamHandlers = {
   onEvent: (event: SseEvent) => void;
   onHttpError: (status: number, body: HttpError) => void;
@@ -325,7 +325,7 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
   useEffect(() => cancel, [cancel]);
 
   const submit = useCallback(
-    async (question: string, suggestedId?: SuggestedId) => {
+    async (question: string, suggestedId?: SuggestedId, chatId?: string) => {
       if (isInFlight(current.current.phase)) return;
       cancel();
       send({ type: 'submit', question });
@@ -350,7 +350,11 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
       active.current = { controller, flush, clear };
       const ownsRequest = () => active.current?.controller === controller;
       await askStream(
-        { question, ...(suggestedId === undefined ? {} : { suggestedId }) },
+        {
+          question,
+          ...(suggestedId === undefined ? {} : { suggestedId }),
+          ...(chatId === undefined ? {} : { chatId }),
+        },
         {
           onEvent(event) {
             if (!ownsRequest()) return;

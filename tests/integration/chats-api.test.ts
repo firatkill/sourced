@@ -151,13 +151,14 @@ test('validation, origin, media type and public-demo gating', async () => {
 });
 
 test('/api/ask with chatId saves the finished turn once; unknown chat is 404', async () => {
-  vi.spyOn(pipeline, 'answerQuestion').mockImplementation(async ({ emit }) => {
+  vi.spyOn(pipeline, 'answerQuestion').mockImplementation(({ emit }) => {
     emit({ event: 'meta', data: meta });
     emit({ event: 'token', data: { delta: 'A partial index covers only ' } });
     emit({ event: 'token', data: { delta: 'the rows that satisfy its predicate [P1].' } });
     emit({ event: 'citations', data: citations });
     emit({ event: 'done', data: done });
-    await Promise.resolve();
+    // The route ignores the outcome; only the emitted events matter here.
+    return Promise.resolve({} as Awaited<ReturnType<typeof pipeline.answerQuestion>>);
   });
   const { chat } = await json<{ chat: { id: string } }>(
     await chatsRoute.POST(call('POST', '/api/chats', { question: 'Partial?' })),

@@ -47,7 +47,12 @@ test('D-119: every page returns safe diagnostics before loading runtime data', a
   env.mockImplementation(() => {
     throw new EnvironmentError(['OPENAI_API_KEY']);
   });
-  for (const page of [Home, How, Evaluation]) {
+  const pages = [
+    () => Home({ searchParams: Promise.resolve({}) }),
+    () => How(),
+    () => Evaluation(),
+  ];
+  for (const page of pages) {
     const html = renderToStaticMarkup(await page());
     expect(html).toContain('Sourced needs configuration');
     expect(html).toContain('OPENAI_API_KEY');

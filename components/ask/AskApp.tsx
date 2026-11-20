@@ -13,6 +13,17 @@ import { ChatRail } from './ChatRail';
 import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 import { ExampleBanner } from './ExampleBanner';
+import type { SidebarData } from '@/components/sidebar/ChatSidebar';
+import { announceChatsChanged, chatApi } from '@/lib/chats/client';
+import type { SavedTurn } from '@/lib/chats/store';
+
+/** D-142: saved chats outside the hosted demo. `chat` is set on `/c/[chatId]`. */
+export type SavedChats = {
+  initial: SidebarData;
+  chat?: { id: string; projectId: string | null; title: string; turns: SavedTurn[] };
+  /** `/?project=<id>`: the first question creates the chat inside this project. */
+  projectId?: string;
+};
 
 type Props = {
   publicDemo?: boolean;
@@ -24,17 +35,23 @@ type Props = {
   library?: { pill: string; searching: string | null } | undefined;
   /** Local profile with the bundled example loaded (copy.exampleNotice). */
   example?: { notice: string; commands: string[] } | undefined;
+  saved?: SavedChats | undefined;
 };
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
   const [mode, setMode] = useState(props.demoMode);
+  // A new chat starts empty: the server-provided chat and project apply to the first session only.
+  const saved = props.saved && session > 0 ? { initial: props.saved.initial } : props.saved;
   return (
     <Conversation
       key={session}
       {...props}
+      saved={saved}
       demoMode={mode}
       onMode={setMode}
       onNew={() => {
+        if (props.saved && window.location.pathname !== '/')
+          window.history.replaceState(null, '', '/');
         setSession((n) => n + 1);
       }}
     />
@@ -48,10 +65,13 @@ function Conversation({
   copy,
   library,
   example,
+  saved,
   onNew,
   onMode,
 }: Props & { onNew: () => void; onMode: (mode: Props['demoMode']) => void }) {
   const ask = useAsk(demoMode);
+  const [chatId, setChatId] = useState(saved?.chat?.id);
+  const chatIdRef = useRef(saved?.chat?.id);
   const [history, setHistory] = useState<ChatTurn[]>([]);
   const [active, setActive] = useState<{ id: number; question: string } | null>(null);
   const [draft, setDraft] = useState('');
@@ -88,7 +108,21 @@ function Conversation({
     setActive({ id: retry && active ? active.id : turns.length + 1, question });
     setDraft('');
     try {
-      await ask.submit(question, id);
+      // D-142: the first question of a new chat creates it, so the turn can be saved.
+      if (saved && !chatIdRef.current) {
+        try {
+          const chat = await chatApi.createChat({ question, projectId: saved.projectId ?? null });
+          chatIdRef.current = chat.id;
+          setChatId(chat.id);
+          window.history.replaceState(null, '', `/c/${chat.id}`);
+          announceChatsChanged();
+        } catch {
+          // The question is still answered; it just is not saved.
+        }
+      }
+      await ask.submit(question, id, chatIdRef.current);
+      // The server saves the turn right after the stream ends; refresh the sidebar's order.
+      if (chatIdRef.current) setTimeout(announceChatsChanged, 400);
     } finally {
       busyRef.current = false;
     }
@@ -144,6 +178,7 @@ function Conversation({
     <div className="chat-shell flex h-dvh flex-col md:flex-row">
       <ChatRail
         copy={copy}
+        saved={saved ? { initial: saved.initial, activeChatId: chatId } : undefined}
         turns={turns}
         busy={ask.inFlight}
         onNew={() => {

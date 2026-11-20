@@ -5,7 +5,9 @@ import { usePathname } from 'next/navigation';
 import { SiteHeader } from './SiteHeader';
 
 export function PageShell({ children, footer }: { children: ReactNode; footer: ReactNode }) {
-  if (usePathname() === '/') return children;
+  const pathname = usePathname();
+  // The ask page, saved chats and projects bring their own shell with the sidebar (T-83).
+  if (pathname === '/' || pathname.startsWith('/c/') || pathname.startsWith('/p/')) return children;
   return (
     <>
       <SiteHeader />

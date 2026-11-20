@@ -113,3 +113,57 @@ export const ACCESS_COPY = {
   error: 'That token is not valid.',
   limited: 'Too many attempts. Try again in an hour.',
 } as const;
+
+// T-83 / REDESIGN-v2 §7: the saved-chats sidebar (local and private profiles).
+export const SIDEBAR_COPY = {
+  projects: 'Projects',
+  newProject: 'New project',
+  projectName: 'Project name',
+  noProjects: 'Group related chats into a project.',
+  search: 'Search chats',
+  chats: 'Chats',
+  empty: 'Your chats will show up here.',
+  noMatches: 'No chats match.',
+  storage: 'Chats are saved on this computer.',
+  groups: {
+    Pinned: 'Pinned',
+    Today: 'Today',
+    Yesterday: 'Yesterday',
+    'Previous 7 days': 'Previous 7 days',
+    Older: 'Older',
+  },
+  options: 'Options for',
+  rename: 'Rename',
+  chatName: 'Chat name',
+  renameHint: 'Enter to save · Esc to cancel',
+  moveTo: 'Move to project',
+  noProject: 'No project',
+  back: 'Back',
+  pin: 'Pin to top',
+  unpin: 'Unpin',
+  delete: 'Delete',
+  cancel: 'Cancel',
+  deleteTitle: 'Delete this chat?',
+  deleteBody: 'and its answers are removed from this computer. This can’t be undone.',
+  loadError: 'Chats could not be loaded. Check that the database is running.',
+  saveError: 'That change was not saved. Try again.',
+  privacy: 'Privacy: chats are saved in this computer’s database.',
+};
+
+// T-83: the project page.
+export const PROJECT_COPY = {
+  label: 'Project',
+  name: 'Project name',
+  description: 'Description',
+  edit: 'Rename project',
+  save: 'Save',
+  cancel: 'Cancel',
+  newChat: 'New chat in this project',
+  chats: 'Chats',
+  empty: 'No chats in this project yet. Start one, or move a chat here from its menu.',
+  delete: 'Delete project',
+  deleteTitle: 'Delete this project?',
+  deleteBody: 'Its chats are kept and move back to the general list.',
+  deleteConfirm: 'Delete project',
+  saveError: 'That change was not saved. Try again.',
+};
