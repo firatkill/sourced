@@ -146,6 +146,12 @@ export function Turn({
           )}
           {meta?.cached && <span className="text-xs text-[var(--ink-3)]">Answered in advance</span>}
         </header>
+        {meta?.standaloneQuestion && (
+          <p className="text-xs text-[var(--ink-3)]">
+            {ASK_COPY.searchedFor}{' '}
+            <span className="text-[var(--ink-2)]">{meta.standaloneQuestion}</span>
+          </p>
+        )}
         {busy && (
           <div className="flex flex-wrap gap-2 text-xs text-[var(--ink-2)]">
             {meta && (

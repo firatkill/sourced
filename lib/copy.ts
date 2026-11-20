@@ -28,6 +28,8 @@ export const ASK_COPY = {
   limit:
     '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
   suggestions: 'Start with one of these',
+  // T-85: the standalone question a follow-up was searched with.
+  searchedFor: 'Searched for:',
   // T-84: opening a cited file in saved-chat mode.
   openFile: 'Open the file',
   openAtPage: 'Open at page',

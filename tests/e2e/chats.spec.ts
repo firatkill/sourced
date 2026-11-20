@@ -195,3 +195,35 @@ test('T-84: a cited file that left the library shows the saved copy note', async
   ).toBeVisible();
   await expect(page.getByRole('link', { name: /^Open at page 3/ })).toHaveCount(0);
 });
+
+test('T-85: a follow-up is searched as a standalone question, also after a reload', async ({
+  page,
+}, info) => {
+  const first = await newChat(page, info);
+  await expect(page.getByRole('textbox', { name: 'Your question' })).toHaveAttribute(
+    'placeholder',
+    /Ask a follow-up|Ask another question/,
+  );
+  await page.getByRole('textbox', { name: 'Your question' }).fill('Can it also be unique?');
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
+  const searched = page.getByText('Searched for:', { exact: false });
+  await expect(searched).toHaveCount(1);
+  await expect(searched).toContainText(`${first} Can it also be unique?`);
+  await expect(page.getByRole('article', { name: 'Answer', exact: true })).toHaveCount(2);
+  // The server saves a turn right after its stream ends; wait for it before reloading.
+  const id = /\/c\/([0-9a-f-]{36})$/.exec(page.url())?.[1] ?? '';
+  await expect
+    .poll(async () => {
+      const body = (await (
+        await page.request.get(`http://localhost:3103/api/chats/${id}`)
+      ).json()) as {
+        chat: { turns: unknown[] };
+      };
+      return body.chat.turns.length;
+    })
+    .toBe(2);
+  await page.reload();
+  await expect(page.getByText('Searched for:', { exact: false })).toContainText(
+    'Can it also be unique?',
+  );
+});

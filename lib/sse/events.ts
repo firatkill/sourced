@@ -30,6 +30,8 @@ export const PassageDto = z.union([
 export const MetaEvent = z.object({
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- normative TRD §12.2 schema
   requestId: z.string().uuid(),
+  // T-85 / D-143: present only for a follow-up; the question retrieval actually used.
+  standaloneQuestion: z.string().min(1).max(500).optional(),
   cached: z.boolean(),
   // eslint-disable-next-line @typescript-eslint/no-deprecated -- normative TRD §12.2 schema
   cachedAt: z.string().datetime().nullable(),

@@ -14,10 +14,17 @@ export type AnswerUsage = {
   rerank: TokenUsage;
   generation: TokenUsage;
   fallback: TokenUsage;
+  /** T-85: the follow-up rewrite call (chat model); absent for a first question. */
+  rewrite?: TokenUsage;
 };
 
 export function totalUsage(usage: AnswerUsage) {
-  const calls = [usage.rerank, usage.generation, usage.fallback];
+  const calls = [
+    usage.rerank,
+    usage.generation,
+    usage.fallback,
+    ...(usage.rewrite ? [usage.rewrite] : []),
+  ];
   return {
     embeddingTokens: usage.embeddingTokens,
     inputTokens: calls.reduce((sum, call) => sum + call.inputTokens, 0),
@@ -50,7 +57,8 @@ export function estimateCost(
     (usage.embeddingTokens * embed.inputPerMTok +
       cost(usage.rerank, rerank) +
       cost(usage.generation, chat) +
-      cost(usage.fallback, chat)) /
+      cost(usage.fallback, chat) +
+      (usage.rewrite ? cost(usage.rewrite, chat) : 0)) /
     1_000_000
   );
 }

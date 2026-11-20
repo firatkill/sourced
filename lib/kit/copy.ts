@@ -46,8 +46,7 @@ export function getCopy(
       copy.scope ??
       'Answers come only from your documents. If the answer is not there, Sourced says so.',
     placeholder: copy.placeholder ?? 'Ask about your documents',
-    // REDESIGN-v2 §3 says "Ask a follow-up"; that wording waits for follow-ups (T-85, FR-91).
-    nextPlaceholder: copy.nextPlaceholder ?? 'Ask another question about your documents',
+    nextPlaceholder: copy.nextPlaceholder ?? 'Ask a follow-up',
     searched: fillCount(copy.searched ?? 'Searched {documentCount} documents'),
     viewerLink: copy.viewerLink ?? 'Open the source',
     ...(copy.sourceDomain === undefined ? {} : { docsDomain: copy.sourceDomain }),

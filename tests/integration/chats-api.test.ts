@@ -201,3 +201,48 @@ test('/api/ask rejects chatId under public-demo and is unchanged without it', as
     reason: 'unknown_field',
   });
 });
+
+test('T-85: a follow-up passes its history to the pipeline and saves the standalone question', async () => {
+  const pipelineSpy = vi.spyOn(pipeline, 'answerQuestion').mockImplementation(({ emit }) => {
+    emit({
+      event: 'meta',
+      data: { ...meta, standaloneQuestion: 'What is a partial index? Can it be unique?' },
+    });
+    emit({ event: 'token', data: { delta: citations.answer } });
+    emit({ event: 'citations', data: citations });
+    emit({ event: 'done', data: done });
+    return Promise.resolve({} as Awaited<ReturnType<typeof pipeline.answerQuestion>>);
+  });
+  const { chat } = await json<{ chat: { id: string } }>(
+    await chatsRoute.POST(call('POST', '/api/chats', { question: 'Partial?' })),
+  );
+  const history = [{ question: 'What is a partial index?', answer: 'An index over some rows.' }];
+  const response = await ask(
+    call(
+      'POST',
+      '/api/ask',
+      { question: 'Can it be unique?', chatId: chat.id, history },
+      { 'x-real-ip': '192.0.2.78' },
+    ),
+  );
+  await response.text();
+  await flushAfter();
+  expect(pipelineSpy).toHaveBeenCalledWith(expect.objectContaining({ history }));
+  expect((await getChat(chat.id)).turns[0]?.standaloneQuestion).toBe(
+    'What is a partial index? Can it be unique?',
+  );
+});
+
+test('T-85: history is validated strictly', async () => {
+  const tooMany = Array.from({ length: 5 }, () => ({ question: 'Q?', answer: 'A.' }));
+  for (const history of [
+    tooMany,
+    [{ question: 'Q?', answer: 'A.', extra: 1 }],
+    [{ question: '' }],
+  ]) {
+    const response = await ask(
+      call('POST', '/api/ask', { question: 'Can it be unique?', history }),
+    );
+    expect(response.status).toBe(400);
+  }
+});

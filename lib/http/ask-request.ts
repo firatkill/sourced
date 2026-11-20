@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { QUESTION } from '@/lib/config';
+import { FOLLOWUP, QUESTION } from '@/lib/config';
 import { SUGGESTED_IDS } from '@/lib/suggested';
 
 export const AskRequest = z
@@ -11,6 +11,18 @@ export const AskRequest = z
     suggestedId: z.enum(SUGGESTED_IDS).optional(),
     // T-82 / D-142: save the finished turn in this chat (local and private profiles only).
     chatId: z.uuid().optional(),
+    // T-85 / FR-91: earlier turns of this chat, oldest first; the browser sends them.
+    history: z
+      .array(
+        z
+          .object({
+            question: z.string().min(1).max(QUESTION.MAX_CHARS),
+            answer: z.string().max(FOLLOWUP.MAX_ANSWER_CHARS),
+          })
+          .strict(),
+      )
+      .max(FOLLOWUP.MAX_TURNS)
+      .optional(),
   })
   .strict();
 export type AskRequest = z.infer<typeof AskRequest>;

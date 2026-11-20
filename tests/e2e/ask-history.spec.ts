@@ -12,7 +12,11 @@ for (const theme of ['light', 'dark'] as const) {
     await expectDone(page);
     const request = page.waitForRequest('**/api/ask');
     const second = await ask(page);
-    expect((await request).postDataJSON()).toEqual({ question: second });
+    // T-85 / D-143: a follow-up carries the earlier answered turn from the browser's memory.
+    expect((await request).postDataJSON()).toEqual({
+      question: second,
+      history: [{ question: first, answer: expect.any(String) as unknown }],
+    });
     await expectDone(page);
     await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(2);
     const session = page

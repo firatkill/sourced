@@ -158,6 +158,7 @@ export async function evaluateQuestions(
     try {
       const outcome = await (options.answer ?? answerQuestion)({
         question: golden.question,
+        ...(golden.history ? { history: golden.history } : {}),
         requestId: randomUUID(),
         signal: new AbortController().signal,
         emit: (event) => {

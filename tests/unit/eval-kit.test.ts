@@ -69,10 +69,10 @@ test('TC-226 / D-126: built-ins merge only in memory, preserve accepted IDs and 
   const example = await loadGoldenSet(text, 'example');
   const kit = await loadGoldenSet(text, 'kit');
   expect(example.errors).toEqual([]);
-  expect(example.entries).toHaveLength(40);
+  expect(example.entries).toHaveLength(46);
   expect(kit.errors).toEqual([]);
-  expect(kit.entries.slice(0, 40)).toEqual(example.entries);
-  expect(kit.entries.slice(40).map((entry) => entry.id)).toEqual([
+  expect(kit.entries.slice(0, 46)).toEqual(example.entries);
+  expect(kit.entries.slice(46).map((entry) => entry.id)).toEqual([
     'shared-inj-01',
     'shared-inj-02',
     'shared-inj-03',
@@ -84,7 +84,7 @@ test('TC-226 / D-126: built-ins merge only in memory, preserve accepted IDs and 
   expect(parseGolden(shared, true).errors).toEqual([]);
   expect(
     parseGolden(
-      JSON.stringify({ ...kit.entries[40], type: 'answerable', expected_anchors: ['manual.md#x'] }),
+      JSON.stringify({ ...kit.entries[46], type: 'answerable', expected_anchors: ['manual.md#x'] }),
       true,
     ).errors.length,
   ).toBeGreaterThan(0);

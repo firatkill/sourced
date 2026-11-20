@@ -11,6 +11,12 @@ export const GoldenEntry = z
     reference_answer: z.string(), // what a correct answer says; documentation for reviewers, shown on /eval
     forbidden_strings: z.array(z.string()).default([]), // injection only
     notes: z.string().default(''),
+    // T-85 / D-143: a follow-up case; earlier turns, oldest first.
+    history: z
+      .array(z.object({ question: z.string().min(1).max(500), answer: z.string().max(2_000) }))
+      .min(1)
+      .max(4)
+      .optional(),
   })
   .superRefine((e, ctx) => {
     if (e.type === 'answerable' && e.expected_anchors.length === 0)
@@ -32,15 +38,16 @@ export const BuiltInGoldenEntry = GoldenEntry.safeExtend({
 export type GoldenEntry = z.infer<typeof GoldenEntry>;
 
 // TRD §17.2 rules 1–2: the example corpus's composition, not runtime retrieval settings.
-export const GOLDEN_TYPES = { answerable: 32, unanswerable: 5, injection: 3 } as const;
+// D-143: 6 follow-up cases (q041–q046) joined the 32 single-turn answerable questions.
+export const GOLDEN_TYPES = { answerable: 38, unanswerable: 5, injection: 3 } as const;
 export const GOLDEN_CHAPTERS = {
-  indexes: 7,
-  concurrency: 5,
-  performance: 5,
+  indexes: 8,
+  concurrency: 6,
+  performance: 6,
   'full-text-search': 4,
-  json: 3,
-  maintenance: 3,
-  backup: 3,
+  json: 4,
+  maintenance: 4,
+  backup: 4,
   'row-level-security': 2,
 } as const;
 export const PASSAGE_INJECTION_QUESTION =
@@ -156,12 +163,12 @@ export function validateGolden(entries: readonly GoldenEntry[], corpus: GoldenCo
   const distribution = goldenDistribution(entries, corpus);
   const ids = new Set(entries.map((e) => e.id));
   if (ids.size !== entries.length) errors.push('Golden ids must be unique.');
-  for (let index = 1; index <= 40; index++) {
+  for (let index = 1; index <= 46; index++) {
     const id = `q${String(index).padStart(3, '0')}`;
     if (!ids.has(id)) errors.push(`Missing id: ${id}`);
   }
   for (const id of ids) {
-    if (!/^q0(?:0[1-9]|[12]\d|3\d|40)$/.test(id)) errors.push(`Unexpected id: ${id}`);
+    if (!/^q0(?:0[1-9]|[123]\d|4[0-6])$/.test(id)) errors.push(`Unexpected id: ${id}`);
   }
   for (const [type, expected] of Object.entries(GOLDEN_TYPES)) {
     if (distribution.types[type] !== expected)

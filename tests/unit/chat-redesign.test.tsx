@@ -42,7 +42,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it('keeps independent turns after validation, submits no history, clears with New chat', async () => {
+it('keeps turns after validation, sends earlier answers as follow-up history (FR-91), clears with New chat', async () => {
   const fetch = vi.fn(() => Promise.resolve(stream()));
   vi.stubGlobal('fetch', fetch);
   render(<AskApp demoMode="on" limits={limits} suggested={SUGGESTED} copy={ASK_COPY} />);
@@ -65,15 +65,25 @@ it('keeps independent turns after validation, submits no history, clears with Ne
   await submit('When should I create an index?');
   expect(screen.getAllByRole('article', { name: 'Answer' })).toHaveLength(2);
   expect(fetch).toHaveBeenCalledTimes(2);
-  for (const [index, question] of [
-    'How do partial indexes work?',
-    'When should I create an index?',
-  ].entries()) {
-    expect(fetch.mock.calls[index]).toEqual([
-      '/api/ask',
-      expect.objectContaining({ body: JSON.stringify({ question }) }),
-    ]);
-  }
+  expect(fetch.mock.calls[0]).toEqual([
+    '/api/ask',
+    expect.objectContaining({ body: JSON.stringify({ question: 'How do partial indexes work?' }) }),
+  ]);
+  // T-85 / D-143: the follow-up carries the earlier answered turn.
+  expect(fetch.mock.calls[1]).toEqual([
+    '/api/ask',
+    expect.objectContaining({
+      body: JSON.stringify({
+        question: 'When should I create an index?',
+        history: [
+          {
+            question: 'How do partial indexes work?',
+            answer: 'A partial index covers only the rows that satisfy its predicate [P1].',
+          },
+        ],
+      }),
+    }),
+  ]);
   expect(
     within(screen.getByRole('region', { name: 'This session' }))
       .getAllByRole('button')

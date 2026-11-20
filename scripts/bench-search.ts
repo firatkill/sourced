@@ -187,7 +187,8 @@ export function realisticQueries(text: string) {
   const parsed = parseGolden(text);
   if (parsed.errors.length) throw new Error('Invalid committed golden set.');
   return parsed.entries
-    .filter((entry) => entry.type === 'answerable')
+    // D-143: follow-up cases (with history) are not standalone search queries.
+    .filter((entry) => entry.type === 'answerable' && !entry.history)
     .flatMap((entry) => {
       const paraphrase = paraphrases[entry.id];
       if (!paraphrase) throw new Error('Add a reviewed paraphrase for the new golden question.');

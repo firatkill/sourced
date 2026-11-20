@@ -101,15 +101,18 @@ export async function POST(request: Request): Promise<Response> {
     const env = getEnv();
     const publicDemo = isPublicDemo();
     if (publicDemo && env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
-    const { question, suggestedId: suppliedSuggested, chatId } = parsed.data;
+    const { question, suggestedId: suppliedSuggested, chatId, history = [] } = parsed.data;
     if (chatId !== undefined && publicDemo)
       return reject('VALIDATION_FAILED', 400, { field: 'body', reason: 'unknown_field' });
     if (chatId !== undefined && !(await chatExists(chatId))) return reject('NOT_FOUND', 404);
     const canonical = SUGGESTED.find((entry) => entry.id === suppliedSuggested);
+    // T-85: a follow-up depends on earlier turns, so it never matches a prepared answer.
     const suggestedId =
-      canonical && normalize(canonical.question) === normalize(question)
-        ? canonical.id
-        : matchSuggested(question);
+      history.length > 0
+        ? undefined
+        : canonical && normalize(canonical.question) === normalize(question)
+          ? canonical.id
+          : matchSuggested(question);
     logger.info({ event: 'ask.received', questionLength: question.length, suggestedId });
     row = {
       requestId,
@@ -172,6 +175,7 @@ export async function POST(request: Request): Promise<Response> {
                 : 'done';
         await appendTurn(chatId, {
           question,
+          standaloneQuestion: turn.meta.standaloneQuestion ?? null,
           answer: {
             meta: turn.meta,
             answerText: turn.text,
@@ -331,7 +335,13 @@ export async function POST(request: Request): Promise<Response> {
             };
             if (cached) replayAnswerCache({ cached, requestId, emit });
             else
-              await answerQuestion({ question, requestId, signal: abortController.signal, emit });
+              await answerQuestion({
+                question,
+                history,
+                requestId,
+                signal: abortController.signal,
+                emit,
+              });
           } catch (error) {
             await fail(error);
           }

@@ -79,8 +79,9 @@ test('T-63 / NFR-21: realistic queries retain every answerable golden question a
   const originals = text
     .trim()
     .split('\n')
-    .map((line) => JSON.parse(line) as { type: string; question: string })
-    .filter((e) => e.type === 'answerable');
+    .map((line) => JSON.parse(line) as { type: string; question: string; history?: unknown })
+    // D-143: follow-up cases need their history and are not standalone search queries.
+    .filter((e) => e.type === 'answerable' && !e.history);
   expect(new Set(queries.map((q) => q.question)).size).toBeGreaterThanOrEqual(200);
   for (const entry of originals)
     expect(queries.some((q) => q.question === entry.question)).toBe(true);

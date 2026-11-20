@@ -49,7 +49,7 @@ test('UT-33 / D-140: all default strings are generic and absent optional content
     headerScope: 'Answers only from your documents',
     scope: 'Answers come only from your documents. If the answer is not there, Sourced says so.',
     placeholder: 'Ask about your documents',
-    nextPlaceholder: 'Ask another question about your documents',
+    nextPlaceholder: 'Ask a follow-up',
     searched: 'Searched 12 documents',
     viewerLink: 'Open the source',
     promptSubject: 'Guide',

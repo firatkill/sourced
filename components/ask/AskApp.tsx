@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAsk } from '@/hooks/useAsk';
-import { QUESTION } from '@/lib/config';
+import { FOLLOWUP, QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { AskForm } from './AskForm';
@@ -108,6 +108,20 @@ function Conversation({
     }
     busyRef.current = true;
     setViewer(null);
+    // T-85 / FR-91: the last answered turns travel with a follow-up (a retry resends its own).
+    // A suggested question stands alone, so it keeps its prepared answer and quota exemption.
+    const earlier = (id !== undefined ? [] : retry ? turns.slice(0, -1) : turns)
+      .flatMap((turn) =>
+        turn.phase.kind === 'done'
+          ? [
+              {
+                question: turn.question,
+                answer: turn.phase.citations.answer.slice(0, FOLLOWUP.MAX_ANSWER_CHARS),
+              },
+            ]
+          : [],
+      )
+      .slice(-FOLLOWUP.MAX_TURNS);
     if (current && !retry) setHistory((previous) => [...previous, current]);
     setActive({ id: retry && active ? active.id : turns.length + 1, question });
     setDraft('');
@@ -124,7 +138,11 @@ function Conversation({
           // The question is still answered; it just is not saved.
         }
       }
-      await ask.submit(question, id, chatIdRef.current);
+      const context = {
+        ...(chatIdRef.current ? { chatId: chatIdRef.current } : {}),
+        ...(earlier.length > 0 ? { history: earlier } : {}),
+      };
+      await ask.submit(question, id, Object.keys(context).length > 0 ? context : undefined);
       // The server saves the turn right after the stream ends; refresh the sidebar's order.
       if (chatIdRef.current) setTimeout(announceChatsChanged, 400);
     } finally {
