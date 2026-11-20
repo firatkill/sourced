@@ -110,7 +110,12 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | 9903da3 |
 | T-91 | M11 Setup and settings | Settings › Models and keys | done | 82dc4d9 |
 | T-92 | M11 Setup and settings | Settings › Library, Chats and data | done | 652e90e |
-| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | done (merged in #8, tag v2.3.0) | HEAD |
+| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | done (merged in #8, tag v2.3.0) | 12c13ce |
+| T-94 | M12 Project search scope | Project search scope | done | dd667a0 |
+| T-95 | M12 Project search scope | Example banner points to Settings › Library | done | dd667a0 |
+| T-96 | M12 Project search scope | `/eval` hydration flake | recorded, cause not found (`qa/release-v2/tc-145-eval-hydration.md`) | 8412af4 |
+| T-97 | M12 Project search scope | Dependency alerts | done | 2886ff2 |
+| T-98 | M12 Project search scope | Docs and v2.4.0 | done on `v2.4/project-scope`; merge and tag need the owner | HEAD |
 
 ## Open questions for the owner
 

@@ -4046,3 +4046,24 @@ Configuration: inside the server the snapshot is the configuration (Next cannot 
 
 `tests/unit/setup-guard.test.ts`, `setup-helpers.test.ts`, `chat-markdown.test.ts`; `tests/integration/setup-api.test.ts`; launcher contracts in `tests/contract/docker-launcher.test.ts`; E2E `tests/e2e/setup.spec.ts` on a fresh local checkout (port 3107, its own database `<e2e database>_setup`, no keys, mock mode): link → own documents → upload → cost → index → cited answer, then Settings and Library.
 
+## 44. Project search scope *(v2.4, D-145, D-150, D-151)*
+
+### 44.1 Data and API
+
+Migration `0005_project_scope` adds `projects.source_ids text[]` (additive). Null means the whole library, and a check keeps a non-null list between 1 and 50 entries. `POST /api/projects` and `PATCH /api/projects/:id` accept `sourceIds` (an array of source ids, or `null` to search everything). The server trims the ids and removes duplicates, and rejects an empty list with `400`. Every project response carries `sourceIds`.
+
+### 44.2 Retrieval
+
+`/api/ask` with a `chatId` reads the scope from the chat's project on the server (`chatSearchScope`), so a client cannot widen it. It passes `scope: { sourceIds }` through `answerQuestion` and `retrieve` to `searchInTransaction`. A scoped search adds `c.document_id IN (SELECT id FROM documents WHERE source_id = ANY($ids))` to the vector ranker, the full-text ranker and both candidate counts. It also turns on `hnsw.iterative_scan = relaxed_order` when the installed pgvector has the setting (0.8 or later), so the filtered HNSW scan still fills its candidate list. An unscoped search runs the same SQL as v2.3, so the golden-set eval needs no new run. A source id that is no longer indexed matches nothing: the answer is "not found" rather than a search of the whole library.
+
+### 44.3 UI
+
+- The project page has a **Search in** section: **Everything in the library**, or **Only these sources** with one checkbox per indexed source (`listLibrarySources`: `id/` for folders, the id for web sources, with document counts). Saved ids that are no longer indexed are listed as "no longer in the library".
+- A new chat in a limited project, and every chat inside it, shows "Searching only …" under the composer. A new chat started from there is outside the project and searches everything.
+- D-151: in the local profile, the example banner links to Settings › Library (**Open Library**) instead of showing `reset` and `add` commands.
+
+### 44.4 Tests
+
+- Integration: `chats.test.ts` covers the store and the check constraint; `search-sql.test.ts` covers the scoped and unscoped rankers and counts; `chats-api.test.ts` covers the API and the scope passed by `/api/ask`; `migrations.test.ts` covers the constraint name.
+- E2E: T-94 in `setup.spec.ts`, and the banner link in `copy-rules.spec.ts`.
+

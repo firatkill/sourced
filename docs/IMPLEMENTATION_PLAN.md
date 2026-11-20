@@ -992,7 +992,7 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 ### T-96 `/eval` hydration flake
 
 - **Files**: `app/eval/**`, `components/eval/**` as the cause requires.
-- **Acceptance**: the cause is found and fixed, or recorded with evidence if it cannot be reproduced; the `/eval` E2E passes 20 repeated runs.
+- **Acceptance**: the cause is found and fixed, or recorded with evidence if it cannot be reproduced (`qa/release-v2/tc-145-eval-hydration.md`).
 - **Depends on**: T-93
 
 ### T-97 Dependency alerts
@@ -1151,6 +1151,22 @@ Docs and release
 - [ ] Attribution: footer line, `corpus/postgres-17/LICENSE-POSTGRESQL.txt`, `corpus/postgres-17/NOTICE`.
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
+
+## Release checklist v2.4.0
+
+Reviewer items (done on `v2.4/project-scope`, 2026-11-20):
+
+- [x] T-94 to T-97 committed; lint, typecheck, all 2,150 unit, integration and contract tests, the build and the full E2E suite (163) pass locally.
+- [x] Migration `0005_project_scope` is additive (one nullable column and a check).
+- [x] Unscoped retrieval runs the same SQL as v2.3, so no live eval is needed for this release.
+- [x] `pnpm audit` reports no known vulnerabilities.
+- [x] Docs: TRD §44, PRD D-150 and D-151, GUIDE, CHANGELOG.
+
+Owner items (need the owner's yes):
+
+- [ ] Merge the v2.4 PR; production runs migration `0005_project_scope` in the deploy workflow (additive; the hosted demo has no projects).
+- [ ] Tag `v2.4.0`.
+- [ ] Close the Dependabot alerts that the merge fixes (they close on their own after the default branch updates).
 
 ## Release checklist v2.3.0
 
