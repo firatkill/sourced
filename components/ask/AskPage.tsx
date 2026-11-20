@@ -70,19 +70,24 @@ export async function AskPage({
     readLibrary(),
     readScopeLine(chat ? chat.projectId : projectId),
   ]);
-  // T-90 / R2 §6: the local app sends a new chat to /setup until something is indexed.
-  if (!chat && getKitConfig().profile === 'local' && library?.documents === 0) redirect('/setup');
+  const local = getKitConfig().profile === 'local';
+  const sidebar = publicDemo ? undefined : await readSidebar();
+  // D-153: with nothing indexed, a first-time user goes to /setup (T-90). After a library reset
+  // the chats and projects stay, so the app stays too and says documents are needed to ask.
+  const emptyLibrary = local && library?.documents === 0;
+  if (!chat && emptyLibrary && !sidebar?.chats.length && !sidebar?.projects.length)
+    redirect('/setup');
   const example =
-    getKitConfig().profile === 'local' && copy.exampleNotice && !chat
+    local && copy.exampleNotice && !chat && !emptyLibrary
       ? { notice: copy.exampleNotice }
       : undefined;
-  const saved: SavedChats | undefined = publicDemo
-    ? undefined
-    : {
-        initial: await readSidebar(),
+  const saved: SavedChats | undefined = sidebar
+    ? {
+        initial: sidebar,
         ...(chat ? { chat } : {}),
         ...(projectId ? { projectId } : {}),
-      };
+      }
+    : undefined;
   return (
     <AskApp
       library={
@@ -95,6 +100,7 @@ export async function AskPage({
           : undefined
       }
       example={example}
+      emptyLibrary={emptyLibrary}
       saved={saved}
       demoMode={publicDemo ? env.DEMO_MODE : 'on'}
       publicDemo={publicDemo}

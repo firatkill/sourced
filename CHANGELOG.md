@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- The sidebar shows projects as folders among the chats (D-153): open or close a project, use its ⋯ menu for New chat in this project and Project settings, and drag a chat onto a project to move it. The rail uses the favicon's mark.
+
+### Added
+
+- **Reset all data…** in the local app's Settings menu (D-153): reset the library and keep chats, or remove everything. After a library reset the app stays open with your chats and asks you to add documents.
+
+### Fixed
+
+- The home page no longer shows "Something went wrong" after the example or the library is removed.
+
 ## [2.5.0] - 2026-11-21
 
 Optional Docling reader for PDF, Word and PowerPoint files.

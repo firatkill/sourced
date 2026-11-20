@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { ChatItem, ProjectItem } from '@/lib/chats/client';
 import { SIDEBAR_COPY } from '@/lib/copy';
+import { CHAT_DRAG_TYPE } from './useMenu';
 
 type Props = {
   chat: ChatItem;
@@ -43,6 +44,7 @@ export function ChatRow({
   const [menu, setMenu] = useState<'closed' | 'main' | 'move'>('closed');
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(chat.title);
+  const [dragging, setDragging] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = `chat-menu-${chat.id}`;
@@ -122,9 +124,19 @@ export function ChatRow({
     );
 
   return (
-    <li className="group relative flex items-center">
+    <li className={`group relative flex items-center ${dragging ? 'opacity-40' : ''}`}>
       <Link
         href={`/c/${chat.id}`}
+        // D-153: drag a chat onto a project (or onto Chats) to move it; the menu does the same.
+        draggable
+        onDragStart={(event) => {
+          event.dataTransfer.setData(CHAT_DRAG_TYPE, chat.id);
+          event.dataTransfer.effectAllowed = 'move';
+          setDragging(true);
+        }}
+        onDragEnd={() => {
+          setDragging(false);
+        }}
         {...(onNavigate ? { onClick: onNavigate } : {})}
         aria-current={active ? 'page' : undefined}
         className={`flex min-h-10 min-w-0 flex-1 items-center rounded-lg pr-10 pl-2.5 text-sm hover:bg-[var(--rule)] hover:no-underline ${active ? 'bg-[var(--rule)] font-medium text-[var(--ink)]' : 'text-[var(--ink-2)]'}`}

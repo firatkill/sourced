@@ -539,3 +539,30 @@ test('T-101 Docling: the choice is saved for the next run; the service status is
   );
   resetIngestJobForTests();
 });
+
+test('D-153 reset: the library reset keeps chats and the reader choice; everything removes chats', async () => {
+  const { createChat, createProject, listChats, listProjects } = await import('@/lib/chats/store');
+  const { readConfig, writeConfig } = await import('@/lib/setup/config');
+  const { getSql } = await import('@/lib/db/client');
+  const { getPageCopy } = await import('@/lib/kit/copy-server');
+  await writeConfig({ ...readConfig(), parsing: { engine: 'docling' } });
+  const project = await createProject({ name: `Reset ${crypto.randomUUID().slice(0, 8)}` });
+  const chat = await createChat({ question: 'What stays after a reset?', projectId: project.id });
+  const route = await import('@/app/api/setup/reset/route');
+
+  expect((await route.POST(call('POST', '/api/setup/reset', { scope: 'all' }))).status).toBe(400);
+  const library = await route.POST(call('POST', '/api/setup/reset', { scope: 'library' }));
+  expect(library.status).toBe(200);
+  expect(await library.json()).toMatchObject({ removedChats: 0 });
+  expect((await listChats()).map((entry) => entry.id)).toContain(chat.id);
+  expect(readConfig().sources).toEqual([]);
+  expect(readConfig().parsing).toEqual({ engine: 'docling' });
+  expect(await getSql()`SELECT 1 FROM corpus_meta`).toHaveLength(0);
+  // The home page reads its copy after a reset (it used to throw on the missing row).
+  await expect(getPageCopy()).resolves.toMatchObject({});
+
+  const everything = await route.POST(call('POST', '/api/setup/reset', { scope: 'everything' }));
+  expect(await everything.json()).toMatchObject({ removedChats: expect.any(Number) as number });
+  expect(await listChats()).toEqual([]);
+  expect(await listProjects()).toEqual([]);
+});

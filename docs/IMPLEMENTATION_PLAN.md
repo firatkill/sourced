@@ -28,6 +28,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 | M11 Setup and settings in the browser *(v2.3)* | T-88 – T-93 | `./sourced dev` then the browser reaches a cited answer with no other terminal step; keys, models, library and chat data managed in Settings; v2.3.0 |
 | M12 Project search scope *(v2.4)* | T-94 – T-98 | A project's chats search only the library sources it names; example banner points to Settings › Library; `/eval` hydration flake; dependency alerts; v2.4.0 (D-150, D-151) |
 | M13 Docling reader *(v2.5)* | T-99 – T-102 | Optional local Docling container reads PDF, Word and PowerPoint files; offered in setup and Settings; v2.5.0 (D-152) |
+| M14 Sidebar folders and reset *(v2.6)* | T-103 – T-104 | Projects as folders among the chats with a ⋯ menu and drag to move; Reset all data with the app kept open after a library reset (D-153) |
 
 ---
 
@@ -1039,6 +1040,20 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 - **Files**: `README.md`, `docs/GUIDE.md`, `docs/TRD.md` §45, `docs/PRD.md`, `CHANGELOG.md`, `docs/PROGRESS.md`.
 - **Acceptance**: a newcomer can turn Docling on from the README alone; release checklist v2.5.0 walked.
 - **Depends on**: T-101
+
+### T-103 Sidebar: projects as folders
+
+- **Implements**: D-153
+- **Files**: `components/sidebar/ChatSidebar.tsx`, `ProjectGroup.tsx`, `ChatRow.tsx`, `useMenu.ts`, `components/ask/ChatRail.tsx`, `lib/copy.ts`.
+- **Acceptance**: a project opens and closes (kept after a reload); its ⋯ menu offers New chat in this project, Project settings, Rename and Delete project; a chat dragged onto a project moves there and back onto Chats moves out; menus work from the keyboard (E2E `chats.spec.ts`).
+- **Depends on**: T-83
+
+### T-104 Reset all data and the empty library
+
+- **Implements**: D-153
+- **Files**: `app/api/setup/reset/route.ts`, `lib/setup/reset.ts`, `components/sidebar/SettingsMenu.tsx`, `ResetDataDialog.tsx`, `components/ask/EmptyLibraryBanner.tsx`, `AskApp.tsx`, `AskPage.tsx`, `lib/kit/copy-server.ts`.
+- **Acceptance**: the library reset keeps chats, projects and the reader choice; "Remove everything" deletes chats too; `/` renders after a reset (it threw before) and, with chats left, shows the Add documents banner with asking off instead of sending the person to `/setup` (integration, unit and E2E tests).
+- **Depends on**: T-92
 
 ## Traceability: functional requirements to tasks and tests
 

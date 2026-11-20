@@ -123,6 +123,19 @@ export const ACCESS_COPY = {
 export const SIDEBAR_COPY = {
   projects: 'Projects',
   newProject: 'New project',
+  newChatInProject: 'New chat in this project',
+  projectSettings: 'Project settings',
+  deleteProject: 'Delete project…',
+  deleteProjectTitle: 'Delete this project?',
+  deleteProjectBody: 'Its chats are kept and move back to Chats.',
+  projectEmpty: 'No chats yet. Drag a chat here.',
+  dropHere: 'Drop to move the chat here',
+  dropOut: 'Drop to take the chat out of its project',
+  results: 'Results',
+  searchRow: 'Search',
+  closeSearch: 'Close search',
+  settingsMenu: 'Settings',
+  library: 'Library',
   projectName: 'Project name',
   noProjects: 'Group related chats into a project.',
   search: 'Search chats',
@@ -130,13 +143,6 @@ export const SIDEBAR_COPY = {
   empty: 'Your chats will show up here.',
   noMatches: 'No chats match.',
   storage: 'Chats are saved on this computer.',
-  groups: {
-    Pinned: 'Pinned',
-    Today: 'Today',
-    Yesterday: 'Yesterday',
-    'Previous 7 days': 'Previous 7 days',
-    Older: 'Older',
-  },
   options: 'Options for',
   rename: 'Rename',
   chatName: 'Chat name',
@@ -155,9 +161,34 @@ export const SIDEBAR_COPY = {
   privacy: 'Privacy: chats are saved in this computer’s database.',
 };
 
+// D-153: the app after "Reset the library": chats stay readable, asking waits for documents.
+export const EMPTY_LIBRARY_COPY = {
+  label: 'Library',
+  heading: 'Your library is empty',
+  body: 'Add documents to ask questions. Your saved chats are still here to read.',
+  link: 'Add documents',
+  placeholder: 'Add documents to start asking',
+};
+
+// D-153: Reset all data, from the sidebar's Settings menu.
+export const RESET_COPY = {
+  menuItem: 'Reset all data…',
+  title: 'Reset all data?',
+  body: 'Choose what to remove. Your files on disk are never touched. This cannot be undone.',
+  legend: 'What to remove',
+  libraryTitle: 'Reset the library',
+  libraryBody:
+    'Removes every source and its indexed passages. Chats and projects stay, and you can read them, but you cannot ask new questions until you add documents.',
+  everythingTitle: 'Remove everything',
+  everythingBody: 'Resets the library and also deletes every chat and project.',
+  cancel: 'Cancel',
+  working: 'Resetting…',
+  failed: 'The reset did not finish. Try again.',
+};
+
 // T-83: the project page.
 export const PROJECT_COPY = {
-  label: 'Project',
+  label: 'Project settings',
   name: 'Project name',
   description: 'Description',
   edit: 'Rename project',

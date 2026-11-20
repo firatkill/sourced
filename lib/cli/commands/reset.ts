@@ -26,6 +26,8 @@ export async function runReset(options: { chats?: boolean; config?: KitConfig } 
     profile: 'local',
     models: current.models,
     pricing: current.pricing,
+    // The reader choice (D-152) is a preference, not library data.
+    ...(current.parsing ? { parsing: current.parsing } : {}),
   });
   const sql = connectDatabase();
   try {

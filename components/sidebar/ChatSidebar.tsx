@@ -1,13 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Folder, Plus, Search } from 'lucide-react';
+import { FolderPlus, Search, X } from 'lucide-react';
 import { CHATS_CHANGED, chatApi, type ChatItem, type ProjectItem } from '@/lib/chats/client';
-import { groupChats } from '@/lib/chats/groups';
 import { SIDEBAR_COPY } from '@/lib/copy';
 import { ChatRow } from './ChatRow';
+import { ProjectGroup, useChatDrop } from './ProjectGroup';
 import { Modal } from '@/components/ask/Modal';
 
 export type SidebarData = {
@@ -18,9 +17,52 @@ export type SidebarData = {
   settings?: boolean;
 };
 
-const never = () => () => {};
+const OPEN_KEY = 'sourced-open-projects';
+const navRow =
+  'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)] hover:text-[var(--ink)]';
+const label = 'flex min-h-9 items-center px-2.5 text-[13px] font-medium text-[var(--ink-3)]';
 
-/** D-142 / REDESIGN-v2 §7: saved chats grouped by day, projects, search and chat actions. */
+/** Projects the person opened or closed, kept in this browser (D-153). */
+type Folds = { open: string[]; closed: string[] };
+const foldListeners = new Set<() => void>();
+let foldMemory = '{"open":[],"closed":[]}'; // Used when storage is blocked.
+function foldSnapshot(): string {
+  try {
+    return localStorage.getItem(OPEN_KEY) ?? foldMemory;
+  } catch {
+    return foldMemory;
+  }
+}
+function parseFolds(raw: string): Folds {
+  try {
+    const value = JSON.parse(raw) as Partial<Folds>;
+    const ids = (list: unknown) =>
+      Array.isArray(list) ? list.filter((id): id is string => typeof id === 'string') : [];
+    return { open: ids(value.open), closed: ids(value.closed) };
+  } catch {
+    return { open: [], closed: [] };
+  }
+}
+function saveFolds(folds: Folds) {
+  foldMemory = JSON.stringify(folds);
+  try {
+    localStorage.setItem(OPEN_KEY, foldMemory);
+  } catch {
+    /* Without storage the choice lasts for this page only. */
+  }
+  for (const listener of foldListeners) listener();
+}
+function subscribeFolds(listener: () => void) {
+  foldListeners.add(listener);
+  return () => {
+    foldListeners.delete(listener);
+  };
+}
+
+/**
+ * D-142 / D-153: saved chats with projects as folders among them (like a chat app's sidebar).
+ * Search, a new project, open/closed projects, drag a chat into a project, chat actions.
+ */
 export function ChatSidebar({
   initial,
   activeChatId,
@@ -36,18 +78,32 @@ export function ChatSidebar({
   const [chats, setChats] = useState(initial.chats);
   const [projects, setProjects] = useState(initial.projects);
   const [search, setSearch] = useState('');
+  const [searching, setSearching] = useState(false);
   const [adding, setAdding] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<ChatItem | null>(null);
-  const searchRef = useRef(search);
-  // Server HTML groups by UTC days; after hydration the browser's own calendar is used.
-  const local = useSyncExternalStore(
-    never,
-    () => true,
-    () => false,
+  const [deletingProject, setDeletingProject] = useState<ProjectItem | null>(null);
+  const activeProject =
+    activeProjectId ?? initial.chats.find((chat) => chat.id === activeChatId)?.projectId ?? null;
+  // The active project starts open; the server renders only that, the browser adds the rest.
+  const folds = parseFolds(
+    useSyncExternalStore(subscribeFolds, foldSnapshot, () => '{"open":[],"closed":[]}'),
   );
-  const now = local ? new Date() : new Date(initial.now);
+  const isOpen = (id: string) =>
+    folds.open.includes(id) || (id === activeProject && !folds.closed.includes(id));
+  const searchRef = useRef(search);
+
+  function setFold(id: string, open: boolean) {
+    const current = parseFolds(foldSnapshot());
+    saveFolds({
+      open: open ? [...new Set([...current.open, id])] : current.open.filter((x) => x !== id),
+      closed: open ? current.closed.filter((x) => x !== id) : [...new Set([...current.closed, id])],
+    });
+  }
+  function toggle(id: string) {
+    setFold(id, !isOpen(id));
+  }
 
   const refresh = useCallback(async () => {
     try {
@@ -85,40 +141,118 @@ export function ChatSidebar({
       setError(SIDEBAR_COPY.saveError);
     }
   }
-  const groups = groupChats(chats, now, local);
+  function move(chatId: string, projectId: string | null) {
+    const chat = chats.find((entry) => entry.id === chatId);
+    if (!chat || chat.projectId === projectId) return;
+    // Show the move at once; the refresh after saving confirms it.
+    setChats((current) =>
+      current.map((entry) => (entry.id === chatId ? { ...entry, projectId } : entry)),
+    );
+    if (projectId && !isOpen(projectId)) setFold(projectId, true);
+    void run(() => chatApi.updateChat(chatId, { projectId }));
+  }
+  const looseDrop = useChatDrop((chatId) => {
+    move(chatId, null);
+  });
+
+  const row = (chat: ChatItem) => (
+    <ChatRow
+      key={chat.id}
+      chat={chat}
+      projects={projects}
+      active={chat.id === activeChatId}
+      onNavigate={onNavigate}
+      onRename={(title) => run(() => chatApi.updateChat(chat.id, { title }))}
+      onMove={async (projectId) => {
+        move(chat.id, projectId);
+        await Promise.resolve();
+      }}
+      onPin={(pinned) => run(() => chatApi.updateChat(chat.id, { pinned }))}
+      onDelete={() => {
+        setDeleting(chat);
+      }}
+    />
+  );
+  const known = new Set(projects.map((project) => project.id));
+  const loose = chats.filter((chat) => !chat.projectId || !known.has(chat.projectId));
+
   return (
-    <div className="space-y-5">
-      <section aria-labelledby="projects-heading" className="space-y-1">
-        <div className="flex items-center justify-between pl-2.5">
-          <h2
-            id="projects-heading"
-            className="text-xs! font-semibold tracking-[0.04em] text-[var(--ink-3)] uppercase"
-          >
-            {SIDEBAR_COPY.projects}
-          </h2>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-0.5">
+        {searching ? (
+          <div className="relative">
+            <label htmlFor="chat-search" className="sr-only">
+              {SIDEBAR_COPY.search}
+            </label>
+            <Search
+              size={15}
+              aria-hidden="true"
+              className="pointer-events-none absolute top-3 left-2.5 text-[var(--ink-3)]"
+            />
+            <input
+              id="chat-search"
+              type="search"
+              autoFocus
+              value={search}
+              placeholder={SIDEBAR_COPY.search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setSearch('');
+                  setSearching(false);
+                }
+              }}
+              className="min-h-10 w-full rounded-md border border-[var(--rule-strong)] bg-transparent pr-10 pl-8 text-sm"
+            />
+            <button
+              type="button"
+              aria-label={SIDEBAR_COPY.closeSearch}
+              className="absolute top-1 right-1 flex size-8 items-center justify-center rounded-md text-[var(--ink-3)] hover:bg-[var(--rule)]"
+              onClick={() => {
+                setSearch('');
+                setSearching(false);
+              }}
+            >
+              <X size={15} aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            aria-label={SIDEBAR_COPY.newProject}
-            aria-expanded={adding}
-            className="flex size-9 items-center justify-center rounded-md text-[var(--ink-3)] hover:bg-[var(--rule)] hover:text-[var(--ink)]"
+            className={navRow}
             onClick={() => {
-              setAdding((value) => !value);
+              setSearching(true);
             }}
           >
-            <Plus size={16} aria-hidden="true" />
+            <Search size={16} aria-hidden="true" />
+            {SIDEBAR_COPY.searchRow}
           </button>
-        </div>
+        )}
+        <button
+          type="button"
+          aria-expanded={adding}
+          className={navRow}
+          onClick={() => {
+            setAdding((value) => !value);
+          }}
+        >
+          <FolderPlus size={16} aria-hidden="true" />
+          {SIDEBAR_COPY.newProject}
+        </button>
         {adding && (
           <form
-            className="px-1"
+            className="px-0.5 pt-1"
             onSubmit={(event) => {
               event.preventDefault();
               const name = projectName.trim();
               if (!name) return;
               void run(async () => {
-                await chatApi.createProject(name);
+                const project = await chatApi.createProject(name);
                 setProjectName('');
                 setAdding(false);
+                setFold(project.id, true);
               });
             }}
           >
@@ -141,87 +275,82 @@ export function ChatSidebar({
             />
           </form>
         )}
-        {projects.length === 0 && !adding ? (
-          <p className="px-2.5 text-xs text-[var(--ink-3)]">{SIDEBAR_COPY.noProjects}</p>
-        ) : (
-          <ul className="space-y-0.5">
-            {projects.map((project) => (
-              <li key={project.id}>
-                <Link
-                  href={`/p/${project.id}`}
-                  {...(onNavigate ? { onClick: onNavigate } : {})}
-                  aria-current={activeProjectId === project.id ? 'page' : undefined}
-                  className={`flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 text-sm hover:bg-[var(--rule)] hover:no-underline ${activeProjectId === project.id ? 'bg-[var(--rule)] font-medium text-[var(--ink)]' : 'text-[var(--ink-2)]'}`}
-                >
-                  <Folder size={15} aria-hidden="true" className="shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{project.name}</span>
-                  <span className="text-xs text-[var(--ink-3)]">{project.chats}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <div className="relative">
-        <label htmlFor="chat-search" className="sr-only">
-          {SIDEBAR_COPY.search}
-        </label>
-        <Search
-          size={15}
-          aria-hidden="true"
-          className="pointer-events-none absolute top-3 left-2.5 text-[var(--ink-3)]"
-        />
-        <input
-          id="chat-search"
-          type="search"
-          value={search}
-          placeholder={SIDEBAR_COPY.search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-          }}
-          className="min-h-10 w-full rounded-md border border-[var(--rule-strong)] bg-transparent pr-2 pl-8 text-sm"
-        />
       </div>
 
-      <section aria-label={SIDEBAR_COPY.chats} className="space-y-4">
-        {error && (
-          <p role="alert" className="px-2.5 text-xs text-[var(--danger)]">
-            {error}
-          </p>
-        )}
-        {chats.length === 0 ? (
-          <p className="px-2.5 text-[var(--ink-3)]">
-            {search ? SIDEBAR_COPY.noMatches : SIDEBAR_COPY.empty}
-          </p>
-        ) : (
-          groups.map(({ group, chats: list }) => (
-            <div key={group} className="space-y-0.5">
-              <h2 className="px-2.5 pb-1 text-xs! font-semibold text-[var(--ink-3)]">
-                {SIDEBAR_COPY.groups[group]}
-              </h2>
+      {error && (
+        <p role="alert" className="px-2.5 text-xs text-[var(--danger)]">
+          {error}
+        </p>
+      )}
+
+      {search ? (
+        <section aria-label={SIDEBAR_COPY.results}>
+          <h2 className={`${label} text-xs!`}>{SIDEBAR_COPY.results}</h2>
+          {chats.length === 0 ? (
+            <p className="px-2.5 text-sm text-[var(--ink-3)]">{SIDEBAR_COPY.noMatches}</p>
+          ) : (
+            <ul className="space-y-0.5">{chats.map(row)}</ul>
+          )}
+        </section>
+      ) : (
+        <>
+          {projects.length > 0 && (
+            <section aria-label={SIDEBAR_COPY.projects}>
               <ul className="space-y-0.5">
-                {list.map((chat) => (
-                  <ChatRow
-                    key={chat.id}
-                    chat={chat}
-                    projects={projects}
-                    active={chat.id === activeChatId}
-                    onNavigate={onNavigate}
-                    onRename={(title) => run(() => chatApi.updateChat(chat.id, { title }))}
-                    onMove={(projectId) => run(() => chatApi.updateChat(chat.id, { projectId }))}
-                    onPin={(pinned) => run(() => chatApi.updateChat(chat.id, { pinned }))}
-                    onDelete={() => {
-                      setDeleting(chat);
-                    }}
-                  />
-                ))}
+                {projects.map((project) => {
+                  const inside = chats.filter((chat) => chat.projectId === project.id);
+                  return (
+                    <ProjectGroup
+                      key={project.id}
+                      project={project}
+                      open={isOpen(project.id)}
+                      active={project.id === activeProjectId}
+                      onToggle={() => {
+                        toggle(project.id);
+                      }}
+                      onNavigate={onNavigate}
+                      onDropChat={(chatId) => {
+                        move(chatId, project.id);
+                      }}
+                      onRename={(name) => run(() => chatApi.updateProject(project.id, { name }))}
+                      onDelete={() => {
+                        setDeletingProject(project);
+                      }}
+                    >
+                      {inside.length === 0 ? (
+                        <p className="px-2.5 pb-2 text-xs text-[var(--ink-3)]">
+                          {SIDEBAR_COPY.projectEmpty}
+                        </p>
+                      ) : (
+                        <ul className="space-y-0.5 pb-1">{inside.map(row)}</ul>
+                      )}
+                    </ProjectGroup>
+                  );
+                })}
               </ul>
-            </div>
-          ))
-        )}
-        <p className="px-2.5 text-xs text-[var(--ink-3)]">{SIDEBAR_COPY.storage}</p>
-      </section>
+            </section>
+          )}
+
+          <section
+            aria-label={SIDEBAR_COPY.chats}
+            {...looseDrop.handlers}
+            className={`rounded-lg ${looseDrop.over ? 'bg-[var(--accent-soft)] outline-2 outline-[var(--accent)]' : ''}`}
+          >
+            <h2 className={`${label} text-xs!`}>{SIDEBAR_COPY.chats}</h2>
+            {looseDrop.over && (
+              <p className="px-2.5 pb-2 text-xs text-[var(--accent-soft-ink)]">
+                {SIDEBAR_COPY.dropOut}
+              </p>
+            )}
+            {loose.length === 0 ? (
+              <p className="px-2.5 text-sm text-[var(--ink-3)]">{SIDEBAR_COPY.empty}</p>
+            ) : (
+              <ul className="space-y-0.5">{loose.map(row)}</ul>
+            )}
+          </section>
+        </>
+      )}
+      <p className="px-2.5 text-xs text-[var(--ink-3)]">{SIDEBAR_COPY.storage}</p>
 
       {deleting && (
         <Modal
@@ -256,6 +385,48 @@ export function ChatSidebar({
                 void run(async () => {
                   await chatApi.deleteChat(chat.id);
                   if (chat.id === activeChatId) router.push('/');
+                });
+              }}
+            >
+              {SIDEBAR_COPY.delete}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {deletingProject && (
+        <Modal
+          label={SIDEBAR_COPY.deleteProjectTitle}
+          onClose={() => {
+            setDeletingProject(null);
+          }}
+          className="m-auto w-[min(420px,calc(100vw-32px))] rounded-[var(--radius-lg)] border border-[var(--rule-strong)] bg-[var(--surface)] p-5 text-[var(--ink)]"
+        >
+          <h2 className="text-lg! font-semibold">{SIDEBAR_COPY.deleteProjectTitle}</h2>
+          <p className="mt-2 text-sm text-[var(--ink-2)]">
+            <span className="font-medium text-[var(--ink)]">{deletingProject.name}</span>.{' '}
+            {SIDEBAR_COPY.deleteProjectBody}
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              autoFocus
+              className="min-h-11 rounded-md border border-[var(--rule-strong)] px-4"
+              onClick={() => {
+                setDeletingProject(null);
+              }}
+            >
+              {SIDEBAR_COPY.cancel}
+            </button>
+            <button
+              type="button"
+              className="min-h-11 rounded-md bg-[var(--danger)] px-4 font-medium text-[var(--surface)]"
+              onClick={() => {
+                const project = deletingProject;
+                setDeletingProject(null);
+                void run(async () => {
+                  await chatApi.deleteProject(project.id);
+                  if (project.id === activeProjectId) router.push('/');
                 });
               }}
             >

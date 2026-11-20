@@ -1,7 +1,7 @@
 // T-83 / D-142 / REDESIGN-v2 §7: saved chats in the sidebar (local profile fixture on 3103).
 import { randomUUID } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectDone, openAsk } from './helpers/ask';
 
 const sidebar = (page: Page) => page.getByRole('navigation', { name: 'Main', exact: true });
@@ -52,22 +52,54 @@ test('T-83: rename inline, then Escape cancels a second rename', async ({ page }
   await expect(chatLink(page, title)).toBeVisible();
 });
 
-test('T-83: create a project, move a chat into it and open the project page', async ({
-  page,
-}, info) => {
-  const question = await newChat(page, info);
+/**
+ * HTML5 drag and drop with one shared DataTransfer: the events the browser sends, without
+ * mouse moves that scroll a long sidebar mid-drag.
+ */
+async function drag(page: Page, source: Locator, target: Locator) {
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  await source.dispatchEvent('dragstart', { dataTransfer });
+  await target.dispatchEvent('dragover', { dataTransfer });
+  await target.dispatchEvent('drop', { dataTransfer });
+  await source.dispatchEvent('dragend', { dataTransfer });
+}
+
+async function newProject(page: Page) {
   const project = `Project ${randomUUID().slice(0, 8)}`;
   await sidebar(page).getByRole('button', { name: 'New project', exact: true }).click();
   const name = sidebar(page).getByRole('textbox', { name: 'Project name' });
   await name.fill(project);
   await name.press('Enter');
-  const projectLink = sidebar(page).getByRole('link', { name: new RegExp(`^${project}`) });
-  await expect(projectLink).toContainText('0');
+  const header = sidebar(page).getByRole('button', { name: project, exact: true });
+  await expect(header).toHaveAttribute('aria-expanded', 'true');
+  const group = sidebar(page)
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('button', { name: project, exact: true }) });
+  await expect(group).toContainText('No chats yet. Drag a chat here.');
+  return { project, header, group };
+}
+
+test('D-153: a project is a folder among the chats; its menu opens the project settings', async ({
+  page,
+}, info) => {
+  const question = await newChat(page, info);
+  const { project, header, group } = await newProject(page);
   const menu = await openMenu(page, question);
   await menu.getByRole('menuitem', { name: 'Move to project' }).click();
   await page.getByRole('menuitemradio', { name: project }).click();
-  await expect(projectLink).toContainText('1');
-  await projectLink.click();
+  await expect(group.getByRole('link', { name: question, exact: true })).toBeVisible();
+  // Closing the folder hides its chats; it stays closed after a reload.
+  await header.click();
+  await expect(header).toHaveAttribute('aria-expanded', 'false');
+  await expect(chatLink(page, question)).toHaveCount(0);
+  await page.reload();
+  await expect(header).toHaveAttribute('aria-expanded', 'false');
+  await header.click();
+  await expect(chatLink(page, question)).toBeVisible();
+
+  const options = await openMenu(page, project);
+  await expect(options.getByRole('menuitem', { name: 'New chat in this project' })).toBeFocused();
+  await options.getByRole('menuitem', { name: 'Project settings' }).click();
   await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { level: 1, name: project })).toBeVisible();
   await expect(
@@ -77,6 +109,43 @@ test('T-83: create a project, move a chat into it and open the project page', as
     'href',
     /\/\?project=/,
   );
+});
+
+test('D-153: drag a chat into a project and back out to Chats', async ({ page }, info) => {
+  const question = await newChat(page, info);
+  const { header, group } = await newProject(page);
+  await drag(page, chatLink(page, question), header);
+  await expect(group.getByRole('link', { name: question, exact: true })).toBeVisible();
+  await drag(
+    page,
+    chatLink(page, question),
+    sidebar(page).getByRole('heading', { name: 'Chats', exact: true }),
+  );
+  await expect(group.getByRole('link', { name: question, exact: true })).toHaveCount(0);
+  await expect(
+    sidebar(page)
+      .getByRole('region', { name: 'Chats', exact: true })
+      .getByRole('link', { name: question, exact: true }),
+  ).toBeVisible();
+});
+
+test('D-153: Reset all data asks what to remove before it resets', async ({ page }, info) => {
+  await openAsk(page, info, 3103);
+  let sent: unknown = null;
+  // The fixture server is shared by parallel tests, so the reset itself is answered here.
+  await page.route('**/api/setup/reset', async (route) => {
+    sent = route.request().postDataJSON();
+    await route.fulfill({ json: { removedSources: 1, removedDocuments: 3, removedChats: 0 } });
+  });
+  await sidebar(page).getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Reset all data…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Reset all data?' });
+  await expect(dialog.getByRole('radio', { name: /^Reset the library/ })).toBeChecked();
+  await expect(dialog.getByRole('button', { name: 'Reset the library' })).toBeVisible();
+  await dialog.getByRole('radio', { name: /^Remove everything/ }).check();
+  await dialog.getByRole('button', { name: 'Remove everything' }).click();
+  await expect.poll(() => sent).toEqual({ scope: 'everything' });
+  await expect(page).toHaveURL(/:3103\/$/);
 });
 
 test('T-83: delete asks for confirmation and removes the chat', async ({ page }, info) => {
