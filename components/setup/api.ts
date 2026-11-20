@@ -81,3 +81,12 @@ export const setupApi = {
 };
 
 export type { IngestProgress, SetupStatus, UploadResult };
+
+export const settingsApi = {
+  removeSource: (id: string) =>
+    request<{ removedDocuments: number }>(`/api/settings/sources?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+  deleteAllChats: () =>
+    request<{ removedChats: number }>('/api/settings/chats', { method: 'DELETE' }),
+};

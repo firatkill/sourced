@@ -108,7 +108,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | done | d41f2bf |
 | T-89 | M11 Setup and settings | Setup and settings APIs | done | bec30c3 |
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | 9903da3 |
-| T-91 | M11 Setup and settings | Settings › Models and keys | done | HEAD |
+| T-91 | M11 Setup and settings | Settings › Models and keys | done | 82dc4d9 |
+| T-92 | M11 Setup and settings | Settings › Library, Chats and data | done | HEAD |
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | todo | |
 | T-89 | M11 Setup and settings | Setup and settings APIs | todo | |
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | todo | |

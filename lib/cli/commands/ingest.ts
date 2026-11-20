@@ -62,9 +62,7 @@ export async function runIngest(
 ) {
   const dryRun = input.values['dry-run'] === true;
   if (options.config && !dryRun) await writeConfigSnapshot(options.config);
-  setCliKitConfig(
-    options.config ?? (await loadConfig(process.cwd(), { writeSnapshot: !dryRun })),
-  );
+  setCliKitConfig(options.config ?? (await loadConfig(process.cwd(), { writeSnapshot: !dryRun })));
   requireSources(getKitConfig());
   const env = getEnv();
   const config = structuredClone(getKitConfig());

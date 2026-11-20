@@ -370,3 +370,79 @@ test('T-91 models: answer and check models apply without a restart; a new embedd
     SELECT status, documents_total AS total FROM ingest_runs ORDER BY id DESC LIMIT 1`;
   expect(row).toEqual({ status: 'succeeded', total: 1 });
 });
+
+test('T-92 data: export a chat as Markdown, delete all chats, remove a source and its documents', async () => {
+  const { createChat, appendTurn } = await import('@/lib/chats/store');
+  const { getSql } = await import('@/lib/db/client');
+  const chat = await createChat({ question: 'How many leave days?', projectId: null });
+  await appendTurn(chat.id, {
+    question: 'How many leave days?',
+    standaloneQuestion: null,
+    status: 'done',
+    answer: {
+      meta: {
+        requestId: crypto.randomUUID(),
+        cached: false,
+        cachedAt: null,
+        passages: [],
+        retrieval: {
+          vectorCandidates: 0,
+          ftsCandidates: 0,
+          rerankFallback: false,
+          rerankFallbackReason: null,
+          timingsMs: { embed: 0, search: 0, rerank: 0 },
+        },
+      },
+      answerText: 'Twenty-five.',
+      citations: null,
+      done: null,
+    },
+  } as Parameters<typeof appendTurn>[1]);
+  const exported = await (
+    await import('@/app/api/chats/[id]/export/route')
+  ).GET(call('GET', `/api/chats/${chat.id}/export`), { params: Promise.resolve({ id: chat.id }) });
+  expect(exported.headers.get('content-type')).toBe('text/markdown; charset=utf-8');
+  expect(exported.headers.get('content-disposition')).toBe(
+    'attachment; filename="how-many-leave-days.md"',
+  );
+  expect(await exported.text()).toContain('## How many leave days?\n\nTwenty-five.');
+
+  const chats = await import('@/app/api/settings/chats/route');
+  expect(
+    (
+      await chats.DELETE(
+        call('DELETE', '/api/settings/chats', undefined, { host: 'localhost:3000' }),
+      )
+    ).status,
+  ).toBe(403);
+  expect(await (await chats.DELETE(call('DELETE', '/api/settings/chats'))).json()).toEqual({
+    removedChats: 1,
+  });
+
+  // beforeEach restored the example configuration; the index still holds `my-docs`.
+  const { writeConfig } = await import('@/lib/setup/config');
+  const { detectSource } = await import('@/lib/cli/commands/add');
+  const current = SnapshotSchema.parse(
+    JSON.parse(await readFile('.sourced/config.json', 'utf8')),
+  ).config;
+  await writeConfig({
+    ...current,
+    sources: [(await detectSource('my-docs', { id: 'my-docs' })).source],
+  });
+  const sources = await import('@/app/api/settings/sources/route');
+  expect((await sources.DELETE(call('DELETE', '/api/settings/sources?id=nope'))).status).toBe(404);
+  const [{ count: before = 0 } = {}] = await getSql()<{ count: number }[]>`
+    SELECT count(*)::int AS count FROM documents WHERE source_id = 'my-docs'`;
+  expect(before).toBeGreaterThan(0);
+  expect(
+    await (await sources.DELETE(call('DELETE', '/api/settings/sources?id=my-docs'))).json(),
+  ).toEqual({
+    removedDocuments: before,
+  });
+  const config = SnapshotSchema.parse(
+    JSON.parse(await readFile('.sourced/config.json', 'utf8')),
+  ).config;
+  expect(config.sources.map((s) => s.id)).not.toContain('my-docs');
+  // Files on disk stay.
+  expect(await readFile(path.join(root, 'my-docs/notes/indexes.md'), 'utf8')).toContain('Partial');
+});

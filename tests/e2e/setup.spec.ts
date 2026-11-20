@@ -152,3 +152,53 @@ test('T-91: Settings saves a key, switches the answer model and rebuilds for a n
   await page.getByRole('link', { name: 'Done' }).click();
   await expect(page.getByLabel('Search (embeddings)')).toHaveValue('openai:text-embedding-3-large');
 });
+
+test('T-92: Library adds a file and re-indexes; a chat downloads as Markdown; all chats and a source are removed', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await page.goto(`${base}/setup?token=${SETUP_FIXTURE_TOKEN}`);
+  await page.goto(`${base}/settings/library`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Library' })).toBeVisible();
+  await expect(page.getByText('Files · my-docs · 1 indexed')).toBeVisible();
+  await page.getByLabel('Choose files').setInputFiles({
+    name: 'remote-work.md',
+    mimeType: 'text/markdown',
+    buffer: Buffer.from('# Remote work\n\nStaff may work remotely up to three days a week.\n'),
+  });
+  await page.getByRole('button', { name: 'Index new documents' }).click();
+  await page.getByRole('button', { name: /^Start indexing/ }).click();
+  await expect(page.getByRole('heading', { name: 'Your documents are ready' })).toBeVisible({
+    timeout: 30_000,
+  });
+  await page.getByRole('link', { name: 'Done' }).click();
+  await expect(page.getByText('Files · my-docs · 2 indexed')).toBeVisible();
+
+  // The chat from the setup test is saved; download it, then delete every chat.
+  await page.goto(`${base}/settings/data`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Chats and data' })).toBeVisible();
+  const link = page.getByRole('link', { name: /^Download .+ as Markdown$/ }).first();
+  const [download] = await Promise.all([page.waitForEvent('download'), link.click()]);
+  expect(download.suggestedFilename()).toMatch(/^how-many-days-of-paid-leave.*\.md$/);
+  const text = await (await download.createReadStream()).toArray();
+  expect(Buffer.concat(text).toString('utf8')).toContain(
+    '## How many days of paid leave do employees get?',
+  );
+  await page.getByRole('button', { name: 'Delete all chats' }).click();
+  const confirm = page.getByRole('group', { name: 'Delete all chats' });
+  await expect(confirm).toContainText(/^Delete \d+ chats? and all projects\?/);
+  await confirm.getByRole('button', { name: 'Delete all chats' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: /^Deleted \d+ chats?\.$/ }),
+  ).toBeVisible();
+  await expect(page.getByText('No saved chats.')).toBeVisible();
+
+  await page.goto(`${base}/settings/library`);
+  await page.getByRole('button', { name: 'Remove my-docs' }).click();
+  await page
+    .getByRole('group', { name: 'Remove my-docs' })
+    .getByRole('button', { name: 'Remove', exact: true })
+    .click();
+  await expect(page.getByText('Removed my-docs and 2 indexed documents.')).toBeVisible();
+  await expect(page.getByText('No sources yet.', { exact: false })).toBeVisible();
+});

@@ -114,3 +114,21 @@ export async function chooseData(choice: 'example' | 'own', root = process.cwd()
   reloadKitConfig();
   return { example: false, removedDocuments };
 }
+
+/** T-92: drops a source and its indexed documents, as `sources remove` does. */
+export async function removeSource(id: string, root = process.cwd()) {
+  const config = readConfig(root);
+  if (!config.sources.some((source) => source.id === id))
+    throw new AppError('NOT_FOUND', 'That source is no longer in your library.');
+  const { getSql } = await import('@/lib/db/client');
+  const removedDocuments = await getSql().begin(async (tx) => {
+    const removed = await tx`DELETE FROM documents WHERE source_id = ${id} RETURNING id`;
+    await tx`UPDATE corpus_meta SET documents_total = (SELECT count(*) FROM documents), updated_at = now() WHERE id = 1`;
+    return removed.length;
+  });
+  await writeConfig(
+    { ...config, sources: config.sources.filter((source) => source.id !== id) },
+    root,
+  );
+  return { removedDocuments };
+}

@@ -24,6 +24,13 @@ export async function setupStatus(sql: postgres.Sql) {
   const [counts] = await sql<{ documents: number; chunks: number }[]>`
     SELECT (SELECT count(*)::int FROM documents) AS documents,
       (SELECT count(*)::int FROM chunks) AS chunks`;
+  const perSource = new Map(
+    (
+      await sql<{ source: string; documents: number }[]>`
+        SELECT source_id AS source, count(*)::int AS documents FROM documents
+        WHERE source_id IS NOT NULL GROUP BY source_id`
+    ).map((row) => [row.source, row.documents]),
+  );
   return {
     setupRequired: state.required,
     llmMode: getEnv().LLM_MODE,
@@ -46,6 +53,7 @@ export async function setupStatus(sql: postgres.Sql) {
         id: source.id,
         type: source.type,
         location: describeSource(source),
+        documents: perSource.get(source.id) ?? 0,
       })),
       documents: counts?.documents ?? 0,
       chunks: counts?.chunks ?? 0,
