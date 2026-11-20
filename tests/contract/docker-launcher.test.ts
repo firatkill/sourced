@@ -245,7 +245,9 @@ test('TC-214 / NFR-22: Windows down has the same JSON branch and envelopes', asy
   const branch = launcher.split('\n:down\n')[1]?.split('\n:dev\n')[0];
   expect(branch).toBeDefined();
   expect(branch).toContain('if "%~1"=="--json" set "json=true"');
-  expect(branch).toContain('if "%json%"=="false" (\n  docker compose --profile docling down\n  exit /b\n)');
+  expect(branch).toContain(
+    'if "%json%"=="false" (\n  docker compose --profile docling down\n  exit /b\n)',
+  );
   expect(branch).toContain('docker compose --profile docling down 1>&2\nif errorlevel 1 (');
   const envelopes = [...(branch ?? '').matchAll(/echo (\{[^\n]+\})\n/g)].map((match) =>
     CliEnvelope.parse(JSON.parse(match[1] ?? '')),
