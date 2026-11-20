@@ -1128,8 +1128,8 @@ Reviewer items (done on `v2.3/setup-settings`, 2026-11-20):
 
 Owner items (need the owner's yes):
 
-- [ ] Merge the v2.2 PR, then the v2.3 PR; no migration in v2.3.
-- [ ] Tag `v2.3.0`.
+- [x] Merge the v2.2 PR, then the v2.3 PR; no migration in v2.3 (owner's yes, 2026-11-20).
+- [x] Tag `v2.3.0`.
 - [ ] Try `./sourced dev` on a fresh clone with a real key on your machine.
 
 ## Release checklist v2.2.0

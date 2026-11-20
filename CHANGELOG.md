@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-11-20
+
+Setup and Settings in the browser, on top of v2.2 (saved chats, projects, follow-up questions, themes) and v2.1 (one-key local first run). v2.1 and v2.2 were not released on their own, so their changes are listed here too; the `v2.2.0` tag marks the chat app.
+
 ### Added
 
 - Setup in the browser: `./sourced dev` starts without `.env.local` and prints a one-time setup link. The browser walks through the data choice, the provider key (checked with one free request, saved in `.env.local`), your documents (upload files or a folder, or add a web page) and a cost confirm, then shows indexing progress. An **Advanced settings** section on the provider step picks the answer, quality-check and embedding models before anything is indexed. `./sourced setup` prints a new link.

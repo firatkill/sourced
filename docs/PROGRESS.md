@@ -104,13 +104,13 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-84 | M10 Chat app | Thread restore and sources that open the file | done | HEAD |
 | T-85 | M10 Chat app | Follow-up questions | done | HEAD |
 | T-86 | M10 Chat app | `/eval` and `/how-it-works` in the shell | done | HEAD |
-| T-87 | M10 Chat app | Docs and v2.2.0 | doing (docs HEAD; merge, tag and production steps wait for the owner) | |
+| T-87 | M10 Chat app | Docs and v2.2.0 | done (merged in #7, tag v2.2.0) | b2c904d |
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | done | d41f2bf |
 | T-89 | M11 Setup and settings | Setup and settings APIs | done | bec30c3 |
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | 9903da3 |
 | T-91 | M11 Setup and settings | Settings › Models and keys | done | 82dc4d9 |
 | T-92 | M11 Setup and settings | Settings › Library, Chats and data | done | 652e90e |
-| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | doing (docs, Advanced settings, newcomer rehearsal and live eval HEAD; merge and tag wait for the owner) | |
+| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | done (merged in #8, tag v2.3.0) | HEAD |
 
 ## Open questions for the owner
 
