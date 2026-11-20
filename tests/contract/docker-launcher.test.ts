@@ -581,12 +581,12 @@ test('D-135: shell port values win over .env.local and --port wins for dev', asy
     JSON.parse((await run(['dev', '--port', '3189', '--json'], variables)).stdout),
   ).toMatchObject({ result: { url: 'http://localhost:3189' } });
 });
-test('D-135: Windows imports only the two port assignments when absent from the shell', async () => {
+test('D-135 / D-152: Windows imports only the port assignments when absent from the shell', async () => {
   const launcher = await readFile('sourced.cmd', 'utf8');
   expect(launcher).toContain(
-    `for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (`,
+    `for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" /c:"SOURCED_DOCLING_PORT=" .env.local') do (`,
   );
-  for (const key of ['SOURCED_PORT', 'SOURCED_DB_PORT']) {
+  for (const key of ['SOURCED_PORT', 'SOURCED_DB_PORT', 'SOURCED_DOCLING_PORT']) {
     expect(launcher).toContain(`if "%%A"=="${key}" if not defined ${key} set "${key}=%%B"`);
   }
   expect(launcher).not.toContain('set "%%A=%%B"');
