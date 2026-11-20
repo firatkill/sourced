@@ -44,40 +44,51 @@ test('TC-020: PRD §9.7 exact not-found copy', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Go to the ask page' })).toHaveAttribute('href', '/');
 });
 
-// REDESIGN §6 shared top bar and attribution, TRD §15.6 landmarks.
+// T-86 / REDESIGN-v2 §7: content pages share the chat sidebar; TRD §15.6 landmarks.
 for (const [path, current] of [
   ['/eval', 'Evaluation'],
   ['/how-it-works', 'How it works'],
-  ['/missing-r1', null],
+  ['/settings/appearance', 'Appearance'],
 ] as const) {
-  test(`R1 content shell: ${path}`, async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 800 });
+  test(`R2 content shell: ${path}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(path);
     const nav = page.getByRole('navigation', { name: 'Main', exact: true });
-    await expect(nav.getByRole('link')).toHaveCount(4);
-    await expect(
-      page
-        .getByRole('banner')
-        .getByRole('link', { name: 'Sourced', exact: true })
-        .locator('svg[aria-hidden="true"]'),
-    ).toHaveCount(1);
-    if (current)
-      await expect(nav.getByRole('link', { name: current, exact: true })).toHaveAttribute(
-        'aria-current',
-        'page',
-      );
-    else await expect(nav.locator('[aria-current]')).toHaveCount(0);
+    await expect(nav.getByRole('link', { name: current, exact: true })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(nav.getByRole('button', { name: 'New chat', exact: true })).toBeVisible();
     await expect(page.getByRole('main')).toHaveAttribute('id', 'content');
     await expect(page.getByRole('contentinfo')).toContainText(
       'The PostgreSQL Global Development Group',
     );
     for (const control of await nav.locator('a, button').all()) {
+      if (!(await control.isVisible())) continue;
       const box = await control.boundingBox();
-      expect(box).not.toBeNull();
-      expect(box?.height).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44); // the hosted demo's rail (3100)
     }
+    await page.setViewportSize({ width: 360, height: 800 });
+    await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeVisible();
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);
   });
 }
+
+// Not-found keeps the top bar: there is no chat to go back to.
+test('R1 content shell: /missing-r1', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/missing-r1');
+  const nav = page.getByRole('navigation', { name: 'Main', exact: true });
+  await expect(nav.getByRole('link', { name: 'Appearance', exact: true })).toHaveAttribute(
+    'href',
+    '/settings/appearance',
+  );
+  await expect(nav.locator('[aria-current]')).toHaveCount(0);
+  await expect(page.getByRole('main')).toHaveAttribute('id', 'content');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+});

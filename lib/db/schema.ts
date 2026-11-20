@@ -237,3 +237,60 @@ export const ingestItems = pgTable(
     ),
   ],
 );
+
+// D-142 / REDESIGN-v2 §4: saved chats under the local and private profiles. A turn keeps a
+// snapshot of its answer and the passages it cited, so a chat reads the same after re-ingest.
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('projects_name_check', sql`char_length(${t.name}) BETWEEN 1 AND 80`),
+    check('projects_description_check', sql`char_length(${t.description}) <= 300`),
+  ],
+);
+
+export const chats = pgTable(
+  'chats',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    title: text('title').notNull(),
+    titleSource: text('title_source').notNull().default('auto'),
+    pinned: boolean('pinned').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('chats_title_check', sql`char_length(${t.title}) BETWEEN 1 AND 120`),
+    check('chats_title_source_check', sql`${t.titleSource} IN ('auto', 'user')`),
+    index('chats_updated_at_idx').on(t.updatedAt.desc()),
+    index('chats_project_idx').on(t.projectId),
+  ],
+);
+
+export const turns = pgTable(
+  'turns',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    chatId: uuid('chat_id')
+      .notNull()
+      .references(() => chats.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    question: text('question').notNull(),
+    standaloneQuestion: text('standalone_question'),
+    answer: jsonb('answer').notNull(),
+    status: text('status').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('turns_chat_position_key').on(t.chatId, t.position),
+    check('turns_position_check', sql`${t.position} >= 0`),
+    check('turns_status_check', sql`${t.status} IN ('done', 'not_found', 'stopped', 'error')`),
+  ],
+);

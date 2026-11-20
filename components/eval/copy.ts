@@ -55,7 +55,9 @@ export const EVAL_COPY = {
   types: { answerable: 'Answerable', unanswerable: 'Unanswerable', injection: 'Injection' },
   pass: 'Pass',
   fail: 'Fail',
-  emptyHeading: 'No evaluation runs yet',
-  emptyBody: (directory: string) => `Run pnpm eval and commit the file it writes to ${directory}.`,
+  emptyHeading: 'No evaluation for these documents yet',
+  // T-86: how to measure your own documents; the commands follow the launcher in use.
+  emptyBody: (command: string, directory: string) =>
+    `Draft questions from your documents with ${command} eval:generate, review them with ${command} eval:review, then run ${command} eval. Results are written to ${directory}.`,
   methodology: 'How these numbers are computed',
 } as const;

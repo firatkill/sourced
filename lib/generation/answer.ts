@@ -10,6 +10,8 @@ import {
   PROVIDER_TIMEOUT_MESSAGE,
 } from '@/lib/errors';
 import { getProviders, isInvalidOutput } from '@/lib/llm';
+import { standaloneQuestion } from './standalone';
+import type { FollowupTurn } from '@/lib/prompts/followup';
 import { MockDropSignal } from '@/lib/llm/mock';
 import { createLogger } from '@/lib/logger';
 import { buildAnswerPrompt, ANSWER_SYSTEM_PROMPT } from '@/lib/prompts/system';
@@ -49,14 +51,24 @@ function withAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 
 async function runAnswer(input: {
   question: string;
+  /** T-85 / FR-91: earlier turns; the question is rewritten to stand alone first. */
+  history?: readonly FollowupTurn[];
   requestId: string;
   signal: AbortSignal;
   emit: (e: SseEvent) => void;
 }): Promise<AnswerOutcome> {
   const started = performance.now();
+  const followup = await standaloneQuestion({
+    question: input.question,
+    history: input.history ?? [],
+    signal: input.signal,
+  });
+  // D-143: retrieval, the answer prompt and citation checks all use the standalone question.
+  input = { ...input, question: followup.question };
   const retrieval = await retrieve(input.question, input.signal);
   const meta = MetaEvent.parse({
     requestId: input.requestId,
+    ...(followup.rewritten ? { standaloneQuestion: followup.question } : {}),
     cached: false,
     cachedAt: null,
     passages: retrieval.passages.map((p) => ({
@@ -95,6 +107,7 @@ async function runAnswer(input: {
     },
     generation: { inputTokens: 0, outputTokens: 0 },
     fallback: { inputTokens: 0, outputTokens: 0 },
+    ...(input.history?.length ? { rewrite: followup.usage } : {}),
   };
   let firstToken: number | null = null;
   let generation = 0;

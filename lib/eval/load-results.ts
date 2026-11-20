@@ -2,11 +2,17 @@ import 'server-only';
 import { readdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { getEnv } from '@/lib/env';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 import { createLogger } from '@/lib/logger';
 import { EvalResult } from './results-schema';
 
+/** T-86: the configured corpus's results unless EVAL_RESULTS_DIR points elsewhere (tests, E2E). */
+export function resultsDirectory(): string {
+  return getEnv().EVAL_RESULTS_DIR ?? `eval/${getKitConfig().corpus.name}/results`;
+}
+
 export async function loadResults(): Promise<Array<EvalResult & { sourceFile: string }>> {
-  const directory = resolve(process.cwd(), getEnv().EVAL_RESULTS_DIR);
+  const directory = resolve(process.cwd(), resultsDirectory());
   let files: string[];
   try {
     files = await readdir(directory);

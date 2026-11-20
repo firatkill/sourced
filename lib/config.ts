@@ -89,3 +89,12 @@ export const ACCESS = {
   COOKIE_MAX_AGE_SECONDS: 30 * 24 * 60 * 60,
   FAILED_ATTEMPTS_PER_HOUR: 10,
 } as const;
+
+// T-85 / FR-91, D-143: follow-up questions are rewritten into one standalone question.
+export const FOLLOWUP = {
+  MAX_TURNS: 4,
+  MAX_ANSWER_CHARS: 2_000, // per earlier answer sent with a follow-up
+  PROMPT_ANSWER_CHARS: 800, // per earlier answer shown to the rewrite model
+  TIMEOUT_MS: 6_000,
+  MAX_OUTPUT_TOKENS: 200,
+} as const;

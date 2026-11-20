@@ -4,7 +4,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Saved chats: the sidebar lists your chats by day with search, rename, pin, delete and projects; a chat reopens exactly as it was answered, even after a re-ingest. `./sourced reset --chats` removes them. The hosted demo keeps chats in the tab only.
+- Follow-up questions: a question that refers back ("Can it also be unique?") is rewritten into a standalone question before searching, and the answer shows what was searched for.
+- Citations of your own files open the original document, PDFs at the cited page.
+- Five themes (Graphite, Paper, Midnight, Linen, High contrast) plus "Match my system", and a text size, under Appearance.
+- `GET /api/library` and the header line "{n} documents · updated …".
+
 ### Changed
+
+- With your own documents the app no longer shows the corpus title ("My documents") anywhere and shows no empty suggestions block; the PostgreSQL example explains how to switch to your own documents.
+- `/eval`, `/how-it-works` and Appearance use the same sidebar as the chat. `/eval` reads `eval/<corpus>/results`, so your own documents never show the example's evaluation.
+- The golden set has six follow-up cases (46 questions); the latest live run passes every floor.
 
 - Simpler first run: copy `.env.example` to `.env.local`, paste one API key, then `./sourced ingest` and `./sourced dev`. The shipped configuration uses the `local` profile, and every other setting has a default.
 - The PostgreSQL example stays the default source, but the database starts empty; `./sourced reset` removes the example and everything indexed so you can add your own documents.

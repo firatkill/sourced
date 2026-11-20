@@ -1,10 +1,8 @@
-import { getPageCopy } from '@/lib/kit/copy-server';
 import type { Metadata } from 'next';
-import { AskApp } from '@/components/ask/AskApp';
+import { z } from 'zod';
+import { AskPage } from '@/components/ask/AskPage';
 import { CONFIGURATION_COPY } from '@/lib/copy';
-import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import { readAppConfiguration } from '@/lib/kit/app-configuration';
-import { isPublicDemo } from '@/lib/kit/profile';
 
 export function generateMetadata(): Metadata {
   const configuration = readAppConfiguration();
@@ -13,18 +11,13 @@ export function generateMetadata(): Metadata {
     : { title: CONFIGURATION_COPY.heading };
 }
 
-export default async function Home() {
-  const configuration = readAppConfiguration();
-  if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
-  const copy = await getPageCopy();
-  const { env } = configuration;
-  return (
-    <AskApp
-      demoMode={isPublicDemo() ? env.DEMO_MODE : 'on'}
-      publicDemo={isPublicDemo()}
-      limits={{ ipDaily: env.RATE_LIMIT_IP_DAILY, globalDaily: env.RATE_LIMIT_GLOBAL_DAILY }}
-      suggested={copy.suggested}
-      copy={copy}
-    />
-  );
+/** `/?project=<id>` starts a new chat inside that project (T-83). */
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const project = z.uuid().safeParse((await searchParams).project);
+  // Called as a function so the page stays a plain async server render (D-119 diagnostics test).
+  return AskPage(project.success ? { projectId: project.data } : {});
 }

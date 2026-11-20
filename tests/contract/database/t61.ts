@@ -271,10 +271,27 @@ describe('CT-03 / CT-04: source commands', () => {
     expect(
       (await getSql()<{ count: number }[]>`SELECT count(*)::int AS count FROM chunks`)[0]?.count,
     ).toBeGreaterThan(0);
+    // D-144: saved chats survive a plain reset; `reset --chats` removes them.
+    await getSql()`TRUNCATE turns, chats, projects`;
+    await getSql()`INSERT INTO chats (title) VALUES ('Kept chat')`;
     expect(commandSchemas.reset.parse((await cli(['reset', '--yes'])).result)).toEqual({
       removedSources: 2,
       removedDocuments: 2,
+      removedChats: 0,
     });
+    expect(
+      (await getSql()<{ count: number }[]>`SELECT count(*)::int AS count FROM chats`)[0]?.count,
+    ).toBe(1);
+    expect((await cli(['reset', '--chats'], 2)).error).toMatchObject({
+      code: 'NEEDS_CONFIRMATION',
+      fix: 'pnpm sourced reset --chats --yes',
+    });
+    expect(
+      commandSchemas.reset.parse((await cli(['reset', '--chats', '--yes'])).result).removedChats,
+    ).toBe(1);
+    expect(
+      (await getSql()<{ count: number }[]>`SELECT count(*)::int AS count FROM chats`)[0]?.count,
+    ).toBe(0);
     for (const table of ['documents', 'chunks', 'corpus_meta', 'ingest_runs', 'answer_cache'])
       expect(
         (

@@ -13,9 +13,12 @@ const dollars = (value: number | null) => (value === null ? 'unknown' : `$${valu
 export function EvalView({
   runs,
   resultsDirectory,
+  command = 'pnpm sourced',
 }: {
   runs: Array<EvalResult & { sourceFile?: string }>;
   resultsDirectory: string;
+  /** T-86: the launcher in use, for the empty state's commands. */
+  command?: string;
 }) {
   const latest = runs.at(-1);
   const failures = latest ? checkRun(latest.metrics, thresholds, null).failures : [];
@@ -150,7 +153,7 @@ export function EvalView({
       ) : (
         <section>
           <h2>{EVAL_COPY.emptyHeading}</h2>
-          <p>{EVAL_COPY.emptyBody(resultsDirectory)}</p>
+          <p>{EVAL_COPY.emptyBody(command, resultsDirectory)}</p>
         </section>
       )}
       <section aria-labelledby="eval-methodology">

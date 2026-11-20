@@ -158,6 +158,7 @@ export async function evaluateQuestions(
     try {
       const outcome = await (options.answer ?? answerQuestion)({
         question: golden.question,
+        ...(golden.history ? { history: golden.history } : {}),
         requestId: randomUUID(),
         signal: new AbortController().signal,
         emit: (event) => {
@@ -221,7 +222,14 @@ export async function evaluateQuestions(
         write: (message) => {
           process.stderr.write(message);
         },
-      }).warn({ event: 'eval.question_failed', questionId: golden.id });
+      }).warn({
+        event: 'eval.question_failed',
+        questionId: golden.id,
+        // Which step failed and how, without provider text: answer vs judge, error code and type.
+        stage: record.usage.answer ? 'judge' : 'answer',
+        code: error instanceof AppError ? error.code : null,
+        errorType: error instanceof Error ? error.name : typeof error,
+      });
     }
     result.costUsd =
       record.answerCostUsd === null || record.judgeCostUsd === null
@@ -451,7 +459,8 @@ export async function runEval(
       throw new EvalAbort(2, 'Missing golden anchors; run pnpm eval:validate');
     const runDate = new Date();
     const resultsDir =
-      profile === 'example' ? env.EVAL_RESULTS_DIR : `eval/${config.corpus.name}/results`;
+      (profile === 'example' ? env.EVAL_RESULTS_DIR : undefined) ??
+      `eval/${config.corpus.name}/results`;
     const stem = await resultFileStem(resultsDir, () => runDate, exists);
     stage = 'baseline loading';
     const baseline = await loadBaseline(

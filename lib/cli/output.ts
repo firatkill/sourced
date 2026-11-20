@@ -14,7 +14,8 @@ export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
   if (json) return `${JSON.stringify(envelope)}\n`;
   if (envelope.command === 'reset' && envelope.ok) {
     const reset = commandSchemas.reset.parse(envelope.result);
-    return `Removed ${String(reset.removedSources)} sources and ${String(reset.removedDocuments)} indexed documents. Your files were not touched.\nNext: pnpm sourced add <folder or URL>\n`;
+    const chats = reset.removedChats > 0 ? ` and ${String(reset.removedChats)} saved chats` : '';
+    return `Removed ${String(reset.removedSources)} sources${chats === '' ? ' and' : ','} ${String(reset.removedDocuments)} indexed documents${chats}. Your files were not touched.\nNext: pnpm sourced add <folder or URL>\n`;
   }
   if (envelope.command === 'add' && envelope.ok) {
     const added = commandSchemas.add.parse(envelope.result);

@@ -30,6 +30,8 @@ import { cleanup, consume, refund } from '@/lib/ratelimit/limiter';
 import { encodeEvent, startHeartbeat } from '@/lib/sse/encode';
 import { SseEvent } from '@/lib/sse/events';
 import { matchSuggested, SUGGESTED } from '@/lib/suggested';
+import { appendTurn, chatExists } from '@/lib/chats/store';
+import type { TurnAnswer, TurnStatus } from '@/lib/chats/schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,6 +51,8 @@ export async function POST(request: Request): Promise<Response> {
   const finished = new Promise<void>((resolve) => {
     resolveFinished = resolve;
   });
+  // T-82: the finished turn, saved after the stream like the query log.
+  let saveTurn: (() => Promise<void>) | undefined;
   let scheduled = false;
   const scheduleLog = () => {
     if (scheduled) return;
@@ -62,6 +66,11 @@ export async function POST(request: Request): Promise<Response> {
         }
       } catch {
         logger.warn({ event: 'querylog.failed' });
+      }
+      try {
+        await saveTurn?.();
+      } catch {
+        logger.warn({ event: 'chat.save_failed' });
       }
       if (Math.random() < MAINTENANCE.CLEANUP_PROBABILITY) await cleanup(requestId);
     });
@@ -92,12 +101,18 @@ export async function POST(request: Request): Promise<Response> {
     const env = getEnv();
     const publicDemo = isPublicDemo();
     if (publicDemo && env.DEMO_MODE === 'off') return reject('DEMO_OFF', 503);
-    const { question, suggestedId: suppliedSuggested } = parsed.data;
+    const { question, suggestedId: suppliedSuggested, chatId, history = [] } = parsed.data;
+    if (chatId !== undefined && publicDemo)
+      return reject('VALIDATION_FAILED', 400, { field: 'body', reason: 'unknown_field' });
+    if (chatId !== undefined && !(await chatExists(chatId))) return reject('NOT_FOUND', 404);
     const canonical = SUGGESTED.find((entry) => entry.id === suppliedSuggested);
+    // T-85: a follow-up depends on earlier turns, so it never matches a prepared answer.
     const suggestedId =
-      canonical && normalize(canonical.question) === normalize(question)
-        ? canonical.id
-        : matchSuggested(question);
+      history.length > 0
+        ? undefined
+        : canonical && normalize(canonical.question) === normalize(question)
+          ? canonical.id
+          : matchSuggested(question);
     logger.info({ event: 'ask.received', questionLength: question.length, suggestedId });
     row = {
       requestId,
@@ -142,6 +157,34 @@ export async function POST(request: Request): Promise<Response> {
     }
     // Capture this request's mutable log record; after() waits for its terminal state.
     const streamRow = row;
+    const turn: { meta?: TurnAnswer['meta']; text: string; citations: TurnAnswer['citations'] } = {
+      text: '',
+      citations: null,
+    };
+    let turnDone: TurnAnswer['done'] = null;
+    if (chatId !== undefined)
+      saveTurn = async () => {
+        if (!turn.meta) return; // nothing to show: the turn failed before retrieval finished
+        const status: TurnStatus =
+          streamRow.outcome === 'aborted'
+            ? 'stopped'
+            : streamRow.outcome === 'error'
+              ? 'error'
+              : turn.citations?.notFound
+                ? 'not_found'
+                : 'done';
+        await appendTurn(chatId, {
+          question,
+          standaloneQuestion: turn.meta.standaloneQuestion ?? null,
+          answer: {
+            meta: turn.meta,
+            answerText: turn.text,
+            citations: turn.citations,
+            done: turnDone,
+          },
+          status,
+        });
+      };
     const abortController = new AbortController();
     let closed = false;
     let firstToken = false;
@@ -190,6 +233,7 @@ export async function POST(request: Request): Promise<Response> {
       controller.enqueue(encodeEvent(event));
       switch (event.event) {
         case 'meta':
+          turn.meta = event.data;
           streamRow.passagesCount = event.data.passages.length;
           streamRow.rerankFallback = event.data.retrieval.rerankFallback;
           streamRow.latencyEmbedMs = Math.round(event.data.retrieval.timingsMs.embed);
@@ -197,6 +241,7 @@ export async function POST(request: Request): Promise<Response> {
           streamRow.latencyRerankMs = Math.round(event.data.retrieval.timingsMs.rerank);
           break;
         case 'token':
+          turn.text += event.data.delta;
           if (!firstToken) {
             streamRow.latencyFirstTokenMs = Math.round(performance.now() - started);
             logger.info({
@@ -207,6 +252,7 @@ export async function POST(request: Request): Promise<Response> {
           firstToken = true;
           break;
         case 'citations':
+          turn.citations = event.data;
           streamRow.outcome = event.data.notFound ? 'not_found' : 'answered';
           streamRow.citationsValid = event.data.valid.length;
           streamRow.citationsInvalid = event.data.invalid.length;
@@ -221,6 +267,7 @@ export async function POST(request: Request): Promise<Response> {
           });
           break;
         case 'done':
+          turnDone = event.data;
           streamRow.tokensEmbedding = event.data.usage.embeddingTokens;
           streamRow.tokensInput = event.data.usage.inputTokens;
           streamRow.tokensOutput = event.data.usage.outputTokens;
@@ -288,7 +335,13 @@ export async function POST(request: Request): Promise<Response> {
             };
             if (cached) replayAnswerCache({ cached, requestId, emit });
             else
-              await answerQuestion({ question, requestId, signal: abortController.signal, emit });
+              await answerQuestion({
+                question,
+                history,
+                requestId,
+                signal: abortController.signal,
+                emit,
+              });
           } catch (error) {
             await fail(error);
           }

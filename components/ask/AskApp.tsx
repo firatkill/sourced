@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAsk } from '@/hooks/useAsk';
-import { QUESTION } from '@/lib/config';
+import { FOLLOWUP, QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { AskForm } from './AskForm';
@@ -12,6 +12,19 @@ import { rateLimitCopy } from './states/RateLimited';
 import { ChatRail } from './ChatRail';
 import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
+import { ExampleBanner } from './ExampleBanner';
+import { restoreTurn } from './restore';
+import type { SidebarData } from '@/components/sidebar/ChatSidebar';
+import { announceChatsChanged, chatApi } from '@/lib/chats/client';
+import type { SavedTurn } from '@/lib/chats/store';
+
+/** D-142: saved chats outside the hosted demo. `chat` is set on `/c/[chatId]`. */
+export type SavedChats = {
+  initial: SidebarData;
+  chat?: { id: string; projectId: string | null; title: string; turns: SavedTurn[] };
+  /** `/?project=<id>`: the first question creates the chat inside this project. */
+  projectId?: string;
+};
 
 type Props = {
   publicDemo?: boolean;
@@ -19,17 +32,27 @@ type Props = {
   limits: { ipDaily: number; globalDaily: number };
   suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
   copy: CorpusCopy;
+  /** REDESIGN-v2 §3.3: facts from the index; absent in the hosted demo. */
+  library?: { pill: string; searching: string | null } | undefined;
+  /** Local profile with the bundled example loaded (copy.exampleNotice). */
+  example?: { notice: string; commands: string[] } | undefined;
+  saved?: SavedChats | undefined;
 };
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
   const [mode, setMode] = useState(props.demoMode);
+  // A new chat starts empty: the server-provided chat and project apply to the first session only.
+  const saved = props.saved && session > 0 ? { initial: props.saved.initial } : props.saved;
   return (
     <Conversation
       key={session}
       {...props}
+      saved={saved}
       demoMode={mode}
       onMode={setMode}
       onNew={() => {
+        if (props.saved && window.location.pathname !== '/')
+          window.history.replaceState(null, '', '/');
         setSession((n) => n + 1);
       }}
     />
@@ -41,11 +64,19 @@ function Conversation({
   limits,
   suggested,
   copy,
+  library,
+  example,
+  saved,
   onNew,
   onMode,
 }: Props & { onNew: () => void; onMode: (mode: Props['demoMode']) => void }) {
   const ask = useAsk(demoMode);
-  const [history, setHistory] = useState<ChatTurn[]>([]);
+  const [chatId, setChatId] = useState(saved?.chat?.id);
+  const chatIdRef = useRef(saved?.chat?.id);
+  // T-84: a saved chat opens with its turns restored from the server's snapshot.
+  const [history, setHistory] = useState<ChatTurn[]>(
+    () => saved?.chat?.turns.map((turn, index) => restoreTurn(turn, index + 1)) ?? [],
+  );
   const [active, setActive] = useState<{ id: number; question: string } | null>(null);
   const [draft, setDraft] = useState('');
   const [viewer, setViewer] = useState<{ turn: number; label: string } | null>(null);
@@ -77,11 +108,43 @@ function Conversation({
     }
     busyRef.current = true;
     setViewer(null);
+    // T-85 / FR-91: the last answered turns travel with a follow-up (a retry resends its own).
+    // A suggested question stands alone, so it keeps its prepared answer and quota exemption.
+    const earlier = (id !== undefined ? [] : retry ? turns.slice(0, -1) : turns)
+      .flatMap((turn) =>
+        turn.phase.kind === 'done'
+          ? [
+              {
+                question: turn.question,
+                answer: turn.phase.citations.answer.slice(0, FOLLOWUP.MAX_ANSWER_CHARS),
+              },
+            ]
+          : [],
+      )
+      .slice(-FOLLOWUP.MAX_TURNS);
     if (current && !retry) setHistory((previous) => [...previous, current]);
     setActive({ id: retry && active ? active.id : turns.length + 1, question });
     setDraft('');
     try {
-      await ask.submit(question, id);
+      // D-142: the first question of a new chat creates it, so the turn can be saved.
+      if (saved && !chatIdRef.current) {
+        try {
+          const chat = await chatApi.createChat({ question, projectId: saved.projectId ?? null });
+          chatIdRef.current = chat.id;
+          setChatId(chat.id);
+          window.history.replaceState(null, '', `/c/${chat.id}`);
+          announceChatsChanged();
+        } catch {
+          // The question is still answered; it just is not saved.
+        }
+      }
+      const context = {
+        ...(chatIdRef.current ? { chatId: chatIdRef.current } : {}),
+        ...(earlier.length > 0 ? { history: earlier } : {}),
+      };
+      await ask.submit(question, id, Object.keys(context).length > 0 ? context : undefined);
+      // The server saves the turn right after the stream ends; refresh the sidebar's order.
+      if (chatIdRef.current) setTimeout(announceChatsChanged, 400);
     } finally {
       busyRef.current = false;
     }
@@ -123,7 +186,8 @@ function Conversation({
       hasTurns={turns.length > 0}
     />
   );
-  const suggestions = (
+  // REDESIGN-v2 §3.1: no suggestions block at all when the corpus has none.
+  const suggestions = suggested.length > 0 && (
     <SuggestedQuestions
       suggested={suggested}
       disabled={ask.inFlight}
@@ -136,6 +200,7 @@ function Conversation({
     <div className="chat-shell flex h-dvh flex-col md:flex-row">
       <ChatRail
         copy={copy}
+        saved={saved ? { initial: saved.initial, activeChatId: chatId } : undefined}
         turns={turns}
         busy={ask.inFlight}
         onNew={() => {
@@ -148,8 +213,10 @@ function Conversation({
         className="chat-main flex min-h-0 min-w-0 flex-1 flex-col p-0"
       >
         <header className="flex h-[60px] shrink-0 flex-col justify-center border-b border-[var(--rule)] px-5">
-          <p className="truncate text-sm font-semibold">{turns[0]?.question ?? copy.hero}</p>
-          <p className="text-xs text-[var(--ink-3)]">{copy.headerScope}</p>
+          <p className="truncate text-sm font-semibold">
+            {saved?.chat?.title ?? turns[0]?.question ?? copy.hero}
+          </p>
+          <p className="text-xs text-[var(--ink-3)]">{library?.pill ?? copy.headerScope}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
           <div className="mx-auto w-full max-w-[760px] space-y-10">
@@ -158,6 +225,7 @@ function Conversation({
                 <DemoOff />
               ) : (
                 <>
+                  {example && <ExampleBanner notice={example.notice} commands={example.commands} />}
                   <div className="space-y-4">
                     {effectiveMode === 'readonly' ? (
                       <ReadonlyBanner />
@@ -169,6 +237,9 @@ function Conversation({
                     )}
                   </div>
                   {composer}
+                  {library?.searching && suggested.length === 0 && (
+                    <p className="-mt-6 text-sm text-[var(--ink-3)]">{library.searching}</p>
+                  )}
                   {suggestions}
                   <p className="text-sm text-[var(--ink-3)]">
                     {copy.scope}{' '}
@@ -227,6 +298,7 @@ function Conversation({
       {viewer && selectedMeta && selectedTurn?.citations && (
         <SourceViewer
           copy={copy}
+          fileLinks={saved !== undefined}
           passages={selectedMeta.passages}
           citations={selectedTurn.citations}
           label={viewer.label}

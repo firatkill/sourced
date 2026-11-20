@@ -15,6 +15,12 @@ for (const theme of ['light', 'dark'] as const) {
     page,
   }, info) => {
     await page.emulateMedia({ colorScheme: theme });
+    await page.addInitScript(
+      (value) => {
+        localStorage.setItem('sourced-theme', value);
+      },
+      theme === 'light' ? 'paper' : 'graphite',
+    );
     await openAsk(page, info);
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
@@ -26,7 +32,7 @@ for (const theme of ['light', 'dark'] as const) {
         'solid',
       );
     }
-    await tabTo(page, nav.getByRole('button', { name: /Switch to .* theme/ }));
+    await tabTo(page, nav.getByRole('link', { name: 'Appearance', exact: true }));
     const input = page.getByRole('textbox', { name: 'Your question' });
     await tabTo(page, input);
     await expect(input).toHaveCSS('outline-style', 'solid');
@@ -107,6 +113,12 @@ for (const theme of ['light', 'dark'] as const) {
   }, info) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: theme });
+    await page.addInitScript(
+      (value) => {
+        localStorage.setItem('sourced-theme', value);
+      },
+      theme === 'light' ? 'paper' : 'graphite',
+    );
     await openAsk(page, info);
     const menu = page.getByRole('button', { name: 'Menu', exact: true });
     await expect(page.getByRole('navigation', { name: 'Main' })).toHaveCount(0);
@@ -115,8 +127,9 @@ for (const theme of ['light', 'dark'] as const) {
     const dialog = page.getByRole('dialog', { name: 'Main menu' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('navigation', { name: 'Main' })).toBeVisible();
-    await expect(dialog.getByRole('button', { name: /Switch to .* theme/ })).toHaveText(
-      /Switch to .* theme/,
+    await expect(dialog.getByRole('link', { name: 'Appearance', exact: true })).toHaveAttribute(
+      'href',
+      '/settings/appearance',
     );
     for (let i = 0; i < 18; i++) {
       await page.keyboard.press(i < 9 ? 'Tab' : 'Shift+Tab');

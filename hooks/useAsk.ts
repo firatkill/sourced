@@ -228,7 +228,14 @@ export function askStatus(phase: Phase): string {
   return '';
 }
 
-type AskRequest = { question: string; suggestedId?: SuggestedId };
+type AskRequest = {
+  question: string;
+  suggestedId?: SuggestedId;
+  chatId?: string;
+  history?: { question: string; answer: string }[];
+};
+/** T-82 / T-85: where to save the turn and the earlier turns a follow-up depends on. */
+export type AskContext = { chatId?: string; history?: { question: string; answer: string }[] };
 type StreamHandlers = {
   onEvent: (event: SseEvent) => void;
   onHttpError: (status: number, body: HttpError) => void;
@@ -325,7 +332,7 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
   useEffect(() => cancel, [cancel]);
 
   const submit = useCallback(
-    async (question: string, suggestedId?: SuggestedId) => {
+    async (question: string, suggestedId?: SuggestedId, context?: AskContext) => {
       if (isInFlight(current.current.phase)) return;
       cancel();
       send({ type: 'submit', question });
@@ -350,7 +357,12 @@ export function useAsk(demoMode: 'on' | 'readonly' | 'off' = 'on') {
       active.current = { controller, flush, clear };
       const ownsRequest = () => active.current?.controller === controller;
       await askStream(
-        { question, ...(suggestedId === undefined ? {} : { suggestedId }) },
+        {
+          question,
+          ...(suggestedId === undefined ? {} : { suggestedId }),
+          ...(context?.chatId === undefined ? {} : { chatId: context.chatId }),
+          ...(context?.history?.length ? { history: context.history } : {}),
+        },
         {
           onEvent(event) {
             if (!ownsRequest()) return;

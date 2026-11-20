@@ -2,18 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { usePathname } from 'next/navigation';
+import { Palette } from 'lucide-react';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
+import { ChatSidebar, type SidebarData } from '@/components/sidebar/ChatSidebar';
+import { SIDEBAR_COPY } from '@/lib/copy';
 
 type Props = {
   copy?: CorpusCopy;
   turns: { id: number; question: string }[];
   busy: boolean;
   onNew: () => void;
+  /** D-142: saved chats replace the tab-only "This session" list outside the hosted demo. */
+  saved?:
+    | {
+        initial: SidebarData;
+        activeChatId?: string | undefined;
+        activeProjectId?: string | undefined;
+      }
+    | undefined;
 };
-export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
+export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) {
+  const pathname = usePathname();
+  const current = (href: string) => (pathname === href ? ('page' as const) : undefined);
   const [selection, setSelection] = useState<{ id: number; count: number } | null>(null);
   const currentId = selection?.count === turns.length ? selection.id : turns.at(-1)?.id;
   const [open, setOpen] = useState(false);
@@ -66,46 +79,58 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
           <ChatIcon name="newChat" />
           New chat
         </button>
-        <section className="space-y-3" aria-label="This session">
-          <h2 className="text-xs! font-semibold tracking-[0.04em] text-[var(--ink-3)] uppercase">
-            This session
-          </h2>
-          {turns.length === 0 ? (
-            <p className="text-[var(--ink-3)]">Your questions will appear here.</p>
-          ) : (
-            <ol className="space-y-1">
-              {turns.map((turn) => (
-                <li key={turn.id}>
-                  <button
-                    className={`min-h-11 w-full truncate rounded-lg px-2.5 py-[9px] text-left text-sm ${currentId === turn.id ? 'bg-[var(--rule)]' : 'hover:bg-[var(--surface)]'}`}
-                    onClick={() => {
-                      setSelection({ id: turn.id, count: turns.length });
-                      setOpen(false);
-                      // Let the modal restore its opener before moving focus to the chosen turn.
-                      requestAnimationFrame(() => {
-                        const target = document.getElementById(`turn-${String(turn.id)}`);
-                        target?.focus({ preventScroll: true });
-                        target?.scrollIntoView({
-                          block: 'start',
-                          behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
-                            ? 'instant'
-                            : 'smooth',
+        {saved ? (
+          <ChatSidebar
+            initial={saved.initial}
+            activeChatId={saved.activeChatId}
+            activeProjectId={saved.activeProjectId}
+            onNavigate={() => {
+              setOpen(false);
+            }}
+          />
+        ) : (
+          <section className="space-y-3" aria-label="This session">
+            <h2 className="text-xs! font-semibold tracking-[0.04em] text-[var(--ink-3)] uppercase">
+              This session
+            </h2>
+            {turns.length === 0 ? (
+              <p className="text-[var(--ink-3)]">Your questions will appear here.</p>
+            ) : (
+              <ol className="space-y-1">
+                {turns.map((turn) => (
+                  <li key={turn.id}>
+                    <button
+                      className={`min-h-11 w-full truncate rounded-lg px-2.5 py-[9px] text-left text-sm ${currentId === turn.id ? 'bg-[var(--rule)]' : 'hover:bg-[var(--surface)]'}`}
+                      onClick={() => {
+                        setSelection({ id: turn.id, count: turns.length });
+                        setOpen(false);
+                        // Let the modal restore its opener before moving focus to the chosen turn.
+                        requestAnimationFrame(() => {
+                          const target = document.getElementById(`turn-${String(turn.id)}`);
+                          target?.focus({ preventScroll: true });
+                          target?.scrollIntoView({
+                            block: 'start',
+                            behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
+                              ? 'instant'
+                              : 'smooth',
+                          });
                         });
-                      });
-                    }}
-                  >
-                    {turn.question}
-                  </button>
-                </li>
-              ))}
-            </ol>
-          )}
-          <p className="text-xs text-[var(--ink-3)]">{ASK_COPY.sessionPrivacy}</p>
-        </section>
+                      }}
+                    >
+                      {turn.question}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <p className="text-xs text-[var(--ink-3)]">{ASK_COPY.sessionPrivacy}</p>
+          </section>
+        )}
         <div className="mt-auto flex flex-col gap-2 border-t border-[var(--rule)] pt-4">
           <a
             className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-[9px] text-sm text-[var(--ink-2)] hover:bg-[var(--rule)] hover:no-underline"
             href="/eval"
+            aria-current={current('/eval')}
           >
             <ChatIcon name="chart" />
             Evaluation
@@ -113,6 +138,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
           <a
             className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-[9px] text-sm text-[var(--ink-2)] hover:bg-[var(--rule)] hover:no-underline"
             href="/how-it-works"
+            aria-current={current('/how-it-works')}
           >
             <ChatIcon name="info" />
             How it works
@@ -124,7 +150,14 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
             <ChatIcon name="github" />
             Source on GitHub
           </a>
-          <ThemeToggle label />
+          <Link
+            href="/settings/appearance"
+            aria-current={current('/settings/appearance')}
+            className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
+          >
+            <Palette size={16} aria-hidden="true" />
+            Appearance
+          </Link>
         </div>
       </nav>
       <footer className="space-y-3 p-4 text-xs text-[var(--ink-3)]">
@@ -144,7 +177,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
           </p>
         )}
         <p>
-          Privacy: questions are not stored.{' '}
+          {saved ? SIDEBAR_COPY.privacy : 'Privacy: questions are not stored.'}{' '}
           <a href="/how-it-works#privacy">Read how this works.</a>
         </p>
       </footer>
@@ -152,7 +185,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
   );
   return (
     <>
-      <div className="hidden h-dvh w-[264px] shrink-0 overflow-y-auto border-r border-[var(--rule)] bg-[var(--rail)] md:block">
+      <div className="hidden h-dvh w-[264px] shrink-0 overflow-y-auto border-r border-[var(--rule)] bg-[var(--rail)] md:sticky md:top-0 md:block">
         {content}
       </div>
       <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-[var(--rule)] px-4 md:hidden">

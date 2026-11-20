@@ -141,6 +141,10 @@ test('TC-029: IT-03 all tables, primary keys and operational constraints match t
     answer_cache: ['id'],
     rate_limits: ['bucket', 'window_start'],
     query_log: ['id'],
+    // T-81 / D-142: saved chats (migration 0004).
+    projects: ['id'],
+    chats: ['id'],
+    turns: ['id'],
   });
   const checks = await sql<
     { conname: string }[]
@@ -157,6 +161,11 @@ test('TC-029: IT-03 all tables, primary keys and operational constraints match t
       'query_log_source_check',
       'query_log_outcome_check',
       'query_log_question_length_check',
+      'projects_name_check',
+      'chats_title_check',
+      'chats_title_source_check',
+      'turns_position_check',
+      'turns_status_check',
     ]),
   );
   const indexes = await sql<

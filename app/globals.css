@@ -39,7 +39,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root:not([data-theme]) {
     --ground: #111317;
     --rail: #16191e;
     --surface: #1b1e24;
@@ -65,7 +65,7 @@
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme='graphite'] {
   --ground: #111317;
   --rail: #16191e;
   --surface: #1b1e24;
@@ -90,6 +90,129 @@
   color-scheme: dark;
 }
 
+:root[data-theme='paper'] {
+  --ground: #fafaf8;
+  --rail: #f3f3ef;
+  --surface: #ffffff;
+  --ink: #16181d;
+  --ink-2: #3e434c;
+  --ink-3: #5b616c;
+  --rule: #e6e6e1;
+  --rule-strong: #d6d6d0;
+  --accent: #2155d6;
+  --accent-ink: #ffffff;
+  --accent-soft: #eef3ff;
+  --accent-soft-ink: #1c47b8;
+  --user-bubble: #16181d;
+  --user-bubble-ink: #ffffff;
+  --quote: #ffefb0;
+  --ok: #1f7a4d;
+  --ok-soft: #e7f4ec;
+  --warn: #8a4b08;
+  --warn-soft: #fff1e0;
+  --danger: #7a1414;
+  --danger-soft: #fdecec;
+  --code-bg: #14161b;
+  --code-bar: #1b1e25;
+  --code-ink: #e4e6eb;
+  --sql-keyword: #7aa2f7;
+  --sql-function: #e0af68;
+  --sql-string: #9ece6a;
+  --sql-number: #ff9e64;
+  --sql-comment: #8a93a8;
+  --sql-operator: #c0caf5;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  color-scheme: light;
+  --highlight: var(--quote);
+}
+
+:root[data-theme='midnight'] {
+  --ground: #0b1220;
+  --rail: #0f1a2e;
+  --surface: #13213a;
+  --ink: #e6edf7;
+  --ink-2: #b8c6dc;
+  --ink-3: #8b9bb4;
+  --rule: #1c2a44;
+  --rule-strong: #2a3b5c;
+  --accent: #4fd1c5;
+  --accent-ink: #04201d;
+  --accent-soft: #0f3437;
+  --accent-soft-ink: #9eeae2;
+  --user-bubble: #1b2c4a;
+  --user-bubble-ink: #e6edf7;
+  --quote: #4a4214;
+  --ok: #5cc28f;
+  --ok-soft: #12291f;
+  --warn: #f0a35d;
+  --warn-soft: #2b2012;
+  --danger: #ff9b9b;
+  --danger-soft: #2e1519;
+  color-scheme: dark;
+}
+
+:root[data-theme='linen'] {
+  --ground: #f6f1e7;
+  --rail: #efe7d8;
+  --surface: #fffaf0;
+  --ink: #2b2118;
+  --ink-2: #4a3b2d;
+  --ink-3: #6b5a48;
+  --rule: #e3d8c4;
+  --rule-strong: #d3c4aa;
+  --accent: #a3461f;
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e3d6;
+  --accent-soft-ink: #8a3a17;
+  --user-bubble: #3a2c20;
+  --user-bubble-ink: #fffaf0;
+  --quote: #f7e1a1;
+  --ok: #2f6b45;
+  --ok-soft: #e4efe2;
+  --warn: #8a4b08;
+  --warn-soft: #fbe9d2;
+  --danger: #8a1c1c;
+  --danger-soft: #f8e3e0;
+  color-scheme: light;
+}
+
+:root[data-theme='contrast'] {
+  --ground: #000000;
+  --rail: #0a0a0a;
+  --surface: #111111;
+  --ink: #ffffff;
+  --ink-2: #f0f0f0;
+  --ink-3: #d0d0d0;
+  --rule: #6b6b6b;
+  --rule-strong: #ffffff;
+  --accent: #ffd60a;
+  --accent-ink: #000000;
+  --accent-soft: #2b2400;
+  --accent-soft-ink: #ffe566;
+  --user-bubble: #1f1f1f;
+  --user-bubble-ink: #ffffff;
+  --quote: #6b5a00;
+  --ok: #7dffb0;
+  --ok-soft: #002914;
+  --warn: #ffc266;
+  --warn-soft: #2b1a00;
+  --danger: #ff8a8a;
+  --danger-soft: #2b0000;
+  --code-bg: #000000;
+  --code-bar: #111111;
+  --code-ink: #ffffff;
+  color-scheme: dark;
+}
+
+html[data-text-size='small'] {
+  font-size: 93.75%;
+}
+html[data-text-size='large'] {
+  font-size: 112.5%;
+}
+
 @theme inline {
   --color-background: var(--ground);
   --color-foreground: var(--ink);
@@ -109,7 +232,7 @@ body {
   background: var(--ground);
   color: var(--ink);
 }
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant dark (&:where([data-theme=graphite], [data-theme=graphite] *, [data-theme=midnight], [data-theme=midnight] *, [data-theme=contrast], [data-theme=contrast] *));
 @theme inline {
   --color-secondary: var(--surface);
   --color-secondary-foreground: var(--ink);
@@ -211,16 +334,6 @@ a:hover {
 }
 .skip-link:focus {
   transform: translateY(0);
-}
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  cursor: pointer;
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--radius);
 }
 mark {
   background: var(--highlight);
@@ -327,12 +440,13 @@ mark {
   background: var(--ink);
   color: var(--surface);
 }
-:root[data-theme='dark'] .source-primary {
+:root:is([data-theme='graphite'], [data-theme='midnight'], [data-theme='contrast'])
+  .source-primary {
   background: var(--accent);
   color: var(--accent-ink);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) .source-primary {
+  :root:not([data-theme]) .source-primary {
     background: var(--accent);
     color: var(--accent-ink);
   }

@@ -247,6 +247,7 @@ export default defineConfig({
     license: { name: 'PostgreSQL License', url: 'https://www.postgresql.org/about/licence/' },
     promptSubject: 'PostgreSQL 17',
     rerankSubject: 'PostgreSQL',
+    exampleNotice: "You're trying Sourced with an example: 35 pages of the PostgreSQL 17 docs.",
     suggested: [
       {
         id: 'iso',

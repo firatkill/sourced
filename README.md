@@ -45,7 +45,9 @@ The repository includes 35 pages of the PostgreSQL 17 documentation. Your databa
 ./sourced dev
 ```
 
-Open http://localhost:3000 and ask, for example, “When should I use a partial index?”
+Open http://localhost:3000 and ask, for example, “When should I use a partial index?”, then a follow-up such as “Can it also be unique?”.
+
+Your chats are saved in the sidebar: rename them, pin them, group them into projects, and come back to them later. Every answer cites the passages it used; for your own files, a citation opens the original document (PDFs at the cited page). Pick a theme under Appearance.
 
 ## Use your own documents
 

@@ -329,7 +329,7 @@ describe('T-33 / PRD §9.3 non-happy states (TC-097, TC-100–TC-105)', () => {
       expect(document.activeElement).toBe(retry);
       await Promise.resolve();
       fireEvent.click(retry);
-      expect(submit).toHaveBeenCalledWith('Original question', undefined);
+      expect(submit).toHaveBeenCalledWith('Original question', undefined, undefined);
     },
   );
   it('TC-104 network error preserves partial text with neutral markers and focuses retry', async () => {

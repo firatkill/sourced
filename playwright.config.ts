@@ -73,5 +73,11 @@ export default defineConfig({
       ...server(3103, { DEMO_MODE: 'off' }),
       command: 'pnpm exec tsx --conditions=react-server tests/fixtures/local-profile-server.ts',
     },
+    {
+      // T-80: local profile with no copy block (a user's own documents).
+      ...server(3106, { DEMO_MODE: 'off' }),
+      command:
+        'pnpm exec tsx --conditions=react-server tests/fixtures/local-profile-server.ts own-docs',
+    },
   ],
 });

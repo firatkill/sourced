@@ -3,7 +3,7 @@ import packageJson from '@/package.json';
 import { afterEach, expect, test, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import example from '@/sourced.config';
-import { getCopy } from '@/lib/kit/copy';
+import { getCopy, uiCopy } from '@/lib/kit/copy';
 import { KitConfigSchema } from '@/lib/kit/config-schema';
 import { ASK_COPY } from '../helpers/runtime-copy';
 import { renderAnswerSystemPrompt } from '@/lib/prompts/system';
@@ -34,30 +34,53 @@ const defaults = () => {
   return value;
 };
 
-test('UT-33: all default strings and absent optional content', () => {
+test('UT-33 / D-140: all default strings are generic and absent optional content stays out', () => {
   expect(getCopy(defaults(), 12)).toEqual({
     citationMarkers: '[P1], [P2], [P3], [P4], [P5] or [P6]',
-    documentTitle: 'Sourced: answers from Guide',
-    hero: 'Ask Guide. Every claim shows its source.',
-    lead: 'Answers come only from the indexed guide. Each citation is checked against the passage it points to before you see it.',
-    notFound: "I couldn't find this in Guide.",
-    notFoundHeading: 'I couldn’t find this in Guide.',
+    documentTitle: 'Sourced',
+    hero: 'What do you want to know?',
+    lead: 'Answers come only from your documents. Every claim links to the passage it came from, checked before you see it.',
+    notFound: "I couldn't find this in your documents.",
+    notFoundHeading: 'I couldn’t find this in your documents.',
     notFoundBody:
       'Sourced only answers from the 12 documents it has indexed. These passages came closest:',
     docsLink: 'Read the source',
-    railSubtitle: 'Guide',
-    headerScope: 'Answers only from the indexed guide',
-    scope: 'Answers come only from the indexed guide. If the answer is not there, Sourced says so.',
-    placeholder: 'Ask a question about Guide',
-    nextPlaceholder: 'Ask another question about Guide',
+    railSubtitle: 'Your documents',
+    headerScope: 'Answers only from your documents',
+    scope: 'Answers come only from your documents. If the answer is not there, Sourced says so.',
+    placeholder: 'Ask about your documents',
+    nextPlaceholder: 'Ask a follow-up',
     searched: 'Searched 12 documents',
     viewerLink: 'Open the source',
     promptSubject: 'Guide',
     rerankSubject: 'Guide',
-    preparationSubject: 'the indexed guide',
-    corpusExtent: 'the indexed guide',
+    preparationSubject: 'Your documents',
     suggested: [],
   });
+});
+
+test('D-140: a corpus without copy never shows its title or description in UI strings', () => {
+  const value = defaults();
+  value.corpus.title = 'My documents';
+  value.corpus.description = 'Answers from your own documents';
+  const { promptSubject, rerankSubject, ...ui } = getCopy(value, 4);
+  expect(promptSubject).toBe('My documents'); // prompts may name the corpus
+  expect(rerankSubject).toBe('My documents');
+  for (const [key, text] of Object.entries(ui)) {
+    const serialized = JSON.stringify(text);
+    expect(serialized, key).not.toContain('My documents');
+    expect(serialized, key).not.toContain('Answers from your own documents');
+  }
+});
+
+test('D-140: uiCopy keeps prompt subjects on the server', () => {
+  const value = defaults();
+  value.corpus.title = 'My documents';
+  const ui = uiCopy(getCopy(value, 4));
+  expect(ui).not.toHaveProperty('promptSubject');
+  expect(ui).not.toHaveProperty('rerankSubject');
+  expect(JSON.stringify(ui)).not.toContain('My documents');
+  expect(ui.hero).toBe('What do you want to know?');
 });
 
 test('UT-33: example reproduces every existing UI string, including redesign overrides', () => {
@@ -69,10 +92,11 @@ test('UT-33: example reproduces every existing UI string, including redesign ove
     name: 'PostgreSQL License',
     url: 'https://www.postgresql.org/about/licence/',
   });
-  expect(copy.preparationSubject).toBe('35 PostgreSQL 17 documentation pages');
-  expect(
-    `The corpus is ${copy.corpusExtent}, not the full ${copy.rerankSubject} documentation.`,
-  ).toBe('The corpus is 35 pages, not the full PostgreSQL documentation.');
+  expect(copy.preparationSubject).toBe('The 35 PostgreSQL 17 documentation pages');
+  expect(copy.corpusLimit).toBe('The corpus is 35 pages, not the full PostgreSQL documentation.');
+  expect(copy.exampleNotice).toBe(
+    "You're trying Sourced with an example: 35 pages of the PostgreSQL 17 docs.",
+  );
   expect(copy.suggested).toEqual([
     {
       id: 'iso',

@@ -98,6 +98,7 @@ export async function dispatch(
   handler: Handler = runCommand,
 ): Promise<{ envelope: CliEnvelope; exitCode: ExitCode }> {
   let command = 'sourced';
+  let chats = false;
   try {
     if (!args.length || args.every((a) => ['--help', '--json'].includes(a))) {
       return {
@@ -112,6 +113,7 @@ export async function dispatch(
     }
     const input = parseInvocation(args);
     command = input.command;
+    chats = input.values.chats === true;
     if (input.values.help)
       return {
         envelope: CliEnvelope.parse({
@@ -131,7 +133,9 @@ export async function dispatch(
           command === 'sources remove'
             ? 'Remove this source and its documents?'
             : command === 'reset'
-              ? 'Remove the example configuration and everything indexed? Your document files are not deleted.'
+              ? input.values.chats === true
+                ? 'Remove the configuration, everything indexed and every saved chat and project? Your document files are not deleted.'
+                : 'Remove the example configuration and everything indexed? Saved chats and your document files are kept.'
               : 'Rebuild the corpus and replace its indexed documents?',
         ...(context.prompt ? { prompt: context.prompt } : {}),
       });
@@ -184,13 +188,14 @@ export async function dispatch(
       });
     return { envelope, exitCode };
   } catch (error) {
-    return errorEnvelope(command, error);
+    return errorEnvelope(command, error, { chats });
   }
 }
 /** Map a thrown error to the failure envelope and exit code (shared with app startup). */
 export function errorEnvelope(
   command: string,
   error: unknown,
+  flags: { chats?: boolean } = {},
 ): { envelope: CliEnvelope; exitCode: ExitCode } {
   if (
     error instanceof Error &&
@@ -254,7 +259,9 @@ export function errorEnvelope(
                   : command === 'ingest'
                     ? 'pnpm sourced ingest --yes'
                     : command === 'reset'
-                      ? 'pnpm sourced reset --yes'
+                      ? flags.chats
+                        ? 'pnpm sourced reset --chats --yes'
+                        : 'pnpm sourced reset --yes'
                       : 'pnpm sourced sources remove <id> --yes'
           : error.code === 'CORPUS_MISMATCH'
             ? 'pnpm sourced ingest --rebuild'
@@ -294,7 +301,11 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     case 'sources remove':
       return { result: await (await import('./commands/sources')).runSources(input) };
     case 'reset':
-      return { result: await (await import('./commands/reset')).runReset() };
+      return {
+        result: await (
+          await import('./commands/reset')
+        ).runReset({ chats: input.values.chats === true }),
+      };
     case 'eval:generate':
       return {
         result: await (await import('./commands/eval-generate')).runEvalGenerate(input, context),

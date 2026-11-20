@@ -22,23 +22,32 @@ beforeAll(async () => {
 
 test('TC-113 / UT-25 / FR-40: full golden file meets TRD §17.2 rules 1–5, 7 and reference length', () => {
   expect(parseGolden(text).errors).toEqual([]);
-  expect(entries).toHaveLength(40);
+  expect(entries).toHaveLength(46); // D-143: q041–q046 are follow-up cases
   expect(entries.map((entry) => entry.id)).toEqual(
-    Array.from({ length: 40 }, (_, i) => `q${String(i + 1).padStart(3, '0')}`),
+    Array.from({ length: 46 }, (_, i) => `q${String(i + 1).padStart(3, '0')}`),
   );
   expect(validateGolden(entries, corpus)).toEqual([]);
   const distribution = goldenDistribution(entries, corpus);
-  expect(distribution.types).toEqual({ answerable: 32, unanswerable: 5, injection: 3 });
+  expect(distribution.types).toEqual({ answerable: 38, unanswerable: 5, injection: 3 });
   expect(distribution.chapters).toEqual({
-    indexes: 7,
-    concurrency: 5,
-    performance: 5,
+    indexes: 8,
+    concurrency: 6,
+    performance: 6,
     'full-text-search': 4,
-    json: 3,
-    maintenance: 3,
-    backup: 3,
+    json: 4,
+    maintenance: 4,
+    backup: 4,
     'row-level-security': 2,
   });
+  // D-143: exactly q041–q046 are follow-ups, each with an earlier turn.
+  expect(entries.filter((entry) => entry.history).map((entry) => entry.id)).toEqual([
+    'q041',
+    'q042',
+    'q043',
+    'q044',
+    'q045',
+    'q046',
+  ]);
   expect(distribution.multiAnchor).toBeGreaterThanOrEqual(6);
   expect(distribution.exactIdentifier).toBeGreaterThanOrEqual(6);
   expect(distribution.paraphrase).toBeGreaterThanOrEqual(6);
@@ -94,24 +103,24 @@ describe('TC-113 / UT-25 / FR-40: rules reject regressions independently', () =>
     edit(copy);
     expect(validateGolden(copy, corpus).join('\n')).toContain(message);
   };
-  test('unique and complete q001–q040 ids', () => {
+  test('unique and complete q001–q046 ids', () => {
     check((copy) => {
       copy[1]!.id = 'q001';
     }, 'unique');
     check((copy) => {
-      copy[1]!.id = 'q041';
-    }, 'Unexpected id: q041');
+      copy[1]!.id = 'q047';
+    }, 'Unexpected id: q047');
     check((copy) => {
       copy.pop();
-    }, 'Missing id: q040');
+    }, 'Missing id: q046');
   });
   test('type totals and chapter counts', () => {
     check((copy) => {
       copy[0]!.type = 'unanswerable';
-    }, 'answerable: expected 32, got 31');
+    }, 'answerable: expected 38, got 37');
     check((copy) => {
       copy[1]!.group = 'backup';
-    }, 'indexes: expected 7, got 6');
+    }, 'indexes: expected 8, got 7');
   });
   test('multi-section means distinct anchors', () => {
     check((copy) => {

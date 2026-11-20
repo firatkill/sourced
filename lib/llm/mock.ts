@@ -151,7 +151,16 @@ export const mockProvider: LlmProvider = {
   generateObject(args) {
     args.abortSignal?.throwIfAborted();
     let output: unknown;
-    if (args.model === 'generate') {
+    const followUp = /^Follow-up: <<<(.*)>>>$/m.exec(args.prompt)?.[1];
+    if (followUp !== undefined) {
+      // T-85: deterministic rewrite. Like a model, it leaves a standalone question alone and
+      // joins one that refers back (it, that, the same…) to the latest earlier question.
+      const previous = [...args.prompt.matchAll(/^Question: (.*)$/gm)].at(-1)?.[1];
+      const refersBack = /\b(it|its|that|those|these|them|they|the same|the two|both)\b/i.test(
+        followUp,
+      );
+      output = { question: previous && refersBack ? `${previous} ${followUp}` : followUp };
+    } else if (args.model === 'generate') {
       const anchor = /^Anchor: (.+)$/m.exec(args.prompt)?.[1];
       output = anchor
         ? {

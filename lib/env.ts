@@ -117,7 +117,8 @@ const schema = z.object({
   INGEST_INCLUDE_FIXTURES: flag('false'),
   INGEST_CONFIRM_ABOVE_USD: z.coerce.number().nonnegative().default(1),
   EVAL_MAX_COST_USD: z.coerce.number().positive().default(1),
-  EVAL_RESULTS_DIR: z.string().default('eval/postgres-17/results'),
+  // T-86: unset means eval/<corpus.name>/results, so /eval never shows another corpus's runs.
+  EVAL_RESULTS_DIR: optionalText,
   MOCK_STREAM_DELAY_MS: z.coerce.number().int().nonnegative().default(10),
   VERCEL_ENV: optionalText,
   VERCEL_URL: optionalText,

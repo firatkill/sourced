@@ -24,7 +24,7 @@ export const commands: Record<
   },
   'sources list': {},
   'sources remove': { positional: 1 },
-  reset: {},
+  reset: { boolean: ['chats'] },
   ingest: {
     boolean: [
       'dry-run',

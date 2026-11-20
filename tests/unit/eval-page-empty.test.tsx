@@ -8,12 +8,16 @@ import newer from '../fixtures/eval-results/2026-11-02.json';
 
 afterEach(cleanup);
 
-test('TC-131 / UT-31: synchronous empty view renders the exact PRD §9.5 copy', () => {
-  render(<EvalView resultsDirectory="eval/postgres-17/results" runs={[]} />);
+test('TC-131 / UT-31 / T-86: synchronous empty view renders the exact PRD §9.5 copy', () => {
+  render(<EvalView resultsDirectory="eval/my-docs/results" runs={[]} command="./sourced" />);
   expect(screen.getByRole('heading', { name: 'How good are the answers?', level: 1 })).toBeTruthy();
-  expect(screen.getByRole('heading', { name: 'No evaluation runs yet', level: 2 })).toBeTruthy();
   expect(
-    screen.getByText('Run pnpm eval and commit the file it writes to eval/postgres-17/results.'),
+    screen.getByRole('heading', { name: 'No evaluation for these documents yet', level: 2 }),
+  ).toBeTruthy();
+  expect(
+    screen.getByText(
+      'Draft questions from your documents with ./sourced eval:generate, review them with ./sourced eval:review, then run ./sourced eval. Results are written to eval/my-docs/results.',
+    ),
   ).toBeTruthy();
   expect(screen.queryByRole('table')).toBeNull();
   expect(

@@ -14,6 +14,8 @@ This document overrides PRD §9 (layout and the strings listed in section 7), TR
 
 ## 2. Tokens and type (replaces TRD §15.2)
 
+The theme mechanism and token sets are superseded by [REDESIGN-v2 §6.1](REDESIGN-v2.md#61-theme-tokens-normative).
+
 Fonts: Inter (400, 500, 600, 700) for text and JetBrains Mono (400, 500) for code, numbers in code-like labels and citation numbers, both through `next/font/google` (self-hosted at build). Base size 16 px, line height 1.6 (answers 1.7). H1 40/46 px weight 700, letter-spacing −0.02em (32/38 px below 640 px). H2 20–22 px weight 600.
 
 ```css

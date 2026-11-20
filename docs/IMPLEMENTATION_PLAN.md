@@ -23,7 +23,9 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 | M6 Sources and CLI *(v2)* | T-53 – T-64 | All source types and the `sourced` CLI; Docker path; any-corpus check passes |
 | M7 Quality on any corpus *(v2)* | T-65 – T-68 | `inspect`, generated golden sets, eval and comparison on kit corpora |
 | M8 Agent guidance and v2.0 release *(v2)* | T-69 – T-76 | Skills, private profile, user-facing agent files, newcomer check, v2.0.0 |
-| M9 Chat and integrations *(v2.1)* | planned | Follow-ups, MCP server, API and widget, dedicated rerankers (PRD FR-86, FR-91 to FR-93); tasks are written when v2.0.0 ships |
+| M9 Chat and integrations *(v2.1)* | planned | MCP server, API and widget, dedicated rerankers (PRD FR-86, FR-92, FR-93; follow-ups (FR-91) moved to M10); tasks are written when v2.0.0 ships |
+| M10 Chat app *(v2.2)* | T-79 – T-87 | Own-documents-first copy, five themes, saved chats and projects, sources open the original file, follow-up questions, every page in one shell; v2.2.0 (D-140 to D-145, `docs/REDESIGN-v2.md`) |
+| M11 Setup and settings in the browser *(v2.3)* | T-88 – T-93 | `./sourced dev` then the browser reaches a cited answer with no other terminal step; keys, models, library and chat data managed in Settings; v2.3.0 |
 
 ---
 
@@ -861,6 +863,115 @@ v2 tasks start after v1.0.0 is tagged (PRD section 16). "TRD §n" in these tasks
 
 ---
 
+## M10 Chat app *(v2.2)*
+
+Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers below ("R2 §n") refer to it. Visual reference: the "Sourced v2 chat redesign" canvas.
+
+### T-79 Themes and Settings › Appearance
+
+- **Implements**: D-140; R2 §6 (Themes), §7
+- **Files**: `app/globals.css` (token sets under `[data-theme]`), `app/layout.tsx` (head script), `components/layout/ThemeToggle.tsx` (removed), `app/settings/appearance/page.tsx`, `components/settings/ThemePicker.tsx`, `TextSize.tsx`, a token-contrast unit test, `tests/e2e/theme.spec.ts`.
+- **Acceptance**: every theme passes the contrast test of R2 §6 (text and foreground/background pairs 4.5:1, accent on ground 3:1, SQL colours on the code background); switching and persistence covered by E2E; the default themes look unchanged.
+- **Depends on**: T-78
+
+### T-80 Copy rules and library facts
+
+- **Implements**: D-140; R2 §3
+- **Files**: `lib/kit/copy.ts`, `lib/copy.ts`, `lib/library/facts.ts`, `app/api/library/route.ts`, `components/ask/EmptyState.tsx`, `ExampleBanner.tsx`, `/how-it-works` copy, PRD §9 copy rows, affected E2E specs.
+- **Acceptance**: with a corpus without a `copy` block the rendered HTML contains neither `corpus.title` nor `corpus.description`, and no suggestions block; the example shows the banner and suggestions; the hosted-demo copy is unchanged.
+- **Depends on**: T-79
+
+### T-81 Chats, projects and turns in the database
+
+- **Implements**: D-142, D-144; R2 §4
+- **Files**: `lib/db/schema.ts`, a new additive migration, `lib/chats/*`, `lib/cli/commands/reset.ts` (`--chats`), CLI schema and snapshots (additive, NFR-22), integration tests.
+- **Acceptance**: create, rename, move, pin and delete with cascade; turn snapshots survive `reset`; `reset --chats` empties them.
+- **Depends on**: T-78
+
+### T-82 Chat and project APIs; saved turns
+
+- **Implements**: D-142; R2 §5
+- **Files**: `app/api/chats/**`, `app/api/projects/**`, `app/api/ask/route.ts` (optional `chatId`), `middleware.ts` (profile gating), contract tests.
+- **Acceptance**: routes return 404 under `public-demo`; `/api/ask` without the new fields is byte-for-byte unchanged; a finished turn with `chatId` is stored once.
+- **Depends on**: T-81
+
+### T-83 App shell and sidebar
+
+- **Implements**: D-140, D-142; R2 §7
+- **Files**: `components/layout/AppShell.tsx`, `components/sidebar/*`, `app/c/[chatId]/page.tsx`, `app/p/[projectId]/page.tsx`, E2E specs.
+- **Acceptance**: create, rename (inline), move to project and delete (with confirm) a chat; reload keeps it; keyboard-only path; axe clean; first-load JS for `/` ≤ 180 KB gzip.
+- **Depends on**: T-80, T-82
+
+### T-84 Thread restore and sources that open the file
+
+- **Implements**: D-142; R2 §5, §7
+- **Files**: `components/ask/Thread.tsx`, `SourceList.tsx`, `SourceViewer.tsx`, `app/api/files/[documentId]/route.ts`, unit tests for path containment.
+- **Acceptance**: a fixture PDF opens at the cited page; path traversal and symlink escape are rejected; a source whose document was removed shows the "no longer in your library" state.
+- **Depends on**: T-83
+
+### T-85 Follow-up questions
+
+- **Implements**: FR-91, D-143; R2 §5
+- **Files**: `lib/generation/standalone.ts`, `lib/prompts/*` (rewrite prompt, `PROMPT_VERSION`), `/api/ask` (`history`), the golden set (two-turn cases), `components/ask/Turn.tsx` ("Searched for").
+- **Acceptance**: a live eval run passes every floor (cost approved by the owner first); E2E two-turn chat in mock mode.
+- **Depends on**: T-84
+
+### T-86 `/eval` and `/how-it-works` in the shell
+
+- **Implements**: D-140; R2 §7
+- **Files**: `app/eval/page.tsx`, `app/how-it-works/page.tsx`, `components/eval/*`, `components/how/*`, their E2E specs.
+- **Acceptance**: both pages use the app shell; `/eval` shows its empty state when the results belong to another corpus.
+- **Depends on**: T-83
+
+### T-87 Docs and v2.2.0
+
+- **Implements**: D-140 to D-145
+- **Files**: `docs/PRD.md` §9, `docs/TRD.md` (§15, new chat sections), `README.md` (screenshots), `CHANGELOG.md`, demo GIF, `qa/`.
+- **Acceptance**: v2.2 release checklist; the hosted demo smoke-tested after release.
+- **Depends on**: T-85, T-86
+
+## M11 Setup and settings in the browser *(v2.3)*
+
+### T-88 Boot without a key; setup link and request checks
+
+- **Implements**: D-142; R2 §6
+- **Files**: `sourced`, `sourced.cmd`, `scripts/sourced-*.ps1`, `scripts/app-startup.ts`, `lib/env.ts` (setup mode, `reloadEnv`), `middleware.ts` (Host and Origin checks, token cookie), `lib/cli/commands/setup.ts`, contract tests.
+- **Acceptance**: a fresh clone runs `./sourced dev` with no `.env.local` and prints the one-time link; a foreign `Host` or `Origin` is rejected; `./sourced setup` prints a new link.
+- **Depends on**: T-87
+
+### T-89 Setup and settings APIs
+
+- **Implements**: D-142; R2 §5, §6
+- **Files**: `app/api/setup/**`, `app/api/settings/**`, `app/api/ingest/[runId]/events/route.ts`, reuse of `checkProviderKeys`, `saveConfig`, `runAdd`, `runReset`, `runIngest`.
+- **Acceptance**: contract test per route; the key never appears in a response or a log line; only one ingest runs at a time; progress survives closing the tab.
+- **Depends on**: T-88
+
+### T-90 `/setup` steps 1–4
+
+- **Files**: `app/setup/page.tsx`, `components/setup/*`, E2E.
+- **Acceptance**: on a fresh mock checkout, `./sourced dev`, then the browser, reaches a cited answer with no other terminal step.
+- **Depends on**: T-89
+
+### T-91 Settings › Models and keys
+
+- **Files**: `app/settings/page.tsx`, `components/settings/*`, E2E.
+- **Acceptance**: switching the chat model takes effect without a restart; an embedding change shows the rebuild estimate and rebuilds after confirm.
+- **Depends on**: T-89
+
+### T-92 Settings › Library, Chats and data
+
+- **Files**: `app/settings/library/page.tsx`, `app/settings/data/page.tsx`, E2E.
+- **Acceptance**: add, remove and re-ingest sources; remove the example; export a chat as Markdown; delete all chats.
+- **Depends on**: T-91
+
+### T-93 Docs, skills and v2.3.0
+
+- **Files**: `README.md` (quick start: `./sourced dev`, then the browser), `.agents/skills/sourced-setup/SKILL.md` (browser path first, CLI kept), `docs/GUIDE.md`, `CHANGELOG.md`, `qa/release-v2/`.
+- **Acceptance**: newcomer rehearsal on a clean machine reaches a cited answer; a security review of the setup and settings routes is recorded; v2.3 release checklist.
+- **Depends on**: T-90, T-92
+
+---
+
 ## Traceability: functional requirements to tasks and tests
 
 | FR | Tasks | Tests |
@@ -1003,6 +1114,23 @@ Docs and release
 - [ ] Attribution: footer line, `corpus/postgres-17/LICENSE-POSTGRESQL.txt`, `corpus/postgres-17/NOTICE`.
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
+
+## Release checklist v2.2.0
+
+Reviewer items (done on the M10 branches, 2026-11-20):
+
+- [x] T-79 to T-86 committed; lint, typecheck, unit, contract (except the environment-only `doctor` port snapshot), integration and the full E2E suite pass locally.
+- [x] Live eval with the six follow-up cases committed (`eval/postgres-17/results/2026-11-20.*`): every floor passes, cost $0.40.
+- [x] Docs: TRD §42, PRD §9.10 and D-140 to D-145, README, GUIDE, CHANGELOG.
+- [x] `verify-fresh.sh` passes on the release branch.
+
+Owner items (need the owner's yes):
+
+- [ ] Merge `v2.1/first-run` (PR #6), with `SOURCED_PROFILE=public-demo` set in Vercel first (open question k).
+- [ ] Merge the v2.2 branches; production migration `0004_chats` runs in the deploy workflow (additive).
+- [ ] Tag `v2.2.0`.
+- [ ] Production smoke test: health, pages, a cited answer, a follow-up, `/api/chats` returns 404 on the hosted demo.
+- [ ] Record the demo GIF again on production (saved chats are not on the hosted demo, so record the sidebar from a local run).
 
 ## Release checklist v2.0.0
 
