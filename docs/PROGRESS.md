@@ -1,6 +1,6 @@
 # Progress
 
-Updated: 2026-11-10.
+Updated: 2026-11-20.
 
 ## Repository setup
 
@@ -96,6 +96,21 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-76 | M8 Agent guidance and v2.0 | README, newcomer release check and v2.0.0 | done | de13131 |
 | T-77 | v2.1 First run | Per-checkout Compose project and clear first-run failures (D-136, D-137) | done | 583ff35 |
 | T-78 | v2.1 First run | One-key local first run, `reset`, short README, `/deploy` removed (D-138, D-139) | done | 7141b85, 97552bb, ab365d3 |
+| T-79 | M10 Chat app | Themes and Settings › Appearance | todo | |
+| T-80 | M10 Chat app | Copy rules and library facts | todo | |
+| T-81 | M10 Chat app | Chats, projects and turns in the database | todo | |
+| T-82 | M10 Chat app | Chat and project APIs; saved turns | todo | |
+| T-83 | M10 Chat app | App shell and sidebar | todo | |
+| T-84 | M10 Chat app | Thread restore and sources that open the file | todo | |
+| T-85 | M10 Chat app | Follow-up questions | todo | |
+| T-86 | M10 Chat app | `/eval` and `/how-it-works` in the shell | todo | |
+| T-87 | M10 Chat app | Docs and v2.2.0 | todo | |
+| T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | todo | |
+| T-89 | M11 Setup and settings | Setup and settings APIs | todo | |
+| T-90 | M11 Setup and settings | `/setup` steps 1–4 | todo | |
+| T-91 | M11 Setup and settings | Settings › Models and keys | todo | |
+| T-92 | M11 Setup and settings | Settings › Library, Chats and data | todo | |
+| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | todo | |
 
 ## Open questions for the owner
 
