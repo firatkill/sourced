@@ -98,6 +98,14 @@ export function getKitConfig(applyMock = true): KitConfig {
   }
   return config;
 }
+/**
+ * T-89: Setup and Settings rewrite the snapshot inside the running server; they call
+ * this right after, so the next request reads the new file. TC-238: no request reads it.
+ */
+export function reloadKitConfig(): void {
+  cached = undefined;
+  setEnvConfig(undefined);
+}
 export function resetKitConfigForTests(): void {
   cached = undefined;
   setEnvConfig(undefined);
