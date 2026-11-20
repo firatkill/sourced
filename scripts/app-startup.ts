@@ -7,7 +7,8 @@ import path from 'node:path';
 import { initializeDatabase } from '@/lib/cli/commands/database';
 import { errorEnvelope } from '@/lib/cli/router';
 import { redact } from '@/lib/cli/output';
-import { getCliSecrets, getEnv } from '@/lib/env';
+import { allowSetupMode, getCliSecrets, getEnv, setupState } from '@/lib/env';
+import { issueSetupToken } from '@/lib/setup/token';
 import { loadConfig } from '@/lib/kit/load-config';
 import { forLauncher, getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
 
@@ -16,13 +17,19 @@ export async function startApp(root = process.cwd()): Promise<boolean> {
   const files = {
     json: path.join(directory, 'startup-error.json'),
     text: path.join(directory, 'startup-error.txt'),
+    pending: path.join(directory, 'setup-pending'),
   };
   await rm(files.json, { force: true });
   await rm(files.text, { force: true });
+  await rm(files.pending, { force: true });
   try {
     setCliKitConfig(await loadConfig(root));
+    // T-88: no provider key yet is setup mode, not a failure; the launcher prints the link.
+    allowSetupMode();
     getEnv();
     await initializeDatabase(getKitConfig());
+    issueSetupToken(root, false);
+    if (setupState().required) await writeFile(files.pending, '');
     return true;
   } catch (error) {
     const { envelope } = errorEnvelope('dev', error);

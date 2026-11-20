@@ -328,6 +328,8 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
     }
     case 'dev':
       return { result: await (await import('./commands/dev')).runDev(input, context) };
+    case 'setup':
+      return { result: (await import('./commands/setup')).runSetup(input) };
 
     case 'down':
       throw new AppError(

@@ -27,6 +27,16 @@ export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
           : added.source.id;
     return `Added ${added.detected.type} source ${added.source.id} (${where}).\nNext: pnpm sourced ingest\n`;
   }
+  if (envelope.command === 'setup' && envelope.ok) {
+    const { url } = commandSchemas.setup.parse(envelope.result);
+    return `Open this link to finish setup in your browser:\n${url}\nIt replaces any earlier link.\n`;
+  }
+  if (envelope.command === 'dev' && envelope.ok) {
+    const dev = commandSchemas.dev.parse(envelope.result);
+    return dev.setupUrl
+      ? `Sourced is running. Finish setup in your browser:\n${dev.setupUrl}\n`
+      : `Sourced is running at ${dev.url}\n`;
+  }
   if (envelope.command === 'ingest' && envelope.ok) {
     const ingest = commandSchemas.ingest.safeParse(envelope.result);
     if (ingest.success) return formatIngest(ingest.data, envelope.warnings);

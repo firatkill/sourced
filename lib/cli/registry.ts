@@ -46,6 +46,7 @@ export const commands: Record<
     string: ['compare', 'limit', 'only', 'baseline', 'file'],
   },
   dev: { string: ['port'] },
+  setup: { string: ['port'] },
   down: {},
   'deploy:check': { string: ['profile'] },
   'config:snapshot': {},

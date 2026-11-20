@@ -6,8 +6,9 @@ cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 command=${1:-help}
 if [ ! -f .env.local ]; then
   case "$command" in
-    init|doctor) ;;
-    *) printf '%s\n' 'Create .env.local first: cp .env.example .env.local, then add your API key to it.' >&2; exit 2 ;;
+    # T-88: dev and setup start without one; the browser asks for the key.
+    init|doctor|dev|setup) ;;
+    *) printf '%s\n' 'Run ./sourced dev first, then finish setup in your browser.' >&2; exit 2 ;;
   esac
 fi
 if ! command -v docker >/dev/null 2>&1; then
@@ -114,7 +115,37 @@ compose_step() {
     done
   )
 }
+setup_token() {
+  # T-88: the same 48-hex-digit token lib/setup/token.ts reads; never in .env.local.
+  mkdir -p .sourced
+  token=$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')
+  (umask 077; printf '%s\n' "$token" > .sourced/setup-token.tmp)
+  mv .sourced/setup-token.tmp .sourced/setup-token
+  printf '%s' "$token"
+}
 case "$command" in
+  setup)
+    shift
+    port=${SOURCED_PORT:-3000}
+    while [ "$#" -gt 0 ]; do
+      case "$1" in
+        --json) ;;
+        --port) shift; port=${1:-} ;;
+        *) printf '%s\n' 'Usage: ./sourced setup [--port <port>] [--json]' >&2; exit 2 ;;
+      esac
+      [ "$#" -eq 0 ] || shift
+    done
+    case "$port" in
+      ''|*[!0-9]*) printf '%s\n' 'Port must be an integer from 1 to 65535.' >&2; exit 2 ;;
+    esac
+    url="http://localhost:$port/setup?token=$(setup_token)"
+    if [ "$json" = true ]; then
+      printf '{"schemaVersion":1,"command":"setup","ok":true,"result":{"url":"%s"},"warnings":[]}\n' "$url"
+    else
+      printf 'Open this link to finish setup in your browser:\n%s\nIt replaces any earlier link.\n' "$url"
+    fi
+    exit 0
+    ;;
   down)
     json=false
     for argument in "$@"; do
@@ -193,8 +224,19 @@ case "$command" in
       fi
       exit 1
     fi
+    # The app writes setup-pending while no provider key is saved (T-88).
+    setup_url=
+    if [ -f .sourced/setup-pending ] && token=$(cat .sourced/setup-token 2>/dev/null) && [ -n "$token" ]; then
+      setup_url="http://localhost:$SOURCED_PORT/setup?token=$token"
+    fi
     if [ "$json" = true ]; then
-      printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s"},"warnings":[]}\n' "$SOURCED_PORT"
+      if [ -n "$setup_url" ]; then
+        printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s","setupUrl":"%s"},"warnings":[]}\n' "$SOURCED_PORT" "$setup_url"
+      else
+        printf '{"schemaVersion":1,"command":"dev","ok":true,"result":{"url":"http://localhost:%s"},"warnings":[]}\n' "$SOURCED_PORT"
+      fi
+    elif [ -n "$setup_url" ]; then
+      printf 'Sourced is running. Finish setup in your browser:\n%s\nStop it with ./sourced down\n' "$setup_url"
     else
       printf 'Sourced is running at http://localhost:%s\nStop it with ./sourced down\n' "$SOURCED_PORT"
     fi

@@ -15,8 +15,19 @@ for ($attempt = 0; $attempt -lt $attempts; $attempt++) {
   Start-Sleep -Seconds 1
 }
 if ($started) {
+  # T-88: the app writes setup-pending while no provider key is saved.
+  $setupUrl = $null
+  if ((Test-Path '.sourced\setup-pending') -and (Test-Path '.sourced\setup-token')) {
+    $token = (Get-Content '.sourced\setup-token' -TotalCount 1).Trim()
+    if ($token) { $setupUrl = "http://localhost:$Port/setup?token=$token" }
+  }
   if ($Json -eq 'true') {
-    Write-Output "{`"schemaVersion`":1,`"command`":`"dev`",`"ok`":true,`"result`":{`"url`":`"http://localhost:$Port`"},`"warnings`":[]}"
+    $extra = if ($setupUrl) { ",`"setupUrl`":`"$setupUrl`"" } else { '' }
+    Write-Output "{`"schemaVersion`":1,`"command`":`"dev`",`"ok`":true,`"result`":{`"url`":`"http://localhost:$Port`"$extra},`"warnings`":[]}"
+  } elseif ($setupUrl) {
+    Write-Output 'Sourced is running. Finish setup in your browser:'
+    Write-Output $setupUrl
+    Write-Output 'Stop it with sourced.cmd down'
   } else {
     Write-Output "Sourced is running at http://localhost:$Port"
     Write-Output 'Stop it with sourced.cmd down'

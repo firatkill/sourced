@@ -108,7 +108,7 @@ Follow-ups (FR-91): when `history` is present, one extra chat-model call rewrite
 
 **Boot without a key.**
 
-- `./sourced dev` no longer needs `.env.local`. The launcher creates an empty one (mode 0600), generates `SOURCED_SETUP_TOKEN` and prints the one-time link.
+- `./sourced dev` no longer needs `.env.local`. The launcher creates an empty one (mode 0600). The app's startup check writes a setup token to `.sourced/setup-token` (mode 0600, not `.env.local`, so `./sourced setup` can issue a new link while the app runs), and the launcher prints the one-time link while no provider key is saved.
 - `scripts/app-startup.ts` and `getEnv()` accept a missing provider key in `local`. The app then starts in setup mode: every page redirects to `/setup` until a key check passes and an index exists.
 - `./sourced setup` prints a new link at any time.
 

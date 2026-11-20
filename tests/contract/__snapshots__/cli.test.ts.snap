@@ -173,7 +173,7 @@ corpus: Run pnpm sourced ingest (or ingest --rebuild for a configuration mismatc
           "ok": true,
         },
         {
-          "detail": "ports check failed.",
+          "detail": "app port 3000 is taken on 127.0.0.1.",
           "fix": "Free the application and database ports, or set SOURCED_PORT / SOURCED_DB_PORT in .env.local.",
           "id": "ports",
           "ok": false,
@@ -1186,6 +1186,10 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "properties": {
+    "setupUrl": {
+      "format": "uri",
+      "type": "string",
+    },
     "url": {
       "format": "uri",
       "type": "string",
@@ -2141,6 +2145,22 @@ exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned >
     "removedSources",
     "removedDocuments",
     "removedChats",
+  ],
+  "type": "object",
+}
+`;
+
+exports[`UT-45 / NFR-22: versioned envelope and per-command schemas are pinned > setup 1`] = `
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "url": {
+      "format": "uri",
+      "type": "string",
+    },
+  },
+  "required": [
+    "url",
   ],
   "type": "object",
 }

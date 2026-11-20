@@ -519,6 +519,10 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
     "dev": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "properties": {
+        "setupUrl": {
+          "format": "uri",
+          "type": "string",
+        },
         "url": {
           "format": "uri",
           "type": "string",
@@ -1447,6 +1451,19 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
         "removedSources",
         "removedDocuments",
         "removedChats",
+      ],
+      "type": "object",
+    },
+    "setup": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "url": {
+          "format": "uri",
+          "type": "string",
+        },
+      },
+      "required": [
+        "url",
       ],
       "type": "object",
     },

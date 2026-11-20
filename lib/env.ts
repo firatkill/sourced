@@ -39,6 +39,7 @@ export function getMiddlewareEnv() {
       NODE_ENV: z.string().optional(),
       VERCEL_ENV: z.string().optional(),
       SOURCED_ACCESS_TOKEN: z.string().optional(),
+      ALLOWED_ORIGINS: z.string().optional(),
     })
     .parse(process.env);
 }
@@ -206,12 +207,10 @@ export function getEnv(): Env {
           message: 'At least 24 characters required for private',
         });
       if (env.LLM_MODE === 'live') {
-        const keys = new Set<string>(config ? [] : ['OPENAI_API_KEY']);
-        for (const model of Object.values(config?.models ?? {})) {
-          if (model.provider === 'openai') keys.add('OPENAI_API_KEY');
-          if (model.provider === 'gemini') keys.add('GOOGLE_GENERATIVE_AI_API_KEY');
-          if (model.provider === 'anthropic') keys.add('ANTHROPIC_API_KEY');
-        }
+        // T-88: the local app boots without a key and sends the browser to /setup.
+        const keys = new Set<string>(
+          config?.profile === 'local' && serverSetupMode() ? [] : providerKeyNames(config),
+        );
         if (!config || config.profile === 'public-demo')
           for (const key of [
             'CHAT_MODEL',
@@ -247,6 +246,51 @@ export function getEnv(): Env {
 /** Tests only: invalidate memoized environment after changing test variables. */
 export function resetEnvForTests(): void {
   cached = undefined;
+}
+
+/** T-88/T-89: re-read `process.env` after the running server saved a key or setting. */
+export function reloadEnv(): void {
+  cached = undefined;
+}
+
+type ProviderConfig = z.infer<typeof providerConfigSchema>['config'];
+const KEY_NAMES = {
+  openai: 'OPENAI_API_KEY',
+  gemini: 'GOOGLE_GENERATIVE_AI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+} as const;
+export type ProviderKeyName = (typeof KEY_NAMES)[keyof typeof KEY_NAMES];
+function providerKeyNames(config: ProviderConfig | undefined): ProviderKeyName[] {
+  if (!config) return ['OPENAI_API_KEY'];
+  const names = new Set<ProviderKeyName>();
+  for (const model of Object.values(config.models))
+    if (model.provider in KEY_NAMES) names.add(KEY_NAMES[model.provider as keyof typeof KEY_NAMES]);
+  return [...names];
+}
+
+/**
+ * T-88: the local app server boots without a provider key. The app container's
+ * entrypoint and `pnpm sourced dev` set SOURCED_SETUP_MODE for `next`; the startup
+ * check opts in here. An environment variable reaches every server bundle.
+ */
+export function allowSetupMode(): void {
+  process.env.SOURCED_SETUP_MODE = '1';
+  cached = undefined;
+}
+function serverSetupMode(): boolean {
+  return process.env.SOURCED_SETUP_MODE === '1';
+}
+
+/**
+ * T-88 / R2 §6: the local app is in setup mode while a configured provider has no key.
+ * Mock mode, Ollama-only configurations and the other profiles never are.
+ */
+export function setupState(): { required: boolean; missingKeys: ProviderKeyName[] } {
+  const config = providerConfig();
+  if (config?.profile !== 'local' || process.env.LLM_MODE === 'mock')
+    return { required: false, missingKeys: [] };
+  const missingKeys = providerKeyNames(config).filter((name) => !process.env[name]?.trim());
+  return { required: missingKeys.length > 0, missingKeys };
 }
 
 /** CLI output boundary only: usable even when runtime environment validation fails. */

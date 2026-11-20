@@ -3,7 +3,14 @@ import { ACCESS_COOKIE, validCookie } from '@/lib/access/cookie';
 import { accessDecision } from '@/lib/access/decision';
 import { jsonError } from '@/lib/http/errors';
 import { getSnapshotConfig } from '@/lib/kit/runtime-config';
-import { getMiddlewareEnv } from '@/lib/env';
+import { getMiddlewareEnv, setupState } from '@/lib/env';
+import { allowedHosts, localDecision } from '@/lib/setup/guard';
+import {
+  SETUP_COOKIE,
+  SETUP_COOKIE_MAX_AGE,
+  setupCookieValue,
+  validSetupToken,
+} from '@/lib/setup/token';
 
 export async function middleware(request: NextRequest) {
   const env = getMiddlewareEnv();
@@ -47,12 +54,47 @@ export async function middleware(request: NextRequest) {
           profile === 'private' &&
           (await validCookie(env.SOURCED_ACCESS_TOKEN, request.cookies.get(ACCESS_COOKIE)?.value)),
       });
-  const response =
-    decision === 'redirect'
-      ? NextResponse.redirect(new URL('/access', request.url))
-      : decision === 'deny'
-        ? jsonError({ code: 'ACCESS_DENIED', status: 401, requestId })
-        : NextResponse.next({ request: { headers } });
+  // T-88: the local profile only answers loopback hosts and same-origin mutations,
+  // exchanges the setup link for a cookie, and sends pages to /setup until a key is saved.
+  const local =
+    profile === 'local'
+      ? localDecision({
+          host: request.headers.get('host') ?? request.nextUrl.host,
+          origin: request.headers.get('origin'),
+          method: request.method,
+          path: request.nextUrl.pathname,
+          hasToken: request.nextUrl.searchParams.has('token'),
+          setupRequired: setupState().required,
+          extraHosts: allowedHosts(env.ALLOWED_ORIGINS ?? ''),
+        })
+      : ({ kind: 'allow' } as const);
+  let response: Response;
+  if (local.kind === 'deny')
+    response = jsonError({ code: 'ORIGIN_FORBIDDEN', status: 403, requestId });
+  else if (local.kind === 'exchange') {
+    // The token never stays in the address bar; an unknown token says the link expired.
+    const token = request.nextUrl.searchParams.get('token');
+    const valid = validSetupToken(token);
+    const clean = new URL('/setup', request.url);
+    if (!valid) clean.searchParams.set('link', 'expired');
+    const redirect = NextResponse.redirect(clean);
+    if (valid && token)
+      redirect.cookies.set(SETUP_COOKIE, setupCookieValue(token), {
+        httpOnly: true,
+        sameSite: 'strict',
+        path: '/',
+        maxAge: SETUP_COOKIE_MAX_AGE,
+      });
+    response = redirect;
+  } else if (local.kind === 'setup')
+    response = NextResponse.redirect(new URL('/setup', request.url));
+  else
+    response =
+      decision === 'redirect'
+        ? NextResponse.redirect(new URL('/access', request.url))
+        : decision === 'deny'
+          ? jsonError({ code: 'ACCESS_DENIED', status: 401, requestId })
+          : NextResponse.next({ request: { headers } });
   for (const [name, value] of Object.entries({
     'Content-Security-Policy': policy,
     'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
