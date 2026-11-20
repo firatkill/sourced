@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { Palette } from 'lucide-react';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
@@ -124,7 +124,13 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY }: Props) {
             <ChatIcon name="github" />
             Source on GitHub
           </a>
-          <ThemeToggle label />
+          <Link
+            href="/settings/appearance"
+            className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
+          >
+            <Palette size={16} aria-hidden="true" />
+            Appearance
+          </Link>
         </div>
       </nav>
       <footer className="space-y-3 p-4 text-xs text-[var(--ink-3)]">

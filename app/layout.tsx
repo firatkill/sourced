@@ -1,3 +1,4 @@
+import { THEME_SCRIPT } from '@/lib/theme';
 import { CONFIGURATION_COPY } from '@/lib/copy';
 import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import { readAppConfiguration } from '@/lib/kit/app-configuration';
@@ -22,8 +23,6 @@ const mono = JetBrains_Mono({
   variable: '--font-jetbrains',
   display: 'swap',
 });
-const THEME_SCRIPT =
-  "try { const t = localStorage.getItem('sourced-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}";
 export function generateMetadata(): Metadata {
   const configuration = readAppConfiguration();
   if (!configuration.ok) return { title: CONFIGURATION_COPY.heading };

@@ -54,7 +54,12 @@ for (const [path, current] of [
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto(path);
     const nav = page.getByRole('navigation', { name: 'Main', exact: true });
-    await expect(nav.getByRole('link')).toHaveCount(4);
+    // T-79: Ask, Evaluation, How it works, GitHub and the Appearance link (was the theme button).
+    await expect(nav.getByRole('link')).toHaveCount(5);
+    await expect(nav.getByRole('link', { name: 'Appearance', exact: true })).toHaveAttribute(
+      'href',
+      '/settings/appearance',
+    );
     await expect(
       page
         .getByRole('banner')

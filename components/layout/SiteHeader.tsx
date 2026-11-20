@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ThemeToggle } from './ThemeToggle';
+import { Palette } from 'lucide-react';
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -40,7 +40,14 @@ export function SiteHeader() {
             How it works
           </Link>
           <a href="https://github.com/firatkill/sourced">GitHub</a>
-          <ThemeToggle />
+          <Link
+            href="/settings/appearance"
+            aria-label="Appearance"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-[var(--radius)] border border-[var(--rule-strong)]"
+            aria-current={pathname === '/settings/appearance' ? 'page' : undefined}
+          >
+            <Palette size={18} aria-hidden="true" />
+          </Link>
         </nav>
       </div>
     </header>
