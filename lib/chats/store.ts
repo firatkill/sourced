@@ -233,6 +233,11 @@ export async function updateChat(
   return toChat(one(rows, 'Chat'));
 }
 
+export async function chatExists(id: string, sql: Sql = getSql()): Promise<boolean> {
+  const rows = await sql`SELECT 1 FROM chats WHERE id = ${Uuid.parse(id)}`;
+  return rows.length > 0;
+}
+
 export async function deleteChat(id: string, sql: Sql = getSql()): Promise<void> {
   one(await sql`DELETE FROM chats WHERE id = ${Uuid.parse(id)} RETURNING id`, 'Chat');
 }

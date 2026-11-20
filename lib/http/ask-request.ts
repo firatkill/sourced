@@ -9,6 +9,8 @@ export const AskRequest = z
       .transform((s) => s.replace(/\s+/g, ' ').trim())
       .pipe(z.string().min(QUESTION.MIN_CHARS).max(QUESTION.MAX_CHARS)),
     suggestedId: z.enum(SUGGESTED_IDS).optional(),
+    // T-82 / D-142: save the finished turn in this chat (local and private profiles only).
+    chatId: z.uuid().optional(),
   })
   .strict();
 export type AskRequest = z.infer<typeof AskRequest>;

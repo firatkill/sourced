@@ -13,6 +13,7 @@ export function jsonError(input: {
 }): Response {
   let message = 'Something went wrong on our side';
   if (input.code === 'ACCESS_DENIED') message = ACCESS_COPY.heading;
+  if (input.code === 'NOT_FOUND') message = 'Not found';
   if (input.code === 'DEMO_OFF') message = 'The demo is offline for maintenance';
   if (input.code === 'DEMO_READONLY')
     message =

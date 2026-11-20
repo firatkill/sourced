@@ -33,7 +33,7 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 - `$`: object
 - `$.command`: string
 - `$.error`: object (optional)
-- `$.error.code`: "VALIDATION_FAILED" | "ORIGIN_FORBIDDEN" | "PAYLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "RATE_LIMITED_IP" | "RATE_LIMITED_GLOBAL" | "DEMO_READONLY" | "DEMO_OFF" | "PROVIDER_ERROR" | "PROVIDER_TIMEOUT" | "RETRIEVAL_ERROR" | "INTERNAL_ERROR" | "CONFIG_INVALID" | "CORPUS_MISMATCH" | "CORPUS_EMPTY" | "NEEDS_CONFIRMATION" | "CHECKS_FAILED"
+- `$.error.code`: "VALIDATION_FAILED" | "ORIGIN_FORBIDDEN" | "PAYLOAD_TOO_LARGE" | "UNSUPPORTED_MEDIA_TYPE" | "RATE_LIMITED_IP" | "RATE_LIMITED_GLOBAL" | "DEMO_READONLY" | "DEMO_OFF" | "PROVIDER_ERROR" | "PROVIDER_TIMEOUT" | "RETRIEVAL_ERROR" | "INTERNAL_ERROR" | "CONFIG_INVALID" | "CORPUS_MISMATCH" | "CORPUS_EMPTY" | "NEEDS_CONFIRMATION" | "CHECKS_FAILED" | "NOT_FOUND"
 - `$.error.fix`: string (optional)
 - `$.error.message`: string
 - `$.ok`: boolean
@@ -356,3 +356,4 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 - `CORPUS_EMPTY`
 - `NEEDS_CONFIRMATION`
 - `CHECKS_FAILED`
+- `NOT_FOUND`

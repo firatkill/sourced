@@ -1872,6 +1872,7 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
               "CORPUS_EMPTY",
               "NEEDS_CONFIRMATION",
               "CHECKS_FAILED",
+              "NOT_FOUND",
             ],
             "type": "string",
           },
