@@ -37,6 +37,15 @@ test('T-90: setup link, own documents, cost confirm, indexing, then a cited answ
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Connect your model provider');
   await expect(page.getByText('Mock mode: no provider is called')).toBeVisible();
+  // Advanced settings: closed by default; models are chosen before anything is indexed.
+  await expect(page.getByLabel('Answer model')).toBeHidden();
+  await page.getByText('Advanced settings').click();
+  await expect(page.getByLabel('Embedding model')).toHaveValue('openai:text-embedding-3-small');
+  await expect(page.getByRole('button', { name: 'Save models' })).toBeDisabled();
+  await page.getByLabel('Answer model').selectOption('anthropic:claude-sonnet-5-5');
+  await page.getByRole('button', { name: 'Save models' }).click();
+  await expect(page.getByText('Models saved.')).toBeVisible();
+  await expect(page.getByText(/^Answers use anthropic:claude-sonnet-5-5;/)).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Add your documents');

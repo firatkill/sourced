@@ -371,6 +371,46 @@ test('T-91 models: answer and check models apply without a restart; a new embedd
   expect(row).toEqual({ status: 'succeeded', total: 1 });
 });
 
+test('setup Advanced settings: every model is saved before indexing, with no run started', async () => {
+  const { getKitConfig } = await import('@/lib/kit/runtime-config');
+  const { currentJob } = await import('@/lib/setup/ingest-job');
+  resetIngestJobForTests();
+  const route = await import('@/app/api/setup/models/route');
+  const saved = await route.POST(
+    call('POST', '/api/setup/models', {
+      chat: 'anthropic:claude-sonnet-5-5',
+      judge: 'openai:gpt-5.4',
+      embed: 'ollama:nomic-embed-text',
+    }),
+  );
+  expect(saved.status).toBe(200);
+  const body = (await saved.json()) as { current: { chat: string; embed: string } };
+  expect(body.current).toMatchObject({
+    chat: 'anthropic:claude-sonnet-5-5',
+    embed: 'ollama:nomic-embed-text',
+  });
+  expect(getKitConfig(false).models).toMatchObject({
+    chat: { provider: 'anthropic', model: 'claude-sonnet-5-5' },
+    judge: { provider: 'openai', model: 'gpt-5.4' },
+    embed: { provider: 'ollama', model: 'nomic-embed-text', dimensions: 768 },
+  });
+  // Saving changes the configuration only; step 4 asks before anything is indexed.
+  expect(currentJob()).toBeNull();
+  // The current embedding model again is not an error here, unlike Settings.
+  expect(
+    (await route.POST(call('POST', '/api/setup/models', { embed: 'ollama:nomic-embed-text' })))
+      .status,
+  ).toBe(200);
+  for (const change of [{}, { chat: 'nope' }, { embed: 'openai:gpt-6-luna' }, { extra: 1 }])
+    expect((await route.POST(call('POST', '/api/setup/models', change))).status).toBe(400);
+
+  const store = globalThis as typeof globalThis & { __sourcedIngestJob?: unknown };
+  store.__sourcedIngestJob = { id: 'x', status: 'running', rebuild: false };
+  const busy = await route.POST(call('POST', '/api/setup/models', { chat: 'openai:gpt-5.4' }));
+  expect(busy.status).toBe(409);
+  resetIngestJobForTests();
+});
+
 test('T-92 data: export a chat as Markdown, delete all chats, remove a source and its documents', async () => {
   const { createChat, appendTurn } = await import('@/lib/chats/store');
   const { getSql } = await import('@/lib/db/client');

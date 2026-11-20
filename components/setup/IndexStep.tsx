@@ -100,7 +100,10 @@ export function IndexStep({
     setStarting(true);
     setStartError(null);
     try {
-      const { job: started } = await setupApi.startIngest(rebuild);
+      // The estimate said the embedding model changed: the run must rebuild to succeed.
+      const { job: started } = await setupApi.startIngest(
+        rebuild || estimate?.rebuildRequired === true,
+      );
       setJob(started);
       follow(started.id);
     } catch (error) {

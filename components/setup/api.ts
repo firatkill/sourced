@@ -66,6 +66,8 @@ export const setupApi = {
       `/api/setup/key?provider=${encodeURIComponent(provider)}`,
       { method: 'DELETE' },
     ),
+  setupModels: (change: { chat?: string; judge?: string; embed?: string }) =>
+    request<ModelOptions>('/api/setup/models', json(change)),
   // T-91: Settings › Models and keys
   models: () => request<ModelOptions>('/api/settings/models', { cache: 'no-store' }),
   saveModels: (change: { chat?: string; judge?: string }) =>

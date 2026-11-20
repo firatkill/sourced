@@ -146,7 +146,7 @@ export async function ingestProgress(sql: postgres.Sql): Promise<IngestProgress 
 
 /** The numbers behind the cost confirm (setup step 4, Settings rebuild). */
 export async function estimateSummary(options: { rebuild?: boolean; config?: KitConfig } = {}) {
-  const result = (await estimateIngest(options)) as {
+  type DryRun = {
     totals: {
       documents: { discovered: number; skipped: number };
       embeddingTokens: number;
@@ -154,6 +154,11 @@ export async function estimateSummary(options: { rebuild?: boolean; config?: Kit
     };
     warnings?: { code: string }[];
   };
+  let result = (await estimateIngest(options)) as DryRun;
+  const rebuildRequired = (result.warnings ?? []).some((w) => w.code === 'CORPUS_MISMATCH');
+  // A new embedding model (setup's Advanced settings) re-embeds everything: price that run.
+  if (rebuildRequired && !options.rebuild)
+    result = await estimateIngest({ ...options, rebuild: true });
   const { getEnv } = await import('@/lib/env');
   const env = getEnv();
   const embed = (options.config ?? readConfig()).models.embed;
@@ -165,7 +170,7 @@ export async function estimateSummary(options: { rebuild?: boolean; config?: Kit
     // Mock mode replaces every provider, so the page says nothing leaves the computer.
     provider: env.LLM_MODE === 'mock' ? 'mock' : embed.provider,
     model: env.LLM_MODE === 'mock' ? 'mock' : embed.model,
-    rebuildRequired: (result.warnings ?? []).some((w) => w.code === 'CORPUS_MISMATCH'),
+    rebuildRequired,
     confirmAboveUsd: env.INGEST_CONFIRM_ABOVE_USD,
   };
 }

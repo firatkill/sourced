@@ -97,3 +97,20 @@ export function withEmbedding(config: KitConfig, id: string): KitConfig {
   };
   return parseKitConfig(next);
 }
+
+/**
+ * Setup's Advanced settings: every model is chosen before the first index, so a new
+ * embedding model is saved at once. Step 4's estimate then reports a rebuild if the
+ * index already holds passages from another model.
+ */
+export function withSetupModels(
+  config: KitConfig,
+  change: { chat?: string; judge?: string; embed?: string },
+): KitConfig {
+  const next = withModels(config, {
+    ...(change.chat ? { chat: change.chat } : {}),
+    ...(change.judge ? { judge: change.judge } : {}),
+  });
+  const current = `${next.models.embed.provider}:${next.models.embed.model}`;
+  return change.embed && change.embed !== current ? withEmbedding(next, change.embed) : next;
+}

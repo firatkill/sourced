@@ -6,6 +6,7 @@ import { useState, type ReactNode } from 'react';
 import { setupApi, type SetupStatus, type UploadResult } from './api';
 import { IndexStep } from './IndexStep';
 import { KeyField } from './KeyField';
+import { AdvancedSettings } from './AdvancedSettings';
 import { DocumentAdder, SKIP_REASONS } from './DocumentAdder';
 
 const STEPS = ['Data', 'Provider', 'Documents', 'Index'] as const;
@@ -188,18 +189,20 @@ function DataStep({ status, onDone }: { status: SetupStatus; onDone: (example: b
 
 function ProviderStep({
   status,
+  onStatus,
   onBack,
   onDone,
 }: {
   status: SetupStatus;
+  onStatus: (status: SetupStatus) => void;
   onBack?: () => void;
   onDone: () => void;
 }) {
-  const [saved, setSaved] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(status.providers.map((p) => [p.id, p.saved])),
-  );
+  // Keys saved on this step; a provider chosen in Advanced settings starts from the server.
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const used = status.providers.filter((provider) => provider.used);
-  const ready = status.llmMode === 'mock' || used.every((provider) => saved[provider.id]);
+  const ready =
+    status.llmMode === 'mock' || used.every((provider) => saved[provider.id] ?? provider.saved);
   return (
     <>
       <Heading
@@ -230,6 +233,11 @@ function ProviderStep({
             <span className="font-mono">{status.ollama.baseUrl}</span>. Nothing leaves it.
           </p>
         )}
+        <AdvancedSettings
+          onSaved={() => {
+            void setupApi.status().then(onStatus);
+          }}
+        />
       </div>
       <Nav back={onBack} next={onDone} disabled={!ready} />
     </>
@@ -358,6 +366,7 @@ export function SetupWizard({ initial }: { initial: SetupStatus }) {
           {step === 2 && (
             <ProviderStep
               status={status}
+              onStatus={setStatus}
               {...(initial.library.example
                 ? {
                     onBack: () => {
