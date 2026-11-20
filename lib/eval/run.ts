@@ -452,7 +452,8 @@ export async function runEval(
       throw new EvalAbort(2, 'Missing golden anchors; run pnpm eval:validate');
     const runDate = new Date();
     const resultsDir =
-      profile === 'example' ? env.EVAL_RESULTS_DIR : `eval/${config.corpus.name}/results`;
+      (profile === 'example' ? env.EVAL_RESULTS_DIR : undefined) ??
+      `eval/${config.corpus.name}/results`;
     const stem = await resultFileStem(resultsDir, () => runDate, exists);
     stage = 'baseline loading';
     const baseline = await loadBaseline(

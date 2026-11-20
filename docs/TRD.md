@@ -510,7 +510,7 @@ export const ACCESS = {
 | `INGEST_INCLUDE_FIXTURES` | No | `false` | `true` ingests `corpus/fixtures/*` (tests and eval only, FR-39). |
 | `INGEST_CONFIRM_ABOVE_USD` | no | `1.00` | Nonnegative USD threshold for ingest confirmation (§33.8). |
 | `EVAL_MAX_COST_USD` | Eval | `1.00` | Budget guard (FR-44). |
-| `EVAL_RESULTS_DIR` | No | `eval/postgres-17/results` | Directory read by `/eval`. E2E sets `tests/fixtures/eval-results`. |
+| `EVAL_RESULTS_DIR` | No | `eval/<corpus.name>/results` *(T-86; was `eval/postgres-17/results`)* | Directory read by `/eval` and written by the example's eval run. E2E sets `tests/fixtures/eval-results`. |
 | `MOCK_STREAM_DELAY_MS` | No | `10` | Delay between mock tokens. |
 | `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_GIT_COMMIT_SHA`, `VERCEL` | Set by Vercel | — | Read only. `VERCEL` (any value) makes `pnpm ingest` refuse to run (section 10.7). |
 | `NODE_ENV` | Set by Next.js / Vitest | — | Read only. `development` enables `'unsafe-eval'` in the CSP; anything other than `production` enables SSE event validation in `send()` (section 12.3). |
@@ -1987,7 +1987,7 @@ Status line text is derived, not stored: `submitting` → "Searching the docs…
 
 ### 15.7 `/eval` page
 
-Server component reads results through `lib/eval/load-results.ts`: list `EVAL_RESULTS_DIR/*.json` (resolved against `process.cwd()`), parse each with `EvalResult` schema (section 17.6), skip invalid files with a server log warning, sort by `runId` ascending; the last is the latest run and "previous" for deltas is the one before it. The page passes the parsed runs to `components/eval/EvalView.tsx`, a synchronous component that renders the empty state when the array is empty (UT-31 renders `<EvalView runs={[]} />`; async server components cannot be rendered by React Testing Library).
+Server component reads results through `lib/eval/load-results.ts`: list `EVAL_RESULTS_DIR/*.json` (default `eval/<corpus.name>/results`, so a user corpus never shows the example's runs; T-86) (resolved against `process.cwd()`), parse each with `EvalResult` schema (section 17.6), skip invalid files with a server log warning, sort by `runId` ascending; the last is the latest run and "previous" for deltas is the one before it. The page passes the parsed runs to `components/eval/EvalView.tsx`, a synchronous component that renders the empty state when the array is empty (UT-31 renders `<EvalView runs={[]} />`; async server components cannot be rendered by React Testing Library).
 
 Cell formats: "Recall@5" and "RR" to 2 decimals, "—" for non-answerable rows; "Faithfulness" as `0`, `0.5`, `1` or "—"; "Citations" as `{valid} / {valid + invalid}`; "Latency" as seconds with 1 decimal plus " s"; metric card values to 2 decimals except latency (`{p50} s / {p95} s`, 1 decimal) and cost (`$` + 4 decimals); deltas signed to 2 decimals with a true minus sign (−). `next.config.ts` sets `outputFileTracingIncludes: { '/eval': ['./eval/postgres-17/results/**/*.json'] }` so the files are bundled into the Vercel function. `TrendChart` is a 160 × 40 inline SVG polyline with an accessible `<title>` listing the values; no chart library. Table filter state is client-side.
 

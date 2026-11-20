@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Palette } from 'lucide-react';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
@@ -24,6 +25,8 @@ type Props = {
     | undefined;
 };
 export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) {
+  const pathname = usePathname();
+  const current = (href: string) => (pathname === href ? ('page' as const) : undefined);
   const [selection, setSelection] = useState<{ id: number; count: number } | null>(null);
   const currentId = selection?.count === turns.length ? selection.id : turns.at(-1)?.id;
   const [open, setOpen] = useState(false);
@@ -127,6 +130,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
           <a
             className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-[9px] text-sm text-[var(--ink-2)] hover:bg-[var(--rule)] hover:no-underline"
             href="/eval"
+            aria-current={current('/eval')}
           >
             <ChatIcon name="chart" />
             Evaluation
@@ -134,6 +138,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
           <a
             className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 py-[9px] text-sm text-[var(--ink-2)] hover:bg-[var(--rule)] hover:no-underline"
             href="/how-it-works"
+            aria-current={current('/how-it-works')}
           >
             <ChatIcon name="info" />
             How it works
@@ -147,6 +152,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
           </a>
           <Link
             href="/settings/appearance"
+            aria-current={current('/settings/appearance')}
             className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
           >
             <Palette size={16} aria-hidden="true" />
@@ -179,7 +185,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
   );
   return (
     <>
-      <div className="hidden h-dvh w-[264px] shrink-0 overflow-y-auto border-r border-[var(--rule)] bg-[var(--rail)] md:block">
+      <div className="hidden h-dvh w-[264px] shrink-0 overflow-y-auto border-r border-[var(--rule)] bg-[var(--rail)] md:sticky md:top-0 md:block">
         {content}
       </div>
       <header className="flex h-[60px] shrink-0 items-center justify-between border-b border-[var(--rule)] px-4 md:hidden">

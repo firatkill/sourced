@@ -433,7 +433,7 @@ Document title: "Evaluation · Sourced"
   - A secondary row under the retrieval cards: "Without reranking: Recall@5 {x} · Recall@10 {y} · MRR {z}".
 - H2: "Trend" with one small line chart per metric across all committed runs. Caption: "Each point is one committed run."
 - H2: "Questions". Filter buttons: "All", "Failures only". Table columns: "ID", "Question", "Type", "Recall@5", "RR", "Faithfulness", "Citations", "Result", "Latency". Type values: "Answerable", "Unanswerable", "Injection". Result values: "Pass", "Fail". Row expands to show the answer, cited passages and judge notes.
-- Empty state: H2 "No evaluation runs yet". Body: "Run pnpm eval and commit the file it writes to eval/postgres-17/results."
+- Empty state *(amended v2.2, T-86)*: H2 "No evaluation for these documents yet". Body: "Draft questions from your documents with {command} eval:generate, review them with {command} eval:review, then run {command} eval. Results are written to {results directory}." `{command}` is the launcher in use; the results directory is `eval/<corpus.name>/results` unless `EVAL_RESULTS_DIR` is set.
 - Methodology section (H2 "How these numbers are computed"): one short paragraph per metric matching TRD section 17.4.
 
 ### 9.6 `/how-it-works`
