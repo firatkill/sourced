@@ -129,7 +129,10 @@ function Choice({
 }
 
 function DataStep({ status, onDone }: { status: SetupStatus; onDone: (example: boolean) => void }) {
-  const [choice, setChoice] = useState<'own' | 'example'>('own');
+  // An example that is already indexed stays chosen, so Continue never removes it by accident.
+  const [choice, setChoice] = useState<'own' | 'example'>(
+    status.library.example && status.library.documents > 0 ? 'example' : 'own',
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
