@@ -6,7 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
-- Setup in the browser: `./sourced dev` starts without `.env.local` and prints a one-time setup link. The browser walks through the data choice, the provider key (checked with one free request, saved in `.env.local`), your documents (upload files or a folder, or add a web page) and a cost confirm, then shows indexing progress. `./sourced setup` prints a new link.
+- Setup in the browser: `./sourced dev` starts without `.env.local` and prints a one-time setup link. The browser walks through the data choice, the provider key (checked with one free request, saved in `.env.local`), your documents (upload files or a folder, or add a web page) and a cost confirm, then shows indexing progress. An **Advanced settings** section on the provider step picks the answer, quality-check and embedding models before anything is indexed. `./sourced setup` prints a new link.
 - Settings, in the local profile: **Models and keys** (replace or remove keys, check Ollama, switch the answer and quality-check models without a restart, and change the embedding model with a rebuild estimate first), **Library** (sources, add, remove, re-index, remove the example) and **Chats and data** (download a chat as Markdown, delete all chats).
 - Saved chats: the sidebar lists your chats by day with search, rename, pin, delete and projects; a chat reopens exactly as it was answered, even after a re-ingest. `./sourced reset --chats` removes them. The hosted demo keeps chats in the tab only.
 - Follow-up questions: a question that refers back ("Can it also be unique?") is rewritten into a standalone question before searching, and the answer shows what was searched for.

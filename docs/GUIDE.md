@@ -104,6 +104,8 @@ What protects these pages, which can save keys and spend money:
 
 Indexing from the browser runs the same `ingest` as the CLI, one run at a time, and its progress comes from the database, so closing the tab does not stop it. Uploads go to `my-docs/` (ignored by Git) and use the folder source's types and 50 MB limit; for a large folder use `./sourced add <folder>`. Changing the embedding model in Settings shows the rebuild estimate first; after you confirm, it saves the model and rebuilds the index, and answers pause until the rebuild finishes. Answer and quality-check models apply to the next question without a restart.
 
+The Provider step has a closed **Advanced settings** section for choosing the answer, quality-check and embedding models before anything is indexed. A provider chosen there gets its own key field on the same step, and the Index step prices the run with the chosen embedding model. Passage size and search depth are left to the `sourced-tune` skill, which changes them against an evaluation.
+
 ## Node path (contributors)
 
 Install Node.js 22 or newer and pnpm 10.18.3. The CLI is the same; run it through pnpm instead of the Docker launcher:

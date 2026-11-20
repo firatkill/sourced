@@ -1122,7 +1122,8 @@ Reviewer items (done on `v2.3/setup-settings`, 2026-11-20):
 - [x] T-88 to T-92 committed; lint, typecheck, unit, integration, contract and the setup E2E specs pass locally.
 - [x] Security review of the setup and settings routes recorded: `qa/release-v2/security-review-v2.3.md`.
 - [x] Docs: TRD §43, D-146 to D-148, README quick start (`./sourced dev`, then the browser), GUIDE, CHANGELOG, `sourced-setup` skill (browser path first).
-- [ ] Newcomer rehearsal on a clean clone with only Docker reaches a cited answer through the browser (`qa/release-v2/rehearsal-browser-setup.md`).
+- [x] Newcomer rehearsal on a clean clone with only Docker reaches a cited answer through the browser (`qa/release-v2/rehearsal-browser-setup.md`).
+- [x] Advanced settings on the Provider step (D-149), from the owner's request after the rehearsal.
 - [ ] One live eval run after all v2.2 and v2.3 development, with the owner's yes for its cost (about $0.40).
 
 Owner items (need the owner's yes):

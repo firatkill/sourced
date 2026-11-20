@@ -110,13 +110,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | 9903da3 |
 | T-91 | M11 Setup and settings | Settings › Models and keys | done | 82dc4d9 |
 | T-92 | M11 Setup and settings | Settings › Library, Chats and data | done | 652e90e |
-| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | doing (docs HEAD; newcomer rehearsal, eval, merge and tag remain) | |
-| T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | todo | |
-| T-89 | M11 Setup and settings | Setup and settings APIs | todo | |
-| T-90 | M11 Setup and settings | `/setup` steps 1–4 | todo | |
-| T-91 | M11 Setup and settings | Settings › Models and keys | todo | |
-| T-92 | M11 Setup and settings | Settings › Library, Chats and data | todo | |
-| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | todo | |
+| T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | doing (docs, Advanced settings and newcomer rehearsal HEAD; eval, merge and tag remain) | |
 
 ## Open questions for the owner
 
