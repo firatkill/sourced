@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { getEnv } from '@/lib/env';
 import { setupRoute } from '@/lib/setup/http';
 import { estimateIngest } from '@/lib/setup/ingest-job';
-import { readConfig } from '@/lib/setup/config';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -20,7 +20,8 @@ export function POST(request: Request): Promise<Response> {
       };
       warnings?: { code: string }[];
     };
-    const embed = readConfig().models.embed;
+    // Mock mode replaces the providers (getKitConfig applies it), so the page says so.
+    const embed = getKitConfig().models.embed;
     return Response.json({
       documents: result.totals.documents.discovered,
       skipped: result.totals.documents.skipped,

@@ -9,10 +9,15 @@ export const dynamic = 'force-dynamic';
 const Body = z.strictObject({ confirm: z.literal(true), rebuild: z.boolean().optional() });
 
 export function POST(request: Request): Promise<Response> {
-  return setupRoute(request, ({ body }) => {
+  return setupRoute(request, async ({ body }) => {
     const { rebuild } = Body.parse(body);
     const { job, started } = startIngest({ rebuild: rebuild === true });
-    return Promise.resolve(Response.json({ job }, { status: started ? 202 : 200 }));
+    // The same shape as GET and the event stream, so the page can render it at once.
+    const progress = (await ingestProgress(getSql())) ?? {
+      ...job,
+      documents: { total: 0, done: 0, failed: 0, skipped: 0 },
+    };
+    return Response.json({ job: progress }, { status: started ? 202 : 200 });
   });
 }
 

@@ -4,13 +4,29 @@
 // silently with a stack trace in the container log.
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { initializeDatabase } from '@/lib/cli/commands/database';
+import { connectDatabase, initializeDatabase } from '@/lib/cli/commands/database';
 import { errorEnvelope } from '@/lib/cli/router';
 import { redact } from '@/lib/cli/output';
 import { allowSetupMode, getCliSecrets, getEnv, setupState } from '@/lib/env';
 import { issueSetupToken } from '@/lib/setup/token';
 import { loadConfig } from '@/lib/kit/load-config';
 import { forLauncher, getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
+
+/** T-90: an empty index also sends the browser to setup, so the launcher prints the link. */
+async function indexIsEmpty(): Promise<boolean> {
+  if (getKitConfig().profile !== 'local') return false;
+  const sql = connectDatabase();
+  try {
+    const [row] = await sql<
+      { documents: number }[]
+    >`SELECT count(*)::int AS documents FROM documents`;
+    return (row?.documents ?? 0) === 0;
+  } catch {
+    return false;
+  } finally {
+    await sql.end();
+  }
+}
 
 export async function startApp(root = process.cwd()): Promise<boolean> {
   const directory = path.join(root, '.sourced');
@@ -29,7 +45,7 @@ export async function startApp(root = process.cwd()): Promise<boolean> {
     getEnv();
     await initializeDatabase(getKitConfig());
     issueSetupToken(root, false);
-    if (setupState().required) await writeFile(files.pending, '');
+    if (setupState().required || (await indexIsEmpty())) await writeFile(files.pending, '');
     return true;
   } catch (error) {
     const { envelope } = errorEnvelope('dev', error);

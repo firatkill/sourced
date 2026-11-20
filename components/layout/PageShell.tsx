@@ -8,7 +8,10 @@ export function PageShell({ children, footer }: { children: ReactNode; footer: R
   const pathname = usePathname();
   // The ask page, saved chats and projects bring their own shell with the sidebar (T-83).
   // T-86: content pages render their own ContentShell too; only not-found keeps the top bar.
-  const ownShell = ['/', '/eval', '/how-it-works', '/settings/appearance'].includes(pathname);
+  // T-90: /setup has its own header and stepper.
+  const ownShell = ['/', '/eval', '/how-it-works', '/settings/appearance', '/setup'].includes(
+    pathname,
+  );
   if (ownShell || pathname.startsWith('/c/') || pathname.startsWith('/p/')) return children;
   return (
     <>
