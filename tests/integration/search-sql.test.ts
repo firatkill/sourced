@@ -100,3 +100,55 @@ test('TC-050 / TC-074: D-76 meta reports 40 vector and 17 FTS candidates before 
     await sql`DELETE FROM documents WHERE slug = 'candidate-counts.html'`;
   }
 });
+
+test('D-150: a scoped search returns only chunks from the listed sources, in both rankers', async () => {
+  const sql = getSql();
+  await insertSearchChunks(sql, 'scope-handbook.md', [
+    { content: 'A partial index predicate in the handbook.', vector: searchQueryVector },
+  ]);
+  await insertSearchChunks(sql, 'scope-contracts.md', [
+    { content: 'A partial index predicate in a contract.', vector: searchQueryVector },
+  ]);
+  await sql`UPDATE documents SET source_id = 'handbook' WHERE slug = 'scope-handbook.md'`;
+  await sql`UPDATE documents SET source_id = 'contracts' WHERE slug = 'scope-contracts.md'`;
+  try {
+    const scoped = await search(
+      searchQueryVector,
+      'partial index predicate',
+      {},
+      {
+        sourceIds: ['handbook'],
+      },
+    );
+    expect(scoped.chunks.map((chunk) => chunk.slug)).toEqual(['scope-handbook.md']);
+    expect(scoped.chunks[0]).toMatchObject({ vectorRank: 1, ftsRank: 1 });
+    expect(scoped).toMatchObject({ vectorCandidates: 1, ftsCandidates: 1 });
+    const both = await search(
+      searchQueryVector,
+      'partial index predicate',
+      {},
+      {
+        sourceIds: ['handbook', 'contracts'],
+      },
+    );
+    expect(new Set(both.chunks.map((chunk) => chunk.slug))).toEqual(
+      new Set(['scope-handbook.md', 'scope-contracts.md']),
+    );
+    const gone = await search(
+      searchQueryVector,
+      'partial index predicate',
+      {},
+      {
+        sourceIds: ['removed'],
+      },
+    );
+    expect(gone).toMatchObject({ chunks: [], vectorCandidates: 0, ftsCandidates: 0 });
+    // Without a scope, every source is searched as before.
+    const all = await search(searchQueryVector, 'partial index predicate');
+    expect(all.chunks.map((chunk) => chunk.slug)).toEqual(
+      expect.arrayContaining(['scope-handbook.md', 'scope-contracts.md', 'rank.html']),
+    );
+  } finally {
+    await sql`DELETE FROM documents WHERE slug IN ('scope-handbook.md', 'scope-contracts.md')`;
+  }
+});

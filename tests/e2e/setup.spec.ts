@@ -163,6 +163,48 @@ test('T-91: Settings saves a key, switches the answer model and rebuilds for a n
   await expect(page.getByLabel('Search (embeddings)')).toHaveValue('openai:text-embedding-3-large');
 });
 
+test('T-94: a project limited to one source says so and answers from it', async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto(`${base}/setup?token=${SETUP_FIXTURE_TOKEN}`);
+  const created = await page.request.post(`${base}/api/projects`, {
+    headers: { origin: base },
+    data: { name: `Handbook ${String(Date.now())}` },
+  });
+  expect(created.status()).toBe(201);
+  const { project } = (await created.json()) as { project: { id: string } };
+  await page.goto(`${base}/p/${project.id}`);
+  const scope = page.getByRole('region', { name: 'Search in' });
+  await expect(scope.getByRole('radio', { name: 'Everything in the library' })).toBeChecked();
+  await scope.getByRole('radio', { name: 'Only these sources' }).check();
+  await expect(scope.getByRole('button', { name: 'Save search scope' })).toBeDisabled();
+  await scope.getByRole('checkbox', { name: /my-docs\// }).check();
+  await scope.getByRole('button', { name: 'Save search scope' }).click();
+  await expect(scope.getByRole('status')).toHaveText(
+    'Saved. Chats in this project search 1 source.',
+  );
+
+  await page.getByRole('link', { name: 'New chat in this project' }).click();
+  await expect(page.getByText('Searching only my-docs/')).toBeVisible();
+  await page.getByRole('textbox', { name: 'Your question' }).fill('Where may staff work?');
+  await page.getByRole('button', { name: 'Ask', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: /^Answer ready/ })).toBeVisible();
+  // The scope line stays under the composer once the chat has turns.
+  await expect(page.getByText('Searching only my-docs/')).toBeVisible();
+  const chatId = new URL(page.url()).pathname.split('/').at(-1) ?? '';
+
+  await page.goto(`${base}/p/${project.id}`);
+  await scope.getByRole('radio', { name: 'Everything in the library' }).check();
+  await scope.getByRole('button', { name: 'Save search scope' }).click();
+  await expect(scope.getByRole('status')).toHaveText(
+    'Saved. Chats in this project search everything.',
+  );
+  // Leave the chat list as T-92 expects it.
+  const removed = await page.request.delete(`${base}/api/chats/${chatId}`, {
+    headers: { origin: base },
+  });
+  expect(removed.status()).toBe(204);
+});
+
 test('T-92: Library adds a file and re-indexes; a chat downloads as Markdown; all chats and a source are removed', async ({
   page,
 }) => {

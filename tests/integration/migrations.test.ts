@@ -162,6 +162,7 @@ test('TC-029: IT-03 all tables, primary keys and operational constraints match t
       'query_log_outcome_check',
       'query_log_question_length_check',
       'projects_name_check',
+      'projects_source_ids_check',
       'chats_title_check',
       'chats_title_source_check',
       'turns_position_check',

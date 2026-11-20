@@ -26,6 +26,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 | M9 Chat and integrations *(v2.1)* | planned | MCP server, API and widget, dedicated rerankers (PRD FR-86, FR-92, FR-93; follow-ups (FR-91) moved to M10); tasks are written when v2.0.0 ships |
 | M10 Chat app *(v2.2)* | T-79 – T-87 | Own-documents-first copy, five themes, saved chats and projects, sources open the original file, follow-up questions, every page in one shell; v2.2.0 (D-140 to D-145, `docs/REDESIGN-v2.md`) |
 | M11 Setup and settings in the browser *(v2.3)* | T-88 – T-93 | `./sourced dev` then the browser reaches a cited answer with no other terminal step; keys, models, library and chat data managed in Settings; v2.3.0 |
+| M12 Project search scope *(v2.4)* | T-94 – T-98 | A project's chats search only the library sources it names; example banner points to Settings › Library; `/eval` hydration flake; dependency alerts; v2.4.0 (D-150, D-151) |
 
 ---
 
@@ -969,6 +970,42 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 - **Files**: `README.md` (quick start: `./sourced dev`, then the browser), `.agents/skills/sourced-setup/SKILL.md` (browser path first, CLI kept), `docs/GUIDE.md`, `CHANGELOG.md`, `qa/release-v2/`.
 - **Acceptance**: newcomer rehearsal on a clean machine reaches a cited answer; a security review of the setup and settings routes is recorded; v2.3 release checklist.
 - **Depends on**: T-90, T-92
+
+---
+
+## M12 Project search scope *(v2.4)*
+
+### T-94 Project search scope
+
+- **Implements**: D-145, D-150
+- **Files**: `drizzle/0005_project_scope.sql` (additive: `projects.source_ids text[]`, null means the whole library), `lib/chats/store.ts`, `app/api/projects/**`, `lib/retrieval/search.ts` and `pipeline.ts` (optional source filter), `lib/generation/answer.ts`, `app/api/ask/route.ts` (scope read from the chat's project on the server), `components/projects/ProjectView.tsx`, `components/ask/AskApp.tsx`.
+- **Acceptance**: a project limited to one source answers only from it (integration test on the search query and the ask route); the unscoped query text is unchanged; the project page sets and clears the scope; the composer line names the project's sources; a source removed from the library is shown as missing and does not widen the scope.
+- **Depends on**: T-93
+
+### T-95 Example banner points to Settings › Library
+
+- **Implements**: D-151; rehearsal finding 4 (`qa/release-v2/rehearsal-browser-setup.md`)
+- **Files**: `components/ask/ExampleBanner.tsx`, `components/ask/AskPage.tsx`, `lib/copy.ts`.
+- **Acceptance**: in the local profile the banner links to Settings › Library and no longer shows `reset` and `add` commands; E2E checks the link.
+- **Depends on**: T-93
+
+### T-96 `/eval` hydration flake
+
+- **Files**: `app/eval/**`, `components/eval/**` as the cause requires.
+- **Acceptance**: the cause is found and fixed, or recorded with evidence if it cannot be reproduced; the `/eval` E2E passes 20 repeated runs.
+- **Depends on**: T-93
+
+### T-97 Dependency alerts
+
+- **Files**: `package.json`, `pnpm-lock.yaml`.
+- **Acceptance**: every open Dependabot alert is fixed by an update within the same major version or recorded with the reason it stays; lint, typecheck, all test projects and the build pass.
+- **Depends on**: T-93
+
+### T-98 Docs and v2.4.0
+
+- **Files**: `docs/TRD.md` §44, `docs/PRD.md` (D-150, D-151), `docs/GUIDE.md`, `CHANGELOG.md`, `docs/PROGRESS.md`.
+- **Acceptance**: v2.4 release checklist; one live eval after all v2.4 development only if retrieval changed for unscoped questions (owner's yes for its cost).
+- **Depends on**: T-94 to T-97
 
 ---
 

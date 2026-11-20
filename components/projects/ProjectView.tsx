@@ -9,7 +9,8 @@ import { Modal } from '@/components/ask/Modal';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
 import { announceChatsChanged, chatApi, type ChatItem, type ProjectItem } from '@/lib/chats/client';
 import { PROJECT_COPY, type CorpusCopy } from '@/lib/copy';
-import { updatedAgo } from '@/lib/library/format';
+import { updatedAgo, type LibrarySource } from '@/lib/library/format';
+import { ProjectScope } from './ProjectScope';
 
 /** T-83 / REDESIGN-v2 §7: a project's page with its chats ("Rename, move and projects"). */
 export function ProjectView({
@@ -17,12 +18,14 @@ export function ProjectView({
   initial,
   project: initialProject,
   chats,
+  sources,
   now,
 }: {
   copy: CorpusCopy;
   initial: SidebarData;
   project: ProjectItem;
   chats: ChatItem[];
+  sources: LibrarySource[];
   now: string;
 }) {
   const router = useRouter();
@@ -151,6 +154,8 @@ export function ProjectView({
               {error}
             </p>
           )}
+
+          <ProjectScope project={project} sources={sources} onSaved={setProject} />
 
           <section aria-labelledby="project-chats" className="mt-10">
             <h2 id="project-chats" className="mb-3">

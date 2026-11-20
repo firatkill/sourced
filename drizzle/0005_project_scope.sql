@@ -1,0 +1,2 @@
+ALTER TABLE "projects" ADD COLUMN "source_ids" text[];--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_source_ids_check" CHECK ("projects"."source_ids" IS NULL OR cardinality("projects"."source_ids") BETWEEN 1 AND 50);

@@ -7,6 +7,24 @@ export type LibraryFacts = {
   lastIngestAt: string | null;
 };
 
+/** D-150: one indexed source a project's search can be limited to. */
+export type LibrarySource = { id: string; label: string; documents: number };
+
+/** Labels for a project's scope; ids no longer indexed keep their id and are marked missing. */
+export function scopeLabels(
+  sourceIds: readonly string[],
+  sources: readonly LibrarySource[],
+): { id: string; label: string; missing: boolean }[] {
+  const known = new Map(sources.map((source) => [source.id, source.label]));
+  return sourceIds.map((id) => ({ id, label: known.get(id) ?? id, missing: !known.has(id) }));
+}
+
+/** Composer line in a limited project: "Searching only handbook/ and contracts/". */
+export function scopedSearchingLine(labels: readonly string[]): string | null {
+  const line = searchingLine({ documents: 1, sources: [...labels], lastIngestAt: null });
+  return line === null ? null : line.replace(/^Searching /, 'Searching only ');
+}
+
 export function documentCount(count: number): string {
   return count === 1 ? '1 document' : `${String(count)} documents`;
 }

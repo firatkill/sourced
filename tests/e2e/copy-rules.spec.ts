@@ -37,10 +37,12 @@ test('T-80: the example in the local profile explains how to switch, and can be 
   await openAsk(page, info, 3103);
   const banner = page.getByRole('complementary', { name: 'About the example' });
   await expect(banner).toContainText("You're trying Sourced with an example");
-  await expect(banner.locator('code')).toHaveText([
-    'pnpm sourced reset',
-    'pnpm sourced add ./my-docs',
-  ]);
+  // D-151: the banner points to Settings › Library instead of terminal commands.
+  await expect(banner.getByRole('link', { name: 'Open Library' })).toHaveAttribute(
+    'href',
+    '/settings/library',
+  );
+  await expect(banner.locator('code')).toHaveCount(0);
   await expect(page.locator('#suggested-heading')).toBeVisible();
   await expect(page.getByText(/^\d+ documents? · updated .+$/)).toBeVisible();
   await banner.getByRole('button', { name: 'Hide this notice' }).click();

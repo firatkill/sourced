@@ -6,6 +6,7 @@ import {
   ChatTitle,
   ProjectDescription,
   ProjectName,
+  ProjectSourceIds,
   TurnAnswer,
   TurnStatus,
   chatTitle,
@@ -21,6 +22,7 @@ const ProjectRow = z.object({
   id: Uuid,
   name: z.string(),
   description: z.string().nullable(),
+  source_ids: z.array(z.string()).nullable(),
   chats: z.number().int().nonnegative(),
   created_at: Time,
   updated_at: Time,
@@ -29,6 +31,8 @@ export type Project = {
   id: string;
   name: string;
   description: string | null;
+  /** D-150: the library sources this project's chats search; null means the whole library. */
+  sourceIds: string[] | null;
   chats: number;
   createdAt: string;
   updatedAt: string;
@@ -39,6 +43,7 @@ const toProject = (row: unknown): Project => {
     id: r.id,
     name: r.name,
     description: r.description,
+    sourceIds: r.source_ids,
     chats: r.chats,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -131,29 +136,35 @@ export async function getProject(id: string, sql: Sql = getSql()): Promise<Proje
 }
 
 export async function createProject(
-  input: { name: string; description?: string | null },
+  input: { name: string; description?: string | null; sourceIds?: string[] | null },
   sql: Sql = getSql(),
 ): Promise<Project> {
   const name = ProjectName.parse(input.name);
   const description = input.description ? ProjectDescription.parse(input.description) : null;
+  const sourceIds = input.sourceIds ? ProjectSourceIds.parse(input.sourceIds) : null;
   const rows = await sql`
-    INSERT INTO projects (name, description) VALUES (${name}, ${description})
+    INSERT INTO projects (name, description, source_ids)
+    VALUES (${name}, ${description}, ${sourceIds})
     RETURNING *, 0 AS chats`;
   return toProject(one(rows, 'Project'));
 }
 
+/** `sourceIds: null` searches the whole library again (D-150). */
 export async function updateProject(
   id: string,
-  input: { name?: string; description?: string | null },
+  input: { name?: string; description?: string | null; sourceIds?: string[] | null },
   sql: Sql = getSql(),
 ): Promise<Project> {
   const name = input.name === undefined ? null : ProjectName.parse(input.name);
   const setDescription = input.description !== undefined;
   const description = input.description ? ProjectDescription.parse(input.description) : null;
+  const setSources = input.sourceIds !== undefined;
+  const sourceIds = input.sourceIds ? ProjectSourceIds.parse(input.sourceIds) : null;
   const rows = await sql`
     UPDATE projects SET
       name = coalesce(${name}, name),
       description = CASE WHEN ${setDescription} THEN ${description} ELSE description END,
+      source_ids = CASE WHEN ${setSources} THEN ${sourceIds}::text[] ELSE source_ids END,
       updated_at = now()
     WHERE id = ${Uuid.parse(id)}
     RETURNING id`;
@@ -236,6 +247,21 @@ export async function updateChat(
 export async function chatExists(id: string, sql: Sql = getSql()): Promise<boolean> {
   const rows = await sql`SELECT 1 FROM chats WHERE id = ${Uuid.parse(id)}`;
   return rows.length > 0;
+}
+
+/**
+ * D-150: the sources a chat searches, read from its project on the server. `undefined` when the
+ * chat does not exist, `null` when it searches the whole library.
+ */
+export async function chatSearchScope(
+  id: string,
+  sql: Sql = getSql(),
+): Promise<string[] | null | undefined> {
+  const rows = await sql<{ source_ids: string[] | null }[]>`
+    SELECT p.source_ids FROM chats c LEFT JOIN projects p ON p.id = c.project_id
+    WHERE c.id = ${Uuid.parse(id)}`;
+  const [row] = rows;
+  return row === undefined ? undefined : row.source_ids;
 }
 
 export async function deleteChat(id: string, sql: Sql = getSql()): Promise<void> {

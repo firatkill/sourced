@@ -33,9 +33,16 @@ type Props = {
   suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
   copy: CorpusCopy;
   /** REDESIGN-v2 §3.3: facts from the index; absent in the hosted demo. */
-  library?: { pill: string; searching: string | null } | undefined;
+  library?:
+    | {
+        pill: string;
+        searching: string | null;
+        /** D-150: set when this chat's project searches only some sources. */
+        scoped?: string | undefined;
+      }
+    | undefined;
   /** Local profile with the bundled example loaded (copy.exampleNotice). */
-  example?: { notice: string; commands: string[] } | undefined;
+  example?: { notice: string } | undefined;
   saved?: SavedChats | undefined;
 };
 export function AskApp(props: Props) {
@@ -43,10 +50,14 @@ export function AskApp(props: Props) {
   const [mode, setMode] = useState(props.demoMode);
   // A new chat starts empty: the server-provided chat and project apply to the first session only.
   const saved = props.saved && session > 0 ? { initial: props.saved.initial } : props.saved;
+  // A new chat is outside the project, so it searches the whole library again.
+  const library =
+    props.library && session > 0 ? { ...props.library, scoped: undefined } : props.library;
   return (
     <Conversation
       key={session}
       {...props}
+      library={library}
       saved={saved}
       demoMode={mode}
       onMode={setMode}
@@ -225,7 +236,7 @@ function Conversation({
                 <DemoOff />
               ) : (
                 <>
-                  {example && <ExampleBanner notice={example.notice} commands={example.commands} />}
+                  {example && <ExampleBanner notice={example.notice} />}
                   <div className="space-y-4">
                     {effectiveMode === 'readonly' ? (
                       <ReadonlyBanner />
@@ -237,8 +248,13 @@ function Conversation({
                     )}
                   </div>
                   {composer}
-                  {library?.searching && suggested.length === 0 && (
-                    <p className="-mt-6 text-sm text-[var(--ink-3)]">{library.searching}</p>
+                  {library?.scoped ? (
+                    <p className="-mt-6 text-sm text-[var(--ink-3)]">{library.scoped}</p>
+                  ) : (
+                    library?.searching &&
+                    suggested.length === 0 && (
+                      <p className="-mt-6 text-sm text-[var(--ink-3)]">{library.searching}</p>
+                    )
                   )}
                   {suggestions}
                   <p className="text-sm text-[var(--ink-3)]">
@@ -288,7 +304,12 @@ function Conversation({
         </div>
         {turns.length > 0 && effectiveMode !== 'off' && (
           <div className="shrink-0 border-t border-[var(--rule)] bg-[var(--ground)] px-4 py-3 sm:px-8">
-            <div className="mx-auto max-w-[760px]">{composer}</div>
+            <div className="mx-auto max-w-[760px]">
+              {composer}
+              {library?.scoped && (
+                <p className="mt-2 text-sm text-[var(--ink-3)]">{library.scoped}</p>
+              )}
+            </div>
           </div>
         )}
         <div role="status" aria-live="polite" className="sr-only" data-ask-status>

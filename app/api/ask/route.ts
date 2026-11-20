@@ -30,7 +30,7 @@ import { cleanup, consume, refund } from '@/lib/ratelimit/limiter';
 import { encodeEvent, startHeartbeat } from '@/lib/sse/encode';
 import { SseEvent } from '@/lib/sse/events';
 import { matchSuggested, SUGGESTED } from '@/lib/suggested';
-import { appendTurn, chatExists } from '@/lib/chats/store';
+import { appendTurn, chatSearchScope } from '@/lib/chats/store';
 import type { TurnAnswer, TurnStatus } from '@/lib/chats/schema';
 
 export const runtime = 'nodejs';
@@ -104,7 +104,10 @@ export async function POST(request: Request): Promise<Response> {
     const { question, suggestedId: suppliedSuggested, chatId, history = [] } = parsed.data;
     if (chatId !== undefined && publicDemo)
       return reject('VALIDATION_FAILED', 400, { field: 'body', reason: 'unknown_field' });
-    if (chatId !== undefined && !(await chatExists(chatId))) return reject('NOT_FOUND', 404);
+    // D-150: the chat's project decides which sources are searched; the client cannot widen it.
+    const sourceIds = chatId === undefined ? null : await chatSearchScope(chatId);
+    if (sourceIds === undefined) return reject('NOT_FOUND', 404);
+    const scope = sourceIds === null ? undefined : { sourceIds };
     const canonical = SUGGESTED.find((entry) => entry.id === suppliedSuggested);
     // T-85: a follow-up depends on earlier turns, so it never matches a prepared answer.
     const suggestedId =
@@ -338,6 +341,7 @@ export async function POST(request: Request): Promise<Response> {
               await answerQuestion({
                 question,
                 history,
+                ...(scope ? { scope } : {}),
                 requestId,
                 signal: abortController.signal,
                 emit,
