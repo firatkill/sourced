@@ -11,13 +11,14 @@ export function GET(request: Request): Promise<Response> {
   );
 }
 
-/** POST /api/projects { name, description? } */
+/** POST /api/projects { name, description?, sourceIds? } */
 export function POST(request: Request): Promise<Response> {
   return chatRoute(request, async (body) => {
     const input = CreateProjectBody.parse(body);
     const project = await createProject({
       name: input.name,
       description: input.description ?? null,
+      sourceIds: input.sourceIds ?? null,
     });
     return Response.json({ project }, { status: 201, headers: noStore });
   });

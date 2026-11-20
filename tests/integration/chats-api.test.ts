@@ -246,3 +246,63 @@ test('T-85: history is validated strictly', async () => {
     expect(response.status).toBe(400);
   }
 });
+
+test('D-150: a project scope is set over the API and the ask route passes it to the pipeline', async () => {
+  const pipelineSpy = vi.spyOn(pipeline, 'answerQuestion').mockImplementation(({ emit }) => {
+    emit({ event: 'meta', data: meta });
+    emit({ event: 'token', data: { delta: citations.answer } });
+    emit({ event: 'citations', data: citations });
+    emit({ event: 'done', data: done });
+    return Promise.resolve({} as Awaited<ReturnType<typeof pipeline.answerQuestion>>);
+  });
+  const { project } = await json<{ project: { id: string; sourceIds: string[] | null } }>(
+    await projectsRoute.POST(call('POST', '/api/projects', { name: 'Handbook only' })),
+  );
+  expect(project.sourceIds).toBeNull();
+  const patched = await projectRoute.PATCH(
+    call('PATCH', `/api/projects/${project.id}`, { sourceIds: ['handbook', 'handbook'] }),
+    params(project.id),
+  );
+  expect((await json<{ project: { sourceIds: string[] } }>(patched)).project.sourceIds).toEqual([
+    'handbook',
+  ]);
+  for (const sourceIds of [[], [''], 'handbook'])
+    expect(
+      (
+        await projectRoute.PATCH(
+          call('PATCH', `/api/projects/${project.id}`, { sourceIds }),
+          params(project.id),
+        )
+      ).status,
+    ).toBe(400);
+
+  const { chat } = await json<{ chat: { id: string } }>(
+    await chatsRoute.POST(
+      call('POST', '/api/chats', { question: 'Leave?', projectId: project.id }),
+    ),
+  );
+  const asked = async (id: string, ip: string) => {
+    const response = await ask(
+      call(
+        'POST',
+        '/api/ask',
+        { question: 'How many days of leave?', chatId: id },
+        { 'x-real-ip': ip },
+      ),
+    );
+    await response.text();
+    await flushAfter();
+  };
+  await asked(chat.id, '192.0.2.81');
+  expect(pipelineSpy).toHaveBeenLastCalledWith(
+    expect.objectContaining({ scope: { sourceIds: ['handbook'] } }),
+  );
+
+  // Clearing the scope searches the whole library again; a chat outside projects has no scope.
+  await projectRoute.PATCH(
+    call('PATCH', `/api/projects/${project.id}`, { sourceIds: null }),
+    params(project.id),
+  );
+  await asked(chat.id, '192.0.2.82');
+  expect(pipelineSpy.mock.lastCall?.[0]).not.toHaveProperty('scope');
+});

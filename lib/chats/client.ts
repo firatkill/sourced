@@ -14,6 +14,7 @@ export type ProjectItem = {
   id: string;
   name: string;
   description: string | null;
+  sourceIds: string[] | null;
   chats: number;
   createdAt: string;
   updatedAt: string;
@@ -60,8 +61,10 @@ export const chatApi = {
     call<{ projects: ProjectItem[] }>('GET', '/api/projects').then((r) => r.projects),
   createProject: (name: string) =>
     call<{ project: ProjectItem }>('POST', '/api/projects', { name }).then((r) => r.project),
-  updateProject: (id: string, input: { name?: string; description?: string | null }) =>
-    call<{ project: ProjectItem }>('PATCH', `/api/projects/${id}`, input).then((r) => r.project),
+  updateProject: (
+    id: string,
+    input: { name?: string; description?: string | null; sourceIds?: string[] | null },
+  ) => call<{ project: ProjectItem }>('PATCH', `/api/projects/${id}`, input).then((r) => r.project),
   deleteProject: (id: string) => call<undefined>('DELETE', `/api/projects/${id}`),
 };
 

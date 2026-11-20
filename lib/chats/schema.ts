@@ -17,6 +17,12 @@ export const CHAT_TITLE_MAX = 60;
 export const ChatTitle = z.string().trim().min(1).max(120);
 export const ProjectName = z.string().trim().min(1).max(80);
 export const ProjectDescription = z.string().trim().max(300);
+/** D-150: source ids as the library stores them; at least one, at most 50, no duplicates. */
+export const ProjectSourceIds = z
+  .array(z.string().trim().min(1).max(200))
+  .min(1)
+  .max(50)
+  .transform((ids) => [...new Set(ids)]);
 
 /** D-144: a chat's automatic title is its first question, cut at a word to 60 characters. */
 export function chatTitle(question: string): string {

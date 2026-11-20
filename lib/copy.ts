@@ -36,10 +36,9 @@ export const ASK_COPY = {
   fileMissing: 'This document is no longer in your library. The passage below is the saved copy.',
   // REDESIGN-v2 §3.2 example banner (local profile only).
   exampleBannerLabel: 'About the example',
-  exampleBannerBefore: 'To use your own documents, run',
-  exampleBannerThen: 'and then',
-  exampleBannerCopy: 'Copy commands',
-  exampleBannerCopied: 'Commands copied',
+  exampleBannerBefore:
+    'To use your own documents, add them in Settings › Library and remove the example there.',
+  exampleBannerLink: 'Open Library',
   exampleBannerHide: 'Hide this notice',
   scopeLink: 'See how it is measured',
   sessionPrivacy:
@@ -172,4 +171,16 @@ export const PROJECT_COPY = {
   deleteBody: 'Its chats are kept and move back to the general list.',
   deleteConfirm: 'Delete project',
   saveError: 'That change was not saved. Try again.',
+  scopeHeading: 'Search in',
+  scopeAll: 'Everything in the library',
+  scopeSome: 'Only these sources',
+  scopeHint:
+    "Chats in this project search only the sources you pick. Answers already given don't change.",
+  scopeNone: 'Pick at least one source.',
+  scopeMissing: 'no longer in the library',
+  scopeEmptyLibrary: 'Nothing is indexed yet, so there are no sources to pick.',
+  scopeSave: 'Save search scope',
+  scopeSavedAll: 'Saved. Chats in this project search everything.',
+  scopeSaved: (count: number) =>
+    `Saved. Chats in this project search ${count === 1 ? '1 source' : `${String(count)} sources`}.`,
 };

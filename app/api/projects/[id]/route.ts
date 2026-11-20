@@ -12,13 +12,14 @@ export function GET(request: Request, { params }: Context): Promise<Response> {
   );
 }
 
-/** PATCH /api/projects/:id { name?, description? } */
+/** PATCH /api/projects/:id { name?, description?, sourceIds? } — `sourceIds: null` searches everything. */
 export function PATCH(request: Request, { params }: Context): Promise<Response> {
   return chatRoute(request, async (body) => {
     const input = UpdateProjectBody.parse(body);
     const project = await updateProject((await params).id, {
       ...(input.name === undefined ? {} : { name: input.name }),
       ...(input.description === undefined ? {} : { description: input.description }),
+      ...(input.sourceIds === undefined ? {} : { sourceIds: input.sourceIds }),
     });
     return Response.json({ project }, { headers: noStore });
   });

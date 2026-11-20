@@ -2,7 +2,7 @@ import 'server-only';
 import { z } from 'zod';
 import type postgres from 'postgres';
 import { getSql } from '@/lib/db/client';
-import type { LibraryFacts } from './format';
+import type { LibrarySource, LibraryFacts } from './format';
 
 const Row = z.object({
   documents: z.number().int().nonnegative(),
@@ -30,4 +30,17 @@ export async function getLibraryFacts(sql: postgres.Sql = getSql()): Promise<Lib
     sources: [...(row.file_sources ?? []).map((id) => `${id}/`), ...(row.web_hosts ?? [])],
     lastIngestAt: row.last_ingest_at?.toISOString() ?? null,
   };
+}
+
+/** D-150: the sources a project can be limited to, one row per indexed source id. */
+export async function listLibrarySources(sql: postgres.Sql = getSql()): Promise<LibrarySource[]> {
+  const rows = await sql<{ id: string; kind: string | null; documents: number }[]>`
+    SELECT source_id AS id, max(source_kind) AS kind, count(*)::integer AS documents
+    FROM documents WHERE NOT is_fixture AND source_id IS NOT NULL
+    GROUP BY source_id ORDER BY source_id`;
+  return rows.map((row) => ({
+    id: row.id,
+    label: row.kind === 'file' ? `${row.id}/` : row.id,
+    documents: row.documents,
+  }));
 }

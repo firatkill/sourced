@@ -3,12 +3,13 @@ import { RETRIEVAL } from '@/lib/config';
 import { AppError, RETRIEVAL_ERROR_MESSAGE } from '@/lib/errors';
 import { embedQuery } from './embed-query';
 import { rerank } from './rerank';
-import { search } from './search';
+import { search, type SearchScope } from './search';
 import type { Passage, RetrievalResult } from './types';
 
 export async function retrieve(
   question: string,
   signal: AbortSignal = new AbortController().signal,
+  scope?: SearchScope,
 ): Promise<RetrievalResult> {
   const started = performance.now();
   const embedding = await embedQuery(question, signal);
@@ -16,7 +17,7 @@ export async function retrieve(
   const searchStarted = performance.now();
   let searched: Awaited<ReturnType<typeof search>>;
   try {
-    searched = await search(embedding.vector, question);
+    searched = await search(embedding.vector, question, {}, scope);
   } catch (cause) {
     signal.throwIfAborted();
     if (cause instanceof AppError && cause.code === 'CORPUS_EMPTY')

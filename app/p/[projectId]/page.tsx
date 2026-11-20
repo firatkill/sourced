@@ -8,6 +8,7 @@ import { NotFoundError, getProject, listChats } from '@/lib/chats/store';
 import { readAppConfiguration } from '@/lib/kit/app-configuration';
 import { uiCopy } from '@/lib/kit/copy';
 import { isPublicDemo } from '@/lib/kit/profile';
+import { listLibrarySources } from '@/lib/library/facts';
 
 type Props = { params: Promise<{ projectId: string }> };
 
@@ -31,13 +32,18 @@ export default async function ProjectPage({ params }: Props) {
   const configuration = readAppConfiguration();
   if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
   const project = await load((await params).projectId);
-  const [initial, chats] = await Promise.all([readSidebar(), listChats({ projectId: project.id })]);
+  const [initial, chats, sources] = await Promise.all([
+    readSidebar(),
+    listChats({ projectId: project.id }),
+    listLibrarySources(),
+  ]);
   return (
     <ProjectView
       copy={uiCopy(configuration.copy)}
       initial={initial}
       project={project}
       chats={chats}
+      sources={sources}
       now={initial.now}
     />
   );

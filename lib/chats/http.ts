@@ -77,9 +77,14 @@ export const UpdateChatBody = z
     pinned: z.boolean().optional(),
   })
   .strict();
+const SourceIds = z.array(z.string()).nullable().optional();
 export const CreateProjectBody = z
-  .object({ name: z.string(), description: z.string().nullable().optional() })
+  .object({ name: z.string(), description: z.string().nullable().optional(), sourceIds: SourceIds })
   .strict();
 export const UpdateProjectBody = z
-  .object({ name: z.string().optional(), description: z.string().nullable().optional() })
+  .object({
+    name: z.string().optional(),
+    description: z.string().nullable().optional(),
+    sourceIds: SourceIds,
+  })
   .strict();

@@ -246,12 +246,18 @@ export const projects = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     description: text('description'),
+    // D-150: the library sources this project's chats search; null means the whole library.
+    sourceIds: text('source_ids').array(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     check('projects_name_check', sql`char_length(${t.name}) BETWEEN 1 AND 80`),
     check('projects_description_check', sql`char_length(${t.description}) <= 300`),
+    check(
+      'projects_source_ids_check',
+      sql`${t.sourceIds} IS NULL OR cardinality(${t.sourceIds}) BETWEEN 1 AND 50`,
+    ),
   ],
 );
 

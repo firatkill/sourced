@@ -1,3 +1,4 @@
+import type { SearchScope } from '@/lib/retrieval/search';
 import type { z } from 'zod';
 import { GENERATION } from '@/lib/config';
 import { verifyCitations } from '@/lib/citations/verify';
@@ -53,6 +54,8 @@ async function runAnswer(input: {
   question: string;
   /** T-85 / FR-91: earlier turns; the question is rewritten to stand alone first. */
   history?: readonly FollowupTurn[];
+  /** D-150: the chat's project limits the search to these library sources. */
+  scope?: SearchScope;
   requestId: string;
   signal: AbortSignal;
   emit: (e: SseEvent) => void;
@@ -65,7 +68,7 @@ async function runAnswer(input: {
   });
   // D-143: retrieval, the answer prompt and citation checks all use the standalone question.
   input = { ...input, question: followup.question };
-  const retrieval = await retrieve(input.question, input.signal);
+  const retrieval = await retrieve(input.question, input.signal, input.scope);
   const meta = MetaEvent.parse({
     requestId: input.requestId,
     ...(followup.rewritten ? { standaloneQuestion: followup.question } : {}),

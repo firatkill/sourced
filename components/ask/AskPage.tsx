@@ -2,14 +2,14 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import { AskApp, type SavedChats } from '@/components/ask/AskApp';
 import { ConfigurationError } from '@/components/layout/ConfigurationError';
-import { listChats, listProjects } from '@/lib/chats/store';
+import { getProject, listChats, listProjects } from '@/lib/chats/store';
 import { readAppConfiguration } from '@/lib/kit/app-configuration';
 import { uiCopy } from '@/lib/kit/copy';
 import { getPageCopy } from '@/lib/kit/copy-server';
 import { isPublicDemo } from '@/lib/kit/profile';
-import { getKitConfig, sourcedCommand } from '@/lib/kit/runtime-config';
-import { getLibraryFacts } from '@/lib/library/facts';
-import { libraryPill, searchingLine } from '@/lib/library/format';
+import { getKitConfig } from '@/lib/kit/runtime-config';
+import { getLibraryFacts, listLibrarySources } from '@/lib/library/facts';
+import { libraryPill, scopeLabels, scopedSearchingLine, searchingLine } from '@/lib/library/format';
 import type { SavedTurn } from '@/lib/chats/store';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
 
@@ -25,6 +25,20 @@ async function readLibrary() {
     };
   } catch {
     return undefined; // The page still works without facts; /api/health reports the database.
+  }
+}
+
+/** D-150: in a project limited to some sources, the line under the composer names only those. */
+async function readScopeLine(projectId: string | null | undefined): Promise<string | null> {
+  if (!projectId || isPublicDemo()) return null;
+  try {
+    const { sourceIds } = await getProject(projectId);
+    if (sourceIds === null) return null;
+    return scopedSearchingLine(
+      scopeLabels(sourceIds, await listLibrarySources()).map((entry) => entry.label),
+    );
+  } catch {
+    return null;
   }
 }
 
@@ -52,13 +66,15 @@ export async function AskPage({
   const copy = await getPageCopy();
   const { env } = configuration;
   const publicDemo = isPublicDemo();
-  const library = await readLibrary();
+  const [library, scopeLine] = await Promise.all([
+    readLibrary(),
+    readScopeLine(chat ? chat.projectId : projectId),
+  ]);
   // T-90 / R2 §6: the local app sends a new chat to /setup until something is indexed.
   if (!chat && getKitConfig().profile === 'local' && library?.documents === 0) redirect('/setup');
-  const command = sourcedCommand();
   const example =
     getKitConfig().profile === 'local' && copy.exampleNotice && !chat
-      ? { notice: copy.exampleNotice, commands: [`${command} reset`, `${command} add ./my-docs`] }
+      ? { notice: copy.exampleNotice }
       : undefined;
   const saved: SavedChats | undefined = publicDemo
     ? undefined
@@ -69,7 +85,15 @@ export async function AskPage({
       };
   return (
     <AskApp
-      library={library ? { pill: library.pill, searching: library.searching } : undefined}
+      library={
+        library
+          ? {
+              pill: library.pill,
+              searching: library.searching,
+              ...(scopeLine ? { scoped: scopeLine } : {}),
+            }
+          : undefined
+      }
       example={example}
       saved={saved}
       demoMode={publicDemo ? env.DEMO_MODE : 'on'}

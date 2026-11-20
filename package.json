@@ -52,7 +52,7 @@
     "linkedom": "0.18.15",
     "lucide-react": "1.61.0",
     "mammoth": "1.13.0",
-    "next": "15.5.28",
+    "next": "15.5.29",
     "picomatch": "4.0.7",
     "pino": "10.4.0",
     "postgres": "3.4.9",
@@ -98,7 +98,13 @@
   "type": "module",
   "pnpm": {
     "overrides": {
-      "next@15.5.28>postcss": "8.5.31"
+      "next@15.5.29>postcss": "8.5.31",
+      "hono": "^4.13.16",
+      "@hono/node-server": "^2.1.6",
+      "@typescript-eslint/typescript-estree>minimatch": "^11.0.1",
+      "@esbuild-kit/core-utils>esbuild": "^0.25.0",
+      "@ts-morph/common>minimatch": "^11.0.1",
+      "express>body-parser": "^2.4.0"
     }
   }
 }

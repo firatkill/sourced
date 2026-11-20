@@ -4,6 +4,7 @@ import { getSql } from '@/lib/db/client';
 import {
   NotFoundError,
   appendTurn,
+  chatSearchScope,
   createChat,
   createProject,
   deleteAllChats,
@@ -108,6 +109,27 @@ test('projects: update, delete keeps chats, list is sorted by name', async () =>
   await deleteProject(a.id);
   expect((await getChat(chat.id)).projectId).toBeNull();
   await expect(getProject(a.id)).rejects.toBeInstanceOf(NotFoundError);
+});
+
+test('D-150: a project keeps its search scope; its chats read it, others search everything', async () => {
+  const project = await createProject({ name: 'Contracts', sourceIds: ['contracts', 'specs'] });
+  expect(project.sourceIds).toEqual(['contracts', 'specs']);
+  const inside = await createChat({ question: 'Notice period?', projectId: project.id });
+  const outside = await createChat({ question: 'Anything?' });
+  expect(await chatSearchScope(inside.id)).toEqual(['contracts', 'specs']);
+  expect(await chatSearchScope(outside.id)).toBeNull();
+  expect(await chatSearchScope('00000000-0000-4000-8000-000000000000')).toBeUndefined();
+  // Renaming leaves the scope alone; null clears it.
+  expect((await updateProject(project.id, { name: 'Legal' })).sourceIds).toEqual([
+    'contracts',
+    'specs',
+  ]);
+  expect((await updateProject(project.id, { sourceIds: null })).sourceIds).toBeNull();
+  expect(await chatSearchScope(inside.id)).toBeNull();
+  await expect(updateProject(project.id, { sourceIds: [] })).rejects.toThrow();
+  await expect(
+    getSql()`UPDATE projects SET source_ids = '{}' WHERE id = ${project.id}`,
+  ).rejects.toMatchObject({ code: '23514' });
 });
 
 test('delete cascades turns; deleteAllChats empties chats and projects', async () => {

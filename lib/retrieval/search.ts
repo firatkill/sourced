@@ -7,6 +7,8 @@ import { getSql } from '@/lib/db/client';
 import type { RetrievedChunk } from './types';
 
 type SearchLimits = { vectorCandidates?: number; ftsCandidates?: number; limit?: number };
+/** D-150: search only documents from these library sources; absent means the whole library. */
+export type SearchScope = { sourceIds: readonly string[] };
 type SearchResult = {
   chunks: RetrievedChunk[];
   vectorCandidates: number;
@@ -38,9 +40,22 @@ export async function searchInTransaction(
   question: string,
   limits: SearchLimits = {},
   schema?: CorpusSchema,
+  scope?: SearchScope,
 ): Promise<SearchResult> {
   const active = schema ?? (await checkCorpusSchema(tx, getKitConfig())).schema;
   await tx.unsafe(`SET LOCAL hnsw.ef_search = ${String(RETRIEVAL.HNSW_EF_SEARCH)}`);
+  // An unscoped search runs the same SQL as before D-150; a scoped one adds one filter.
+  const filter = (keyword: 'WHERE' | 'AND') =>
+    scope
+      ? tx`${tx.unsafe(keyword)} c.document_id IN
+          (SELECT id FROM documents WHERE source_id = ANY(${[...scope.sourceIds]}::text[]))`
+      : tx``;
+  if (scope) {
+    // pgvector 0.8+ keeps scanning the HNSW index until enough rows pass the filter.
+    const [iterative] = await tx<{ present: boolean }[]>`
+      SELECT EXISTS (SELECT 1 FROM pg_settings WHERE name = 'hnsw.iterative_scan') AS present`;
+    if (iterative?.present) await tx.unsafe(`SET LOCAL hnsw.iterative_scan = relaxed_order`);
+  }
   const rows = await tx<SearchRow[]>`WITH vector_hits AS (
   SELECT v.id,
          v.distance,
@@ -49,6 +64,7 @@ export async function searchInTransaction(
     SELECT c.id,
            c.embedding <=> ${JSON.stringify(vector)}::${tx(active.vector_type)} AS distance
     FROM chunks c
+    ${filter('WHERE')}
     ORDER BY c.embedding <=> ${JSON.stringify(vector)}::${tx(active.vector_type)}
     LIMIT ${limits.vectorCandidates ?? RETRIEVAL.VECTOR_CANDIDATES}::int
   ) AS v
@@ -62,7 +78,7 @@ fts_hits AS (
            ts_rank_cd(c.tsv, q.query, 32) AS score
     FROM chunks c,
          websearch_to_tsquery(${active.fts_config}::regconfig, ${question}::text) AS q(query)
-    WHERE c.tsv @@ q.query
+    WHERE c.tsv @@ q.query ${filter('AND')}
     ORDER BY score DESC, c.id ASC
     LIMIT ${limits.ftsCandidates ?? RETRIEVAL.FTS_CANDIDATES}::int
   ) AS f
@@ -104,11 +120,12 @@ ORDER BY fu.rrf_score DESC,
 LIMIT ${limits.limit ?? RETRIEVAL.RERANK_CANDIDATES}::int;`;
   const [vectorCount] = await tx<{ count: number }[]>`
     SELECT LEAST(${limits.vectorCandidates ?? RETRIEVAL.VECTOR_CANDIDATES}::int,
-      (SELECT count(*) FROM chunks))::int AS count`;
+      (SELECT count(*) FROM chunks c ${filter('WHERE')}))::int AS count`;
   const [ftsCount] = await tx<{ count: number }[]>`
     SELECT count(*)::int AS count FROM (
       SELECT 1 FROM chunks c
       WHERE c.tsv @@ websearch_to_tsquery(${active.fts_config}::regconfig, ${question}::text)
+        ${filter('AND')}
       LIMIT ${limits.ftsCandidates ?? RETRIEVAL.FTS_CANDIDATES}::int
     ) AS fts_candidates`;
   return {
@@ -142,12 +159,13 @@ export async function search(
   vector: number[],
   question: string,
   limits: SearchLimits = {},
+  scope?: SearchScope,
 ): Promise<SearchResult> {
   return getSql().begin(async (tx) => {
     const state = await checkCorpusSchema(tx, getKitConfig());
     const [row] = await tx<{ present: boolean }[]>`SELECT EXISTS (SELECT 1 FROM chunks) AS present`;
     if (!row?.present)
       throw new AppError('CORPUS_EMPTY', 'Nothing is indexed yet. Run ./sourced ingest.');
-    return searchInTransaction(tx, vector, question, limits, state.schema);
+    return searchInTransaction(tx, vector, question, limits, state.schema, scope);
   });
 }
