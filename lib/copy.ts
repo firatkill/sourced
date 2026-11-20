@@ -1,7 +1,8 @@
 import type { CorpusCopy } from '@/lib/kit/copy';
 
 import { getCopy } from '@/lib/kit/copy';
-export type { CorpusCopy } from '@/lib/kit/copy';
+// Components receive UI copy only (D-140): prompt subjects never reach the browser.
+export type { UiCopy as CorpusCopy } from '@/lib/kit/copy';
 
 // Generic fallbacks only. The server passes the mounted corpus's rendered copy as props.
 export const CORPUS_COPY: CorpusCopy = getCopy({
@@ -27,6 +28,13 @@ export const ASK_COPY = {
   limit:
     '{limit} questions per visitor per day. Suggested questions are answered instantly and do not count.',
   suggestions: 'Start with one of these',
+  // REDESIGN-v2 §3.2 example banner (local profile only).
+  exampleBannerLabel: 'About the example',
+  exampleBannerBefore: 'To use your own documents, run',
+  exampleBannerThen: 'and then',
+  exampleBannerCopy: 'Copy commands',
+  exampleBannerCopied: 'Commands copied',
+  exampleBannerHide: 'Hide this notice',
   scopeLink: 'See how it is measured',
   sessionPrivacy:
     'Kept in this tab only. Reload or close it and the chat is gone; nothing is stored on the server.',

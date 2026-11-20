@@ -3290,6 +3290,7 @@ export const KitConfigSchema = z.object({
     searched: z.string().max(60).optional(),
     viewerLink: z.string().max(40).optional(),
     sourceDomain: z.string().max(80).optional(),
+    exampleNotice: z.string().min(1).max(160).optional(),    // D-140: bundled example banner
     license: z.object({ name: z.string().min(1).max(80), url: z.url() }).optional(),
     promptSubject: z.string().min(1).max(60).optional(),
     rerankSubject: z.string().min(1).max(60).optional(),
@@ -3368,23 +3369,23 @@ The per-group sections of the v1 manifest (`indexes`, `concurrency`, ...) become
 
 Corpus copy is resolved from the runtime snapshot by server components and passed to client components as props (section 8). Never embed corpus copy at build time or import generated files. After updating the configuration and snapshot, restarting `next start` shows the new copy without rebuilding the image.
 
-`getCopy(config)` returns the corpus-dependent strings. Defaults when `copy.*` is unset:
+`getCopy(config)` returns the corpus-dependent strings. Defaults when `copy.*` is unset (generic since D-140: no UI default interpolates `corpus.title` or `corpus.description`; only the prompt subjects do, and the browser never receives them, see `uiCopy`):
 
 | Key | Default |
 |---|---|
-| Document title | `Sourced: answers from {corpus.title}` |
-| `hero` | `Ask {corpus.title}. Every claim shows its source.` |
-| `lead` | `Answers come only from {corpus.description}. Each citation is checked against the passage it points to before you see it.` |
-| `notFound` | `I couldn't find this in {corpus.title}.` |
+| Document title | `Sourced` |
+| `hero` | `What do you want to know?` |
+| `lead` | `Answers come only from your documents. Every claim links to the passage it came from, checked before you see it.` |
+| `notFound` | `I couldn't find this in your documents.` |
 | Not-found body | `Sourced only answers from the {documentCount} documents it has indexed. These passages came closest:` |
 | Link label | `corpus.linkLabel` |
 | Footer line 2 | `corpus.attribution`, omitted when unset; followed by a link to `copy.license.url` labelled `copy.license.name` when `license` is set |
-| `documentTitle` (page `<title>` of `/`) | `Sourced: answers from {corpus.title}` |
-| `shortTitle` (rail subtitle) | `corpus.title` |
-| `headerScope` | `Answers only from {corpus.description}` |
-| `scope` (welcome scope line) | `Answers come only from {corpus.description}. If the answer is not there, Sourced says so.` |
-| `placeholder` | `Ask a question about {corpus.title}` |
-| `nextPlaceholder` | `Ask another question about {corpus.title}` |
+| `documentTitle` (page `<title>` of `/`) | `Sourced` |
+| `shortTitle` (rail subtitle) | `Your documents` |
+| `headerScope` | `Answers only from your documents` (outside `public-demo` the header shows the library facts instead, REDESIGN-v2 §3) |
+| `scope` (welcome scope line) | `Answers come only from your documents. If the answer is not there, Sourced says so.` |
+| `placeholder` | `Ask about your documents` |
+| `nextPlaceholder` | `Ask another question about your documents` (becomes `Ask a follow-up` with T-85) |
 | `notFoundBody` | the not-found body above |
 | `searched` | `Searched {documentCount} documents` |
 | `viewerLink` | `Open the source` |
@@ -3392,8 +3393,10 @@ Corpus copy is resolved from the runtime snapshot by server components and passe
 | `promptSubject` (TRD §13.1: "answers questions about {promptSubject}", "excerpts from the {promptSubject} documentation") | `corpus.title` |
 | `rerankSubject` (TRD §13.2: "a question about {rerankSubject}"; also the eval judge prompt, TRD §17: "your own knowledge of {rerankSubject}") | `promptSubject` |
 | Suggested topic label | omitted when `topic` is unset |
+| `exampleNotice` | omitted; when set, the `local` profile shows it in the example banner with the `reset` and `add` commands (REDESIGN-v2 §3.2) |
+| `/how-it-works` preparation subject | `The {n} {subject} pages` when `corpus.description` reads `{n} pages of the {subject}`, else `Your documents`; the corpus-size limit line appears only in the first case |
 
-The example configuration sets every one of these to the string the app shows in v1.1, so the rendered page and both rendered prompts are byte-identical and `PROMPT_VERSION` does not change. Page titles of `/eval` and `/how-it-works` do not name the corpus and stay constants.
+The example configuration sets every one of these to the string the app shows in v1.1, so the rendered page and both rendered prompts are byte-identical and `PROMPT_VERSION` does not change. The D-140 change of the defaults changes rendered prompts only for corpora without their own copy; the example's prompts are unchanged, so `PROMPT_VERSION` stays. Page titles of `/eval` and `/how-it-works` do not name the corpus and stay constants.
 
 `{documentCount}` comes from `corpus_meta.documents_total`. The example configuration sets values that reproduce PRD §9 byte for byte; E2E-01 to E2E-25 keep asserting the v1 strings against the example. The prompt's not-found sentence (TRD §13.1) is `getCopy().notFound`; changing it bumps `PROMPT_VERSION` like any prompt change.
 

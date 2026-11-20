@@ -12,6 +12,7 @@ import { rateLimitCopy } from './states/RateLimited';
 import { ChatRail } from './ChatRail';
 import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
+import { ExampleBanner } from './ExampleBanner';
 
 type Props = {
   publicDemo?: boolean;
@@ -19,6 +20,10 @@ type Props = {
   limits: { ipDaily: number; globalDaily: number };
   suggested: readonly { id: SuggestedId; question: string; topic?: string }[];
   copy: CorpusCopy;
+  /** REDESIGN-v2 §3.3: facts from the index; absent in the hosted demo. */
+  library?: { pill: string; searching: string | null } | undefined;
+  /** Local profile with the bundled example loaded (copy.exampleNotice). */
+  example?: { notice: string; commands: string[] } | undefined;
 };
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
@@ -41,6 +46,8 @@ function Conversation({
   limits,
   suggested,
   copy,
+  library,
+  example,
   onNew,
   onMode,
 }: Props & { onNew: () => void; onMode: (mode: Props['demoMode']) => void }) {
@@ -123,7 +130,8 @@ function Conversation({
       hasTurns={turns.length > 0}
     />
   );
-  const suggestions = (
+  // REDESIGN-v2 §3.1: no suggestions block at all when the corpus has none.
+  const suggestions = suggested.length > 0 && (
     <SuggestedQuestions
       suggested={suggested}
       disabled={ask.inFlight}
@@ -149,7 +157,7 @@ function Conversation({
       >
         <header className="flex h-[60px] shrink-0 flex-col justify-center border-b border-[var(--rule)] px-5">
           <p className="truncate text-sm font-semibold">{turns[0]?.question ?? copy.hero}</p>
-          <p className="text-xs text-[var(--ink-3)]">{copy.headerScope}</p>
+          <p className="text-xs text-[var(--ink-3)]">{library?.pill ?? copy.headerScope}</p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
           <div className="mx-auto w-full max-w-[760px] space-y-10">
@@ -158,6 +166,7 @@ function Conversation({
                 <DemoOff />
               ) : (
                 <>
+                  {example && <ExampleBanner notice={example.notice} commands={example.commands} />}
                   <div className="space-y-4">
                     {effectiveMode === 'readonly' ? (
                       <ReadonlyBanner />
@@ -169,6 +178,9 @@ function Conversation({
                     )}
                   </div>
                   {composer}
+                  {library?.searching && suggested.length === 0 && (
+                    <p className="-mt-6 text-sm text-[var(--ink-3)]">{library.searching}</p>
+                  )}
                   {suggestions}
                   <p className="text-sm text-[var(--ink-3)]">
                     {copy.scope}{' '}

@@ -57,7 +57,7 @@ These rules fix the doubled copy seen in `lib/kit/copy.ts`: "Ask My documents", 
    - Lead: "Answers come only from your documents. Every claim links to the passage it came from, checked before you see it."
    - Placeholder: "Ask about your documents"; after the first turn, "Ask a follow-up".
    - No suggested-questions block.
-2. **Example and hosted demo.** The example corpus (and the hosted demo) keeps its `copy` block: hero, suggestions, scope lines. In `local` with the example loaded, a banner explains how to switch to your own documents (Example artboard).
+2. **Example and hosted demo.** The example corpus (and the hosted demo) keeps its `copy` block: hero, suggestions, scope lines. In `local` with the example loaded, a banner explains how to switch to your own documents (Example artboard). The example is marked by `copy.exampleNotice` (the banner's first sentence); the banner adds the `reset` and `add` commands for the launcher in use and can be hidden (stored in the browser).
 3. **Library facts** come from the database, not from config:
    - document count;
    - top-level folders, or hosts for URLs;

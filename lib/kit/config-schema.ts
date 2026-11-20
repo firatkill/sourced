@@ -105,6 +105,8 @@ const BaseKitConfigSchema = z.object({
       license: z.object({ name: z.string().min(1).max(80), url: z.url() }).optional(),
       promptSubject: z.string().min(1).max(60).optional(),
       rerankSubject: z.string().min(1).max(60).optional(),
+      // REDESIGN-v2 §3: marks the bundled example; the local profile shows it as a banner.
+      exampleNotice: z.string().min(1).max(160).optional(),
       suggested: z
         .array(
           z.object({

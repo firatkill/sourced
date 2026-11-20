@@ -26,7 +26,7 @@ export default function HowItWorks() {
           <section>
             <h2>1. Preparing the documents</h2>
             <p>
-              The {CORPUS_COPY.preparationSubject} are parsed offline into sections, then split into
+              {CORPUS_COPY.preparationSubject} are parsed offline into sections, then split into
               chunks of {CHUNKING.MIN_TOKENS}–{CHUNKING.MAX_TOKENS} tokens with{' '}
               {CHUNKING.OVERLAP_TOKENS} tokens of overlap when a section needs splitting. Short
               sections can form smaller chunks. Each chunk keeps its heading and source URL. Its
@@ -108,10 +108,7 @@ export default function HowItWorks() {
                 A quote match proves the words exist in the passage, not that the passage fully
                 supports the sentence. That is what the faithfulness judge measures.
               </li>
-              <li>
-                The corpus is {CORPUS_COPY.corpusExtent}, not the full {CORPUS_COPY.rerankSubject}{' '}
-                documentation.
-              </li>
+              {CORPUS_COPY.corpusLimit && <li>{CORPUS_COPY.corpusLimit}</li>}
               <li>
                 The first request after a quiet period can be slow because the database scales to
                 zero.
