@@ -25,6 +25,9 @@ Embedding example: --embed openai:text-embedding-3-small:1536
   dev --port <value>
   setup --port <value>
   down
+  docling on
+  docling off
+  docling status
   deploy:check --profile local|private|public-demo
   config:snapshot
 ```
@@ -327,6 +330,30 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 ## down result
 
 - `result`: object
+
+## docling on result
+
+- `result`: object
+- `result.changed`: boolean
+- `result.engine`: "builtin" | "docling"
+- `result.image`: string
+- `result.service`: "ready" | "starting" | "off"
+
+## docling off result
+
+- `result`: object
+- `result.changed`: boolean
+- `result.engine`: "builtin" | "docling"
+- `result.image`: string
+- `result.service`: "ready" | "starting" | "off"
+
+## docling status result
+
+- `result`: object
+- `result.changed`: boolean
+- `result.engine`: "builtin" | "docling"
+- `result.image`: string
+- `result.service`: "ready" | "starting" | "off"
 
 ## deploy:check result
 

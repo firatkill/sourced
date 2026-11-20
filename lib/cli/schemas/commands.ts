@@ -10,6 +10,12 @@ const checks = z.object({
     z.object({ id: z.string(), ok: z.boolean(), detail: z.string(), fix: z.string().optional() }),
   ),
 });
+const DoclingResult = z.object({
+  engine: z.enum(['builtin', 'docling']),
+  service: z.enum(['ready', 'starting', 'off']),
+  image: z.string(),
+  changed: z.boolean(),
+});
 export const commandSchemas = {
   doctor: checks,
   init: z.object({
@@ -43,6 +49,9 @@ export const commandSchemas = {
   dev: z.object({ url: z.url(), setupUrl: z.url().optional() }),
   setup: z.object({ url: z.url() }),
   down: z.object({}),
+  'docling on': DoclingResult,
+  'docling off': DoclingResult,
+  'docling status': DoclingResult,
   'deploy:check': checks,
   'config:snapshot': z.object({ configHash: z.string().regex(/^[a-f0-9]{64}$/) }),
 };

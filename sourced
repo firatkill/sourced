@@ -63,6 +63,11 @@ while IFS= read -r line || [ -n "$line" ]; do
         SOURCED_DB_PORT=${line#SOURCED_DB_PORT=}
         export SOURCED_DB_PORT
       fi ;;
+    SOURCED_DOCLING_PORT=*)
+      if [ "${SOURCED_DOCLING_PORT+x}" != x ]; then
+        SOURCED_DOCLING_PORT=${line#SOURCED_DOCLING_PORT=}
+        export SOURCED_DOCLING_PORT
+      fi ;;
   esac
 done < .env.local
 SOURCED_UID=$(id -u)
@@ -152,10 +157,10 @@ case "$command" in
       [ "$argument" != --json ] || json=true
     done
     if [ "$json" = false ]; then
-      exec docker compose down
+      exec docker compose --profile docling down
     fi
     # Down stops the containers, so emit the fixed envelope without starting one.
-    if docker compose down >&2; then
+    if docker compose --profile docling down >&2; then
       printf '%s\n' '{"schemaVersion":1,"command":"down","ok":true,"result":{},"warnings":[]}'
       exit 0
     else
@@ -189,6 +194,14 @@ case "$command" in
       compose_step 'App container start' compose up -d --build --force-recreate app || exit $?
     else
       docker compose up -d --build --force-recreate app >&2 || exit 1
+    fi
+    # D-152: a library read with Docling gets its reader back after ./sourced down.
+    if grep -q '"engine": "docling"' .sourced/config.json 2>/dev/null; then
+      if [ "$json" = true ]; then
+        compose_step 'Docling start' compose --profile docling up -d docling || exit $?
+      else
+        docker compose --profile docling up -d docling >&2 || exit 1
+      fi
     fi
     attempts=${SOURCED_DEV_ATTEMPTS:-60}
     attempt=0
@@ -243,6 +256,16 @@ case "$command" in
     exit 0
     ;;
   init) printf '%s\n' 'Building the image on first run takes a few minutes.' >&2 ;;
+  docling)
+    # D-152: the CLI container has no Docker socket, so the launcher starts or stops Docling.
+    case "${2:-}" in
+      on)
+        [ "$json" = true ] || printf '%s\n' 'Downloading Docling the first time (about 2.1 GB, 6.5 GB on disk), then starting it.' >&2
+        compose_step 'Docling download and start' compose --profile docling up -d docling || exit $? ;;
+      off) compose_step 'Docling stop' compose --profile docling stop docling || exit $? ;;
+      status) ;;
+      *) printf '%s\n' 'Usage: ./sourced docling on|off|status [--json]' >&2; exit 2 ;;
+    esac ;;
 esac
 compose_step 'CLI image build' compose build cli || exit $?
 compose_step 'Database container start' compose up -d --wait db || exit $?

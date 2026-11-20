@@ -1,4 +1,5 @@
 import { access, statfs, readFile } from 'node:fs/promises';
+import { doclingStatus } from '@/lib/ingest/docling';
 import { constants } from 'node:fs';
 import { createServer } from 'node:net';
 import path from 'node:path';
@@ -297,6 +298,17 @@ export async function runDoctor(
           return 'Corpus and eval directories writable.';
         },
       );
+      // D-152: only a library that reads files with Docling needs it running.
+      if (selected.parsing?.engine === 'docling')
+        await check(
+          'docling',
+          `Run ${sourcedCommand()} docling on, or ${sourcedCommand()} docling off to use the built-in readers.`,
+          async () => {
+            const state = await doclingStatus({ fetch: fetcher });
+            if (state !== 'ready') throw new Error();
+            return 'Docling is running.';
+          },
+        );
     }
   }
   return { result: { checks }, warnings, exitCode: checks.every((c) => c.ok) ? 0 : 2 };

@@ -533,6 +533,105 @@ exports[`CT-01–CT-14 / NFR-22: pins schemas by envelope schemaVersion > schema
       ],
       "type": "object",
     },
+    "docling off": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "changed": {
+          "type": "boolean",
+        },
+        "engine": {
+          "enum": [
+            "builtin",
+            "docling",
+          ],
+          "type": "string",
+        },
+        "image": {
+          "type": "string",
+        },
+        "service": {
+          "enum": [
+            "ready",
+            "starting",
+            "off",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "engine",
+        "service",
+        "image",
+        "changed",
+      ],
+      "type": "object",
+    },
+    "docling on": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "changed": {
+          "type": "boolean",
+        },
+        "engine": {
+          "enum": [
+            "builtin",
+            "docling",
+          ],
+          "type": "string",
+        },
+        "image": {
+          "type": "string",
+        },
+        "service": {
+          "enum": [
+            "ready",
+            "starting",
+            "off",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "engine",
+        "service",
+        "image",
+        "changed",
+      ],
+      "type": "object",
+    },
+    "docling status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "changed": {
+          "type": "boolean",
+        },
+        "engine": {
+          "enum": [
+            "builtin",
+            "docling",
+          ],
+          "type": "string",
+        },
+        "image": {
+          "type": "string",
+        },
+        "service": {
+          "enum": [
+            "ready",
+            "starting",
+            "off",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "engine",
+        "service",
+        "image",
+        "changed",
+      ],
+      "type": "object",
+    },
     "doctor": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "properties": {

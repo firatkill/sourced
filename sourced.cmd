@@ -18,10 +18,11 @@ if not exist .env.local (
 set "SOURCED_LAUNCHER=sourced.cmd"
 rem D-136: one Compose project per checkout, recorded in .env for Compose to read.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-project.ps1"
-rem Read only the two port keys; never execute or export other env-file lines.
-for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (
+rem Read only the port keys; never execute or export other env-file lines.
+for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" /c:"SOURCED_DOCLING_PORT=" .env.local') do (
   if "%%A"=="SOURCED_PORT" if not defined SOURCED_PORT set "SOURCED_PORT=%%B"
   if "%%A"=="SOURCED_DB_PORT" if not defined SOURCED_DB_PORT set "SOURCED_DB_PORT=%%B"
+  if "%%A"=="SOURCED_DOCLING_PORT" if not defined SOURCED_DOCLING_PORT set "SOURCED_DOCLING_PORT=%%B"
 )
 if "%~1"=="down" goto down
 if "%~1"=="dev" goto dev
@@ -29,6 +30,9 @@ if "%~1"=="setup" goto setup
 if "%~1"=="init" echo Building the image on first run takes a few minutes. 1>&2
 set "json=false"
 for %%A in (%*) do if "%%~A"=="--json" set "json=true"
+rem D-152: the CLI container has no Docker socket, so the launcher starts or stops Docling.
+if "%~1"=="docling" call :docling "%~2"
+if errorlevel 1 exit /b %errorlevel%
 if "%json%"=="true" (
   powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" "%~1" "CLI image build" compose build cli
 ) else (
@@ -53,6 +57,27 @@ if "%json%"=="true" (
   docker compose run --no-deps --rm %ttyArgs% %mountArgs% cli %*
 )
 exit /b
+:docling
+if "%~1"=="status" exit /b 0
+if "%~1"=="on" (
+  if "%json%"=="false" echo Downloading Docling the first time ^(about 2.1 GB, 6.5 GB on disk^), then starting it. 1>&2
+  if "%json%"=="true" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" docling "Docling download and start" compose --profile docling up -d docling
+  ) else (
+    docker compose --profile docling up -d docling 1>&2
+  )
+  exit /b
+)
+if "%~1"=="off" (
+  if "%json%"=="true" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-compose.ps1" docling "Docling stop" compose --profile docling stop docling
+  ) else (
+    docker compose --profile docling stop docling 1>&2
+  )
+  exit /b
+)
+echo Usage: sourced.cmd docling on^|off^|status [--json] 1>&2
+exit /b 2
 :mount
 set mountArgs=%mountArgs% -v "%~1:%~1:ro"
 exit /b 0
@@ -66,11 +91,11 @@ shift
 goto downargs
 :stopapp
 if "%json%"=="false" (
-  docker compose down
+  docker compose --profile docling down
   exit /b
 )
 rem Down stops the containers, so emit the fixed envelope without starting one.
-docker compose down 1>&2
+docker compose --profile docling down 1>&2
 if errorlevel 1 (
   echo {"schemaVersion":1,"command":"down","ok":false,"error":{"code":"INTERNAL_ERROR","message":"Docker Compose down failed.","fix":"Check Docker is running, then retry sourced.cmd down --json."},"warnings":[]}
   exit /b 1
@@ -112,6 +137,9 @@ if "%json%"=="true" (
   docker compose up -d --build --force-recreate app 1>&2
 )
 if errorlevel 1 exit /b 1
+rem D-152: a library read with Docling gets its reader back after sourced.cmd down.
+findstr /c:"\"engine\": \"docling\"" .sourced\config.json >nul 2>nul
+if not errorlevel 1 docker compose --profile docling up -d docling 1>&2
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-dev.ps1" "%json%" "%SOURCED_PORT%"
 exit /b
 :setup
