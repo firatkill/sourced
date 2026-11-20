@@ -464,6 +464,17 @@ The PostgreSQL License requires the copyright notice and permission paragraphs t
 - Too many failed attempts (10 per hour per visitor): "Too many attempts. Try again in an hour."
 - Under the `local` and `public-demo` profiles the page does not exist and no cookie is set.
 
+### 9.10 Saved chats, projects and appearance *(v2.2, D-140 to D-145)*
+
+Layout and behaviour: `docs/REDESIGN-v2.md` and TRD §42. The strings live in `lib/copy.ts` (`SIDEBAR_COPY`, `PROJECT_COPY`, `ASK_COPY`); the ones users see most:
+
+- Own documents, empty chat: H1 "What do you want to know?"; lead "Answers come only from your documents. Every claim links to the passage it came from, checked before you see it."; placeholder "Ask about your documents", after the first turn "Ask a follow-up"; header "{n} documents · updated {time}" (or "No documents indexed yet"); under the composer "Searching {sources}". No suggested questions.
+- Example in the `local` profile: banner "{copy.exampleNotice} To use your own documents, run {launcher} reset and then {launcher} add ./my-docs", buttons "Copy commands" and "Hide this notice".
+- Sidebar (outside `public-demo`): "Projects", "New project", "Search chats", day groups "Pinned", "Today", "Yesterday", "Previous 7 days", "Older"; empty "Your chats will show up here."; footer "Chats are saved on this computer." Chat menu: "Rename", "Move to project", "Pin to top" / "Unpin", "Delete"; confirmation "Delete this chat?".
+- Project page: "Project", "New chat in this project", "Chats {n}", "Delete project" with "Its chats are kept and move back to the general list."
+- Turns: "Searched for: {standalone question}" under a rewritten follow-up; for a cited file "Open at page {n}" or "Open the file", or "This document is no longer in your library. The passage below is the saved copy."
+- `/settings/appearance`: H1 "Appearance"; themes Graphite, Paper, Midnight, Linen, High contrast, Match my system; "Text size" Small, Default, Large.
+
 ## 10. Content safety and prompt injection
 
 ### 10.1 Threats

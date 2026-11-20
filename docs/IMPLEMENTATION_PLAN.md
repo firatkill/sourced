@@ -1115,6 +1115,23 @@ Docs and release
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
 
+## Release checklist v2.2.0
+
+Reviewer items (done on the M10 branches, 2026-11-20):
+
+- [x] T-79 to T-86 committed; lint, typecheck, unit, contract (except the environment-only `doctor` port snapshot), integration and the full E2E suite pass locally.
+- [x] Live eval with the six follow-up cases committed (`eval/postgres-17/results/2026-11-20.*`): every floor passes, cost $0.40.
+- [x] Docs: TRD §42, PRD §9.10 and D-140 to D-145, README, GUIDE, CHANGELOG.
+- [x] `verify-fresh.sh` passes on the release branch.
+
+Owner items (need the owner's yes):
+
+- [ ] Merge `v2.1/first-run` (PR #6), with `SOURCED_PROFILE=public-demo` set in Vercel first (open question k).
+- [ ] Merge the v2.2 branches; production migration `0004_chats` runs in the deploy workflow (additive).
+- [ ] Tag `v2.2.0`.
+- [ ] Production smoke test: health, pages, a cited answer, a follow-up, `/api/chats` returns 404 on the hosted demo.
+- [ ] Record the demo GIF again on production (saved chats are not on the hosted demo, so record the sidebar from a local run).
+
 ## Release checklist v2.0.0
 
 Functional

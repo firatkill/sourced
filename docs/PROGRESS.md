@@ -104,7 +104,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-84 | M10 Chat app | Thread restore and sources that open the file | done | HEAD |
 | T-85 | M10 Chat app | Follow-up questions | done | HEAD |
 | T-86 | M10 Chat app | `/eval` and `/how-it-works` in the shell | done | HEAD |
-| T-87 | M10 Chat app | Docs and v2.2.0 | todo | |
+| T-87 | M10 Chat app | Docs and v2.2.0 | doing (docs HEAD; merge, tag and production steps wait for the owner) | |
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | todo | |
 | T-89 | M11 Setup and settings | Setup and settings APIs | todo | |
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | todo | |
@@ -113,6 +113,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-93 | M11 Setup and settings | Docs, skills and v2.3.0 | todo | |
 
 ## Open questions for the owner
+
+- v2.2 chat app (reviewer, 2026-11-20): M10 is done on stacked local branches `v2.2/app-plan` → `v2.2/t79-themes` → … → `v2.2/t87-release`, on top of `v2.1/first-run` (PR #6); nothing is pushed. Merge, tag and the production steps are in "Release checklist v2.2.0". Known flakes seen during M10, all also present before it or timing-only: `ask-stream.spec.ts` TC-091 sometimes misses the "Reading 6 passages" announcement with the fast mock stream; `health.test.ts` "blocked database" timing test fails about 2 in 5 runs on the base too; the `next/font` Google Fonts download fails some fixture builds (retry passes). The `/eval` hydration flake (React #418) did not reappear in 72 repeats after T-86 moved `/eval` into the app shell.
 
 - v2.1 first run (reviewer, 2026-11-19): (k) before `v2.1/first-run` is merged, the hosted example needs `SOURCED_PROFILE=public-demo` in Vercel (production and preview); without it the next deploy runs the shipped `local` profile with no quotas. Setting it is an external change that needs the owner's yes. (l) The owner's earlier test clone in `~/Desktop/sourced/sourced` shares the volume `sourced_pgdata` with the reviewer's checkout (the D-136 bug itself); delete that clone after `./sourced down` and clone again.
 

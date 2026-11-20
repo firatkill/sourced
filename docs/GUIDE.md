@@ -199,7 +199,7 @@ See the [incident and kill-switch runbook](TRD.md#266-incident-and-kill-switch-r
 
 ## Privacy
 
-By default, Sourced stores a salted question hash, length, timings, token counts, estimated cost and citation counts, not the question text. `STORE_QUESTIONS=true` opts into storing question text. The `public-demo` profile uses a daily-rotating salted IP hash for quotas; raw IP addresses are never stored or logged. The `private` profile sets one first-party access cookie. There are no analytics or third-party scripts.
+Outside the `public-demo` profile, saved chats keep their questions, answers and cited passages in the checkout's database; delete a chat from the sidebar or all of them with `./sourced reset --chats`. The hosted demo saves no chats. Separately, Sourced logs a salted question hash, length, timings, token counts, estimated cost and citation counts, not the question text. `STORE_QUESTIONS=true` opts into storing question text. The `public-demo` profile uses a daily-rotating salted IP hash for quotas; raw IP addresses are never stored or logged. The `private` profile sets one first-party access cookie. There are no analytics or third-party scripts.
 
 Document text, passages and questions go only to the configured embedding, chat, rerank and judge providers. The hosted demo uses OpenAI. With Ollama for every role, they stay local; configured web sources still require web fetches.
 

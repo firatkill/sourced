@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { PipelineDiagram } from '@/components/how/PipelineDiagram';
 import { CHUNKING, GENERATION, RETRIEVAL } from '@/lib/config';
 import { ContentPage } from '@/components/layout/ContentPage';
+import { isPublicDemo } from '@/lib/kit/profile';
 
 const LEAD =
   'Four steps run on the server for every question. The documentation itself was split, embedded and stored once, ahead of time.';
@@ -94,15 +95,32 @@ export default function HowItWorks() {
           <aside className="[&_section]:border-border [&_section]:bg-card min-w-0 space-y-4 [&_section]:rounded-lg [&_section]:border [&_section]:p-6">
             <section id="privacy" className="scroll-mt-8">
               <h2>Privacy</h2>
-              <p>
-                Sourced does not store your questions. For each request it keeps a salted hash of
-                the question, its length, timings, token counts, an estimated cost and how many
-                citations passed or failed. Your IP address is turned into a salted hash that
-                changes every day and is used only to count your daily questions; the IP itself is
-                never stored or logged. There are no cookies, no analytics and no third-party
-                scripts. The question is sent to OpenAI to produce the answer; see OpenAI’s API data
-                usage policy.
-              </p>
+              {isPublicDemo() ? (
+                <p>
+                  Sourced does not store your questions. For each request it keeps a salted hash of
+                  the question, its length, timings, token counts, an estimated cost and how many
+                  citations passed or failed. Your IP address is turned into a salted hash that
+                  changes every day and is used only to count your daily questions; the IP itself is
+                  never stored or logged. There are no cookies, no analytics and no third-party
+                  scripts. The question is sent to OpenAI to produce the answer; see OpenAI’s API
+                  data usage policy.
+                </p>
+              ) : (
+                <>
+                  <p>
+                    Your chats, with their questions, answers and cited passages, are saved in this
+                    computer’s database so you can come back to them. Delete one from its menu in
+                    the sidebar, or all of them with <code>reset --chats</code>.
+                  </p>
+                  <p>
+                    Apart from saved chats, Sourced logs a salted hash of each question rather than
+                    its text, with its length, timings, token counts, an estimated cost and how many
+                    citations passed or failed. There are no analytics and no third-party scripts.
+                    Questions and passages are sent to the configured model provider to produce
+                    answers.
+                  </p>
+                </>
+              )}
             </section>
             <section>
               <h2>7. Limits</h2>
@@ -113,10 +131,12 @@ export default function HowItWorks() {
                   supports the sentence. That is what the faithfulness judge measures.
                 </li>
                 {CORPUS_COPY.corpusLimit && <li>{CORPUS_COPY.corpusLimit}</li>}
-                <li>
-                  The first request after a quiet period can be slow because the database scales to
-                  zero.
-                </li>
+                {isPublicDemo() && (
+                  <li>
+                    The first request after a quiet period can be slow because the database scales
+                    to zero.
+                  </li>
+                )}
               </ul>
             </section>
           </aside>

@@ -3637,6 +3637,7 @@ Incompatible index (D-137). Before planning, `ingest` without `--rebuild` runs t
 | `init` | `--corpus-name --title --description --language --chat <provider:model> --embed <provider:model:dims> --profile --example --source <url-or-path>` | `sourced.config.ts`, `.env.local` (empty provider keys; generated private token per D-113; generated hash salts, local site URL and Node-path local Docker database URL per D-119), `.gitignore` lines, DB schema | `{ configPath, envVarsToFill: string[], database: 'started' | 'running' | 'external' }` |
 | `add` | `<folder-path | url>` `--type folder|urls|sitemap|crawl|git --id --group --include --exclude --max-pages --max-depth` | `sourced.config.ts` (appends a source), `.sourced/mounts` | `{ source, detected: { type, sitemapUrl? } }` |
 | `sources list` / `sources remove <id>` | `--yes` | config; documents of the source | `{ sources }` / `{ removedDocuments }` |
+| `reset` *(v2.1, D-138; `--chats` v2.2, D-144)* | `--chats`, `--yes` | config (empty local configuration); everything indexed; with `--chats` also saved chats and projects | `{ removedSources, removedDocuments, removedChats }` |
 | `ingest` | `--dry-run --offline --refresh --source <id> --rebuild --restart --yes --include-fixtures` | DB, raw cache | ingest report (sections 33.6–33.8; shape in D-109) |
 | `inspect` | `--source <id>` | `corpus/<name>/inspect.json` | section 36.4 |
 | `ask` | `"<question>" --trace` | `query_log` row (source `cli`) | `{ outcome, answer, citations, trace? }` |
@@ -3959,3 +3960,41 @@ Record results in the PRD decisions log with the next free `D-` number.
 | `@inquirer/prompts` | interactive CLI prompts | T-58 |
 
 `tsx` moves from dev to runtime dependencies (the CLI runs in the image). Versions are pinned at task time.
+
+## 42. Chat app *(v2.2, D-140 to D-145)*
+
+Design and scope: `docs/REDESIGN-v2.md` (approved). This section records what was built.
+
+### 42.1 Profiles
+
+Saved chats, projects, `/c/[chatId]`, `/p/[projectId]`, `/api/chats`, `/api/projects` and `/api/files/chunk/:chunkId` exist under `local` and `private`; under `public-demo` the routes return `404 NOT_FOUND` and `/api/ask` rejects `chatId` (`400 VALIDATION_FAILED`, `unknown_field`). Follow-up questions and themes work in every profile.
+
+### 42.2 Data (migration `0004_chats`)
+
+`projects (id uuid, name 1–80, description ≤ 300, created_at, updated_at)`; `chats (id uuid, project_id → projects ON DELETE SET NULL, title 1–120, title_source 'auto'|'user', pinned, created_at, updated_at)`; `turns (id uuid, chat_id → chats ON DELETE CASCADE, position ≥ 0 unique per chat, question, standalone_question, answer jsonb, status 'done'|'not_found'|'stopped'|'error', created_at)`. `turns.answer` is `{ meta, answerText, citations, done }` with the SSE schemas of §12.2, so a chat reads the same after a re-ingest or `reset`. An automatic title is the first question, cut at a word to 60 characters. Store: `lib/chats/store.ts`.
+
+### 42.3 HTTP
+
+| Route | Methods | Notes |
+|---|---|---|
+| `/api/chats` | GET (`search`, `projectId`), POST `{ question?, title?, projectId? }` | list pinned first, newest first, at most 500 |
+| `/api/chats/:id` | GET (with turns), PATCH `{ title?, projectId?, pinned? }`, DELETE | rename sets `title_source = 'user'` |
+| `/api/projects`, `/api/projects/:id` | GET, POST `{ name, description? }`, PATCH, DELETE | deleting a project keeps its chats |
+| `/api/library` | GET | `{ documents, sources, lastIngestAt }` (§42.5) |
+| `/api/files/chunk/:chunkId` | GET, HEAD | the cited file, only when its real path is inside a configured folder or git source; PDF inline (`#page=n`), HTML and Markdown as `text/plain`, other types as attachments; `X-Content-Type-Options: nosniff` |
+| `/api/ask` | POST | optional `chatId` (the finished turn is saved after the stream, next to the query log) and `history` (§42.4) |
+
+Mutating routes require a same-origin request (`ORIGIN_FORBIDDEN`), JSON bodies are strict and at most 8 KB. `NOT_FOUND` joins the error codes (additive, NFR-22).
+
+### 42.4 Follow-up questions (FR-91, D-143)
+
+The browser sends up to four earlier answered turns (`question`, `answer` ≤ 2,000 characters); suggested questions never send history and never match a prepared answer when history is present. `lib/generation/standalone.ts` makes one chat-model `generateObject` call (`lib/prompts/followup.ts`, `FOLLOWUP_PROMPT_VERSION`, timeout 6 s, 200 output tokens) that returns `{ question }`; any failure or an out-of-range result keeps the original question. Retrieval, the answer prompt and citation verification use the standalone question, which `meta.standaloneQuestion` carries (optional, present only when it differs) and the turn shows as "Searched for: …". The rewrite's tokens are `usage.rewrite` in cost estimates. The answer prompt and `PROMPT_VERSION` are unchanged. The mock provider joins the latest earlier question to a follow-up that refers back (it, that, the same…).
+
+### 42.5 Copy and library facts
+
+A corpus without its own `copy` block gets generic copy (§29 defaults) and no suggestions block; `copy.exampleNotice` marks the bundled example, shown in the `local` profile as a banner with the `reset` and `add` commands. Outside `public-demo` the header shows "{n} documents · updated {time}" and the empty state "Searching {sources}" from `lib/library/facts.ts` (file sources as `{id}/`, web sources by host). UI copy never includes `promptSubject` or `rerankSubject` (`uiCopy`).
+
+### 42.6 Shell and themes
+
+`/`, `/c/*`, `/p/*`, `/eval`, `/how-it-works` and `/settings/appearance` share the sidebar shell (`ChatRail`, `ChatSidebar`, `ContentShell`); only not-found keeps the top bar. Themes: REDESIGN-v2 §6.1 (`lib/theme.ts`, `sourced-theme` and `sourced-text-size` in `localStorage`, applied before paint).
+

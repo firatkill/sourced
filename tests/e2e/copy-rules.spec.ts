@@ -26,6 +26,9 @@ test('T-80: own documents never show the corpus title or description', async ({ 
   }
   await expect(page.getByText(/^Your documents are parsed offline/)).toBeVisible();
   await expect(page.getByText(/^The corpus is /)).toHaveCount(0);
+  // T-87: saved chats change the privacy text outside the hosted demo.
+  await expect(page.getByText(/^Your chats, with their questions, answers/)).toBeVisible();
+  await expect(page.getByText(/^Sourced does not store your questions/)).toHaveCount(0);
 });
 
 test('T-80: the example in the local profile explains how to switch, and can be hidden', async ({
