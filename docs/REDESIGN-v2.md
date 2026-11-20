@@ -139,7 +139,7 @@ Follow-ups (FR-91): when `history` is present, one extra chat-model call rewrite
 - Code-block and SQL colours get a value per theme.
 - The choice is stored in `localStorage` (`sourced-theme`, same key as today), and the inline head script is extended to the new values.
 - Text size (S, M, L) is a root `font-size` step.
-- Every theme must pass the contrast rules of TRD §15.2 (4.5:1 text, 3:1 large text and UI), checked by a unit test over the token table.
+- Every theme passes a contrast unit test over the token table: text tokens (`ink`, `ink-2`, `ink-3`) on `ground`, `rail` and `surface`, and every foreground/background token pair (`accent-ink`/`accent`, `accent-soft-ink`/`accent-soft`, `user-bubble-ink`/`user-bubble`, `ink`/`quote`, `ok`, `warn`, `danger` on their `-soft`, `--code-ink` and every `--sql-*` colour on `--code-bg`) at 4.5:1, and `accent` on `ground` at 3:1. Borders (`rule`, `rule-strong`) are not in the test: Paper and Graphite keep their current values (about 1.45:1), and raising input-border contrast is a separate decision.
 
 ## 7. Pages and components
 

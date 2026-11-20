@@ -871,7 +871,7 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 
 - **Implements**: D-140; R2 §6 (Themes), §7
 - **Files**: `app/globals.css` (token sets under `[data-theme]`), `app/layout.tsx` (head script), `components/layout/ThemeToggle.tsx` (removed), `app/settings/appearance/page.tsx`, `components/settings/ThemePicker.tsx`, `TextSize.tsx`, a token-contrast unit test, `tests/e2e/theme.spec.ts`.
-- **Acceptance**: every theme passes the contrast test (4.5:1 text, 3:1 large text and UI, SQL colours on the code background); switching and persistence covered by E2E; the default themes look unchanged.
+- **Acceptance**: every theme passes the contrast test of R2 §6 (text and foreground/background pairs 4.5:1, accent on ground 3:1, SQL colours on the code background); switching and persistence covered by E2E; the default themes look unchanged.
 - **Depends on**: T-78
 
 ### T-80 Copy rules and library facts
