@@ -1124,7 +1124,7 @@ Reviewer items (done on `v2.3/setup-settings`, 2026-11-20):
 - [x] Docs: TRD §43, D-146 to D-148, README quick start (`./sourced dev`, then the browser), GUIDE, CHANGELOG, `sourced-setup` skill (browser path first).
 - [x] Newcomer rehearsal on a clean clone with only Docker reaches a cited answer through the browser (`qa/release-v2/rehearsal-browser-setup.md`).
 - [x] Advanced settings on the Provider step (D-149), from the owner's request after the rehearsal.
-- [ ] One live eval run after all v2.2 and v2.3 development, with the owner's yes for its cost (about $0.40).
+- [x] One live eval run after all v2.2 and v2.3 development, with the owner's yes for its cost: `eval/postgres-17/results/2026-11-20-2.md` at 7b9dff0, every floor passes, $0.41.
 
 Owner items (need the owner's yes):
 
