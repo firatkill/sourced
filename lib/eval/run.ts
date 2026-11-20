@@ -222,7 +222,14 @@ export async function evaluateQuestions(
         write: (message) => {
           process.stderr.write(message);
         },
-      }).warn({ event: 'eval.question_failed', questionId: golden.id });
+      }).warn({
+        event: 'eval.question_failed',
+        questionId: golden.id,
+        // Which step failed and how, without provider text: answer vs judge, error code and type.
+        stage: record.usage.answer ? 'judge' : 'answer',
+        code: error instanceof AppError ? error.code : null,
+        errorType: error instanceof Error ? error.name : typeof error,
+      });
     }
     result.costUsd =
       record.answerCostUsd === null || record.judgeCostUsd === null
