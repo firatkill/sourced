@@ -4,6 +4,7 @@ import type { SetupStatus } from '@/lib/setup/status';
 import type { IngestProgress } from '@/lib/setup/ingest-job';
 import type { UploadResult } from '@/lib/setup/documents';
 import type { modelOptions } from '@/lib/setup/models';
+import type { DoclingInfo } from '@/lib/setup/docling';
 
 export type ModelOptions = ReturnType<typeof modelOptions>;
 
@@ -58,6 +59,9 @@ export const setupApi = {
     return request<UploadResult>('/api/setup/files', { method: 'POST', body: form });
   },
   addUrl: (url: string) => request('/api/setup/url', json({ url })),
+  docling: () => request<DoclingInfo>('/api/setup/docling', { cache: 'no-store' }),
+  setDocling: (engine: DoclingInfo['engine']) =>
+    request<DoclingInfo>('/api/setup/docling', json({ engine })),
   estimate: (rebuild = false) => request<Estimate>('/api/setup/estimate', json({ rebuild })),
   startIngest: (rebuild = false) =>
     request<{ job: IngestProgress }>('/api/ingest', json({ confirm: true, rebuild })),

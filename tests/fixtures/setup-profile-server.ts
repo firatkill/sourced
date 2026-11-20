@@ -71,6 +71,8 @@ for (const folder of ['corpus', 'eval', 'tests'])
 
 const env: NodeJS.ProcessEnv = {
   ...process.env,
+  // D-152: no Docling here, whatever runs on this machine's port 5001.
+  DOCLING_URL: 'http://127.0.0.1:9',
   DATABASE_URL: url.href,
   MIGRATION_DATABASE_URL: url.href,
   SOURCED_SETUP_MODE: '1',

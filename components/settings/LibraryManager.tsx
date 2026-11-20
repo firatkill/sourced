@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { setupApi, settingsApi, type SetupStatus, type UploadResult } from '@/components/setup/api';
 import { DocumentAdder, SKIP_REASONS } from '@/components/setup/DocumentAdder';
 import { IndexStep } from '@/components/setup/IndexStep';
+import { DoclingOption } from '@/components/setup/DoclingOption';
 import { ConfirmButton } from './Confirm';
 
 export function LibraryManager({ initial }: { initial: SetupStatus }) {
@@ -112,6 +113,15 @@ export function LibraryManager({ initial }: { initial: SetupStatus }) {
           ))}
         </ul>
       )}
+
+      <div className="mt-6">
+        <DoclingOption
+          indexed={library.documents > 0}
+          onChanged={() => {
+            setPending(true);
+          }}
+        />
+      </div>
 
       <section aria-labelledby="library-index" className="mt-10">
         <h2 id="library-index" className="mb-3 text-lg font-semibold">

@@ -63,7 +63,7 @@ export function DocumentAdder({
       >
         <p className="font-semibold">Drop files here</p>
         <p className="text-sm text-[var(--ink-3)]">
-          PDF, DOCX, Markdown, HTML or TXT, up to 50 MB each
+          PDF, DOCX, PPTX (with Docling), Markdown, HTML or TXT, up to 50 MB each
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           <label className="inline-flex h-11 cursor-pointer items-center rounded-[var(--radius-md)] border border-[var(--rule-strong)] px-4 focus-within:outline-2 focus-within:outline-[var(--accent)]">
@@ -72,7 +72,7 @@ export function DocumentAdder({
               ref={files}
               type="file"
               multiple
-              accept=".pdf,.docx,.md,.mdx,.html,.htm,.txt"
+              accept=".pdf,.docx,.pptx,.md,.mdx,.html,.htm,.txt"
               className="sr-only"
               onChange={(event) => {
                 if (event.target.files) void upload(event.target.files);

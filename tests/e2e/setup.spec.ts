@@ -64,6 +64,19 @@ test('T-90: setup link, own documents, cost confirm, indexing, then a cited answ
   const list = page.getByRole('region', { name: 'Added documents' });
   await expect(list).toContainText('my-docs/');
   await expect(list).toContainText("budget.xlsx · skipped: this type isn't supported");
+  // T-101 / D-152: Docling is offered, closed and off by default; choosing it shows the
+  // terminal command until the service answers. Back to the built-in readers before indexing.
+  await expect(page.getByRole('radio', { name: /^Docling/ })).toBeHidden();
+  await page.getByText('Better reading for PDF and Office files').click();
+  await expect(page.getByText(/about 2\.1 GB \(6\.5 GB on disk\)/)).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Built-in readers (no download)' })).toBeChecked();
+  await page.getByRole('radio', { name: 'Docling (PDF, Word and PowerPoint)' }).check();
+  await expect(page.getByText('Docling is not running yet.', { exact: false })).toBeVisible();
+  await expect(page.locator('code').filter({ hasText: / docling on$/ })).toBeVisible();
+  await page.getByRole('radio', { name: 'Built-in readers (no download)' }).check();
+  await expect(
+    page.getByText('PowerPoint files are skipped with the built-in readers.'),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Review cost' }).click();
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Index your documents');
