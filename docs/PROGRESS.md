@@ -107,7 +107,8 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-87 | M10 Chat app | Docs and v2.2.0 | doing (docs HEAD; merge, tag and production steps wait for the owner) | |
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | done | d41f2bf |
 | T-89 | M11 Setup and settings | Setup and settings APIs | done | bec30c3 |
-| T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | HEAD |
+| T-90 | M11 Setup and settings | `/setup` steps 1–4 | done | 9903da3 |
+| T-91 | M11 Setup and settings | Settings › Models and keys | done | HEAD |
 | T-88 | M11 Setup and settings | Boot without a key; setup link and request checks | todo | |
 | T-89 | M11 Setup and settings | Setup and settings APIs | todo | |
 | T-90 | M11 Setup and settings | `/setup` steps 1–4 | todo | |

@@ -12,7 +12,13 @@ export function PageShell({ children, footer }: { children: ReactNode; footer: R
   const ownShell = ['/', '/eval', '/how-it-works', '/settings/appearance', '/setup'].includes(
     pathname,
   );
-  if (ownShell || pathname.startsWith('/c/') || pathname.startsWith('/p/')) return children;
+  if (
+    ownShell ||
+    pathname.startsWith('/c/') ||
+    pathname.startsWith('/p/') ||
+    pathname.startsWith('/settings')
+  )
+    return children;
   return (
     <>
       <SiteHeader />

@@ -74,6 +74,8 @@ const env: NodeJS.ProcessEnv = {
   DATABASE_URL: url.href,
   MIGRATION_DATABASE_URL: url.href,
   SOURCED_SETUP_MODE: '1',
+  // A fresh checkout has no keys: stop `next start` loading the repository's .env.local.
+  __NEXT_PROCESSED_ENV: 'true',
 };
 for (const key of ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_GENERATIVE_AI_API_KEY'])
   Reflect.deleteProperty(env, key);

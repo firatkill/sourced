@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Palette } from 'lucide-react';
+import { Palette, Settings } from 'lucide-react';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
@@ -150,14 +150,25 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
             <ChatIcon name="github" />
             Source on GitHub
           </a>
-          <Link
-            href="/settings/appearance"
-            aria-current={current('/settings/appearance')}
-            className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
-          >
-            <Palette size={16} aria-hidden="true" />
-            Appearance
-          </Link>
+          {saved?.initial.settings ? (
+            <Link
+              href="/settings"
+              aria-current={pathname.startsWith('/settings') ? 'page' : undefined}
+              className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
+            >
+              <Settings size={16} aria-hidden="true" />
+              Settings
+            </Link>
+          ) : (
+            <Link
+              href="/settings/appearance"
+              aria-current={current('/settings/appearance')}
+              className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
+            >
+              <Palette size={16} aria-hidden="true" />
+              Appearance
+            </Link>
+          )}
         </div>
       </nav>
       <footer className="space-y-3 p-4 text-xs text-[var(--ink-3)]">

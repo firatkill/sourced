@@ -10,7 +10,13 @@ import { SIDEBAR_COPY } from '@/lib/copy';
 import { ChatRow } from './ChatRow';
 import { Modal } from '@/components/ask/Modal';
 
-export type SidebarData = { chats: ChatItem[]; projects: ProjectItem[]; now: string };
+export type SidebarData = {
+  chats: ChatItem[];
+  projects: ProjectItem[];
+  now: string;
+  /** T-91: the local profile links to Settings (keys, models, library); others to Appearance. */
+  settings?: boolean;
+};
 
 const never = () => () => {};
 

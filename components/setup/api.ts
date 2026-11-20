@@ -3,6 +3,9 @@
 import type { SetupStatus } from '@/lib/setup/status';
 import type { IngestProgress } from '@/lib/setup/ingest-job';
 import type { UploadResult } from '@/lib/setup/documents';
+import type { modelOptions } from '@/lib/setup/models';
+
+export type ModelOptions = ReturnType<typeof modelOptions>;
 
 export type Estimate = {
   documents: number;
@@ -58,6 +61,23 @@ export const setupApi = {
   estimate: (rebuild = false) => request<Estimate>('/api/setup/estimate', json({ rebuild })),
   startIngest: (rebuild = false) =>
     request<{ job: IngestProgress }>('/api/ingest', json({ confirm: true, rebuild })),
+  removeKey: (provider: string) =>
+    request<{ provider: string; masked: null }>(
+      `/api/setup/key?provider=${encodeURIComponent(provider)}`,
+      { method: 'DELETE' },
+    ),
+  // T-91: Settings › Models and keys
+  models: () => request<ModelOptions>('/api/settings/models', { cache: 'no-store' }),
+  saveModels: (change: { chat?: string; judge?: string }) =>
+    request<ModelOptions>('/api/settings/models', { ...json(change), method: 'PATCH' }),
+  estimateEmbedding: (embed: string) =>
+    request<Estimate>('/api/settings/embedding/estimate', json({ embed })),
+  changeEmbedding: (embed: string) =>
+    request<{ job: IngestProgress }>('/api/settings/embedding', json({ embed, confirm: true })),
+  ollama: () =>
+    request<{ baseUrl: string; running: boolean; models: string[] }>('/api/settings/ollama', {
+      cache: 'no-store',
+    }),
 };
 
 export type { IngestProgress, SetupStatus, UploadResult };

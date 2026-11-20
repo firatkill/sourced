@@ -30,11 +30,12 @@ async function readLibrary() {
 
 /** D-142: the sidebar's first render comes from the server, so it never flashes empty. */
 export async function readSidebar(): Promise<SidebarData> {
+  const settings = getKitConfig().profile === 'local';
   try {
     const [chats, projects] = await Promise.all([listChats(), listProjects()]);
-    return { chats, projects, now: new Date().toISOString() };
+    return { chats, projects, now: new Date().toISOString(), settings };
   } catch {
-    return { chats: [], projects: [], now: new Date().toISOString() };
+    return { chats: [], projects: [], now: new Date().toISOString(), settings };
   }
 }
 

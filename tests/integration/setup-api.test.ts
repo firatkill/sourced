@@ -293,3 +293,80 @@ test('ingest: estimate first, then one run at a time with progress that outlives
     ).status,
   ).toBe(404);
 });
+
+test('T-91 models: answer and check models apply without a restart; a new embedding model is estimated, then rebuilt', async () => {
+  const { getKitConfig } = await import('@/lib/kit/runtime-config');
+  const { writeConfig } = await import('@/lib/setup/config');
+  const { detectSource } = await import('@/lib/cli/commands/add');
+  const config = SnapshotSchema.parse(
+    JSON.parse(await readFile('.sourced/config.json', 'utf8')),
+  ).config;
+  await writeConfig({
+    ...config,
+    sources: [(await detectSource('my-docs', { id: 'my-docs' })).source],
+  });
+  resetIngestJobForTests();
+  const models = await import('@/app/api/settings/models/route');
+  const listed = (await (await models.GET(call('GET', '/api/settings/models'))).json()) as {
+    current: { chat: string; embed: string };
+    chat: { id: string; available: boolean }[];
+    embed: { id: string }[];
+  };
+  expect(listed.current.chat).toBe('openai:gpt-6-luna');
+  expect(listed.chat.map((m) => m.id)).toContain('anthropic:claude-sonnet-5-5');
+  expect(listed.embed.map((m) => m.id)).toContain('openai:text-embedding-3-large');
+
+  const patched = await models.PATCH(
+    call('PATCH', '/api/settings/models', { chat: 'openai:gpt-5.4' }),
+  );
+  expect(patched.status).toBe(200);
+  // The running server reads the new model on the next request.
+  expect(getKitConfig(false).models.chat).toEqual({ provider: 'openai', model: 'gpt-5.4' });
+  expect(await readFile('sourced.config.ts', 'utf8')).toContain('"gpt-5.4"');
+  for (const body of [{}, { chat: 'nope' }, { embed: 'openai:text-embedding-3-large' }])
+    expect((await models.PATCH(call('PATCH', '/api/settings/models', body))).status).toBe(400);
+
+  const estimate = await import('@/app/api/settings/embedding/estimate/route');
+  const before = await readFile('.sourced/config.json', 'utf8');
+  const estimated = (await (
+    await estimate.POST(
+      call('POST', '/api/settings/embedding/estimate', { embed: 'openai:text-embedding-3-large' }),
+    )
+  ).json()) as { documents: number };
+  expect(estimated.documents).toBe(1);
+  expect(await readFile('.sourced/config.json', 'utf8')).toBe(before);
+  expect(getKitConfig(false).models.embed.model).toBe('text-embedding-3-small');
+  const same = await estimate.POST(
+    call('POST', '/api/settings/embedding/estimate', { embed: 'openai:text-embedding-3-small' }),
+  );
+  expect(same.status).toBe(400);
+
+  const embedding = await import('@/app/api/settings/embedding/route');
+  expect(
+    (
+      await embedding.POST(
+        call('POST', '/api/settings/embedding', { embed: 'openai:text-embedding-3-large' }),
+      )
+    ).status,
+  ).toBe(400);
+  const started = await embedding.POST(
+    call('POST', '/api/settings/embedding', {
+      embed: 'openai:text-embedding-3-large',
+      confirm: true,
+    }),
+  );
+  expect(started.status).toBe(202);
+  expect(getKitConfig(false).models.embed).toEqual({
+    provider: 'openai',
+    model: 'text-embedding-3-large',
+    dimensions: 1536,
+  });
+  const { currentJob } = await import('@/lib/setup/ingest-job');
+  await expect.poll(() => currentJob()?.status, { timeout: 20_000 }).toBe('succeeded');
+  const { getSql } = await import('@/lib/db/client');
+  // Mock mode records its own embedding model; the run itself is the rebuild.
+  expect(currentJob()?.rebuild).toBe(true);
+  const [row] = await getSql()<{ status: string; total: number }[]>`
+    SELECT status, documents_total AS total FROM ingest_runs ORDER BY id DESC LIMIT 1`;
+  expect(row).toEqual({ status: 'succeeded', total: 1 });
+});

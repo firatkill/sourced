@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { AppError } from '@/lib/errors';
 import { reloadKitConfig } from '@/lib/kit/runtime-config';
 import type { IngestResult } from '@/lib/cli/schemas/ingest';
+import type { KitConfig } from '@/lib/kit/config-schema';
 import { readConfig } from './config';
 
 export const JobStatus = z.enum(['preparing', 'running', 'succeeded', 'failed']);
@@ -102,7 +103,7 @@ export function startIngest(options: { rebuild?: boolean } = {}, runner = defaul
 }
 
 /** The dry run behind the cost confirm: nothing is sent to a provider. */
-export async function estimateIngest(options: { rebuild?: boolean } = {}) {
+export async function estimateIngest(options: { rebuild?: boolean; config?: KitConfig } = {}) {
   const { runIngest } = await import('@/lib/cli/commands/ingest');
   const result = await runIngest(
     {
@@ -112,7 +113,8 @@ export async function estimateIngest(options: { rebuild?: boolean } = {}) {
       json: true,
     },
     { progress: () => undefined, isTTY: false },
-    { config: readConfig() },
+    // T-91: a candidate configuration (a new embedding model) is estimated before it is saved.
+    { config: options.config ?? readConfig() },
   );
   reloadKitConfig();
   return result;
@@ -140,4 +142,30 @@ export async function ingestProgress(sql: postgres.Sql): Promise<IngestProgress 
     if (counts) documents = counts;
   }
   return { ...job, documents };
+}
+
+/** The numbers behind the cost confirm (setup step 4, Settings rebuild). */
+export async function estimateSummary(options: { rebuild?: boolean; config?: KitConfig } = {}) {
+  const result = (await estimateIngest(options)) as {
+    totals: {
+      documents: { discovered: number; skipped: number };
+      embeddingTokens: number;
+      estimatedCostUsd: number | null;
+    };
+    warnings?: { code: string }[];
+  };
+  const { getEnv } = await import('@/lib/env');
+  const env = getEnv();
+  const embed = (options.config ?? readConfig()).models.embed;
+  return {
+    documents: result.totals.documents.discovered,
+    skipped: result.totals.documents.skipped,
+    embeddingTokens: result.totals.embeddingTokens,
+    estimatedCostUsd: result.totals.estimatedCostUsd,
+    // Mock mode replaces every provider, so the page says nothing leaves the computer.
+    provider: env.LLM_MODE === 'mock' ? 'mock' : embed.provider,
+    model: env.LLM_MODE === 'mock' ? 'mock' : embed.model,
+    rebuildRequired: (result.warnings ?? []).some((w) => w.code === 'CORPUS_MISMATCH'),
+    confirmAboveUsd: env.INGEST_CONFIRM_ABOVE_USD,
+  };
 }
