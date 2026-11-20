@@ -2,7 +2,7 @@ import 'server-only';
 // T-89 / R2 §6 (documents): uploads land in `my-docs/<relative path>`, which becomes a
 // folder source on first use; URLs go through the CLI's own source detection. Large
 // folders stay on the CLI (`./sourced add <path>`): a browser cannot hand over a host path.
-import { mkdir, rename, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { detectSource } from '@/lib/cli/commands/add';
 import { runReset } from '@/lib/cli/commands/reset';
@@ -63,6 +63,13 @@ export async function saveUploads(files: File[], root = process.cwd()): Promise<
       continue;
     }
     await mkdir(path.dirname(target), { recursive: true });
+    // A symlinked folder inside my-docs must not lead the write elsewhere.
+    const realBase = await realpath(base);
+    const realParent = await realpath(path.dirname(target));
+    if (realParent !== realBase && !realParent.startsWith(`${realBase}${path.sep}`)) {
+      result.skipped.push({ name: relative, reason: 'invalid_name' });
+      continue;
+    }
     const temporary = `${target}.${crypto.randomUUID()}.upload`;
     await writeFile(temporary, new Uint8Array(await file.arrayBuffer()));
     await rename(temporary, target);

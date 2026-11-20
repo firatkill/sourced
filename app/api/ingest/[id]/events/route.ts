@@ -19,25 +19,34 @@ export function GET(
     const first = await ingestProgress(getSql());
     if (!first || first.id !== id) return setupError('NOT_FOUND', 404, requestId, 'Not found');
     const encoder = new TextEncoder();
+    let closed = false;
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         let progress = first;
-        for (;;) {
-          controller.enqueue(
-            encoder.encode(`event: progress\ndata: ${JSON.stringify(progress)}\n\n`),
-          );
-          if (
-            progress.status === 'succeeded' ||
-            progress.status === 'failed' ||
-            request.signal.aborted
-          )
+        // Closing the tab cancels the stream; the run itself keeps going on the server.
+        while (!closed && !request.signal.aborted) {
+          try {
+            controller.enqueue(
+              encoder.encode(`event: progress\ndata: ${JSON.stringify(progress)}\n\n`),
+            );
+          } catch {
             break;
+          }
+          if (progress.status === 'succeeded' || progress.status === 'failed') break;
           await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
-          const next = await ingestProgress(getSql());
+          const next = await ingestProgress(getSql()).catch(() => null);
           if (!next || next.id !== id) break;
           progress = next;
         }
-        controller.close();
+        if (!closed)
+          try {
+            controller.close();
+          } catch {
+            /* Already closed by the client. */
+          }
+      },
+      cancel() {
+        closed = true;
       },
     });
     return new Response(stream, {

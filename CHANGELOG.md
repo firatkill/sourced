@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Setup in the browser: `./sourced dev` starts without `.env.local` and prints a one-time setup link. The browser walks through the data choice, the provider key (checked with one free request, saved in `.env.local`), your documents (upload files or a folder, or add a web page) and a cost confirm, then shows indexing progress. `./sourced setup` prints a new link.
+- Settings, in the local profile: **Models and keys** (replace or remove keys, check Ollama, switch the answer and quality-check models without a restart, and change the embedding model with a rebuild estimate first), **Library** (sources, add, remove, re-index, remove the example) and **Chats and data** (download a chat as Markdown, delete all chats).
 - Saved chats: the sidebar lists your chats by day with search, rename, pin, delete and projects; a chat reopens exactly as it was answered, even after a re-ingest. `./sourced reset --chats` removes them. The hosted demo keeps chats in the tab only.
 - Follow-up questions: a question that refers back ("Can it also be unique?") is rewritten into a standalone question before searching, and the answer shows what was searched for.
 - Citations of your own files open the original document, PDFs at the cited page.
@@ -14,6 +16,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- The local app answers only `localhost`, `127.0.0.1` and `[::1]` hosts (plus `ALLOWED_ORIGINS`), and refuses a mutating request whose `Origin` names another host. Setup and Settings also need the cookie the setup link sets.
+- A local app with nothing indexed opens setup instead of an empty chat.
 - With your own documents the app no longer shows the corpus title ("My documents") anywhere and shows no empty suggestions block; the PostgreSQL example explains how to switch to your own documents.
 - `/eval`, `/how-it-works` and Appearance use the same sidebar as the chat. `/eval` reads `eval/<corpus>/results`, so your own documents never show the example's evaluation.
 - The golden set has six follow-up cases (46 questions); the latest live run passes every floor.

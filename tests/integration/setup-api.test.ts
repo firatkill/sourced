@@ -447,3 +447,22 @@ test('T-92 data: export a chat as Markdown, delete all chats, remove a source an
   // Files on disk stay.
   expect(await readFile(path.join(root, 'my-docs/notes/indexes.md'), 'utf8')).toContain('Partial');
 });
+
+test('uploads never follow a symlinked folder out of my-docs', async () => {
+  const { symlink, readdir } = await import('node:fs/promises');
+  const outside = await mkdtemp(path.join(tmpdir(), 'sourced-outside-'));
+  await mkdir(path.join(root, 'my-docs'), { recursive: true });
+  await symlink(outside, path.join(root, 'my-docs/linked'), 'dir');
+  const form = new FormData();
+  form.append('files', new File(['# Escape'], 'linked/escape.md'));
+  const { POST } = await routes.files();
+  const result = await POST(
+    new Request(`${base}/api/setup/files`, { method: 'POST', headers: ORIGIN, body: form }),
+  );
+  expect(await result.json()).toMatchObject({
+    saved: [],
+    skipped: [{ name: 'linked/escape.md', reason: 'invalid_name' }],
+  });
+  expect(await readdir(outside)).toEqual([]);
+  await rm(outside, { recursive: true, force: true });
+});
