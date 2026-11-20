@@ -234,6 +234,7 @@ function ProviderStep({
           </p>
         )}
         <AdvancedSettings
+          mock={status.llmMode === 'mock'}
           onSaved={() => {
             void setupApi.status().then(onStatus);
           }}

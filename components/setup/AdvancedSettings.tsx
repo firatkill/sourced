@@ -8,7 +8,7 @@ import { setupApi, type ModelOptions } from './api';
 
 type Choice = { chat: string; judge: string; embed: string };
 
-export function AdvancedSettings({ onSaved }: { onSaved: () => void }) {
+export function AdvancedSettings({ mock, onSaved }: { mock: boolean; onSaved: () => void }) {
   const [options, setOptions] = useState<ModelOptions | null>(null);
   const [choice, setChoice] = useState<Choice | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -55,7 +55,10 @@ export function AdvancedSettings({ onSaved }: { onSaved: () => void }) {
         ...(choice.embed !== options.current.embed ? { embed: choice.embed } : {}),
       });
       setOptions(saved);
-      setMessage({ ok: true, text: 'Models saved. Add a key above for any new provider.' });
+      setMessage({
+        ok: true,
+        text: mock ? 'Models saved.' : 'Models saved. Add a key above for any new provider.',
+      });
       onSaved();
     } catch (error) {
       setMessage({ ok: false, text: error instanceof Error ? error.message : 'Try again.' });
@@ -101,6 +104,7 @@ export function AdvancedSettings({ onSaved }: { onSaved: () => void }) {
               id="setup-model-chat"
               role="chat"
               allowMissingKey
+              keyNote={!mock}
               label="Answer model"
               hint="Writes each answer."
               options={options.chat}
@@ -111,6 +115,7 @@ export function AdvancedSettings({ onSaved }: { onSaved: () => void }) {
               id="setup-model-judge"
               role="chat"
               allowMissingKey
+              keyNote={!mock}
               label="Quality-check model"
               hint="Grades answers when you run an evaluation."
               options={options.chat}
@@ -121,6 +126,7 @@ export function AdvancedSettings({ onSaved }: { onSaved: () => void }) {
               id="setup-model-embed"
               role="embed"
               allowMissingKey
+              keyNote={!mock}
               label="Embedding model"
               hint="Turns your documents into searchable passages."
               options={options.embed}

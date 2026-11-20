@@ -20,11 +20,14 @@ export function ModelSelect({
   warn = false,
   role = id === 'model-embed' ? 'embed' : 'chat',
   allowMissingKey = false,
+  keyNote = true,
 }: {
   id: string;
   role?: 'chat' | 'embed';
   // Setup asks for the key on the same step, so a model without one can still be chosen.
   allowMissingKey?: boolean;
+  // Mock mode needs no keys, so the note would mislead.
+  keyNote?: boolean;
   label: string;
   hint: string;
   options: Option[];
@@ -59,7 +62,11 @@ export function ModelSelect({
             disabled={!allowMissingKey && !option.available && option.id !== value}
           >
             {option.model} · {option.providerLabel}
-            {option.available ? '' : allowMissingKey ? ' (needs a key)' : ' (add a key)'}
+            {option.available || !keyNote
+              ? ''
+              : allowMissingKey
+                ? ' (needs a key)'
+                : ' (add a key)'}
           </option>
         ))}
       </select>
