@@ -115,7 +115,7 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-95 | M12 Project search scope | Example banner points to Settings › Library | done | dd667a0 |
 | T-96 | M12 Project search scope | `/eval` hydration flake | recorded, cause not found (`qa/release-v2/tc-145-eval-hydration.md`) | 8412af4 |
 | T-97 | M12 Project search scope | Dependency alerts | done | 2886ff2 |
-| T-98 | M12 Project search scope | Docs and v2.4.0 | done on `v2.4/project-scope`; merge and tag need the owner | HEAD |
+| T-98 | M12 Project search scope | Docs and v2.4.0 | done (merged in #9, tag v2.4.0) | 39e54a5 |
 
 ## Open questions for the owner
 

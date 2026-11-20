@@ -1164,8 +1164,8 @@ Reviewer items (done on `v2.4/project-scope`, 2026-11-20):
 
 Owner items (need the owner's yes):
 
-- [ ] Merge the v2.4 PR; production runs migration `0005_project_scope` in the deploy workflow (additive; the hosted demo has no projects).
-- [ ] Tag `v2.4.0`.
+- [x] Merge the v2.4 PR; production runs migration `0005_project_scope` in the deploy workflow (additive; the hosted demo has no projects) (owner's yes, 2026-11-20).
+- [x] Tag `v2.4.0`.
 - [ ] Close the Dependabot alerts that the merge fixes (they close on their own after the default branch updates).
 
 ## Release checklist v2.3.0

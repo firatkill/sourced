@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-20
+
+Project search scope, a Library link in the example banner, and dependency updates.
+
 ### Added
 
 - A project can limit its chats to some library sources (**Search in** on the project page); the server applies the limit to both search rankers (D-150, migration `0005_project_scope`).
