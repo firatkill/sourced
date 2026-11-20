@@ -26,6 +26,13 @@ import { parsePdf } from './parse-pdf';
 import { parseText } from './parse-text';
 import { removeBoilerplate } from './boilerplate';
 import { parseDocx } from './parse-docx';
+import {
+  createDoclingConverter,
+  DoclingUnavailableError,
+  type DoclingConvert,
+  type DoclingKind,
+} from './docling';
+import { doclingToSections } from './parse-docling';
 import { chunkDocument } from './chunk';
 import type { IngestDocument } from './upsert';
 
@@ -57,8 +64,14 @@ export async function loadCorpus(options: {
   onEvent?: (event: SourceEvent) => void;
   config?: KitConfig;
   parse?: (raw: RawDocument, source: Source) => ParsedDocument;
+  /** Tests pass a fake; otherwise the local Docling service when the config turns it on. */
+  docling?: DoclingConvert;
 }) {
   const config = options.config ?? getKitConfig();
+  const docling =
+    config.parsing?.engine === 'docling'
+      ? (options.docling ?? createDoclingConverter())
+      : undefined;
   let metadata: z.infer<typeof Metadata> = { version: '1', fixtures: [] };
   try {
     metadata = Metadata.parse(
@@ -146,17 +159,61 @@ export async function loadCorpus(options: {
           raw.mimeType ===
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
           /\.docx$/i.test(slug);
+        const isPptx =
+          raw.mimeType ===
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+          /\.pptx$/i.test(slug);
+        const doclingKind: DoclingKind | undefined = isPdf
+          ? 'pdf'
+          : isDocx
+            ? 'docx'
+            : isPptx
+              ? 'pptx'
+              : undefined;
+        if (!options.parse && isPptx && !docling) {
+          context.onEvent({ type: 'skipped', key: ref.key, reason: 'needs_docling' });
+          continue;
+        }
         if (
           !options.parse &&
           !isPdf &&
           !isDocx &&
+          !isPptx &&
           !['text/html', 'text/markdown', 'text/mdx', 'text/plain'].includes(raw.mimeType)
         )
           throw new AppError(
             'UNSUPPORTED_MEDIA_TYPE',
             'This source format requires its M6 parser.',
           );
-        if (!options.parse && isDocx) {
+        // D-152: a dry run (the cost estimate) never waits for Docling to read a PDF or Word
+        // file: it uses a saved result, or the built-in reader's text for the token count.
+        let json: unknown;
+        if (!options.parse && docling && doclingKind) {
+          const estimate = options.readOnly === true && doclingKind !== 'pptx';
+          try {
+            json = await docling(
+              raw.bytes,
+              {
+                fileName: slug,
+                kind: doclingKind,
+                language: config.corpus.language,
+                contentHash: raw.contentHash,
+              },
+              { cacheOnly: estimate },
+            );
+          } catch (error) {
+            if (!(options.readOnly && error instanceof DoclingUnavailableError)) throw error;
+            context.onEvent({ type: 'skipped', key: ref.key, reason: 'needs_docling' });
+            continue;
+          }
+        }
+        if (json !== undefined && doclingKind) {
+          document = doclingToSections(json, {
+            fileName: slug,
+            paged: doclingKind === 'pdf',
+            slides: doclingKind === 'pptx',
+          });
+        } else if (!options.parse && isDocx) {
           const parsed = await parseDocx(raw.bytes, slug);
           document = parsed.document;
           documents.warnings += parsed.warnings;
@@ -187,6 +244,8 @@ export async function loadCorpus(options: {
                     html: { ...source.html, contentSelector: source.html.contentSelector ?? '' },
                   });
       } catch (error) {
+        // Docling down stops the run: indexing half the files another way would mix readers.
+        if (error instanceof DoclingUnavailableError) throw error;
         context.onEvent({
           type: 'failed',
           key: ref.key,

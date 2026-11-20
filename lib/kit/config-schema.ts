@@ -87,6 +87,9 @@ const BaseKitConfigSchema = z.object({
   }),
   pricing: z.record(z.string(), Pricing).default({}), // key: "<provider>:<model>"
   profile: z.enum(['local', 'private', 'public-demo']).default('local'),
+  // D-152: optional Docling reader for PDF, Word and PowerPoint files. No default, so
+  // snapshots written before v2.5 keep their hash; absent means the built-in readers.
+  parsing: z.object({ engine: z.enum(['builtin', 'docling']) }).optional(),
   copy: z
     .object({
       hero: z.string().max(120).optional(),

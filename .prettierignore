@@ -18,3 +18,5 @@ eval/*/results/
 
 # Saved HTTP fixtures must remain byte-identical.
 tests/fixtures/sites/*.html
+# Docling ground-truth outputs stay exactly as the docling project publishes them.
+tests/fixtures/docling/*.json
