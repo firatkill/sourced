@@ -40,7 +40,8 @@ export const commandSchemas = {
   eval: EvalResult.omit({ questions: true })
     .extend({ comparison: z.record(z.string(), z.unknown()).optional() })
     .optional(),
-  dev: z.object({ url: z.url() }),
+  dev: z.object({ url: z.url(), setupUrl: z.url().optional() }),
+  setup: z.object({ url: z.url() }),
   down: z.object({}),
   'deploy:check': checks,
   'config:snapshot': z.object({ configHash: z.string().regex(/^[a-f0-9]{64}$/) }),

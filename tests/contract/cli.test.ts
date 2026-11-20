@@ -100,7 +100,9 @@ describe('TC-202 / UT-45 / FR-77: real CLI output contains no secrets', () => {
       const normalized = JSON.parse(
         child.stdout
           .replace(/[a-f0-9]{64}/g, '<configHash>')
-          .replace(/Node [^;]+; pnpm [^.]+\.[^.]+\.[^.]+\./g, 'Node <version>; pnpm <version>.'),
+          .replace(/Node [^;]+; pnpm [^.]+\.[^.]+\.[^.]+\./g, 'Node <version>; pnpm <version>.')
+          // The ports check depends on what else runs on the machine (CI vs a laptop).
+          .replace(/(app|database) port \d+ is taken on [^"]+\./g, 'ports check failed.'),
       ) as unknown;
       expect({ exit: child.status, envelope: normalized }).toMatchSnapshot();
       for (const line of child.stderr.trim().split('\n').filter(Boolean))

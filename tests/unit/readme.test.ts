@@ -45,15 +45,17 @@ describe('TC-162: README sections (FR-57, TRD §27)', () => {
   });
 });
 
-describe('D-138 / D-139: the quick start needs only Docker, one key and three commands', () => {
-  it('copies the env template, then ingests and starts the example', () => {
+describe('D-138 / D-139 / D-146: the quick start needs only Docker and one command', () => {
+  it('starts the app and follows the browser; the terminal path stays below it', () => {
     const quick = readme.split('## Quick start')[1]?.split('## Use your own documents')[0] ?? '';
     const blocks = [...quick.matchAll(/```sh\n([\s\S]*?)```/g)].map((m) => m[1]);
     expect(blocks).toEqual([
       'git clone https://github.com/firatkill/sourced.git\ncd sourced\n',
+      './sourced dev\n',
       'cp .env.example .env.local\n',
       './sourced ingest\n./sourced dev\n',
     ]);
+    expect(quick).toContain('`./sourced setup` prints a new one');
     expect(quick).toContain('`OPENAI_API_KEY=`');
   });
   it('replaces the example with reset before adding documents', () => {

@@ -2,8 +2,9 @@
 setlocal DisableDelayedExpansion
 if not defined BUILDX_NO_DEFAULT_ATTESTATIONS set BUILDX_NO_DEFAULT_ATTESTATIONS=1
 cd /d "%~dp0"
-if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" (
-  echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
+rem T-88: dev and setup start without .env.local; the browser asks for the key.
+if not exist .env.local if not "%~1"=="init" if not "%~1"=="doctor" if not "%~1"=="dev" if not "%~1"=="setup" (
+  echo Run sourced.cmd dev first, then finish setup in your browser. 1>&2
   exit /b 2
 )
 where docker >nul 2>nul
@@ -12,10 +13,7 @@ if errorlevel 1 (
   exit /b 2
 )
 if not exist .env.local (
-  if "%~1"=="init" (type nul > .env.local) else if "%~1"=="doctor" (type nul > .env.local) else (
-    echo Create .env.local first: copy .env.example .env.local, then add your API key to it. 1>&2
-    exit /b 2
-  )
+  type nul > .env.local
 )
 set "SOURCED_LAUNCHER=sourced.cmd"
 rem D-136: one Compose project per checkout, recorded in .env for Compose to read.
@@ -27,6 +25,7 @@ for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURC
 )
 if "%~1"=="down" goto down
 if "%~1"=="dev" goto dev
+if "%~1"=="setup" goto setup
 if "%~1"=="init" echo Building the image on first run takes a few minutes. 1>&2
 set "json=false"
 for %%A in (%*) do if "%%~A"=="--json" set "json=true"
@@ -115,3 +114,9 @@ if "%json%"=="true" (
 if errorlevel 1 exit /b 1
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-dev.ps1" "%json%" "%SOURCED_PORT%"
 exit /b
+:setup
+set "json=false"
+for %%A in (%*) do if "%%~A"=="--json" set "json=true"
+if not defined SOURCED_PORT set "SOURCED_PORT=3000"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\sourced-setup.ps1" -Json %json% -Port %SOURCED_PORT%
+exit /b %errorlevel%

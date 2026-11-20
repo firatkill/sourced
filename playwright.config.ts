@@ -79,5 +79,10 @@ export default defineConfig({
       command:
         'pnpm exec tsx --conditions=react-server tests/fixtures/local-profile-server.ts own-docs',
     },
+    {
+      // T-90: a fresh local checkout with its own database for the browser setup flow.
+      ...server(3107, { DEMO_MODE: 'off' }),
+      command: 'pnpm exec tsx --conditions=react-server tests/fixtures/setup-profile-server.ts',
+    },
   ],
 });

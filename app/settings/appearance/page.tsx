@@ -2,12 +2,15 @@ import type { Metadata } from 'next';
 import { ThemePicker } from '@/components/settings/ThemePicker';
 import { TextSize } from '@/components/settings/TextSize';
 import { ContentPage } from '@/components/layout/ContentPage';
+import { SettingsNav } from '@/components/settings/SettingsNav';
+import { getKitConfig } from '@/lib/kit/runtime-config';
 
 export const metadata: Metadata = { title: 'Appearance · Sourced' };
 
 export default function Appearance() {
   return (
     <ContentPage>
+      {getKitConfig().profile === 'local' && <SettingsNav />}
       <div className="max-w-3xl">
         <h1>Appearance</h1>
         <p className="text-[var(--ink-2)]">

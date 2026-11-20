@@ -1,6 +1,11 @@
-import { beforeAll } from 'vitest';
+import { afterEach, beforeAll } from 'vitest';
 
 process.env.LLM_MODE = 'mock';
+// T-88: startApp and runDev opt the process into setup mode; no test inherits it.
+delete process.env.SOURCED_SETUP_MODE;
+afterEach(() => {
+  delete process.env.SOURCED_SETUP_MODE;
+});
 // D-138: tests that reload the shipped config rewrite the shared snapshot; keep it the
 // hosted example's profile, as the suite's global setup generates it.
 process.env.SOURCED_PROFILE ??= 'public-demo';

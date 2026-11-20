@@ -90,6 +90,22 @@ Choose chat and embeddings separately in `sourced.config.ts`: OpenAI, Google Gem
 | `private`     | Shared access token required. Initialization generates `SOURCED_ACCESS_TOKEN` in `.env.local`; enter it in the browser. A site-scoped cookie remembers access. Demo quotas and the suggested-answer cache are off. |
 | `public-demo` | Public access with daily quotas, IP hashing, demo controls and cached suggested answers.                                                                                                                           |
 
+## Setup and Settings in the browser
+
+`./sourced dev` works on a fresh clone. The launcher creates an empty `.env.local` (mode 0600). The app's startup check writes a setup token to `.sourced/setup-token` (mode 0600) and, while no provider key is saved or nothing is indexed, the launcher prints `http://localhost:<port>/setup?token=…`. `./sourced setup` writes a new token and prints a new link; earlier links and signed-in browsers stop working.
+
+What protects these pages, which can save keys and spend money:
+
+- They exist only in the `local` profile; the hosted demo and the private profile have Appearance only.
+- The port is bound to `127.0.0.1`, and the app refuses any `Host` other than `localhost`, `127.0.0.1` or `[::1]` (plus the hosts in `ALLOWED_ORIGINS`), which stops DNS rebinding.
+- The link's token is exchanged for an `HttpOnly`, `SameSite=Strict` cookie that holds only the token's hash and lasts 30 days. Every setup and settings call needs it, and every change also needs an `Origin` naming the same host.
+- Keys are checked with the provider's free list-models call, written to `.env.local` and the running server, and only ever returned masked (`sk-…a91F`). Error messages and logs never include them. `DATABASE_URL` and the ports are not editable in the browser.
+- Nothing else goes to a provider until you confirm the cost on the Index step.
+
+Indexing from the browser runs the same `ingest` as the CLI, one run at a time, and its progress comes from the database, so closing the tab does not stop it. Uploads go to `my-docs/` (ignored by Git) and use the folder source's types and 50 MB limit; for a large folder use `./sourced add <folder>`. Changing the embedding model in Settings shows the rebuild estimate first; after you confirm, it saves the model and rebuilds the index, and answers pause until the rebuild finishes. Answer and quality-check models apply to the next question without a restart.
+
+The Provider step has a closed **Advanced settings** section for choosing the answer, quality-check and embedding models before anything is indexed. A provider chosen there gets its own key field on the same step, and the Index step prices the run with the chosen embedding model. Passage size and search depth are left to the `sourced-tune` skill, which changes them against an evaluation.
+
 ## Node path (contributors)
 
 Install Node.js 22 or newer and pnpm 10.18.3. The CLI is the same; run it through pnpm instead of the Docker launcher:

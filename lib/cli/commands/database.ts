@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -12,7 +13,9 @@ import { ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { AppError } from '@/lib/errors';
 import { ensureComposeProject } from '@/lib/kit/compose-project';
 
-export const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url));
+// T-89: not `new URL('../../../', import.meta.url)`, which webpack resolves as an asset
+// when the app server imports this module (Setup and Settings reuse `reset` and `saveConfig`).
+export const repositoryRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../');
 export const execute = promisify(execFile);
 export function connectDatabase(url = getCliEnvironment().DATABASE_URL) {
   if (!url) throw new AppError('NEEDS_CONFIRMATION', 'Set DATABASE_URL in .env.local.');

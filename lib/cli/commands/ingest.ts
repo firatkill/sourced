@@ -2,7 +2,8 @@ import { writeRunReport } from '@/lib/inspect/run-report';
 import { requireSources } from './config-files';
 import postgres from 'postgres';
 import { AppError } from '@/lib/errors';
-import { configHash, loadConfig } from '@/lib/kit/load-config';
+import { configHash, loadConfig, writeConfigSnapshot } from '@/lib/kit/load-config';
+import type { KitConfig } from '@/lib/kit/config-schema';
 import { getKitConfig, setCliKitConfig } from '@/lib/kit/runtime-config';
 import { corpusRebuildRequired, ensureCorpusSchema } from '@/lib/kit/vector-schema';
 import { getEnv } from '@/lib/env';
@@ -50,9 +51,18 @@ export async function confirmIngest(
   }
 }
 
-export async function runIngest(input: Invocation, context: CommandContext) {
+/**
+ * T-89: the app server passes the configuration it read from the snapshot, because
+ * Next cannot import `sourced.config.ts`; the CLI loads the file as before.
+ */
+export async function runIngest(
+  input: Invocation,
+  context: CommandContext,
+  options: { config?: KitConfig } = {},
+) {
   const dryRun = input.values['dry-run'] === true;
-  setCliKitConfig(await loadConfig(process.cwd(), { writeSnapshot: !dryRun }));
+  if (options.config && !dryRun) await writeConfigSnapshot(options.config);
+  setCliKitConfig(options.config ?? (await loadConfig(process.cwd(), { writeSnapshot: !dryRun })));
   requireSources(getKitConfig());
   const env = getEnv();
   const config = structuredClone(getKitConfig());

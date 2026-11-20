@@ -1,4 +1,5 @@
 import { loadConfig, parseKitConfig } from '@/lib/kit/load-config';
+import type { KitConfig } from '@/lib/kit/config-schema';
 import { connectDatabase } from './database';
 import { saveConfig } from './config-files';
 import { deleteAllChats } from '@/lib/chats/store';
@@ -10,8 +11,9 @@ import { deleteAllChats } from '@/lib/chats/store';
  * rate-limit counters are kept. The router asks for confirmation first.
  * D-144: saved chats and projects are kept unless `--chats` is given.
  */
-export async function runReset(options: { chats?: boolean } = {}) {
-  const current = await loadConfig(process.cwd(), { writeSnapshot: false });
+export async function runReset(options: { chats?: boolean; config?: KitConfig } = {}) {
+  // T-89: the app server passes the snapshot's configuration (Next cannot import the TS file).
+  const current = options.config ?? (await loadConfig(process.cwd(), { writeSnapshot: false }));
   const next = parseKitConfig({
     schemaVersion: 1,
     corpus: {

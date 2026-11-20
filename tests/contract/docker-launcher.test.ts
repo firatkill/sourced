@@ -1,7 +1,7 @@
 // TC-214 / FR-94; TRD §35.3: exercise the POSIX launcher without a Docker daemon.
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, expect, test } from 'vitest';
@@ -34,6 +34,7 @@ async function fixture(
     'sleep',
     'rm',
     'mkdir',
+    'mv',
   ])
     await symlink(
       execFileSync('/bin/sh', ['-c', `command -v ${command}`], { encoding: 'utf8' }).trim(),
@@ -105,7 +106,7 @@ test('TC-214: missing environment stops ordinary commands with the exact setup i
   const { run, log } = await fixture();
   await expect(run(['ask', 'What is an index?'])).rejects.toMatchObject({
     code: 2,
-    stderr: 'Create .env.local first: cp .env.example .env.local, then add your API key to it.\n',
+    stderr: 'Run ./sourced dev first, then finish setup in your browser.\n',
   });
   await expect(readFile(log)).rejects.toMatchObject({ code: 'ENOENT' });
 });
@@ -381,14 +382,66 @@ test('TC-214: doctor without Docker prints its platform install link and exits 2
   await expect(readFile(path.join(root, '.env.local'))).rejects.toMatchObject({ code: 'ENOENT' });
 });
 
-test('TC-214 / TRD §35.2: app refuses to start before init, even though db can run without an env file', async () => {
-  const { root } = await fixture();
-  await expect(
-    execute('/bin/sh', [path.resolve('scripts/docker-entrypoint.sh'), 'app'], { cwd: root }),
-  ).rejects.toMatchObject({
-    code: 2,
-    stderr: 'Create .env.local first: copy .env.example to .env.local and add your API key.\n',
+test('T-88: the app container starts without .env.local; startup decides setup mode', async () => {
+  const entrypoint = await readFile('scripts/docker-entrypoint.sh', 'utf8');
+  expect(entrypoint).not.toContain('Create .env.local first');
+  expect(entrypoint).toContain('--env-file-if-exists=.env.local /app/scripts/app-startup.ts');
+});
+
+const SETUP_LINK = /^http:\/\/localhost:(\d+)\/setup\?token=([0-9a-f]{48})$/;
+test('T-88: dev on a fresh checkout creates a private .env.local and prints the setup link', async () => {
+  const { root, run } = await fixture();
+  await mkdir(path.join(root, '.sourced'));
+  // The app container writes these at startup when no provider key is saved.
+  await writeFile(path.join(root, '.sourced/setup-token'), `${'a1'.repeat(24)}\n`);
+  await writeFile(path.join(root, '.sourced/setup-pending'), '');
+  const { stdout } = await run(['dev']);
+  expect(stdout).toBe(
+    `Sourced is running. Finish setup in your browser:\nhttp://localhost:3000/setup?token=${'a1'.repeat(24)}\nStop it with ./sourced down\n`,
+  );
+  expect((await stat(path.join(root, '.env.local'))).mode & 0o777).toBe(0o600);
+  const json = CliEnvelope.parse(
+    JSON.parse((await run(['dev', '--port', '3187', '--json'])).stdout),
+  );
+  expect(commandSchemas.dev.parse(json.result)).toEqual({
+    url: 'http://localhost:3187',
+    setupUrl: `http://localhost:3187/setup?token=${'a1'.repeat(24)}`,
   });
+});
+
+test('T-88: setup prints a new link each time and keeps the token private', async () => {
+  const { root, run, log } = await fixture();
+  const first = (await run(['setup'])).stdout.split('\n');
+  expect(first[0]).toBe('Open this link to finish setup in your browser:');
+  expect(first[2]).toBe('It replaces any earlier link.');
+  const token = SETUP_LINK.exec(first[1] ?? '')?.[2];
+  expect(token).toBeDefined();
+  const file = path.join(root, '.sourced/setup-token');
+  expect((await readFile(file, 'utf8')).trim()).toBe(token);
+  expect((await stat(file)).mode & 0o777).toBe(0o600);
+  const envelope = CliEnvelope.parse(
+    JSON.parse((await run(['setup', '--port', '3190', '--json'])).stdout),
+  );
+  const { url } = commandSchemas.setup.parse(envelope.result);
+  expect(SETUP_LINK.exec(url)?.[1]).toBe('3190');
+  expect(SETUP_LINK.exec(url)?.[2]).not.toBe(token);
+  expect(await readFile(path.join(root, '.env.local'), 'utf8')).toBe('');
+  // No container is needed to issue a link.
+  await expect(readFile(log)).rejects.toMatchObject({ code: 'ENOENT' });
+});
+
+test('T-88: Windows dev and setup print the same links', async () => {
+  const launcher = await readFile('sourced.cmd', 'utf8');
+  expect(launcher).toContain('if not "%~1"=="dev" if not "%~1"=="setup"');
+  expect(launcher).toContain('if "%~1"=="setup" goto setup');
+  expect(launcher).toContain('scripts\\sourced-setup.ps1" -Json %json% -Port %SOURCED_PORT%');
+  const helper = await readFile('scripts/sourced-setup.ps1', 'utf8');
+  expect(helper).toContain('GetBytes($bytes)');
+  expect(helper).toContain("'.sourced\\setup-token'");
+  expect(helper).toContain('It replaces any earlier link.');
+  const dev = await readFile('scripts/sourced-dev.ps1', 'utf8');
+  expect(dev).toContain('.sourced\\setup-pending');
+  expect(dev).toContain('Finish setup in your browser:');
 });
 
 // D-135 / FR-77: all pre-CLI Compose boundaries preserve the JSON contract.

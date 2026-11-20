@@ -1115,6 +1115,23 @@ Docs and release
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
 
+## Release checklist v2.3.0
+
+Reviewer items (done on `v2.3/setup-settings`, 2026-11-20):
+
+- [x] T-88 to T-92 committed; lint, typecheck, unit, integration, contract and the setup E2E specs pass locally.
+- [x] Security review of the setup and settings routes recorded: `qa/release-v2/security-review-v2.3.md`.
+- [x] Docs: TRD §43, D-146 to D-148, README quick start (`./sourced dev`, then the browser), GUIDE, CHANGELOG, `sourced-setup` skill (browser path first).
+- [x] Newcomer rehearsal on a clean clone with only Docker reaches a cited answer through the browser (`qa/release-v2/rehearsal-browser-setup.md`).
+- [x] Advanced settings on the Provider step (D-149), from the owner's request after the rehearsal.
+- [x] One live eval run after all v2.2 and v2.3 development, with the owner's yes for its cost: `eval/postgres-17/results/2026-11-20-2.md` at 7b9dff0, every floor passes, $0.41.
+
+Owner items (need the owner's yes):
+
+- [x] Merge the v2.2 PR, then the v2.3 PR; no migration in v2.3 (owner's yes, 2026-11-20).
+- [x] Tag `v2.3.0`.
+- [ ] Try `./sourced dev` on a fresh clone with a real key on your machine.
+
 ## Release checklist v2.2.0
 
 Reviewer items (done on the M10 branches, 2026-11-20):

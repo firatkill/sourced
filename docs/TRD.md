@@ -3998,3 +3998,51 @@ A corpus without its own `copy` block gets generic copy (§29 defaults) and no s
 
 `/`, `/c/*`, `/p/*`, `/eval`, `/how-it-works` and `/settings/appearance` share the sidebar shell (`ChatRail`, `ChatSidebar`, `ContentShell`); only not-found keeps the top bar. Themes: REDESIGN-v2 §6.1 (`lib/theme.ts`, `sourced-theme` and `sourced-text-size` in `localStorage`, applied before paint).
 
+## 43. Setup and Settings in the browser *(v2.3, D-142, D-146 to D-149)*
+
+Design and scope: `docs/REDESIGN-v2.md` §5 to §7. This section records what was built.
+
+### 43.1 Boot without a key (T-88)
+
+`./sourced dev` (and `sourced.cmd dev`) run without `.env.local` and create an empty one (mode 0600). The app container's entrypoint starts `next` with `SOURCED_SETUP_MODE=1`; `scripts/app-startup.ts` calls `allowSetupMode()`. With that flag, `getEnv()` accepts a missing provider key in the `local` profile only; `setupState()` reports `{ required, missingKeys }`. Startup writes `.sourced/setup-token` (48 hex digits, mode 0600, kept across restarts) and, while a key is missing or nothing is indexed, `.sourced/setup-pending`; the launcher then prints `http://localhost:<port>/setup?token=…` (JSON: additive `result.setupUrl` on `dev`). `./sourced setup [--port]` writes a new token and prints its link (`result.url`); the shell and PowerShell launchers do it without starting a container.
+
+### 43.2 Request checks (middleware, local profile)
+
+- `Host` must be `localhost`, `127.0.0.1` or `[::1]` on any port, or a host named in `ALLOWED_ORIGINS`; anything else is `403 ORIGIN_FORBIDDEN` before a route runs (DNS rebinding).
+- A request other than `GET`, `HEAD` or `OPTIONS` whose `Origin` names another host is `403 ORIGIN_FORBIDDEN`.
+- `GET /setup?token=…` with the current token sets `sourced_setup` (the token's SHA-256, `HttpOnly`, `SameSite=Strict`, 30 days) and redirects to `/setup`; another token redirects to `/setup?link=expired`. The token never stays in the address bar.
+- While `setupState().required`, page requests (not `/api/*`, `/setup`, `/how-it-works`, assets) redirect to `/setup`. A local chat page with an empty index also redirects there.
+
+### 43.3 APIs (T-89, T-91, T-92)
+
+All are local-profile only (`404 NOT_FOUND` otherwise), need the `sourced_setup` cookie (`401 ACCESS_DENIED`), and every mutation needs a same-host `Origin` (`403`). Bodies are strict JSON up to 8 KB, except the upload (multipart, up to 200 MB declared). Error messages are written for people; logs carry only the error code and type (`setup.error`).
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/setup/status` | setup state, providers (masked keys), models, library (sources with indexed counts), current ingest job |
+| `POST /api/setup/data` `{choice}` | `example` keeps the example; `own` runs `reset` (chats are kept) |
+| `POST /api/setup/key` `{provider, key}`; `DELETE ?provider=` | checks the key with the free list-models call, writes `.env.local` atomically and `process.env`, returns `{provider, masked}` |
+| `POST /api/setup/files` | uploads into `my-docs/<relative path>`; refuses traversal, hidden names, symlinked folders, other types and files over 50 MB; adds the `my-docs` folder source |
+| `POST /api/setup/url` `{url}` | adds an `http(s)` source through the CLI's source detection |
+| `POST /api/setup/models` `{chat?, judge?, embed?}` | setup's Advanced settings (D-149): saves the models before indexing, with no run started; `409` while a job runs |
+| `POST /api/setup/estimate` | dry-run summary: documents, tokens, cost, provider, rebuild needed; when the embedding model changed it prices the rebuild, and the Index step then starts one |
+| `POST /api/ingest` `{confirm: true, rebuild?}`; `GET /api/ingest` | starts the in-process `runIngest` (one job per process) or returns the running one; current progress |
+| `GET /api/ingest/:jobId/events` | SSE `progress` events every second from `ingest_runs` and `ingest_items` until the job ends |
+| `GET`, `PATCH /api/settings/models` `{chat?, judge?}` | model catalogue (`lib/llm/models.ts`) with prices and key availability; changes apply on the next request |
+| `POST /api/settings/embedding/estimate` `{embed}` | dry run of the full rebuild with the candidate model; nothing is saved |
+| `POST /api/settings/embedding` `{embed, confirm: true}` | saves the model and starts a rebuild; `409` while a job runs |
+| `GET /api/settings/ollama` | whether Ollama answers at `OLLAMA_BASE_URL`, and its models |
+| `DELETE /api/settings/sources?id=` | removes a source and its indexed documents (files stay) |
+| `DELETE /api/settings/chats` | deletes all chats and projects |
+| `GET /api/chats/:id/export` | a saved chat as Markdown (`chatRoute`: local and private profiles) |
+
+Configuration: inside the server the snapshot is the configuration (Next cannot import `sourced.config.ts`). Changes go through `saveConfig()` and then `reloadKitConfig()`; `runIngest` and `runReset` take the configuration as an option. Keys: only `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` and `OLLAMA_BASE_URL` are writable, values are printable ASCII without spaces, quotes, `$`, `#` or backslashes.
+
+### 43.4 Pages
+
+`/setup` (steps Data, Provider, Documents, Index; its own header and stepper; the Provider step has a closed Advanced settings section with the three model choices), `/settings` (Models and keys), `/settings/library`, `/settings/appearance` and `/settings/data`, with a section nav in the local profile. Without the cookie a page shows how to get a new link. The rail's last link is Settings in the local profile and Appearance elsewhere. `/setup` and `/settings/*` are separate route chunks; `/` stays under 180 KB first-load JS.
+
+### 43.5 Tests
+
+`tests/unit/setup-guard.test.ts`, `setup-helpers.test.ts`, `chat-markdown.test.ts`; `tests/integration/setup-api.test.ts`; launcher contracts in `tests/contract/docker-launcher.test.ts`; E2E `tests/e2e/setup.spec.ts` on a fresh local checkout (port 3107, its own database `<e2e database>_setup`, no keys, mock mode): link → own documents → upload → cost → index → cited answer, then Settings and Library.
+

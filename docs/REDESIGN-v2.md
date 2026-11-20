@@ -100,7 +100,7 @@ All new routes are local-profile only (private where section 2 says so), same-or
 | `GET /api/library`                                         | library facts for the header, empty state and Settings › Library                                                                                                | `documents`, `ingest_runs`                                            |
 | `GET /api/files/:documentId`                               | streams the original local file (PDF opens at `#page=n`)                                                                                                        | path containment under the configured source roots; no symlink escape |
 | `POST /api/setup/*`, `/api/settings/*`                     | see section 6                                                                                                                                                   | `provider-checks.ts`, `saveConfig`, `runAdd`, `runReset`, ingest      |
-| `GET /api/ingest/:runId/events`                            | SSE progress for the setup and Settings flows                                                                                                                   | `ingest_runs`, `ingest_items`                                         |
+| `POST /api/ingest`, `GET /api/ingest/:jobId/events`                            | start a run (one at a time) and its SSE progress; `:jobId` is returned by the POST, because the run row appears only after planning                                                                                                                   | `ingest_runs`, `ingest_items`                                         |
 
 Follow-ups (FR-91): when `history` is present, one extra chat-model call rewrites the question into a standalone question before retrieval. The rewrite is shown under the turn as "Searched for: …". Retrieval, the answer prompt and citation checks still run on that single question. This is a prompt change, so it needs a new eval run with the golden-set floors unchanged, plus a follow-up subset (6 to 10 two-turn cases) added to the golden set.
 
@@ -108,7 +108,7 @@ Follow-ups (FR-91): when `history` is present, one extra chat-model call rewrite
 
 **Boot without a key.**
 
-- `./sourced dev` no longer needs `.env.local`. The launcher creates an empty one (mode 0600), generates `SOURCED_SETUP_TOKEN` and prints the one-time link.
+- `./sourced dev` no longer needs `.env.local`. The launcher creates an empty one (mode 0600). The app's startup check writes a setup token to `.sourced/setup-token` (mode 0600, not `.env.local`, so `./sourced setup` can issue a new link while the app runs), and the launcher prints the one-time link while no provider key is saved.
 - `scripts/app-startup.ts` and `getEnv()` accept a missing provider key in `local`. The app then starts in setup mode: every page redirects to `/setup` until a key check passes and an index exists.
 - `./sourced setup` prints a new link at any time.
 

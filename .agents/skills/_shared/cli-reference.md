@@ -23,6 +23,7 @@ Embedding example: --embed openai:text-embedding-3-small:1536
   eval:review --apply
   eval --validate-only --ci --no-write --subset --compare <value> --limit <value> --only <value> --baseline <value> --file <value>
   dev --port <value>
+  setup --port <value>
   down
   deploy:check --profile local|private|public-demo
   config:snapshot
@@ -313,6 +314,12 @@ Embedding example: --embed openai:text-embedding-3-small:1536
 - `result.thresholds`: unknown
 
 ## dev result
+
+- `result`: object
+- `result.setupUrl`: string (optional)
+- `result.url`: string
+
+## setup result
 
 - `result`: object
 - `result.url`: string

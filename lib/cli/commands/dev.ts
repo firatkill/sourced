@@ -1,4 +1,5 @@
-import { getEnv } from '@/lib/env';
+import { allowSetupMode, getEnv, setupState } from '@/lib/env';
+import { issueSetupToken, setupUrl } from '@/lib/setup/token';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { z } from 'zod';
@@ -10,7 +11,9 @@ import { repositoryRoot } from './database';
 export async function runDev(input: Invocation, context: CommandContext) {
   const config = await loadConfig(process.cwd(), { writeSnapshot: false });
   await writeConfigSnapshot({ ...config, profile: 'local' });
+  allowSetupMode();
   getEnv();
+  const token = issueSetupToken(process.cwd(), false);
   const port = z.coerce
     .number()
     .int()
@@ -33,7 +36,7 @@ export async function runDev(input: Invocation, context: CommandContext) {
   };
   process.on('SIGINT', interrupt);
   process.on('SIGTERM', stop);
-  return new Promise<{ url: string }>((resolve, reject) => {
+  return new Promise<{ url: string; setupUrl?: string }>((resolve, reject) => {
     let ready = false;
     const buffers = { out: '', err: '' };
     const output = (stream: 'out' | 'err', chunk: Buffer) => {
@@ -44,7 +47,11 @@ export async function runDev(input: Invocation, context: CommandContext) {
         context.progress(line);
         if (/Ready in/.test(line) && !ready) {
           ready = true;
-          resolve({ url: `http://localhost:${String(port)}` });
+          // T-88: without a provider key the browser finishes setup.
+          resolve({
+            url: `http://localhost:${String(port)}`,
+            ...(setupState().required ? { setupUrl: setupUrl(port, token) } : {}),
+          });
         }
       }
     };

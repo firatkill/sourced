@@ -1,4 +1,5 @@
 import 'server-only';
+import { redirect } from 'next/navigation';
 import { AskApp, type SavedChats } from '@/components/ask/AskApp';
 import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import { listChats, listProjects } from '@/lib/chats/store';
@@ -17,7 +18,11 @@ async function readLibrary() {
   if (isPublicDemo()) return undefined;
   try {
     const facts = await getLibraryFacts();
-    return { pill: libraryPill(facts, new Date()), searching: searchingLine(facts) };
+    return {
+      pill: libraryPill(facts, new Date()),
+      searching: searchingLine(facts),
+      documents: facts.documents,
+    };
   } catch {
     return undefined; // The page still works without facts; /api/health reports the database.
   }
@@ -25,11 +30,12 @@ async function readLibrary() {
 
 /** D-142: the sidebar's first render comes from the server, so it never flashes empty. */
 export async function readSidebar(): Promise<SidebarData> {
+  const settings = getKitConfig().profile === 'local';
   try {
     const [chats, projects] = await Promise.all([listChats(), listProjects()]);
-    return { chats, projects, now: new Date().toISOString() };
+    return { chats, projects, now: new Date().toISOString(), settings };
   } catch {
-    return { chats: [], projects: [], now: new Date().toISOString() };
+    return { chats: [], projects: [], now: new Date().toISOString(), settings };
   }
 }
 
@@ -47,6 +53,8 @@ export async function AskPage({
   const { env } = configuration;
   const publicDemo = isPublicDemo();
   const library = await readLibrary();
+  // T-90 / R2 §6: the local app sends a new chat to /setup until something is indexed.
+  if (!chat && getKitConfig().profile === 'local' && library?.documents === 0) redirect('/setup');
   const command = sourcedCommand();
   const example =
     getKitConfig().profile === 'local' && copy.exampleNotice && !chat
@@ -61,7 +69,7 @@ export async function AskPage({
       };
   return (
     <AskApp
-      library={library}
+      library={library ? { pill: library.pill, searching: library.searching } : undefined}
       example={example}
       saved={saved}
       demoMode={publicDemo ? env.DEMO_MODE : 'on'}

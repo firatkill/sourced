@@ -24,34 +24,43 @@ git clone https://github.com/firatkill/sourced.git
 cd sourced
 ```
 
-**2. Add your key**
+**2. Start it and follow the browser**
+
+```sh
+./sourced dev
+```
+
+The first run builds the Docker image, which takes a few minutes once. The command then prints a setup link. Open it, and the browser walks you through four steps:
+
+1. **Data**: try the bundled example (35 pages of the PostgreSQL 17 docs) or use your own documents.
+2. **Provider**: paste your key. Sourced checks it with one free request and saves it in `.env.local` on this computer; the browser never sees it again in full.
+3. **Documents**: drop files or a folder (Markdown, HTML, PDF, Word or text), or add a web page. Files are copied into `my-docs/`.
+4. **Index**: see which provider receives your text and what it costs, confirm, and watch the progress. You can close the tab; indexing keeps going.
+
+Then ask, for example, “When should I use a partial index?”, and a follow-up such as “Can it also be unique?”.
+
+Your chats are saved in the sidebar: rename them, pin them, group them into projects, and come back to them later. Every answer cites the passages it used; for your own files, a citation opens the original document (PDFs at the cited page). **Settings** changes keys and models, adds or removes documents, exports a chat as Markdown, and picks a theme.
+
+The setup link only works on this computer. Lost it? `./sourced setup` prints a new one.
+
+### In the terminal
+
+Every step also has a command. Instead of the browser, add your key yourself:
 
 ```sh
 cp .env.example .env.local
 ```
 
-Open `.env.local` and paste your key after `OPENAI_API_KEY=`. That is the only line you have to fill in.
-
-**3. Choose what to chat with**: the bundled example, or your own documents.
-
-The first command builds the Docker image, which takes a few minutes once. Every command below starts the database by itself.
-
-### Try the example
-
-The repository includes 35 pages of the PostgreSQL 17 documentation. Your database starts empty, so index the example once (about $0.003 with OpenAI), then start the app:
+Open `.env.local` and paste your key after `OPENAI_API_KEY=`. Then index the example once (about $0.003 with OpenAI) and start the app:
 
 ```sh
 ./sourced ingest
 ./sourced dev
 ```
 
-Open http://localhost:3000 and ask, for example, “When should I use a partial index?”, then a follow-up such as “Can it also be unique?”.
-
-Your chats are saved in the sidebar: rename them, pin them, group them into projects, and come back to them later. Every answer cites the passages it used; for your own files, a citation opens the original document (PDFs at the cited page). Pick a theme under Appearance.
-
 ## Use your own documents
 
-The example is configured as the default source. To start from your own documents, remove it first. `reset` deletes everything indexed and empties the source list; it asks before it deletes anything and never touches your files:
+In the browser, choose **My own documents** in setup step 1, or open **Settings › Library** later. In the terminal, remove the example first. `reset` deletes everything indexed and empties the source list; it asks before it deletes anything and never touches your files:
 
 ```sh
 ./sourced reset
@@ -65,7 +74,7 @@ Then add a folder of Markdown, HTML, PDF, Word (`.docx`) or plain-text files, or
 ./sourced dev
 ```
 
-`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs need OCR first.
+`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs need OCR first. For a large folder, prefer `./sourced add <folder>`: a browser can only upload copies.
 
 To go back to the example later, run `./sourced reset`, then `git checkout sourced.config.ts` and `./sourced ingest`.
 

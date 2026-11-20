@@ -21,3 +21,6 @@ next-env.d.ts
 corpus/*/raw/*
 !corpus/postgres-17/raw/pg17-*/
 !corpus/postgres-17/raw/pg17-*/*
+
+# T-89: files uploaded in the browser
+my-docs/
