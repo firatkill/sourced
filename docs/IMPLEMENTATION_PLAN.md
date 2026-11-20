@@ -27,6 +27,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 | M10 Chat app *(v2.2)* | T-79 – T-87 | Own-documents-first copy, five themes, saved chats and projects, sources open the original file, follow-up questions, every page in one shell; v2.2.0 (D-140 to D-145, `docs/REDESIGN-v2.md`) |
 | M11 Setup and settings in the browser *(v2.3)* | T-88 – T-93 | `./sourced dev` then the browser reaches a cited answer with no other terminal step; keys, models, library and chat data managed in Settings; v2.3.0 |
 | M12 Project search scope *(v2.4)* | T-94 – T-98 | A project's chats search only the library sources it names; example banner points to Settings › Library; `/eval` hydration flake; dependency alerts; v2.4.0 (D-150, D-151) |
+| M13 Docling reader *(v2.5)* | T-99 – T-102 | Optional local Docling container reads PDF, Word and PowerPoint files; offered in setup and Settings; v2.5.0 (D-152) |
 
 ---
 
@@ -1009,6 +1010,36 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 
 ---
 
+## M13 Docling reader *(v2.5)*
+
+### T-99 Docling service and command
+
+- **Implements**: D-152
+- **Files**: `docker-compose.yml` (`docling` service, profile `docling`; `DOCLING_URL` for `app` and `cli`), `sourced` and `sourced.cmd` (`docling on|off|status`, `dev` and `down`), `lib/cli/commands/docling.ts`, `lib/cli/registry.ts`, `router.ts`, `schemas/commands.ts`, `output.ts`, `lib/cli/commands/doctor.ts`, `.agents/skills/**`.
+- **Acceptance**: `docling on` records the engine and reports the service; `off` removes the key; `status` writes nothing; human output names the next command; `dev` restarts Docling for a library that uses it; the CLI reference is current (unit tests).
+- **Depends on**: T-98
+
+### T-100 Docling reader
+
+- **Implements**: D-152
+- **Files**: `lib/ingest/docling.ts` (client, cache), `lib/ingest/parse-docling.ts`, `lib/ingest/load.ts`, `lib/kit/config-schema.ts` (`parsing`), `lib/sources/types.ts` (`.pptx`), `lib/files/resolve.ts`, `lib/inspect/findings.ts`.
+- **Acceptance**: Docling's JSON for a PDF, a Word file and slides becomes sections with page anchors (PDF only) and slide headings; PDF, DOCX and PPTX go through Docling only when it is on; a stopped Docling stops the run and one failed file fails alone; a dry run never waits for Docling on a PDF; unchanged files come from the cache (unit tests with a fake service and Docling's ground-truth outputs).
+- **Depends on**: T-99
+
+### T-101 Docling in Setup and Settings
+
+- **Implements**: D-152
+- **Files**: `app/api/setup/docling/route.ts`, `lib/setup/docling.ts`, `components/setup/DoclingOption.tsx`, `components/setup/SetupWizard.tsx`, `components/settings/LibraryManager.tsx`, `components/setup/DocumentAdder.tsx`.
+- **Acceptance**: the route reads the live status and saves the choice behind the setup guard (409 while indexing); setup step 3 shows the card closed, the size, the command while Docling is not running, and switches back (integration test, E2E in the T-90 flow).
+- **Depends on**: T-100
+
+### T-102 Docs and v2.5.0
+
+- **Implements**: D-152
+- **Files**: `README.md`, `docs/GUIDE.md`, `docs/TRD.md` §45, `docs/PRD.md`, `CHANGELOG.md`, `docs/PROGRESS.md`.
+- **Acceptance**: a newcomer can turn Docling on from the README alone; release checklist v2.5.0 walked.
+- **Depends on**: T-101
+
 ## Traceability: functional requirements to tasks and tests
 
 | FR | Tasks | Tests |
@@ -1151,6 +1182,21 @@ Docs and release
 - [ ] Attribution: footer line, `corpus/postgres-17/LICENSE-POSTGRESQL.txt`, `corpus/postgres-17/NOTICE`.
 - [ ] `CHANGELOG.md` v1.0.0 entry; tag `v1.0.0`; GitHub release; repository description, topics and website set.
 - [ ] Link from firatkil.com added (separate repository).
+
+## Release checklist v2.5.0
+
+Reviewer items (on `v2.5/docling`):
+
+- [x] T-99 to T-101 committed; lint, typecheck, unit, integration, the build and E2E pass locally.
+- [x] No migration; a configuration without `parsing` reads files as v2.4 did, so no live eval is needed for this release.
+- [x] Docs: TRD §45, PRD D-152, README, GUIDE, CHANGELOG.
+- [ ] One manual run against the real Docling image (needs about 7 GB free for Docker): `./sourced docling on`, index a scanned PDF, a Word file and a PowerPoint file, ask about each and open the citations.
+
+Owner items (need the owner's yes):
+
+- [ ] The newcomer test from the README (owner, 2026-11-20 request).
+- [ ] Merge the v2.5 PR (no migration; production never reads files).
+- [ ] Tag `v2.5.0`.
 
 ## Release checklist v2.4.0
 

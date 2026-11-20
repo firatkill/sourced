@@ -4067,3 +4067,36 @@ Migration `0005_project_scope` adds `projects.source_ids text[]` (additive). Nul
 - Integration: `chats.test.ts` covers the store and the check constraint; `search-sql.test.ts` covers the scoped and unscoped rankers and counts; `chats-api.test.ts` covers the API and the scope passed by `/api/ask`; `migrations.test.ts` covers the constraint name.
 - E2E: T-94 in `setup.spec.ts`, and the banner link in `copy-rules.spec.ts`.
 
+## 45. Docling document reader *(v2.5, D-152)*
+
+### 45.1 Service
+
+The optional `docling` Compose service runs `quay.io/docling-project/docling-serve-cpu:v1.38.2` (MIT; about 2.1 GB to download, 6.5 GB on disk) under the profile `docling`, with `restart: unless-stopped`, one local worker, the web UI off, and port 5001 published on `127.0.0.1:${SOURCED_DOCLING_PORT:-5001}` for the Node path. The `app` and `cli` services get `DOCLING_URL=http://docling:5001`; elsewhere the URL defaults to `http://127.0.0.1:5001`. `/ready` answers 200 once the models are loaded (`ready`), 503 while they load (`starting`); no answer is `off`. Documents reach it only inside this machine.
+
+### 45.2 Configuration and commands
+
+- `sourced.config.ts` gains an optional `parsing: { engine: 'builtin' | 'docling' }`. It has no default, so a snapshot written before v2.5 keeps its `configHash`; no key means the built-in readers, and turning Docling off removes the key.
+- `sourced docling on|off|status` (`--json` result: `engine`, `service`, `image`, `changed`). `on` records the engine and waits up to five minutes for `ready`; `off` removes it; `status` writes nothing. The CLI container has no Docker socket, so the launchers (`sourced`, `sourced.cmd`) run `docker compose --profile docling up -d docling` before `on` and `stop docling` before `off`; on the Node path the command runs Compose itself, with its output on stderr.
+- `./sourced dev` also starts the service when `.sourced/config.json` names the `docling` engine, and `./sourced down` includes the profile.
+- `doctor` adds a `docling` check only when the engine is `docling`.
+
+### 45.3 Reading files
+
+- With the `docling` engine, `loadCorpus` sends PDF, DOCX and PPTX files (by MIME type or extension) to `POST /v1/convert/file/async` with `from_formats` set to the file's kind, `to_formats=json`, `image_export_mode=placeholder`, `include_images=false`, `do_ocr=true`, `ocr_lang` set to `corpus.language`, `do_pdf_heading_hierarchy=true`, `abort_on_error=false` and `document_timeout=1800`. It polls `/v1/status/poll/{id}?wait=5` and reads `/v1/result/{id}`, accepting `success` and `partial_success`. A file takes at most 30 minutes.
+- `doclingToSections` (`lib/ingest/parse-docling.ts`) walks `body` in reading order and builds the shared section tree. `title` names the document; `section_header` opens a section at its level (one deeper under a title); text, captions and footnotes become paragraphs, `code` code blocks, list groups lists, and tables rows joined with ` | ` (a merged cell once). `page_header`, `page_footer` and non-body layers are dropped; pictures contribute only their captions. PDF blocks keep their page numbers and sections get `p<from>-<to>` anchors, so citations open at the page; DOCX and PPTX have no page links, sections use heading slugs, and each slide becomes a `Slide N: <title>` section.
+- Results are cached in `.sourced/docling-cache/<key>.json`, the key being a hash of the image, the file's content hash and the request options.
+- Errors: Docling not running or still loading raises `DoclingUnavailableError` (`PROVIDER_ERROR`, fix `sourced docling on`), which stops the whole run so a library is never read with two readers at once. Any other Docling error fails that one file.
+- A dry run (the cost estimate in setup and Settings) reads only the cache for PDF and DOCX files and otherwise uses the built-in reader for the token count; PPTX files are converted (they need no models) or, with Docling down, skipped.
+- Without Docling, PPTX files are skipped with `needs_docling`; scanned PDFs keep `needs_ocr`. `inspect` reports `needs_docling` under `skipped_files`, and both fixes name `sourced docling on`.
+
+### 45.4 Setup and Settings
+
+`GET /api/setup/docling` returns `engine`, `service`, `command` (`<launcher> docling on`), `downloadGb` and `diskGb`; `POST` with `{ engine }` records the choice (409 while indexing runs). Both use the setup guard. `DoclingOption` sits in setup step 3 and Settings › Library: closed unless Docling is already chosen, two radios (the choice moves at once and is saved), the download size, and, while Docling is chosen but not ready, the terminal command with a Copy button and a status that refreshes every five seconds. The upload field accepts `.pptx`.
+
+### 45.5 Tests
+
+- Unit: `parse-docling.test.ts` against Docling's own ground-truth JSON (`tests/fixtures/docling/`), `docling-client.test.ts` with a fake service (async flow, options, cache, cache-only, stopped, starting, failed), `docling-load.test.ts` (reader per file, run stop, per-file failure, dry run), `docling-cli.test.ts`.
+- Integration: the Docling route in `setup-api.test.ts`.
+- E2E: the Docling card in the T-90 setup flow (`setup.spec.ts`); the setup fixture points `DOCLING_URL` at a closed port.
+- Manual: one run against the real image on a machine with room for it (release checklist v2.5.0).
+

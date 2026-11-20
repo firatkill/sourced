@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Optional Docling reader for PDF, Word and PowerPoint files (D-152): scanned pages, tables, columns and slides are read on this machine. Turn it on in setup step 3 or Settings › Library and run `./sourced docling on` (one-time 2.1 GB download); `./sourced docling status` and `./sourced docling off` report and undo it. PowerPoint (`.pptx`) files are indexed when Docling is on.
+
 ## [2.4.0] - 2026-11-20
 
 Project search scope, a Library link in the example banner, and dependency updates.
