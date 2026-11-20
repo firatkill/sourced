@@ -31,6 +31,7 @@ services:
       MIGRATION_DATABASE_URL: postgres://sourced:sourced@db:5432/sourced
       SOURCED_LAUNCHER: '${SOURCED_LAUNCHER:-./sourced}'
       OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
+      DOCLING_URL: http://docling:5001
     ports: ['127.0.0.1:${SOURCED_PORT:-3000}:3000']
     volumes: ['.:/workspace']
     working_dir: /workspace
@@ -57,11 +58,22 @@ services:
       SOURCED_LAUNCHER: '${SOURCED_LAUNCHER:-./sourced}'
       SOURCED_PORT: '${SOURCED_PORT:-3000}'
       OLLAMA_BASE_URL: '${OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
+      DOCLING_URL: http://docling:5001
     volumes: ['.:/workspace']
     working_dir: /workspace
     extra_hosts: ['host.docker.internal:host-gateway']
     depends_on:
       db:
         condition: service_healthy
+  # D-152: optional document reader, started only by `./sourced docling on` (or by `dev`
+  # when the library uses it). Documents reach it inside this machine and go nowhere else.
+  docling:
+    image: quay.io/docling-project/docling-serve-cpu:v1.38.2
+    profiles: [docling]
+    restart: unless-stopped
+    environment:
+      DOCLING_SERVE_ENABLE_UI: 'false'
+      DOCLING_SERVE_ENG_LOC_NUM_WORKERS: '1'
+    ports: ['127.0.0.1:${SOURCED_DOCLING_PORT:-5001}:5001']
 volumes:
   pgdata:

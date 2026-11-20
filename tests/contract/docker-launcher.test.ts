@@ -72,7 +72,7 @@ if [ "$2" = run ]; then
   printf '%s' '${cliOutput}'
   exit ${String(cliExit)}
 fi
-if [ "$2" = down ]; then
+if [ "$2" = down ] || [ "$4" = down ]; then
   printf '%s\\n' 'Compose stdout'
   printf '%s\\n' 'Compose stderr' >&2
   exit ${String(downExitCode)}
@@ -167,7 +167,7 @@ test('TC-214: down never deletes volumes', async () => {
     stdout: 'Compose stdout\n',
     stderr: 'Compose stderr\n',
   });
-  expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\ndown\n');
+  expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\n--profile\ndocling\ndown\n');
 });
 
 const downSuccess = {
@@ -226,7 +226,7 @@ test.each([0, 17])('TC-214 / NFR-22: down --json handles Compose exit %i', async
   expect(envelope).toEqual(code === 0 ? downSuccess : downFailure);
   if (envelope.ok) expect(commandSchemas.down.parse(envelope.result)).toEqual({});
   expect(result.stderr).toBe('Compose stdout\nCompose stderr\n');
-  expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\ndown\n');
+  expect(await readFile(log, 'utf8')).toBe('CALL\ncompose\n--profile\ndocling\ndown\n');
 });
 
 test('TC-214: down without --json preserves the Compose failure code and output', async () => {
@@ -245,8 +245,10 @@ test('TC-214 / NFR-22: Windows down has the same JSON branch and envelopes', asy
   const branch = launcher.split('\n:down\n')[1]?.split('\n:dev\n')[0];
   expect(branch).toBeDefined();
   expect(branch).toContain('if "%~1"=="--json" set "json=true"');
-  expect(branch).toContain('if "%json%"=="false" (\n  docker compose down\n  exit /b\n)');
-  expect(branch).toContain('docker compose down 1>&2\nif errorlevel 1 (');
+  expect(branch).toContain(
+    'if "%json%"=="false" (\n  docker compose --profile docling down\n  exit /b\n)',
+  );
+  expect(branch).toContain('docker compose --profile docling down 1>&2\nif errorlevel 1 (');
   const envelopes = [...(branch ?? '').matchAll(/echo (\{[^\n]+\})\n/g)].map((match) =>
     CliEnvelope.parse(JSON.parse(match[1] ?? '')),
   );
@@ -579,12 +581,12 @@ test('D-135: shell port values win over .env.local and --port wins for dev', asy
     JSON.parse((await run(['dev', '--port', '3189', '--json'], variables)).stdout),
   ).toMatchObject({ result: { url: 'http://localhost:3189' } });
 });
-test('D-135: Windows imports only the two port assignments when absent from the shell', async () => {
+test('D-135 / D-152: Windows imports only the port assignments when absent from the shell', async () => {
   const launcher = await readFile('sourced.cmd', 'utf8');
   expect(launcher).toContain(
-    `for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" .env.local') do (`,
+    `for /f "tokens=1,* delims==" %%A in ('findstr /b /l /c:"SOURCED_PORT=" /c:"SOURCED_DB_PORT=" /c:"SOURCED_DOCLING_PORT=" .env.local') do (`,
   );
-  for (const key of ['SOURCED_PORT', 'SOURCED_DB_PORT']) {
+  for (const key of ['SOURCED_PORT', 'SOURCED_DB_PORT', 'SOURCED_DOCLING_PORT']) {
     expect(launcher).toContain(`if "%%A"=="${key}" if not defined ${key} set "${key}=%%B"`);
   }
   expect(launcher).not.toContain('set "%%A=%%B"');

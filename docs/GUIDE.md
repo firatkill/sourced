@@ -213,13 +213,22 @@ FROM query_log GROUP BY 1 ORDER BY 1 DESC LIMIT 14;
 
 See the [incident and kill-switch runbook](TRD.md#266-incident-and-kill-switch-runbook).
 
+## Docling
+
+Docling is an optional document reader (D-152). With it on, `ingest` sends each PDF, Word and PowerPoint file to the `docling` container (`quay.io/docling-project/docling-serve-cpu:v1.38.2`, Compose profile `docling`) over the Compose network, or `127.0.0.1:${SOURCED_DOCLING_PORT:-5001}` on the Node path, and turns Docling's JSON into the same sections and passages as the built-in readers. PDFs keep their page numbers, so citations still open at the cited page; slides become “Slide N” sections. Running headers and footers are left out, and pictures are not read (their captions are).
+
+- **Turning it on.** `./sourced docling on` (or the choice in setup step 3 and Settings › Library) records `parsing: { engine: 'docling' }` in `sourced.config.ts`; the launcher downloads and starts the container. The browser cannot start containers, so it shows the command and follows the service until it answers. `./sourced docling off` removes the key and stops the container. A configuration without the key uses the built-in readers, exactly as before v2.5.
+- **Indexing.** Files go to Docling's async API one at a time, with OCR in the corpus language and heading levels inferred from the PDF. A file Docling cannot read fails alone; Docling not running stops the run, so a library is never read half one way and half the other. Results are kept in `.sourced/docling-cache/` by file hash, image and options.
+- **Estimates.** The cost estimate never waits for Docling on a PDF or Word file: it uses a saved result, or the built-in reader's text to count tokens, so the estimate is close but not exact the first time.
+- **Without Docling,** PowerPoint files are skipped with the reason `needs_docling` and scanned PDFs with `needs_ocr`; `inspect` points both at Docling.
+
 ## Privacy
 
 A project can search only some of your library. On the project page, under **Search in**, choose **Only these sources** and tick the folders or sites its chats should use. Every chat in that project then searches only those, and says so under the question box. Answers already given keep their sources. Choose **Everything in the library** to undo it.
 
 Outside the `public-demo` profile, saved chats keep their questions, answers and cited passages in the checkout's database; delete a chat from the sidebar or all of them with `./sourced reset --chats`. The hosted demo saves no chats. Separately, Sourced logs a salted question hash, length, timings, token counts, estimated cost and citation counts, not the question text. `STORE_QUESTIONS=true` opts into storing question text. The `public-demo` profile uses a daily-rotating salted IP hash for quotas; raw IP addresses are never stored or logged. The `private` profile sets one first-party access cookie. There are no analytics or third-party scripts.
 
-Document text, passages and questions go only to the configured embedding, chat, rerank and judge providers. The hosted demo uses OpenAI. With Ollama for every role, they stay local; configured web sources still require web fetches.
+Document text, passages and questions go only to the configured embedding, chat, rerank and judge providers. Docling, when it is on, runs on this machine and sends nothing out. The hosted demo uses OpenAI. With Ollama for every role, they stay local; configured web sources still require web fetches.
 
 ## Limits
 

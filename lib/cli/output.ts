@@ -37,6 +37,24 @@ export function formatEnvelope(envelope: CliEnvelope, json: boolean): string {
       ? `Sourced is running. Finish setup in your browser:\n${dev.setupUrl}\n`
       : `Sourced is running at ${dev.url}\n`;
   }
+  if (envelope.command.startsWith('docling ') && envelope.ok) {
+    const docling = commandSchemas['docling status'].parse(envelope.result);
+    const service = {
+      ready: 'Docling is running.',
+      starting: 'Docling is starting; it loads its models first, which takes a minute or two.',
+      off: 'Docling is not running.',
+    }[docling.service];
+    const engine =
+      docling.engine === 'docling'
+        ? 'PDF, Word and PowerPoint files are read with Docling.'
+        : 'PDF and Word files are read with the built-in readers.';
+    const next = docling.changed
+      ? 'pnpm sourced ingest (reads those files again; only changed passages are embedded again)'
+      : docling.engine === 'docling' && docling.service !== 'ready'
+        ? 'pnpm sourced docling on'
+        : 'pnpm sourced ingest';
+    return `${engine}\n${service}\nNext: ${next}\n`;
+  }
   if (envelope.command === 'ingest' && envelope.ok) {
     const ingest = commandSchemas.ingest.safeParse(envelope.result);
     if (ingest.success) return formatIngest(ingest.data, envelope.warnings);

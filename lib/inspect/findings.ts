@@ -46,7 +46,7 @@ export function buildFindings(input: FindingInput): InspectFinding[] {
     skipped.filter((item) => item.reason === 'needs_ocr'),
     'warn',
     ['retrieval', 'citations'],
-    'Run OCR on these PDFs, replace them with searchable PDFs, then run sourced ingest.',
+    'Turn on Docling to read scanned PDFs (sourced docling on), or replace them with searchable PDFs, then run sourced ingest.',
   );
   if (input.tinyChunks > input.totalChunks * INSPECT.TINY_RATIO)
     findings.push({
@@ -121,11 +121,14 @@ export function buildFindings(input: FindingInput): InspectFinding[] {
   itemFinding(
     'skipped_files',
     skipped.filter(
-      (item) => item.reason === 'unsupported extension' || item.reason === 'over 50 MB',
+      (item) =>
+        item.reason === 'unsupported extension' ||
+        item.reason === 'over 50 MB' ||
+        item.reason === 'needs_docling',
     ),
     'info',
     ['retrieval', 'citations'],
-    'Convert unsupported files to a supported format and split files over 50 MB, then run sourced ingest.',
+    'Convert unsupported files to a supported format and split files over 50 MB; PowerPoint files need Docling (sourced docling on). Then run sourced ingest.',
   );
   itemFinding(
     'failed_items',

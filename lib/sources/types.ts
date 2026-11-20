@@ -18,6 +18,7 @@ export type RawDocument = DocumentRef & {
     | 'text/mdx'
     | 'application/pdf'
     | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    | 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     | 'text/plain';
   fetchedAt: Date;
   contentHash: string;
@@ -110,5 +111,7 @@ export const MIME_BY_EXTENSION: Readonly<Record<string, RawDocument['mimeType']>
   '.htm': 'text/html',
   '.pdf': 'application/pdf',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  // D-152: read only when Docling is on; otherwise skipped with the reason `needs_docling`.
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   '.txt': 'text/plain',
 };

@@ -64,6 +64,8 @@ describe('D-138 / D-139 / D-146: the quick start needs only Docker and one comma
     expect(blocks).toEqual([
       './sourced reset\n',
       './sourced add ./my-docs\n./sourced ingest\n./sourced dev\n',
+      // D-152: the optional Docling reader.
+      './sourced docling on\n',
     ]);
   });
   it('the env template asks for exactly one value', () => {

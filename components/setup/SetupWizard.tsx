@@ -8,6 +8,7 @@ import { IndexStep } from './IndexStep';
 import { KeyField } from './KeyField';
 import { AdvancedSettings } from './AdvancedSettings';
 import { DocumentAdder, SKIP_REASONS } from './DocumentAdder';
+import { DoclingOption } from './DoclingOption';
 
 const STEPS = ['Data', 'Provider', 'Documents', 'Index'] as const;
 type Step = 1 | 2 | 3 | 4;
@@ -152,7 +153,7 @@ function DataStep({ status, onDone }: { status: SetupStatus; onDone: (example: b
             setChoice('own');
           }}
           title="My own documents"
-          detail="PDF, Word, Markdown, HTML or text files, and web pages. You add them in step 3."
+          detail="PDF, Word, PowerPoint, Markdown, HTML or text files, and web pages. You add them in step 3."
         />
         <Choice
           name="data"
@@ -314,6 +315,9 @@ function DocumentsStep({
           </ul>
         </section>
       )}
+      <div className="mt-4">
+        <DoclingOption />
+      </div>
       <p className="mt-4 text-sm text-[var(--ink-3)]">
         A large folder? Run <code>./sourced add &lt;folder&gt;</code> in the terminal instead; the
         browser cannot read a folder in place.

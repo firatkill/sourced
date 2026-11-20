@@ -53,6 +53,11 @@ export function fileContentType(file: string): { type: string; inline: boolean }
         type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         inline: false,
       };
+    case '.pptx':
+      return {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        inline: false,
+      };
     default:
       return { type: 'application/octet-stream', inline: false };
   }

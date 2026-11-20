@@ -1,4 +1,5 @@
 import { parseArgs } from 'node:util';
+import { DoclingUnavailableError } from '@/lib/ingest/docling';
 import { z } from 'zod';
 import { AppError } from '@/lib/errors';
 import { EnvironmentError, getEnv, getCliEnvironment } from '@/lib/env';
@@ -35,7 +36,7 @@ export function parseInvocation(args: string[]): Invocation {
     if (flag) globals.push(flag);
   }
   const name = rest.shift();
-  const command = name === 'sources' ? `sources ${rest.shift() ?? ''}` : name;
+  const command = name === 'sources' || name === 'docling' ? `${name} ${rest.shift() ?? ''}` : name;
   if (!command || !Object.hasOwn(commands, command))
     throw new AppError('VALIDATION_FAILED', 'Choose a registered command.');
   const key = command as Command;
@@ -267,9 +268,11 @@ export function errorEnvelope(
             ? 'pnpm sourced ingest --rebuild'
             : error.code === 'CORPUS_EMPTY'
               ? 'pnpm sourced ingest'
-              : error.code === 'PROVIDER_ERROR' || error.code === 'PROVIDER_TIMEOUT'
-                ? 'Check the provider key in .env.local and the provider status, then retry; pnpm sourced doctor checks the key.'
-                : 'pnpm sourced --help';
+              : error instanceof DoclingUnavailableError
+                ? 'pnpm sourced docling on'
+                : error.code === 'PROVIDER_ERROR' || error.code === 'PROVIDER_TIMEOUT'
+                  ? 'Check the provider key in .env.local and the provider status, then retry; pnpm sourced doctor checks the key.'
+                  : 'pnpm sourced --help';
     return { envelope: failure(command, error.code, message, fix), exitCode: action ? 2 : 1 };
   }
   const missingEnv =
@@ -330,6 +333,14 @@ async function runCommand(input: Invocation, context: CommandContext): Promise<C
       return { result: await (await import('./commands/dev')).runDev(input, context) };
     case 'setup':
       return { result: (await import('./commands/setup')).runSetup(input) };
+    case 'docling on':
+    case 'docling off':
+    case 'docling status':
+      return {
+        result: await (
+          await import('./commands/docling')
+        ).runDocling(input.command.slice('docling '.length) as 'on' | 'off' | 'status', context),
+      };
 
     case 'down':
       throw new AppError(

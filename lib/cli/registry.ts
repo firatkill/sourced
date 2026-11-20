@@ -48,6 +48,9 @@ export const commands: Record<
   dev: { string: ['port'] },
   setup: { string: ['port'] },
   down: {},
+  'docling on': {},
+  'docling off': {},
+  'docling status': {},
   'deploy:check': { string: ['profile'] },
   'config:snapshot': {},
 };

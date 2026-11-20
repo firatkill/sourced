@@ -34,7 +34,7 @@ The first run builds the Docker image, which takes a few minutes once. The comma
 
 1. **Data**: try the bundled example (35 pages of the PostgreSQL 17 docs) or use your own documents.
 2. **Provider**: paste your key. Sourced checks it with one free request and saves it in `.env.local` on this computer; the browser never sees it again in full.
-3. **Documents**: drop files or a folder (Markdown, HTML, PDF, Word or text), or add a web page. Files are copied into `my-docs/`.
+3. **Documents**: drop files or a folder (Markdown, HTML, PDF, Word or text), or add a web page. Files are copied into `my-docs/`. Optionally, turn on [Docling](#better-reading-for-pdf-and-office-files-docling) here for scanned PDFs, complex layouts and PowerPoint slides.
 4. **Index**: see which provider receives your text and what it costs, confirm, and watch the progress. You can close the tab; indexing keeps going.
 
 Then ask, for example, “When should I use a partial index?”, and a follow-up such as “Can it also be unique?”.
@@ -74,13 +74,29 @@ Then add a folder of Markdown, HTML, PDF, Word (`.docx`) or plain-text files, or
 ./sourced dev
 ```
 
-`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs need OCR first. For a large folder, prefer `./sourced add <folder>`: a browser can only upload copies.
+`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs and PowerPoint files need [Docling](#better-reading-for-pdf-and-office-files-docling). For a large folder, prefer `./sourced add <folder>`: a browser can only upload copies.
 
 To go back to the example later, run `./sourced reset`, then `git checkout sourced.config.ts` and `./sourced ingest`.
 
 Stop the app and the database with `./sourced down`; your data is kept for next time.
 
 On Windows, use `sourced.cmd` instead of `./sourced` in Command Prompt, and `copy .env.example .env.local` instead of `cp`.
+
+### Better reading for PDF and Office files (Docling)
+
+The built-in readers handle ordinary text PDFs and Word files. [Docling](https://github.com/docling-project/docling) reads documents the way a person sees them: it recognizes text in scanned pages, keeps tables and multi-column layouts in order, finds headings, and also reads PowerPoint (`.pptx`) files. It is optional and off by default.
+
+Docling runs in its own container on your computer; your files are not sent anywhere. It is a one-time download of about 2.1 GB (about 6.5 GB on disk), so check that Docker has room. Indexing PDFs becomes slower: Docling reads each page with layout and OCR models on your CPU, which can take a few seconds per page.
+
+To turn it on, choose **Docling** under **Better reading for PDF and Office files** in setup step 3 or in **Settings › Library**, then run what the page shows:
+
+```sh
+./sourced docling on
+```
+
+It downloads Docling the first time, starts it, and waits until it is ready; the page notices on its own. Your next indexing run reads PDF, Word and PowerPoint files with Docling. Only passages that changed are embedded again, and Docling's results are kept in `.sourced/docling-cache/`, so unchanged files are not read again.
+
+`./sourced docling status` says which reader is in use, and `./sourced docling off` goes back to the built-in readers and stops the container. `./sourced dev` starts Docling again after `./sourced down` when your library uses it. To free the disk space after turning it off, remove the image with `docker image rm quay.io/docling-project/docling-serve-cpu:v1.38.2`.
 
 ### With a coding agent
 
@@ -103,9 +119,10 @@ To try the app without any key, add `LLM_MODE=mock` to `.env.local`: answers and
 
 ### If something goes wrong
 
-- **A port is taken.** Set `SOURCED_PORT` (the app, default 3000) or `SOURCED_DB_PORT` (the database, default 5433) in `.env.local`.
+- **A port is taken.** Set `SOURCED_PORT` (the app, default 3000), `SOURCED_DB_PORT` (the database, default 5433) or `SOURCED_DOCLING_PORT` (Docling, default 5001) in `.env.local`.
 - **“The existing index was built with …”.** You changed the embedding model, or the database holds an older index. `./sourced ingest` asks whether to rebuild it.
 - **The app does not start.** `./sourced dev` prints the reason and the command to run next. `docker compose logs app` shows the full log.
+- **“Docling is turned on for this library but is not running.”** Run `./sourced docling on`. If it never becomes ready, `docker compose logs docling` shows why; Docling needs a few GB of memory, which you can raise in Docker Desktop's settings.
 
 Each checkout has its own database, so a second clone on the same machine starts empty.
 

@@ -506,3 +506,36 @@ test('uploads never follow a symlinked folder out of my-docs', async () => {
   expect(await readdir(outside)).toEqual([]);
   await rm(outside, { recursive: true, force: true });
 });
+
+test('T-101 Docling: the choice is saved for the next run; the service status is read live', async () => {
+  const { getKitConfig } = await import('@/lib/kit/runtime-config');
+  resetIngestJobForTests();
+  vi.stubEnv('DOCLING_URL', 'http://127.0.0.1:9'); // Nothing listens: Docling is off.
+  const route = await import('@/app/api/setup/docling/route');
+  type Info = { engine: string; service: string; command: string; downloadGb: number };
+  const read = async () =>
+    (await (await route.GET(call('GET', '/api/setup/docling'))).json()) as Info;
+  expect(await read()).toMatchObject({ engine: 'builtin', service: 'off', downloadGb: 2.1 });
+  expect((await read()).command).toMatch(/ docling on$/);
+
+  const on = await route.POST(call('POST', '/api/setup/docling', { engine: 'docling' }));
+  expect(on.status).toBe(200);
+  expect(getKitConfig(false).parsing).toEqual({ engine: 'docling' });
+  expect((await read()).engine).toBe('docling');
+
+  // Back to the built-in readers removes the key: the snapshot reads as before v2.5.
+  await route.POST(call('POST', '/api/setup/docling', { engine: 'builtin' }));
+  expect(getKitConfig(false)).not.toHaveProperty('parsing');
+  for (const body of [{}, { engine: 'tesseract' }, { engine: 'docling', extra: 1 }])
+    expect((await route.POST(call('POST', '/api/setup/docling', body))).status).toBe(400);
+  expect(
+    (await route.POST(call('POST', '/api/setup/docling', { engine: 'docling' }, {}))).status,
+  ).toBe(403);
+
+  const store = globalThis as typeof globalThis & { __sourcedIngestJob?: unknown };
+  store.__sourcedIngestJob = { id: 'x', status: 'running', rebuild: false };
+  expect((await route.POST(call('POST', '/api/setup/docling', { engine: 'docling' }))).status).toBe(
+    409,
+  );
+  resetIngestJobForTests();
+});

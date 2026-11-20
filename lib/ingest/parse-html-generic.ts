@@ -7,7 +7,7 @@ import type { Block, ParsedDocument, ParsePage, Section } from './parse-html';
 const clean = (text: string) => text.replace(/\s+/g, ' ').trim();
 const boilerplate = 'nav,header,footer,aside,[role=navigation],script,style,noscript,form';
 const notes = 'blockquote,.note,.warning,.tip,.admonition,.callout';
-const headingSlug = (heading: string) =>
+export const headingSlug = (heading: string) =>
   heading
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s-]/gu, '')
