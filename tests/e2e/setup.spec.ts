@@ -60,7 +60,8 @@ test('T-90: setup link, own documents, cost confirm, indexing, then a cited answ
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Index your documents');
   await expect(page.getByText('Nobody (mock mode)')).toBeVisible();
   await expect(page.getByText(/^1 · about \d[\d,]* tokens$/)).toBeVisible();
-  await page.getByRole('button', { name: /^Start indexing/ }).click();
+  await expect(page.getByText('$0, once')).toBeVisible();
+  await page.getByRole('button', { name: 'Start indexing ($0)' }).click();
   // Indexing runs on the server; mock embeddings make it take a few seconds at most.
   await expect(page.getByRole('heading', { name: 'Your documents are ready' })).toBeVisible({
     timeout: 30_000,

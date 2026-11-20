@@ -19,6 +19,9 @@ export function money(value: number | null): string {
   return value < 0.01 ? `$${value.toFixed(4)}` : `$${value.toFixed(2)}`;
 }
 
+// Mock mode calls no provider, so nothing is billed whatever the pricing table says.
+const cost = (estimate: Estimate) => (estimate.provider === 'mock' ? 0 : estimate.estimatedCostUsd);
+
 function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -193,7 +196,7 @@ export function IndexStep({
               label="Documents"
               value={`${String(estimate.documents)} · about ${estimate.embeddingTokens.toLocaleString('en')} tokens`}
             />
-            <Fact label="Estimated cost" value={`${money(estimate.estimatedCostUsd)}, once`} />
+            <Fact label="Estimated cost" value={`${money(cost(estimate))}, once`} />
           </dl>
           {estimate.skipped > 0 && (
             <p className="text-sm text-[var(--ink-3)]">
@@ -219,7 +222,7 @@ export function IndexStep({
             disabled={starting || estimate.documents === 0}
             className="inline-flex h-11 items-center rounded-[var(--radius-md)] bg-[var(--accent)] px-5 font-semibold text-[var(--accent-ink)] disabled:opacity-60"
           >
-            {starting ? 'Starting…' : `Start indexing (${money(estimate.estimatedCostUsd)})`}
+            {starting ? 'Starting…' : `Start indexing (${money(cost(estimate))})`}
           </button>
         </>
       )}
