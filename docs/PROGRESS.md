@@ -116,10 +116,10 @@ The completion commit is filled when a task finishes. In the completing commit i
 | T-96 | M12 Project search scope | `/eval` hydration flake | recorded, cause not found (`qa/release-v2/tc-145-eval-hydration.md`) | 8412af4 |
 | T-97 | M12 Project search scope | Dependency alerts | done | 2886ff2 |
 | T-98 | M12 Project search scope | Docs and v2.4.0 | done (merged in #9, tag v2.4.0) | 39e54a5 |
-| T-99 | M13 Docling reader | Docling service and command | done on `v2.5/docling` | HEAD |
-| T-100 | M13 Docling reader | Docling reader | done on `v2.5/docling` | HEAD |
-| T-101 | M13 Docling reader | Docling in Setup and Settings | done on `v2.5/docling` | HEAD |
-| T-102 | M13 Docling reader | Docs and v2.5.0 | docs done; real-image run, merge and tag need the owner | HEAD |
+| T-99 | M13 Docling reader | Docling service and command | done (merged in v2.5 PR, tag v2.5.0) | HEAD |
+| T-100 | M13 Docling reader | Docling reader | done (merged in v2.5 PR, tag v2.5.0) | HEAD |
+| T-101 | M13 Docling reader | Docling in Setup and Settings | done (merged in v2.5 PR, tag v2.5.0) | HEAD |
+| T-102 | M13 Docling reader | Docs and v2.5.0 | done (merged in v2.5 PR, tag v2.5.0); real-image run left to the owner's README test | HEAD |
 
 ## Open questions for the owner
 

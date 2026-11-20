@@ -1190,13 +1190,13 @@ Reviewer items (on `v2.5/docling`):
 - [x] T-99 to T-101 committed; lint, typecheck, unit, integration, the build and E2E pass locally.
 - [x] No migration; a configuration without `parsing` reads files as v2.4 did, so no live eval is needed for this release.
 - [x] Docs: TRD §45, PRD D-152, README, GUIDE, CHANGELOG.
-- [ ] One manual run against the real Docling image (needs about 7 GB free for Docker): `./sourced docling on`, index a scanned PDF, a Word file and a PowerPoint file, ask about each and open the citations.
+- [ ] One manual run against the real Docling image (needs about 7 GB free for Docker): `./sourced docling on`, index a scanned PDF, a Word file and a PowerPoint file, ask about each and open the citations. Not done before the release: the owner chose to merge first and test from the README afterwards (2026-11-21).
 
 Owner items (need the owner's yes):
 
-- [ ] The newcomer test from the README (owner, 2026-11-20 request).
-- [ ] Merge the v2.5 PR (no migration; production never reads files).
-- [ ] Tag `v2.5.0`.
+- [ ] The newcomer test from the README (owner, after the merge).
+- [x] Merge the v2.5 PR (no migration; production never reads files) (owner's yes, 2026-11-21).
+- [x] Tag `v2.5.0`.
 
 ## Release checklist v2.4.0
 
@@ -1210,7 +1210,7 @@ Reviewer items (done on `v2.4/project-scope`, 2026-11-20):
 
 Owner items (need the owner's yes):
 
-- [x] Merge the v2.4 PR; production runs migration `0005_project_scope` in the deploy workflow (additive; the hosted demo has no projects) (owner's yes, 2026-11-20).
+- [x] Merge the v2.4 PR (owner's yes, 2026-11-20). Migration `0005_project_scope` (additive; the hosted demo has no projects) ran on production through `migrate.yml` on 2026-11-21, owner's yes; that workflow only runs when started by hand.
 - [x] Tag `v2.4.0`.
 - [ ] Close the Dependabot alerts that the merge fixes (they close on their own after the default branch updates).
 
