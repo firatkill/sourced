@@ -143,6 +143,7 @@ export const SIDEBAR_COPY = {
   empty: 'Your chats will show up here.',
   noMatches: 'No chats match.',
   storage: 'Chats are saved on this computer.',
+  sessionStorage: 'Chats are kept in this browser tab and are gone when you close it.',
   options: 'Options for',
   rename: 'Rename',
   chatName: 'Chat name',
@@ -159,6 +160,7 @@ export const SIDEBAR_COPY = {
   loadError: 'Chats could not be loaded. Check that the database is running.',
   saveError: 'That change was not saved. Try again.',
   privacy: 'Privacy: chats are saved in this computer’s database.',
+  sessionPrivacy: 'Privacy: chats stay in this browser tab; the server does not store them.',
 };
 
 // D-153: the app after "Reset the library": chats stay readable, asking waits for documents.
@@ -202,6 +204,9 @@ export const PROJECT_COPY = {
   deleteBody: 'Its chats are kept and move back to the general list.',
   deleteConfirm: 'Delete project',
   saveError: 'That change was not saved. Try again.',
+  missing: 'This project isn’t in this tab',
+  missingBody: 'Projects in the demo are kept in the browser tab that made them, until it closes.',
+  missingLink: 'Start a new chat',
   scopeHeading: 'Search in',
   scopeAll: 'Everything in the library',
   scopeSome: 'Only these sources',

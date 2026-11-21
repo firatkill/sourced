@@ -4,11 +4,11 @@ import { readSidebar } from '@/components/ask/AskPage';
 import { ContentShell } from '@/components/layout/ContentShell';
 import { uiCopy } from '@/lib/kit/copy';
 import { getRuntimeCopy } from '@/lib/kit/copy-server';
-import { isPublicDemo } from '@/lib/kit/profile';
 
-/** T-86: a content page inside the app shell; saved chats appear outside the hosted demo. */
+/** T-86: a content page inside the app shell; with the saved-chats sidebar. */
 export async function ContentPage({ children }: { children: ReactNode }) {
-  const saved = isPublicDemo() ? undefined : await readSidebar();
+  // D-154: the hosted demo shows the same sidebar; its chats come from the visitor's tab.
+  const saved = await readSidebar();
   return (
     <ContentShell copy={uiCopy(getRuntimeCopy())} saved={saved}>
       {children}

@@ -45,13 +45,11 @@ test('TC-088: empty Ask page matches the specified copy', async ({ page }, testI
   await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'New chat' })).toBeEnabled();
   await expect(
-    page.getByText(
-      'Kept in this tab only. Reload or close it and the chat is gone; nothing is stored on the server.',
-    ),
+    page.getByText('Chats are kept in this browser tab and are gone when you close it.'),
   ).toBeVisible();
   await expect(page.getByRole('contentinfo').locator('p')).toHaveText([
     'Built by Fırat Kıl · firatkil.com · Source on GitHub (MIT)',
     'Answers are generated from the PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the PostgreSQL License.',
-    'Privacy: questions are not stored. Read how this works.',
+    'Privacy: chats stay in this browser tab; the server does not store them. Read how this works.',
   ]);
 });

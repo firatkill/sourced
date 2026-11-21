@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useAsk } from '@/hooks/useAsk';
 import { FOLLOWUP, QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
@@ -14,9 +14,10 @@ import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 import { ExampleBanner } from './ExampleBanner';
 import { EmptyLibraryBanner } from './EmptyLibraryBanner';
-import { restoreTurn } from './restore';
+import { restoreTurn, savedTurn } from './restore';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
-import { announceChatsChanged, chatApi } from '@/lib/chats/client';
+import { CHATS_CHANGED, announceChatsChanged, chatStore } from '@/lib/chats/client';
+import { appendSessionTurn, getSessionChat, readRaw } from '@/lib/chats/session-store';
 import type { SavedTurn } from '@/lib/chats/store';
 
 /** D-142: saved chats outside the hosted demo. `chat` is set on `/c/[chatId]`. */
@@ -25,7 +26,40 @@ export type SavedChats = {
   chat?: { id: string; projectId: string | null; title: string; turns: SavedTurn[] };
   /** `/?project=<id>`: the first question creates the chat inside this project. */
   projectId?: string;
+  /** D-154: `/c/[chatId]` in the hosted demo; the browser reads the chat from this tab. */
+  sessionChatId?: string;
 };
+
+const SERVER_RENDER = '\u0000server';
+function subscribeSession(listener: () => void) {
+  window.addEventListener(CHATS_CHANGED, listener);
+  window.addEventListener('storage', listener);
+  return () => {
+    window.removeEventListener(CHATS_CHANGED, listener);
+    window.removeEventListener('storage', listener);
+  };
+}
+/** The tab's copy of a hosted-demo chat; `loading` until the browser has read sessionStorage. */
+function useSessionChat(id: string | undefined) {
+  const raw = useSyncExternalStore(
+    subscribeSession,
+    () => (id ? (readRaw() ?? '') : ''),
+    () => (id ? SERVER_RENDER : ''),
+  );
+  const loading = raw === SERVER_RENDER;
+  const chat = id && !loading ? getSessionChat(id) : null;
+  useEffect(() => {
+    // A link to a chat this tab does not have (another tab, or the tab was closed) starts fresh.
+    if (id && !loading && !chat && window.location.pathname === `/c/${id}`)
+      window.history.replaceState(null, '', '/');
+  }, [id, loading, chat]);
+  return {
+    loading,
+    chat: chat
+      ? { id: chat.id, projectId: chat.projectId, title: chat.title, turns: chat.turns }
+      : undefined,
+  };
+}
 
 type Props = {
   publicDemo?: boolean;
@@ -51,14 +85,17 @@ type Props = {
 export function AskApp(props: Props) {
   const [session, setSession] = useState(0);
   const [mode, setMode] = useState(props.demoMode);
+  const tab = useSessionChat(session === 0 ? props.saved?.sessionChatId : undefined);
+  const first = props.saved && tab.chat ? { ...props.saved, chat: tab.chat } : props.saved;
   // A new chat starts empty: the server-provided chat and project apply to the first session only.
-  const saved = props.saved && session > 0 ? { initial: props.saved.initial } : props.saved;
+  const saved = props.saved && session > 0 ? { initial: props.saved.initial } : first;
   // A new chat is outside the project, so it searches the whole library again.
   const library =
     props.library && session > 0 ? { ...props.library, scoped: undefined } : props.library;
   return (
     <Conversation
-      key={session}
+      key={`${String(session)}:${tab.chat?.id ?? ''}`}
+      loading={tab.loading}
       {...props}
       library={library}
       saved={saved}
@@ -82,10 +119,18 @@ function Conversation({
   example,
   emptyLibrary = false,
   saved,
+  loading = false,
   onNew,
   onMode,
-}: Props & { onNew: () => void; onMode: (mode: Props['demoMode']) => void }) {
+}: Props & {
+  loading?: boolean;
+  onNew: () => void;
+  onMode: (mode: Props['demoMode']) => void;
+}) {
   const ask = useAsk(demoMode);
+  const inTab = saved?.initial.storage === 'session';
+  const chatApi = chatStore(saved?.initial.storage);
+  const savedPhase = useRef<unknown>(null);
   const [chatId, setChatId] = useState(saved?.chat?.id);
   const chatIdRef = useRef(saved?.chat?.id);
   // T-84: a saved chat opens with its turns restored from the server's snapshot.
@@ -108,6 +153,20 @@ function Conversation({
     ? { ...active, phase: ask.phase, citations: ask.citations }
     : null;
   const turns = current ? [...history, current] : history;
+  // D-154: the hosted demo saves each finished turn in this tab, as the server does elsewhere.
+  useEffect(() => {
+    const id = chatIdRef.current;
+    if (!inTab || !id || !active || savedPhase.current === ask.phase) return;
+    const turn = savedTurn(ask.phase, ask.citations);
+    if (!turn) return;
+    savedPhase.current = ask.phase;
+    try {
+      appendSessionTurn(id, turn);
+      announceChatsChanged();
+    } catch {
+      // The answer stays on screen; it just is not kept in this tab.
+    }
+  }, [inTab, active, ask.phase, ask.citations]);
   const selectedTurn = turns.find((turn) => turn.id === viewer?.turn);
   const selectedMeta =
     selectedTurn && 'meta' in selectedTurn.phase ? selectedTurn.phase.meta : null;
@@ -154,12 +213,12 @@ function Conversation({
         }
       }
       const context = {
-        ...(chatIdRef.current ? { chatId: chatIdRef.current } : {}),
+        ...(chatIdRef.current && !inTab ? { chatId: chatIdRef.current } : {}),
         ...(earlier.length > 0 ? { history: earlier } : {}),
       };
       await ask.submit(question, id, Object.keys(context).length > 0 ? context : undefined);
       // The server saves the turn right after the stream ends; refresh the sidebar's order.
-      if (chatIdRef.current) setTimeout(announceChatsChanged, 400);
+      if (chatIdRef.current && !inTab) setTimeout(announceChatsChanged, 400);
     } finally {
       busyRef.current = false;
     }
@@ -236,7 +295,7 @@ function Conversation({
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8">
           <div className="mx-auto w-full max-w-[760px] space-y-10">
-            {turns.length === 0 ? (
+            {turns.length === 0 && loading ? null : turns.length === 0 ? (
               effectiveMode === 'off' ? (
                 <DemoOff />
               ) : (
@@ -327,7 +386,7 @@ function Conversation({
       {viewer && selectedMeta && selectedTurn?.citations && (
         <SourceViewer
           copy={copy}
-          fileLinks={saved !== undefined}
+          fileLinks={saved !== undefined && !inTab}
           passages={selectedMeta.passages}
           citations={selectedTurn.citations}
           label={viewer.label}

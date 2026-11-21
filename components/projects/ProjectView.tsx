@@ -7,7 +7,12 @@ import { Folder, Pencil, Plus, Trash2 } from 'lucide-react';
 import { ChatRail } from '@/components/ask/ChatRail';
 import { Modal } from '@/components/ask/Modal';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
-import { announceChatsChanged, chatApi, type ChatItem, type ProjectItem } from '@/lib/chats/client';
+import {
+  announceChatsChanged,
+  chatStore,
+  type ChatItem,
+  type ProjectItem,
+} from '@/lib/chats/client';
 import { PROJECT_COPY, type CorpusCopy } from '@/lib/copy';
 import { updatedAgo, type LibrarySource } from '@/lib/library/format';
 import { ProjectScope } from './ProjectScope';
@@ -29,6 +34,7 @@ export function ProjectView({
   now: string;
 }) {
   const router = useRouter();
+  const chatApi = chatStore(initial.storage);
   const [project, setProject] = useState(initialProject);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(project.name);
@@ -155,7 +161,10 @@ export function ProjectView({
             </p>
           )}
 
-          <ProjectScope project={project} sources={sources} onSaved={setProject} />
+          {/* D-154: the hosted demo searches its one fixed library, so it has no source choice. */}
+          {initial.storage !== 'session' && (
+            <ProjectScope project={project} sources={sources} onSaved={setProject} />
+          )}
 
           <section aria-labelledby="project-chats" className="mt-10">
             <h2 id="project-chats" className="mb-3">

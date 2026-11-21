@@ -8,7 +8,6 @@ import { isPublicDemo } from '@/lib/kit/profile';
 type Props = { params: Promise<{ chatId: string }> };
 
 async function load(id: string) {
-  if (isPublicDemo()) notFound();
   try {
     return await getChat(id);
   } catch (error) {
@@ -18,12 +17,19 @@ async function load(id: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (isPublicDemo()) return { title: 'Chat · Sourced' };
   const chat = await load((await params).chatId);
   return { title: `${chat.title} · Sourced` };
 }
 
 /** T-83 / D-142: a saved chat. */
 export default async function ChatPage({ params }: Props) {
-  const chat = await load((await params).chatId);
+  const { chatId } = await params;
+  // D-154: the hosted demo keeps chats in the visitor's tab, so the browser loads this one.
+  if (isPublicDemo()) {
+    if (!z.uuid().safeParse(chatId).success) notFound();
+    return AskPage({ sessionChatId: chatId });
+  }
+  const chat = await load(chatId);
   return AskPage({ chat });
 }

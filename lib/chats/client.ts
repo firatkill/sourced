@@ -1,5 +1,7 @@
 'use client';
 
+import { sessionChatApi } from './session-store';
+
 /** Browser helpers for /api/chats and /api/projects (T-83). Errors throw with the API code. */
 export type ChatItem = {
   id: string;
@@ -67,6 +69,13 @@ export const chatApi = {
   ) => call<{ project: ProjectItem }>('PATCH', `/api/projects/${id}`, input).then((r) => r.project),
   deleteProject: (id: string) => call<undefined>('DELETE', `/api/projects/${id}`),
 };
+
+/** D-154: where chats are kept. The hosted demo keeps them in this tab, others on the server. */
+export type ChatStorage = 'server' | 'session';
+export type ChatStore = typeof chatApi;
+export function chatStore(storage: ChatStorage = 'server'): ChatStore {
+  return storage === 'session' ? sessionChatApi : chatApi;
+}
 
 /** Lets the conversation tell the sidebar that chats changed (created, a turn finished). */
 export const CHATS_CHANGED = 'sourced:chats-changed';

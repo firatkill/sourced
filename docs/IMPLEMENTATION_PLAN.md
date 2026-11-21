@@ -28,7 +28,7 @@ Ordered tasks to build Sourced from an empty folder to a deployed v1.0.0 (M0 to 
 | M11 Setup and settings in the browser *(v2.3)* | T-88 – T-93 | `./sourced dev` then the browser reaches a cited answer with no other terminal step; keys, models, library and chat data managed in Settings; v2.3.0 |
 | M12 Project search scope *(v2.4)* | T-94 – T-98 | A project's chats search only the library sources it names; example banner points to Settings › Library; `/eval` hydration flake; dependency alerts; v2.4.0 (D-150, D-151) |
 | M13 Docling reader *(v2.5)* | T-99 – T-102 | Optional local Docling container reads PDF, Word and PowerPoint files; offered in setup and Settings; v2.5.0 (D-152) |
-| M14 Sidebar folders and reset *(v2.6)* | T-103 – T-104 | Projects as folders among the chats with a ⋯ menu and drag to move; Reset all data with the app kept open after a library reset (D-153) |
+| M14 Sidebar folders and reset *(v2.6)* | T-103 – T-105 | Projects as folders among the chats with a ⋯ menu and drag to move; Reset all data with the app kept open after a library reset (D-153); the same sidebar in the hosted demo, kept in the tab (D-154) |
 
 ---
 
@@ -1054,6 +1054,13 @@ Specified in `docs/REDESIGN-v2.md` (approved, D-140 to D-145); section numbers b
 - **Files**: `app/api/setup/reset/route.ts`, `lib/setup/reset.ts`, `components/sidebar/SettingsMenu.tsx`, `ResetDataDialog.tsx`, `components/ask/EmptyLibraryBanner.tsx`, `AskApp.tsx`, `AskPage.tsx`, `lib/kit/copy-server.ts`.
 - **Acceptance**: the library reset keeps chats, projects and the reader choice; "Remove everything" deletes chats too; `/` renders after a reset (it threw before) and, with chats left, shows the Add documents banner with asking off instead of sending the person to `/setup` (integration, unit and E2E tests).
 - **Depends on**: T-92
+
+### T-105 The hosted demo's sidebar, kept in the tab
+
+- **Implements**: D-154
+- **Files**: `lib/chats/session-store.ts`, `lib/chats/client.ts`, `components/ask/AskApp.tsx`, `AskPage.tsx`, `restore.ts`, `ChatRail.tsx`, `components/sidebar/ChatSidebar.tsx`, `components/projects/ProjectView.tsx`, `SessionProjectView.tsx`, `components/layout/ContentPage.tsx`, `app/c/[chatId]/page.tsx`, `app/p/[projectId]/page.tsx`, `app/how-it-works/page.tsx`.
+- **Acceptance**: on `public-demo` the first question creates a chat in the sidebar and `/c/<id>`; the ask request carries no chat id; a reload reopens the chat with its answer; another tab starts fresh; projects, drag to move, the project page and deleting a project work; `/api/chats` stays 404 (unit `session-chat-store.test.ts`, E2E `hosted-chats.spec.ts`, `ask-history.spec.ts`).
+- **Depends on**: T-103
 
 ## Traceability: functional requirements to tasks and tests
 

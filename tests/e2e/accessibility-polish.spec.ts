@@ -122,26 +122,12 @@ for (const theme of ['light', 'dark'] as const) {
       await checkTabRings(page, true);
       await ask(page);
       await expectDone(page);
-      await page.evaluate(() => {
-        // eslint-disable-next-line @typescript-eslint/unbound-method -- invoked below with its original element receiver
-        const original = Element.prototype.scrollIntoView;
-        Element.prototype.scrollIntoView = function (options) {
-          document.documentElement.dataset.scrollBehavior =
-            typeof options === 'object' ? (options.behavior ?? 'auto') : 'auto';
-          original.call(this, options);
-        };
-      });
       const chip = page.getByRole('button', { name: /^Source P1:/ });
       await chip.focus();
       await page.keyboard.press('Enter');
       await expect(page.getByRole('complementary', { name: 'Source viewer' })).toBeFocused();
       await page.keyboard.press('Escape');
-      await page.getByRole('region', { name: 'This session' }).getByRole('button').click();
-      await expect(page.locator('#turn-1')).toBeFocused();
-      await expect(page.locator('html')).toHaveAttribute(
-        'data-scroll-behavior',
-        /^(auto|instant)$/,
-      );
+      await expect(chip).toBeFocused();
     });
 
     for (const state of ['/', 'done', '/eval', '/how-it-works']) {

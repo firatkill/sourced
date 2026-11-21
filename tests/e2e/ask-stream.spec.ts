@@ -46,11 +46,12 @@ test('TC-091: phases, incremental text, verification, and ask-again focus', asyn
   const input = page.getByRole('textbox', { name: 'Your question' });
   await expect(input).toHaveAttribute('placeholder', 'Ask another question about PostgreSQL 17');
   await expect(answer).toHaveCount(1);
-  await page
-    .getByRole('navigation', { name: 'Main' })
-    .getByRole('button', { name: question, exact: true })
-    .click();
-  await expect(page.locator('#turn-1')).toBeFocused();
+  // D-154: the finished chat is listed in the sidebar, kept in this tab.
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: question.slice(0, 40) }),
+  ).toHaveCount(1);
   await expect
     .poll(() =>
       page.evaluate(() => [...new Set(window.answerObservations.map((item) => item.status))]),

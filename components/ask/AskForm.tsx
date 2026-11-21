@@ -103,8 +103,8 @@ export function AskForm({
           <span>{formatAskCopy(ASK_COPY.limit, { limit: dailyLimit })}</span> Questions are{' '}
           <a href="/how-it-works#privacy" className="underline underline-offset-4">
             not stored
-          </a>
-          .
+          </a>{' '}
+          on the server.
         </p>
       )}
     </form>

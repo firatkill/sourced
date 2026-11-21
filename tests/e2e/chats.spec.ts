@@ -191,13 +191,6 @@ test('T-83: the sidebar with saved chats has no serious accessibility violations
   ).toEqual([]);
 });
 
-test('T-83: the hosted demo keeps the tab-only session list', async ({ page }, info) => {
-  await openAsk(page, info, 3100);
-  await expect(page.getByText('Kept in this tab only', { exact: false })).toBeVisible();
-  await expect(sidebar(page).getByRole('button', { name: 'New project' })).toHaveCount(0);
-  expect((await page.request.get('http://localhost:3100/api/chats')).status()).toBe(404);
-});
-
 test('T-84: a saved chat reopens with its answer and sources', async ({ page }, info) => {
   const question = await newChat(page, info);
   const url = page.url();
