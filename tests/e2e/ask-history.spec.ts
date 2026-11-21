@@ -3,7 +3,7 @@ import { ask, openAsk, expectDone } from './helpers/ask';
 
 // REDESIGN §3.1–2 (lines 62–63), §4 (line 70), §8 (line 133).
 for (const theme of ['light', 'dark'] as const) {
-  test(`R2: ${theme} history stays in memory, navigation focuses turns, New chat clears`, async ({
+  test(`D-154: ${theme} chats are kept in the tab, follow-ups carry history, New chat clears`, async ({
     page,
   }, info) => {
     await page.emulateMedia({ colorScheme: theme });
@@ -12,29 +12,31 @@ for (const theme of ['light', 'dark'] as const) {
     await expectDone(page);
     const request = page.waitForRequest('**/api/ask');
     const second = await ask(page);
-    // T-85 / D-143: a follow-up carries the earlier answered turn from the browser's memory.
+    // T-85 / D-143: a follow-up carries the earlier answered turn; no chat id goes to the server.
     expect((await request).postDataJSON()).toEqual({
       question: second,
       history: [{ question: first, answer: expect.any(String) as unknown }],
     });
     await expectDone(page);
     await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(2);
-    const session = page
+    const chats = page
       .getByRole('navigation', { name: 'Main' })
-      .getByRole('region', { name: 'This session' });
-    await expect(session.getByRole('button')).toHaveText([first, second]);
-    await session.getByRole('button', { name: first, exact: true }).click();
-    await expect(page.locator('#turn-1')).toBeFocused();
-    await expect(page.locator('#turn-1')).toBeInViewport();
+      .getByRole('region', { name: 'Chats' })
+      .getByRole('link');
+    await expect(chats).toHaveCount(1);
+    await expect(chats.first()).toHaveAttribute('aria-current', 'page');
     await page.getByRole('button', { name: 'New chat' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ask the PostgreSQL docs.');
     await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(0);
-    await expect(session.getByRole('button')).toHaveCount(0);
+    await expect(page).toHaveURL(/\/$/);
     await ask(page);
     await expectDone(page);
+    await expect(chats).toHaveCount(2);
     await page.reload();
-    await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(0);
-    await expect(session.getByRole('button')).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(1);
+    await chats.last().click();
+    await expect(page.getByRole('article', { name: 'Answer' })).toHaveCount(2);
+    await expect(page.getByText(second, { exact: true }).first()).toBeVisible();
   });
   test(`R2: ${theme} one request at a time and New chat waits for Stop`, async ({ page }, info) => {
     await page.emulateMedia({ colorScheme: theme });

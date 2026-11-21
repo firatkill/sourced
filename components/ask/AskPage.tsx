@@ -44,6 +44,9 @@ async function readScopeLine(projectId: string | null | undefined): Promise<stri
 
 /** D-142: the sidebar's first render comes from the server, so it never flashes empty. */
 export async function readSidebar(): Promise<SidebarData> {
+  // D-154: the hosted demo's chats live in the visitor's tab; the browser fills the sidebar.
+  if (isPublicDemo())
+    return { chats: [], projects: [], now: new Date().toISOString(), storage: 'session' };
   const settings = getKitConfig().profile === 'local';
   try {
     const [chats, projects] = await Promise.all([listChats(), listProjects()]);
@@ -57,9 +60,12 @@ export async function readSidebar(): Promise<SidebarData> {
 export async function AskPage({
   chat,
   projectId,
+  sessionChatId,
 }: {
   chat?: { id: string; projectId: string | null; title: string; turns: SavedTurn[] };
   projectId?: string;
+  /** D-154: a hosted-demo chat, read by the browser from this tab. */
+  sessionChatId?: string;
 }) {
   const configuration = readAppConfiguration();
   if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
@@ -71,23 +77,22 @@ export async function AskPage({
     readScopeLine(chat ? chat.projectId : projectId),
   ]);
   const local = getKitConfig().profile === 'local';
-  const sidebar = publicDemo ? undefined : await readSidebar();
+  const sidebar = await readSidebar();
   // D-153: with nothing indexed, a first-time user goes to /setup (T-90). After a library reset
   // the chats and projects stay, so the app stays too and says documents are needed to ask.
   const emptyLibrary = local && library?.documents === 0;
-  if (!chat && emptyLibrary && !sidebar?.chats.length && !sidebar?.projects.length)
+  if (!chat && emptyLibrary && !sidebar.chats.length && !sidebar.projects.length)
     redirect('/setup');
   const example =
     local && copy.exampleNotice && !chat && !emptyLibrary
       ? { notice: copy.exampleNotice }
       : undefined;
-  const saved: SavedChats | undefined = sidebar
-    ? {
-        initial: sidebar,
-        ...(chat ? { chat } : {}),
-        ...(projectId ? { projectId } : {}),
-      }
-    : undefined;
+  const saved: SavedChats = {
+    initial: sidebar,
+    ...(chat ? { chat } : {}),
+    ...(projectId ? { projectId } : {}),
+    ...(sessionChatId ? { sessionChatId } : {}),
+  };
   return (
     <AskApp
       library={

@@ -26,7 +26,9 @@ test('TC-019: PRD §9.1 shared landmarks, exact copy and keyboard skip link', as
   await expect(footer).toContainText(
     'Answers are generated from the PostgreSQL 17 documentation, © The PostgreSQL Global Development Group, used under the PostgreSQL License.',
   );
-  await expect(footer).toContainText('Privacy: questions are not stored. Read how this works.');
+  await expect(footer).toContainText(
+    'Privacy: chats stay in this browser tab; the server does not store them. Read how this works.',
+  );
   await expect(footer.getByRole('link', { name: 'PostgreSQL License' })).toHaveAttribute(
     'href',
     'https://www.postgresql.org/about/licence/',

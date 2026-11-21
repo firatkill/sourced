@@ -181,7 +181,11 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
           </p>
         )}
         <p>
-          {saved ? SIDEBAR_COPY.privacy : 'Privacy: questions are not stored.'}{' '}
+          {saved
+            ? saved.initial.storage === 'session'
+              ? SIDEBAR_COPY.sessionPrivacy
+              : SIDEBAR_COPY.privacy
+            : 'Privacy: questions are not stored.'}{' '}
           <a href="/how-it-works#privacy">Read how this works.</a>
         </p>
       </footer>

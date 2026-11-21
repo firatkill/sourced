@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { FolderPlus, Search, X } from 'lucide-react';
-import { CHATS_CHANGED, chatApi, type ChatItem, type ProjectItem } from '@/lib/chats/client';
+import {
+  CHATS_CHANGED,
+  chatStore,
+  type ChatItem,
+  type ChatStorage,
+  type ProjectItem,
+} from '@/lib/chats/client';
 import { SIDEBAR_COPY } from '@/lib/copy';
 import { ChatRow } from './ChatRow';
 import { ProjectGroup, useChatDrop } from './ProjectGroup';
@@ -15,6 +21,8 @@ export type SidebarData = {
   now: string;
   /** T-91: the local profile links to Settings (keys, models, library); others to Appearance. */
   settings?: boolean;
+  /** D-154: the hosted demo keeps chats in this browser tab (sessionStorage). */
+  storage?: ChatStorage;
 };
 
 const OPEN_KEY = 'sourced-open-projects';
@@ -75,6 +83,7 @@ export function ChatSidebar({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
+  const chatApi = chatStore(initial.storage);
   const [chats, setChats] = useState(initial.chats);
   const [projects, setProjects] = useState(initial.projects);
   const [search, setSearch] = useState('');
@@ -117,7 +126,7 @@ export function ChatSidebar({
     } catch {
       setError(SIDEBAR_COPY.loadError);
     }
-  }, []);
+  }, [chatApi]);
   useEffect(() => {
     const onChange = () => void refresh();
     window.addEventListener(CHATS_CHANGED, onChange);
@@ -350,7 +359,9 @@ export function ChatSidebar({
           </section>
         </>
       )}
-      <p className="px-2.5 text-xs text-[var(--ink-3)]">{SIDEBAR_COPY.storage}</p>
+      <p className="px-2.5 text-xs text-[var(--ink-3)]">
+        {initial.storage === 'session' ? SIDEBAR_COPY.sessionStorage : SIDEBAR_COPY.storage}
+      </p>
 
       {deleting && (
         <Modal

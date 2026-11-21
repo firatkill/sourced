@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { z } from 'zod';
 import { ConfigurationError } from '@/components/layout/ConfigurationError';
 import { ProjectView } from '@/components/projects/ProjectView';
+import { SessionProjectView } from '@/components/projects/SessionProjectView';
 import { readSidebar } from '@/components/ask/AskPage';
 import { NotFoundError, getProject, listChats } from '@/lib/chats/store';
 import { readAppConfiguration } from '@/lib/kit/app-configuration';
@@ -13,7 +14,6 @@ import { listLibrarySources } from '@/lib/library/facts';
 type Props = { params: Promise<{ projectId: string }> };
 
 async function load(id: string) {
-  if (isPublicDemo()) notFound();
   try {
     return await getProject(id);
   } catch (error) {
@@ -23,6 +23,7 @@ async function load(id: string) {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (isPublicDemo()) return { title: 'Project · Sourced' };
   const project = await load((await params).projectId);
   return { title: `${project.name} · Sourced` };
 }
@@ -31,7 +32,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProjectPage({ params }: Props) {
   const configuration = readAppConfiguration();
   if (!configuration.ok) return <ConfigurationError fixes={configuration.fixes} />;
-  const project = await load((await params).projectId);
+  const { projectId } = await params;
+  // D-154: the hosted demo keeps projects in the visitor's tab, so the browser loads this one.
+  if (isPublicDemo()) {
+    if (!z.uuid().safeParse(projectId).success) notFound();
+    return (
+      <SessionProjectView
+        copy={uiCopy(configuration.copy)}
+        initial={await readSidebar()}
+        projectId={projectId}
+      />
+    );
+  }
+  const project = await load(projectId);
   const [initial, chats, sources] = await Promise.all([
     readSidebar(),
     listChats({ projectId: project.id }),
