@@ -138,9 +138,10 @@ test('T-91: Settings saves a key, switches the answer model and rebuilds for a n
   await page.goto(`${base}/settings`);
   await expect(page.getByRole('heading', { level: 1, name: 'Models and keys' })).toBeVisible();
   const main = page.getByRole('navigation', { name: 'Main', exact: true });
-  await expect(main.getByRole('link', { name: 'Settings', exact: true })).toHaveAttribute(
-    'aria-current',
-    'page',
+  // D-153: Settings is a menu (Library, Settings, Reset all data) shown active on /settings.
+  await expect(main.getByRole('button', { name: 'Settings', exact: true })).toHaveAttribute(
+    'aria-haspopup',
+    'menu',
   );
   await expect(
     page

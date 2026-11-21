@@ -51,6 +51,12 @@ const json = (body: unknown): RequestInit => ({
 export const setupApi = {
   status: () => request<SetupStatus>('/api/setup/status', { cache: 'no-store' }),
   chooseData: (choice: 'example' | 'own') => request('/api/setup/data', json({ choice })),
+  /** D-153: `library` keeps chats and projects; `everything` removes them too. */
+  resetData: (scope: 'library' | 'everything') =>
+    request<{ removedSources: number; removedDocuments: number; removedChats: number }>(
+      '/api/setup/reset',
+      json({ scope }),
+    ),
   saveKey: (provider: string, key: string) =>
     request<{ provider: string; masked: string }>('/api/setup/key', json({ provider, key })),
   upload: (files: { file: File; name: string }[]) => {

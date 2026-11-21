@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAsk } from '@/hooks/useAsk';
 import { FOLLOWUP, QUESTION } from '@/lib/config';
 import type { SuggestedId } from '@/lib/suggested';
-import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
+import { ASK_COPY, EMPTY_LIBRARY_COPY, type CorpusCopy } from '@/lib/copy';
 import { AskForm } from './AskForm';
 import { SuggestedQuestions } from './SuggestedQuestions';
 import { DemoOff, ReadonlyBanner } from './states/DemoState';
@@ -13,6 +13,7 @@ import { ChatRail } from './ChatRail';
 import { Turn, type ChatTurn } from './Turn';
 import { SourceViewer } from './SourceViewer';
 import { ExampleBanner } from './ExampleBanner';
+import { EmptyLibraryBanner } from './EmptyLibraryBanner';
 import { restoreTurn } from './restore';
 import type { SidebarData } from '@/components/sidebar/ChatSidebar';
 import { announceChatsChanged, chatApi } from '@/lib/chats/client';
@@ -43,6 +44,8 @@ type Props = {
     | undefined;
   /** Local profile with the bundled example loaded (copy.exampleNotice). */
   example?: { notice: string } | undefined;
+  /** D-153: the local library has no documents (it was reset); chats stay readable. */
+  emptyLibrary?: boolean | undefined;
   saved?: SavedChats | undefined;
 };
 export function AskApp(props: Props) {
@@ -77,6 +80,7 @@ function Conversation({
   copy,
   library,
   example,
+  emptyLibrary = false,
   saved,
   onNew,
   onMode,
@@ -191,14 +195,15 @@ function Conversation({
       }}
       inputRef={ask.inputRef}
       inFlight={ask.inFlight}
-      disabled={effectiveMode !== 'on'}
+      disabled={effectiveMode !== 'on' || emptyLibrary}
+      disabledPlaceholder={emptyLibrary ? EMPTY_LIBRARY_COPY.placeholder : undefined}
       dailyLimit={publicDemo ? limits.ipDaily : null}
       error={ask.phase.kind === 'validationError' ? ask.phase.message : null}
       hasTurns={turns.length > 0}
     />
   );
   // REDESIGN-v2 §3.1: no suggestions block at all when the corpus has none.
-  const suggestions = suggested.length > 0 && (
+  const suggestions = suggested.length > 0 && !emptyLibrary && (
     <SuggestedQuestions
       suggested={suggested}
       disabled={ask.inFlight}
@@ -236,7 +241,11 @@ function Conversation({
                 <DemoOff />
               ) : (
                 <>
-                  {example && <ExampleBanner notice={example.notice} />}
+                  {emptyLibrary ? (
+                    <EmptyLibraryBanner />
+                  ) : (
+                    example && <ExampleBanner notice={example.notice} />
+                  )}
                   <div className="space-y-4">
                     {effectiveMode === 'readonly' ? (
                       <ReadonlyBanner />
@@ -304,11 +313,10 @@ function Conversation({
         </div>
         {turns.length > 0 && effectiveMode !== 'off' && (
           <div className="shrink-0 border-t border-[var(--rule)] bg-[var(--ground)] px-4 py-3 sm:px-8">
-            <div className="mx-auto max-w-[760px]">
+            <div className="mx-auto max-w-[760px] space-y-3">
+              {emptyLibrary && <EmptyLibraryBanner />}
               {composer}
-              {library?.scoped && (
-                <p className="mt-2 text-sm text-[var(--ink-3)]">{library.scoped}</p>
-              )}
+              {library?.scoped && <p className="text-sm text-[var(--ink-3)]">{library.scoped}</p>}
             </div>
           </div>
         )}

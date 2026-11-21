@@ -14,6 +14,8 @@ type AskFormProps = {
   inputRef: Ref<HTMLTextAreaElement>;
   inFlight: boolean;
   disabled: boolean;
+  /** D-153: why asking is off, shown in the box (the read-only demo text otherwise). */
+  disabledPlaceholder?: string | undefined;
   dailyLimit: number | null;
   error: string | null;
   hasTurns?: boolean;
@@ -27,6 +29,7 @@ export function AskForm({
   inputRef,
   inFlight,
   disabled,
+  disabledPlaceholder,
   dailyLimit,
   error,
   hasTurns = false,
@@ -49,7 +52,7 @@ export function AskForm({
           name="question"
           placeholder={
             disabled
-              ? ASK_COPY.readonlyPlaceholder
+              ? (disabledPlaceholder ?? ASK_COPY.readonlyPlaceholder)
               : hasTurns
                 ? copy.nextPlaceholder
                 : copy.placeholder

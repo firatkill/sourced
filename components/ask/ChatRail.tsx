@@ -3,12 +3,28 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Palette, Settings } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { ASK_COPY, type CorpusCopy } from '@/lib/copy';
 import { ChatIcon } from './ChatIcon';
 import { Modal } from './Modal';
 import { ChatSidebar, type SidebarData } from '@/components/sidebar/ChatSidebar';
 import { SIDEBAR_COPY } from '@/lib/copy';
+import { SettingsMenu } from '@/components/sidebar/SettingsMenu';
+
+/** The favicon's mark (public/favicon.svg), so the rail and the browser tab match. */
+function BrandMark() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true" className="shrink-0">
+      <rect width="32" height="32" rx="7" fill="#2443d0" />
+      <path
+        d="M23 9H12a4 4 0 0 0 0 8h8a3 3 0 0 1 0 6H9"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3"
+      />
+    </svg>
+  );
+}
 
 type Props = {
   copy?: CorpusCopy;
@@ -44,23 +60,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
     <div className="flex min-h-full flex-col">
       <nav aria-label="Main" className="flex flex-1 flex-col gap-6 p-4 text-sm">
         <Link href="/" className="flex min-h-11 items-center gap-3 font-bold">
-          <span
-            aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-[var(--ink)] text-[var(--surface)]"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
-            >
-              <path d="M4 6h10M4 12h16M4 18h7" />
-              <circle cx="18" cy="6" r="2" />
-            </svg>
-          </span>
+          <BrandMark />
           <span>
             Sourced
             <span className="block text-xs font-normal text-[var(--ink-3)]">
@@ -69,7 +69,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
           </span>
         </Link>
         <button
-          className="flex min-h-11 items-center gap-2.5 rounded-md border border-[var(--rule-strong)] bg-[var(--surface)] px-3 text-left font-medium"
+          className="-mb-5 flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left font-medium hover:bg-[var(--rule)] disabled:opacity-50"
           disabled={busy}
           onClick={() => {
             setOpen(false);
@@ -151,14 +151,7 @@ export function ChatRail({ turns, busy, onNew, copy = ASK_COPY, saved }: Props) 
             Source on GitHub
           </a>
           {saved?.initial.settings ? (
-            <Link
-              href="/settings"
-              aria-current={pathname.startsWith('/settings') ? 'page' : undefined}
-              className="flex min-h-11 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-[var(--ink-2)] hover:bg-[var(--rule)]"
-            >
-              <Settings size={16} aria-hidden="true" />
-              Settings
-            </Link>
+            <SettingsMenu current={pathname.startsWith('/settings')} />
           ) : (
             <Link
               href="/settings/appearance"
