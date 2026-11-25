@@ -8,7 +8,7 @@
 
 ## Demo
 
-![A suggested question gets a checked answer, a citation opens the source viewer with its quote highlighted, and How this was answered expands.](docs/assets/demo.gif)
+![A suggested question gets an answer with every citation checked, a citation opens its source passage, How this was answered shows how the passages were ranked, and the chat is dragged into a project in the sidebar.](docs/assets/demo.gif)
 
 The live demo answers questions about 35 pages of the PostgreSQL 17 docs, the example that ships with the kit. Swap in your own documents and the rest of the kit stays the same.
 
