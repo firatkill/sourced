@@ -4,17 +4,23 @@ import { describe, expect, it } from 'vitest';
 const readme = readFileSync('README.md', 'utf8');
 
 describe('TC-162: README sections (FR-57, TRD §27)', () => {
-  it('keeps the required headings in order and the byte-exact first sentence', () => {
-    expect(readme.split('\n\n')[1]).toBe(
-      'A small, production-quality RAG app and starter kit: every claim in the answer cites a passage, and every citation is checked on the server before you see it.',
+  it('keeps the required headings in order and leads with the kit', () => {
+    // D-155: the README opens with the kit and what is in it.
+    expect(readme.split('\n\n')[1]).toMatch(
+      /^\*\*A kit for building a chatbot over your own documents\.\*\* /,
     );
-    // D-139: a short, local-first README; the detail lives in docs/GUIDE.md.
+    // D-139: a local-first README; the detail lives in docs/GUIDE.md.
     expect(readme.match(/^#{1,2} .+$/gm)).toEqual([
       '# Sourced',
       '## Links',
       '## Demo',
+      "## What's in the kit",
       '## Quick start',
       '## Use your own documents',
+      '## Make it your own',
+      '## With a coding agent',
+      '## Other providers',
+      '## If something goes wrong',
       '## How it works',
       '## License',
     ]);
@@ -59,7 +65,7 @@ describe('D-138 / D-139 / D-146: the quick start needs only Docker and one comma
     expect(quick).toContain('`OPENAI_API_KEY=`');
   });
   it('replaces the example with reset before adding documents', () => {
-    const own = readme.split('## Use your own documents')[1]?.split('## How it works')[0] ?? '';
+    const own = readme.split('## Use your own documents')[1]?.split('## Make it your own')[0] ?? '';
     const blocks = [...own.matchAll(/```sh\n([\s\S]*?)```/g)].map((m) => m[1]);
     expect(blocks).toEqual([
       './sourced reset\n',

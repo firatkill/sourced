@@ -1,6 +1,6 @@
 # Sourced
 
-A small, production-quality RAG app and starter kit: every claim in the answer cites a passage, and every citation is checked on the server before you see it.
+**A kit for building a chatbot over your own documents.** Point it at a folder, a website or a Git repository, and you get a chat app whose answers cite the passages they use. The server checks every citation and quote against its passage before you see the answer. The same kit indexes your documents, measures answer quality and runs the app for you alone, for a team or for the public. Use it from the browser, the terminal or a coding agent.
 
 ## Links
 
@@ -8,7 +8,24 @@ A small, production-quality RAG app and starter kit: every claim in the answer c
 
 ## Demo
 
-![A suggested question gets a checked answer, a citation opens the source viewer with its quote highlighted, and How this was answered expands.](docs/assets/demo.gif)
+![A suggested question gets an answer with every citation checked, a citation opens its source passage, How this was answered shows how the passages were ranked, and the chat is dragged into a project in the sidebar.](docs/assets/demo.gif)
+
+The live demo answers questions about 35 pages of the PostgreSQL 17 docs, the example that ships with the kit. Swap in your own documents and the rest of the kit stays the same.
+
+## What's in the kit
+
+One repository and one configuration file, [`sourced.config.ts`](sourced.config.ts), covering everything from your files to a running chatbot:
+
+| Part                  | What you get                                                                                                                                                                                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chat app**          | A Next.js chat with saved chats, search, pins and projects (folders you drag chats into), follow-up questions, five themes and Markdown export. Citations open the original document, PDFs at the cited page.                                                                    |
+| **Checked answers**   | Hybrid vector and keyword search in PostgreSQL with pgvector, a rerank step, and streamed answers. The server checks each citation and quote, removes invalid ones and refuses when no valid citation is left.                                                                   |
+| **Sources**           | Folders and file globs, URL lists, sitemaps, same-origin crawls and local Git checkouts. Markdown, MDX, HTML, PDF, Word and plain text; with the optional [Docling](#better-reading-for-pdf-and-office-files-docling) reader, also scanned PDFs, complex layouts and PowerPoint. |
+| **Providers**         | OpenAI, Google Gemini, Anthropic (answers only) or Ollama, chosen separately for answers and embeddings. With Ollama for every role, nothing leaves your machine.                                                                                                                |
+| **The `sourced` CLI** | One command for each step: `init`, `add`, `ingest` (with a cost estimate first), `inspect`, `ask`, `eval`, `dev`, `deploy:check` and `doctor`. Every command has `--json` output for scripts and agents.                                                                         |
+| **Quality checks**    | Golden questions you generate and review (`eval:generate`, `eval:review`), then an evaluation of retrieval, citation validity, faithfulness, refusals and injection resistance, with a cost guard. CI fails when a score drops below its floor.                                  |
+| **Agent skills**      | `/setup`, `/add-docs`, `/ingest`, `/check-quality`, `/tune` and `/troubleshoot` for Claude Code and Codex. The agent runs the same commands and asks before it spends money.                                                                                                     |
+| **Profiles**          | `local` for your own machine, `private` behind a shared access token, and `public-demo` with daily quotas, IP hashing and cached suggested answers. The live demo runs `public-demo`.                                                                                            |
 
 ## Quick start
 
@@ -33,19 +50,19 @@ cd sourced
 The first run builds the Docker image, which takes a few minutes once. The command then prints a setup link. Open it, and the browser walks you through four steps:
 
 1. **Data**: try the bundled example (35 pages of the PostgreSQL 17 docs) or use your own documents.
-2. **Provider**: paste your key. Sourced checks it with one free request and saves it in `.env.local` on this computer; the browser never sees it again in full.
-3. **Documents**: drop files or a folder (Markdown, HTML, PDF, Word or text), or add a web page. Files are copied into `my-docs/`. Optionally, turn on [Docling](#better-reading-for-pdf-and-office-files-docling) here for scanned PDFs, complex layouts and PowerPoint slides.
+2. **Provider**: paste your key. Sourced checks it with one free request and saves it in `.env.local` on this computer; after that the browser only ever shows it masked.
+3. **Documents**: drop files or a folder (Markdown, HTML, PDF, Word or text), or add a web page. Files are copied into `my-docs/`. You can also turn on [Docling](#better-reading-for-pdf-and-office-files-docling) here for scanned PDFs, complex layouts and PowerPoint slides.
 4. **Index**: see which provider receives your text and what it costs, confirm, and watch the progress. You can close the tab; indexing keeps going.
 
 Then ask, for example, “When should I use a partial index?”, and a follow-up such as “Can it also be unique?”.
 
-Your chats are saved in the sidebar: rename them, pin them, group them into projects, and come back to them later. Every answer cites the passages it used; for your own files, a citation opens the original document (PDFs at the cited page). **Settings** changes keys and models, adds or removes documents, exports a chat as Markdown, and picks a theme.
+Your chats are saved in the sidebar: rename them, pin them, drag them into projects, and come back to them later. Every answer cites the passages it used; for your own files, a citation opens the original document (PDFs at the cited page). **Settings** changes keys and models, adds or removes documents, exports a chat as Markdown, picks a theme, and resets the library or all data.
 
 The setup link only works on this computer. Lost it? `./sourced setup` prints a new one.
 
 ### In the terminal
 
-Every step also has a command. Instead of the browser, add your key yourself:
+Every step also has a command. To add your key yourself instead of in the browser:
 
 ```sh
 cp .env.example .env.local
@@ -60,7 +77,7 @@ Open `.env.local` and paste your key after `OPENAI_API_KEY=`. Then index the exa
 
 ## Use your own documents
 
-In the browser, choose **My own documents** in setup step 1, or open **Settings › Library** later. In the terminal, remove the example first. `reset` deletes everything indexed and empties the source list; it asks before it deletes anything and never touches your files:
+In the browser, choose **My own documents** in setup step 1, or open **Settings › Library** later. In the terminal, remove the example first. `reset` deletes everything indexed and empties the source list. It asks before it deletes anything and never touches your files:
 
 ```sh
 ./sourced reset
@@ -74,7 +91,7 @@ Then add a folder of Markdown, HTML, PDF, Word (`.docx`) or plain-text files, or
 ./sourced dev
 ```
 
-`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs and PowerPoint files need [Docling](#better-reading-for-pdf-and-office-files-docling). For a large folder, prefer `./sourced add <folder>`: a browser can only upload copies.
+`ingest` prints the estimated cost before it sends anything to OpenAI, and stops to ask when the estimate is above $1. Run `./sourced ingest --dry-run` to see the estimate without indexing. Scanned PDFs and PowerPoint files need [Docling](#better-reading-for-pdf-and-office-files-docling). For a large folder, prefer `./sourced add <folder>`: the browser has to upload a copy of every file.
 
 To go back to the example later, run `./sourced reset`, then `git checkout sourced.config.ts` and `./sourced ingest`.
 
@@ -98,7 +115,58 @@ It downloads Docling the first time, starts it, and waits until it is ready; the
 
 `./sourced docling status` says which reader is in use, and `./sourced docling off` goes back to the built-in readers and stops the container. `./sourced dev` starts Docling again after `./sourced down` when your library uses it. To free the disk space after turning it off, remove the image with `docker image rm quay.io/docling-project/docling-serve-cpu:v1.38.2`.
 
-### With a coding agent
+## Make it your own
+
+Everything about your chatbot lives in `sourced.config.ts`: the name and description shown in the app, the sources, the models and their prices, the profile and the suggested questions. `./sourced init` writes one from flags, and `./sourced add` adds sources to it. A configuration for 200 pages of the MongoDB manual looks like this:
+
+```ts
+export default defineConfig({
+  schemaVersion: 1,
+  corpus: { name: 'mongodb-manual', title: 'MongoDB manual', language: 'en' /* … */ },
+  sources: [
+    {
+      id: 'manual',
+      type: 'sitemap',
+      url: 'https://www.mongodb.com/docs/manual/sitemap-0.xml',
+      include: ['/docs/manual/**'],
+      maxPages: 200,
+    },
+  ],
+  profile: 'local',
+  models: {
+    chat: { provider: 'openai', model: 'gpt-6-luna' },
+    embed: { provider: 'openai', model: 'text-embedding-3-small', dimensions: 1536 },
+  },
+});
+```
+
+The full file is in [`examples/mongodb/`](examples/mongodb/sourced.config.ts); [`examples/mixed-folder/`](examples/mixed-folder/) has one small file in each supported format.
+
+### Check answer quality
+
+A chatbot over your documents is only useful if its answers hold up. The kit measures that on your own documents:
+
+```sh
+./sourced eval:generate --count 30
+./sourced eval:review
+./sourced eval
+```
+
+`eval:generate` drafts golden questions from your passages, `eval:review` lets you accept or fix them, and `eval` scores retrieval (recall, MRR), citation validity, faithfulness, false and correct refusals, and resistance to prompt injection. It prices the run first and stops at `EVAL_MAX_COST_USD`. On the PostgreSQL example the latest run scored 0.97 recall@5, 1.0 citation validity and 1.0 faithfulness, at about $0.0008 per question; the [Evaluation page](https://sourced.firatkil.com/eval) shows the full report. `./sourced inspect` shows how a source was split into passages, and `./sourced ask "…" --trace` shows what was searched and why an answer was given.
+
+### Share it
+
+Pick a profile in `sourced.config.ts` or with `SOURCED_PROFILE`:
+
+| Profile       | For                                                                                                                           |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `local`       | Your own machine. Setup and Settings in the browser, chats saved in the local database.                                       |
+| `private`     | A team. Everyone needs the shared access token, which `init` generates in `.env.local`.                                       |
+| `public-demo` | Anyone. Daily quotas, a salted and daily-rotating IP hash, cached suggested answers, chats kept in the visitor's browser tab. |
+
+Before going live, `./sourced deploy:check --profile <profile>` checks the required variables (by name only), the database and its migrations, the index and the profile's own settings. Where you host it is up to you; neither the CLI nor the agent skills deploy anything on their own. The [guide](docs/GUIDE.md#operating-the-hosted-example) shows how the live demo is run with a capped LLM budget.
+
+## With a coding agent
 
 Open the folder in Claude Code or Codex and type `/setup`, or say “Set up a chatbot over my documents.” The agent runs the same commands, explains which provider receives your text and what it costs, and asks before it spends anything. Fill keys in `.env.local` yourself; never paste them into the chat.
 
@@ -111,17 +179,17 @@ Open the folder in Claude Code or Codex and type `/setup`, or say “Set up a ch
 | `/tune`          | Tries one configuration change, compares evaluation and keeps or reverts it.          |
 | `/troubleshoot`  | Traces a wrong answer or a failed step and finds the likely cause.                    |
 
-### Other providers
+## Other providers
 
 Google Gemini, Anthropic (answers only; it needs a separate embedding provider) and Ollama are supported. Put the provider's key in `.env.local` (the lines are in the file, commented out) and choose the models in `sourced.config.ts`. With Ollama for every role, nothing leaves your machine; it needs a running Ollama server with the models pulled, and no key. Changing the embedding model means indexing again: `ingest` tells you and asks first.
 
 To try the app without any key, add `LLM_MODE=mock` to `.env.local`: answers and embeddings are stand-ins, so only use it to look around.
 
-### If something goes wrong
+## If something goes wrong
 
 - **A port is taken.** Set `SOURCED_PORT` (the app, default 3000), `SOURCED_DB_PORT` (the database, default 5433) or `SOURCED_DOCLING_PORT` (Docling, default 5001) in `.env.local`.
 - **“The existing index was built with …”.** You changed the embedding model, or the database holds an older index. `./sourced ingest` asks whether to rebuild it.
-- **The app does not start.** `./sourced dev` prints the reason and the command to run next. `docker compose logs app` shows the full log.
+- **The app does not start.** `./sourced dev` prints the reason and the command to run next. `docker compose logs app` shows the full log. `./sourced doctor` checks Docker, ports, disk space, the database and your keys.
 - **“Docling is turned on for this library but is not running.”** Run `./sourced docling on`. If it never becomes ready, `docker compose logs docling` shows why; Docling needs a few GB of memory, which you can raise in Docker Desktop's settings.
 
 Each checkout has its own database, so a second clone on the same machine starts empty.

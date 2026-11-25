@@ -8,6 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - The sidebar shows projects as folders among the chats (D-153): open or close a project, use its ⋯ menu for New chat in this project and Project settings, and drag a chat onto a project to move it. The rail uses the favicon's mark.
 - The hosted demo has the same chat screen and sidebar as the local app (D-154). Its chats and projects are kept in the visitor's browser tab (session storage), survive a reload and are gone when the tab closes; the server still stores none of them.
+- The README leads with the kit (D-155): what is in it, a configuration example, quality checks and profiles.
 
 ### Added
 
